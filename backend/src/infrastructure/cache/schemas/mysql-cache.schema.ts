@@ -1,12 +1,17 @@
-import { index, int, mysqlTable, varchar } from 'drizzle-orm/mysql-core'
-import { jsonColumn } from '../../database/columns.js'
+import { sql } from 'drizzle-orm'
+import { index, int, mysqlTable, uniqueIndex } from 'drizzle-orm/mysql-core'
+import { jsonColumn, pathVarchar } from '../../database/columns.js'
 
 export const cache = mysqlTable(
   'cache',
   {
-    key: varchar('key', { length: 768 }).primaryKey(),
+    key: pathVarchar('key', { length: 8192 }).notNull(),
     value: jsonColumn<any>()('value'),
     expiration: int('expiration').default(-1).notNull()
   },
-  (table) => [index('expiration_idx').on(table.expiration)]
+  (table) => [
+    uniqueIndex('cache_key_unique').on(table.key),
+    index('cache_key_prefix_idx').on(sql`${table.key}(768)`),
+    index('expiration_idx').on(table.expiration)
+  ]
 )

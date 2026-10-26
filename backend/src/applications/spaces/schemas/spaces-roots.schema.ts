@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { bigint, datetime, index, mysqlTable, unique, varchar } from 'drizzle-orm/mysql-core'
+import { pathVarchar } from '../../../infrastructure/database/columns.js'
 import { files } from '../../files/schemas/files.schema.js'
 import { spaces } from './spaces.schema.js'
 
@@ -20,9 +21,9 @@ export const spacesRoots = mysqlTable(
       .references(() => spaces.id, { onDelete: 'cascade' })
       .notNull(),
     fileId: bigint('fileId', { mode: 'number', unsigned: true }).references(() => files.id, { onDelete: 'cascade' }),
-    alias: varchar('alias', { length: 255 }).notNull(),
-    name: varchar('name', { length: 255 }).notNull(),
-    externalPath: varchar('externalPath', { length: 4096 }),
+    alias: pathVarchar('alias', { length: 255 }).notNull(),
+    name: pathVarchar('name', { length: 255 }).notNull(),
+    externalPath: pathVarchar('externalPath', { length: 4096 }),
     permissions: varchar('permissions', { length: 32 }).default(''),
     createdAt: datetime('createdAt', { mode: 'date' })
       .default(sql`CURRENT_TIMESTAMP`)

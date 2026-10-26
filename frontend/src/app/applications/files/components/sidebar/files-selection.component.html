@@ -33,7 +33,7 @@
     <div appAutoResize class="fs-sm">
       @for (f of files(); track f.id) {
         <div class="card selection-panel">
-          <div class="card-body align-self-center p-0 my-1">
+          <div class="card-body align-self-center p-0 my-1" [class.w-100]="f.shortMime === 'media'">
             @switch (f.shortMime) {
               @case ('image') {
                 <div class="d-flex align-items-center" [style.height.px]="cardImageSize">

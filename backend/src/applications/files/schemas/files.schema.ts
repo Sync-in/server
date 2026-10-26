@@ -1,5 +1,6 @@
 import { SQL, sql, type SQLWrapper } from 'drizzle-orm'
 import { AnyMySqlColumn, bigint, boolean, index, mysqlTable, varchar } from 'drizzle-orm/mysql-core'
+import { pathVarchar } from '../../../infrastructure/database/columns.js'
 import { shares } from '../../shares/schemas/shares.schema.js'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema.js'
 import { spaces } from '../../spaces/schemas/spaces.schema.js'
@@ -23,8 +24,8 @@ export const files = mysqlTable(
       unsigned: true
     }).references((): AnyMySqlColumn => spacesRoots.id, { onDelete: 'cascade' }),
     shareExternalId: bigint('shareExternalId', { mode: 'number', unsigned: true }).references(() => shares.id, { onDelete: 'cascade' }),
-    path: varchar('path', { length: 4096 }).notNull(),
-    name: varchar('name', { length: 255 }).notNull(),
+    path: pathVarchar('path', { length: 4096 }).notNull(),
+    name: pathVarchar('name', { length: 255 }).notNull(),
     isDir: boolean('isDir').notNull(),
     inTrash: boolean('inTrash').default(false).notNull(),
     mime: varchar('mime', { length: 255 }),

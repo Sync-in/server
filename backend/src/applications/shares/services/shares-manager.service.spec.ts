@@ -94,7 +94,7 @@ describe(SharesManager.name, () => {
     updateMembers: vi.fn(),
     shareExistsForOwner: vi.fn(),
     childExistsForShareOwner: vi.fn(),
-    uniqueShareAlias: vi.fn(),
+    shareExistsForAlias: vi.fn(),
     clearCacheIdentities: vi.fn().mockResolvedValue(true),
     clearCachePermissions: vi.fn().mockResolvedValue(true)
   }
@@ -169,7 +169,7 @@ describe(SharesManager.name, () => {
 
   describe('createShare', () => {
     it('forbids creating a share from a space without the share outside permission', async () => {
-      sharesQueriesMock.uniqueShareAlias.mockResolvedValueOnce('shared-file')
+      sharesQueriesMock.shareExistsForAlias.mockResolvedValueOnce(undefined)
       spacesQueriesMock.permissions.mockResolvedValueOnce({ id: 7, alias: 'space-1' })
       vi.mocked(permissionsUtils.havePermission).mockReturnValueOnce(false)
 
@@ -617,11 +617,31 @@ describe(SharesManager.name, () => {
     const currentShareId = 42
     const uniqueShareAlias = (name: string): Promise<string> => (service as any).uniqueShareAlias(name, currentShareId)
 
-    it('should exclude the current share when checking its alias', async () => {
-      sharesQueriesMock.uniqueShareAlias.mockResolvedValueOnce('leba-est-chez-moi')
+    it('normalizes aliases and resolves collisions while excluding the current share', async () => {
+      sharesQueriesMock.shareExistsForAlias.mockResolvedValueOnce({ id: 30 }).mockResolvedValueOnce(undefined)
 
-      await expect(uniqueShareAlias('Lébà est chez moi')).resolves.toBe('leba-est-chez-moi')
-      expect(sharesQueriesMock.uniqueShareAlias).toHaveBeenCalledWith('Lébà est chez moi', currentShareId)
+      await expect(uniqueShareAlias('DócS-2')).resolves.toBe('docs-1')
+      expect(sharesQueriesMock.shareExistsForAlias.mock.calls).toEqual([
+        ['docs', currentShareId],
+        ['docs-1', currentShareId]
+      ])
+    })
+
+    it('bounds long aliases before checking availability and adding a collision suffix', async () => {
+      sharesQueriesMock.shareExistsForAlias.mockResolvedValueOnce({ id: 30 }).mockResolvedValueOnce(undefined)
+
+      await expect(uniqueShareAlias('a'.repeat(256))).resolves.toBe(`${'a'.repeat(253)}-1`)
+      expect(sharesQueriesMock.shareExistsForAlias.mock.calls).toEqual([
+        ['a'.repeat(255), currentShareId],
+        [`${'a'.repeat(253)}-1`, currentShareId]
+      ])
+    })
+
+    it('rejects an invalid alias without checking database availability', async () => {
+      await expect(uniqueShareAlias('---')).rejects.toEqual(
+        new HttpException('Name must contain at least one letter or number', HttpStatus.BAD_REQUEST)
+      )
+      expect(sharesQueriesMock.shareExistsForAlias).not.toHaveBeenCalled()
     })
   })
 })

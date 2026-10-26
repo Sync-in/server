@@ -1,6 +1,6 @@
 import { Component, DOCUMENT, HostListener, inject, OnDestroy, OnInit, Renderer2 } from '@angular/core'
-import { RouterOutlet } from '@angular/router'
-import { Subscription } from 'rxjs'
+import { NavigationStart, Router, RouterOutlet } from '@angular/router'
+import { filter, Subscription } from 'rxjs'
 import { themeLight } from './layout.interfaces'
 import { LayoutService } from './layout.service'
 import { NavBarComponent } from './navbar/navbar.component'
@@ -17,6 +17,7 @@ export class LayoutComponent implements OnDestroy, OnInit {
   private readonly document = inject<Document>(DOCUMENT)
   private readonly layout = inject(LayoutService)
   private readonly renderer = inject(Renderer2)
+  private readonly router = inject(Router)
   private rightSideBarClass = 'control-sidebar-open'
   private leftSideBarCollapsedClass = 'sidebar-collapse'
   private leftSideBarOpenedClass = 'sidebar-open'
@@ -27,6 +28,9 @@ export class LayoutComponent implements OnDestroy, OnInit {
     this.subscriptions.push(this.layout.switchTheme.subscribe((theme: string) => this.setTheme(theme)))
     this.subscriptions.push(this.layout.toggleRightSideBar.subscribe((status: boolean) => this.toggleRightSideBar(status)))
     this.subscriptions.push(this.layout.toggleLeftSideBar.subscribe((status) => this.toggleLeftSideBar(status)))
+    this.subscriptions.push(
+      this.router.events.pipe(filter((event) => event instanceof NavigationStart)).subscribe(() => this.layout.closeContextMenu())
+    )
   }
 
   ngOnInit() {

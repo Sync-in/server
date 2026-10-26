@@ -123,7 +123,7 @@ describe(Cache.name, () => {
   })
 
   it('should create a slug key from parameters', () => {
-    expect(cache.genSlugKey('foo', 'BAR', 12341)).toBe('foo-bar-12341')
+    expect(cache.genSlugKey('foo', 'BAR', 12341)).toBe('foo:bar:12341')
   })
 
   it('should consume, block and reset a rate limit', async () => {

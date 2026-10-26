@@ -15,6 +15,7 @@ export const APP_URL = {
 export const regExpInvalidFileName = /^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$|[<>:"/\\|?*\x00-\x1f\x80-\x9f]/
 export const regExpPreventPathTraversal = /^(\.\.(\/|\\|$))+/
 export const regExpNumberSuffix = /-\d+$/
+export const regExpLetterOrNumber = /[\p{L}\p{N}]/u
 export const forbiddenChars = '\\ / : * ? " < > |'
 
 export class InvalidSlugError extends Error {
@@ -39,6 +40,8 @@ export function currentDate(value?: string): Date {
 }
 
 export function createSlug(input: string, replaceCount = false): string {
+  // Collapse runs of characters other than Unicode letters or numbers into one hyphen, then trim edge hyphens.
+  // When replaceCount is true, also remove an existing trailing numeric suffix (e.g. -2).
   let slug = createLightSlug(input)
     .replace(/[^\p{L}\p{N}]+/gu, '-')
     .replace(/^-|-$/g, '')
@@ -53,10 +56,18 @@ export function createSlug(input: string, replaceCount = false): string {
 }
 
 export function createCacheKeySlug(args: unknown[]) {
-  // Cache patterns intentionally preserve metacharacters such as `*`.
-  return createLightSlug(args.map((arg) => (arg == null ? 'null' : String(arg))).join(' '))
-    .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+  // Keep accents distinct while sharing keys across case and canonical Unicode forms.
+  // Escape reserved characters before joining arguments; only a whole `*` argument is a wildcard.
+  return args
+    .map((arg) => {
+      if (arg == null) return '~null'
+      if (arg === '*') return '*'
+      return String(arg)
+        .toLowerCase()
+        .normalize('NFC')
+        .replace(/[%:~*"'\x60]/g, (character) => '%' + character.charCodeAt(0).toString(16).toUpperCase())
+    })
+    .join(':')
 }
 
 export function createLightSlug(input: string) {

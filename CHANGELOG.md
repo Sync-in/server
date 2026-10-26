@@ -1,4 +1,25 @@
 
+## [2.6.1](https://github.com/Sync-in/server/compare/v2.6.0...v2.6.1) (2026-10-25)
+
+### Features
+
+* **frontend:files:** support relative images in markdown viewer ([#310](https://github.com/Sync-in/server/issues/310)) ([656401c](https://github.com/Sync-in/server/commit/656401c76d41b4d056cd6da4a93f763a707bf164))
+* **frontend:sync:** validate path filters in settings ([bf89ea1](https://github.com/Sync-in/server/commit/bf89ea1b107d7314bf7d1fe172028689ff17237b))
+* **frontend:** Open on touch on smartphones ([#306](https://github.com/Sync-in/server/issues/306)) ([2f35b3f](https://github.com/Sync-in/server/commit/2f35b3f4d9a9bd0699dad493a48a1e95605daffd))
+
+### Bug Fixes
+
+* **backend:files:** escape regexp metacharacters in file paths ([#305](https://github.com/Sync-in/server/issues/305)) ([36a843c](https://github.com/Sync-in/server/commit/36a843cba34d757330b8d9b526953e06803b7445))
+* **backend:sync:** prevent path filter ReDoS ([d6914d0](https://github.com/Sync-in/server/commit/d6914d0acd3785ed4947c6744dff3e15fe8ed265))
+* **backend:** align Unicode aliases, collations and cache keys ([#309](https://github.com/Sync-in/server/issues/309)) ([fca2766](https://github.com/Sync-in/server/commit/fca2766c7c10c16d2fb9580abecffcff0d4fa979))
+* **frontend:admin:** prevent date badges from overflowing on mobile ([735839a](https://github.com/Sync-in/server/commit/735839afe3005a141b75d85084887d94d87d2661))
+* **frontend:files:** prevent Collabora from opening a new tab in Chromium browsers ([#304](https://github.com/Sync-in/server/issues/304)) ([0de3552](https://github.com/Sync-in/server/commit/0de355201a2935065121f24ee18cc08509e7af60))
+* **frontend:files:** prevent duplicate rename confirmation dialogs ([1459a31](https://github.com/Sync-in/server/commit/1459a311317c4bf8744d3acf63198febe2c0ae5b))
+* **frontend:files:** prevent stale touch activation ([fb0dac1](https://github.com/Sync-in/server/commit/fb0dac15f8618d4ac2d4cb34446727c96c281edc))
+* **frontend:files:** prevent unintended browsing during mobile selection ([717d080](https://github.com/Sync-in/server/commit/717d080d9fa15e81104a369a4d9ae66e07029aff))
+* **frontend:** close context menu on navigation ([d37fb72](https://github.com/Sync-in/server/commit/d37fb72ca9ec903d745b57a2a453f8df7f0a86a4))
+* **frontend:** harden touch gesture handling ([4d7a905](https://github.com/Sync-in/server/commit/4d7a905f51511cbc6bd00cce646c79655fc52f9c))
+
 ## [2.6.0](https://github.com/Sync-in/server/compare/v2.5.2...v2.6.0) (2026-10-14)
 
 ### Features

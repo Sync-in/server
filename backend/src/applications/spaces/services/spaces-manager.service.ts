@@ -6,7 +6,7 @@ import { ACTION } from '../../../common/constants.js'
 import { toErrorMessage } from '../../../common/errors.js'
 import { convertDiffUpdate, diffCollection, differencePermissions } from '../../../common/functions.js'
 import type { Entries } from '../../../common/interfaces.js'
-import { createSlug, InvalidSlugError, regExpNumberSuffix } from '../../../common/shared.js'
+import { createSlug, InvalidSlugError, regExpLetterOrNumber, regExpNumberSuffix } from '../../../common/shared.js'
 import { DEFAULT_DIRECTORY_BUFFER_SIZE } from '../../files/constants/files.js'
 import { FileError } from '../../files/models/file-error.js'
 import { dirListFileNames, getProps, isInternalTemporaryEntry, isPathExists, moveFiles, removeFiles } from '../../files/utils/files.js'
@@ -240,7 +240,7 @@ export class SpacesManager {
     // create space
     const space: SpaceProps = new SpaceProps({
       name: createOrUpdateSpaceDto.name,
-      alias: await this.uniqueSpaceAlias(createOrUpdateSpaceDto.name, true),
+      alias: await this.uniqueSpaceAlias(createOrUpdateSpaceDto.name),
       description: createOrUpdateSpaceDto.description,
       enabled: createOrUpdateSpaceDto.enabled ?? undefined,
       storageQuota: createOrUpdateSpaceDto.storageQuota,
@@ -282,7 +282,7 @@ export class SpacesManager {
         ;(spaceDiffProps as Record<string, unknown>)[prop] = createOrUpdateSpaceDto[prop]
         if (prop === 'name') {
           renamedSpaceAlias = space.alias
-          spaceDiffProps.alias = await this.uniqueSpaceAlias(spaceDiffProps.name!, true, space.id)
+          spaceDiffProps.alias = await this.uniqueSpaceAlias(spaceDiffProps.name!, space.id)
           if (space.alias !== spaceDiffProps.alias) {
             // must move the space to match the new alias
             const spaceLocationWasRenamed: boolean = await this.renameSpaceLocation(space.alias, spaceDiffProps.alias)
@@ -405,27 +405,48 @@ export class SpacesManager {
     alias: string,
     aliasesAndNames: string[],
     replaceCount = false,
-    excludedRootId?: number
+    excludedRootId?: number,
+    normalize = false
   ): Promise<string | null> {
-    /* for some webdav clients the root alias is displayed instead of the file name.
-     * This is why a root alias must be unique for files too */
-    const aliasExists = (candidate: string): boolean => {
-      const normalizedCandidate = candidate.toLowerCase()
-      return aliasesAndNames.some((aliasOrName: string) => normalizedCandidate === aliasOrName.toLowerCase())
+    // Resolves a stored space-root alias without renaming filesystem entries.
+    // Some WebDAV clients display aliases instead of names, so aliases must also avoid visible file names.
+    //
+    // aliasesAndNames: aliases and visible file names to avoid; omit the current root's own alias/name when editing.
+    // replaceCount: strip the numeric suffix before trying the base alias, then -1, -2, etc.
+    // normalize: normalize on creation/explicit renaming; otherwise preserve available aliases when browsing.
+    const normalizedNames = new Set(aliasesAndNames.map((name) => name.toLowerCase().normalize('NFC')))
+    const aliasExists = async (candidate: string): Promise<boolean> =>
+      normalizedNames.has(candidate.toLowerCase().normalize('NFC')) ||
+      !!(await this.spacesQueries.spaceRootExistsForAlias(spaceId, candidate, excludedRootId))
+    // Browsing only resolves collisions; it must not normalize existing aliases.
+    if (!normalize && !(await aliasExists(alias))) {
+      return null
     }
-    if (aliasExists(alias) || (await this.spacesQueries.spaceRootExistsForAlias(spaceId, alias, excludedRootId))) {
-      const aliasExtension = path.extname(alias)
-      const aliasWithoutExtension = path.basename(alias, aliasExtension)
-      const originalAlias = this.createAliasSlug(aliasWithoutExtension, replaceCount)
-      let count = 1
-      let newAlias = `${originalAlias}-${count}${aliasExtension}`
-      while (aliasExists(newAlias) || (await this.spacesQueries.spaceRootExistsForAlias(spaceId, newAlias, excludedRootId))) {
-        count += 1
-        newAlias = `${originalAlias}-${count}${aliasExtension}`
+
+    const aliasExtension = path.extname(alias)
+    let aliasWithoutExtension: string
+    let extension = aliasExtension
+    try {
+      aliasWithoutExtension = this.createAliasSlug(path.basename(alias, aliasExtension))
+      if (normalize && aliasExtension) {
+        extension = `.${this.createAliasSlug(aliasExtension.slice(1))}`
       }
-      return newAlias
+    } catch (error) {
+      if (!normalize || !(error instanceof HttpException) || error.getStatus() !== HttpStatus.BAD_REQUEST) {
+        throw error
+      }
+      // A symbol-only component must not reject an otherwise valid alias.
+      aliasWithoutExtension = this.createAliasSlug(alias)
+      extension = ''
     }
-    return null
+    const normalizedAlias = `${aliasWithoutExtension}${extension}`
+    const uniqueAlias = await createUniqueAlias(
+      aliasWithoutExtension,
+      // Browsing must not reuse the normalized alias that already caused a collision.
+      async (candidate) => (!normalize && candidate === normalizedAlias) || aliasExists(candidate),
+      { extension, replaceCount }
+    )
+    return uniqueAlias === alias ? null : uniqueAlias
   }
 
   async deleteExpiredSpaces() {
@@ -616,7 +637,7 @@ export class SpacesManager {
             aliasesAndNames.splice(currentValueIndex, 1)
           }
         }
-        props.alias.new = (await this.uniqueRootAlias(space.id, props.alias.new, aliasesAndNames, true, root.id)) || props.alias.new
+        props.alias.new = (await this.uniqueRootAlias(space.id, props.alias.new, aliasesAndNames, true, root.id, true)) || props.alias.new
         // remove from space cache permissions
         this.spacesQueries
           .clearCachePermissions(space.alias, [props.alias.old, props.alias.new])
@@ -718,7 +739,7 @@ export class SpacesManager {
       if (!r.externalPath) {
         r.file = { ...(await getProps(rPath, r.file.path)), id: r.file.id }
       }
-      r.alias = (await this.uniqueRootAlias(space.id, r.alias, aliases.concat(names), true)) || r.alias
+      r.alias = (await this.uniqueRootAlias(space.id, r.alias, aliases.concat(names), true, undefined, true)) || r.alias
       // update aliases list for next roots
       aliases.push(r.alias)
       r.name = this.uniqueRootName(r.name, names) || r.name
@@ -787,15 +808,30 @@ export class SpacesManager {
     }
   }
 
-  private async uniqueSpaceAlias(name: string, replaceCount = false, excludedSpaceId?: number): Promise<string> {
-    return createUniqueAlias(this.createAliasSlug(name, replaceCount), (alias: string) =>
-      this.spacesQueries.spaceExistsForAlias(alias, excludedSpaceId)
-    )
+  private async uniqueSpaceAlias(name: string, excludedSpaceId?: number): Promise<string> {
+    const base = this.createAliasSlug(name).replace(regExpNumberSuffix, '')
+    const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(base)
+    for (let count = 0; ; count += 1) {
+      const suffix = count ? `-${count}` : ''
+      let bytes = Buffer.byteLength(suffix, 'utf8')
+      let prefix = ''
+      // Space aliases are directory names: reserve the suffix within a 255-byte UTF-8 component.
+      for (const { segment } of graphemes) {
+        const segmentBytes = Buffer.byteLength(segment, 'utf8')
+        if (bytes + segmentBytes > 255) break
+        prefix += segment
+        bytes += segmentBytes
+      }
+      // Truncation can leave no letters or numbers; keep a usable base in that case.
+      prefix = prefix.replace(/-+$/g, '')
+      const alias = `${regExpLetterOrNumber.test(prefix) ? prefix : 'space'}${suffix}`
+      if (alias !== SPACE_ALIAS.PERSONAL && !(await this.spacesQueries.spaceExistsForAlias(alias, excludedSpaceId))) return alias
+    }
   }
 
-  private createAliasSlug(name: string, replaceCount = false): string {
+  private createAliasSlug(name: string): string {
     try {
-      return createSlug(name, replaceCount)
+      return createSlug(name)
     } catch (e) {
       if (e instanceof InvalidSlugError) {
         throw new HttpException(e.message, HttpStatus.BAD_REQUEST)

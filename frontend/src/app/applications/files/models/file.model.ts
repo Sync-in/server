@@ -46,6 +46,7 @@ export class FileModel implements File {
   ctime: number
 
   // Extra properties
+  readonly basePath: string
   hasComments: boolean
   isFavorite = false
   root?: {
@@ -91,6 +92,7 @@ export class FileModel implements File {
   constructor(props: FileProps | File, basePath: string, inShare = false, editorConfig: FileEditorProviders) {
     this.setShares(popFromObject('shares', props))
     Object.assign(this, props)
+    this.basePath = basePath
     this.path = `${basePath}/${this.path !== '.' ? `${this.path}/` : ''}${this.root?.alias || this.name}`
     this.mime = this.getMime(this.mime, inShare, editorConfig)
     this.updateHTimeAgo(this.mtime)

@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { AnyMySqlColumn, bigint, boolean, datetime, index, mysqlTable, tinyint, uniqueIndex, varchar } from 'drizzle-orm/mysql-core'
+import { pathVarchar } from '../../../infrastructure/database/columns.js'
 import { files } from '../../files/schemas/files.schema.js'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema.js'
 import { spaces } from '../../spaces/schemas/spaces.schema.js'
@@ -50,10 +51,10 @@ export const shares = mysqlTable(
     spaceId: bigint('spaceId', { mode: 'number', unsigned: true }).references(() => spaces.id, { onDelete: 'cascade' }),
     spaceRootId: bigint('spaceRootId', { mode: 'number', unsigned: true }).references((): AnyMySqlColumn => spacesRoots.id, { onDelete: 'cascade' }),
     fileId: bigint('fileId', { mode: 'number', unsigned: true }).references((): AnyMySqlColumn => files.id, { onDelete: 'cascade' }),
-    externalPath: varchar('externalPath', { length: 4096 }),
+    externalPath: pathVarchar('externalPath', { length: 4096 }),
     type: tinyint('type', { unsigned: true }).default(0).notNull(),
-    alias: varchar('alias', { length: 255 }).notNull(),
-    name: varchar('name', { length: 255 }).notNull(),
+    alias: pathVarchar('alias', { length: 255 }).notNull(),
+    name: pathVarchar('name', { length: 255 }).notNull(),
     enabled: boolean('enabled').default(true).notNull(),
     description: varchar('description', { length: 255 }),
     storageUsage: bigint('storageUsage', { mode: 'number', unsigned: true }).default(0).notNull(),
