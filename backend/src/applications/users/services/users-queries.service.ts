@@ -4,6 +4,7 @@ import { and, countDistinct, desc, eq, gte, inArray, isNotNull, isNull, like, lt
 import { alias } from 'drizzle-orm/mysql-core'
 import { MySql2PreparedQuery, MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { CACHE_AUTH_WEBDAV_PREFIX } from '../../../authentication/constants/cache.js'
+import { links } from '../../links/schemas/links.schema.js'
 import { anonymizePassword, comparePassword, uniquePermissions } from '../../../common/functions.js'
 import { CacheDecorator } from '../../../infrastructure/cache/cache.decorator.js'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
@@ -160,6 +161,11 @@ export class UsersQueries {
     const [user, groupsPermissions] = [r[0].user, r[0].groupsPermissions]
     user.permissions = uniquePermissions(`${user.permissions},${groupsPermissions}`, USER_PERMS_SEP)
     return user
+  }
+
+  async getUserLinkExpiration(userId: number): Promise<Date | null> {
+    const [link] = await this.db.select({ expiresAt: links.expiresAt }).from(links).where(eq(links.userId, userId)).limit(1)
+    return link ? link.expiresAt : null
   }
 
   async getUserSecrets(userId: number): Promise<UserSecrets> {

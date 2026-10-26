@@ -224,6 +224,21 @@ describe(UsersManager.name, () => {
     await expect(usersManager.fromAuthToken(authUser)).resolves.toBeNull()
   })
 
+  it('should report a link user as expired only once its expiration date has passed', async () => {
+    const getExpiration = vi.spyOn(usersQueriesService, 'getUserLinkExpiration')
+
+    getExpiration.mockResolvedValueOnce(new Date(Date.now() - 60_000))
+    await expect(usersManager.isLinkExpired(7)).resolves.toBe(true)
+
+    getExpiration.mockResolvedValueOnce(new Date(Date.now() + 60_000))
+    await expect(usersManager.isLinkExpired(7)).resolves.toBe(false)
+
+    getExpiration.mockResolvedValueOnce(null)
+    await expect(usersManager.isLinkExpired(7)).resolves.toBe(false)
+
+    expect(getExpiration).toHaveBeenCalledWith(7)
+  })
+
   it('should validate the source administrator before restoring impersonation', async () => {
     const authUser = new UserModel({
       ...generateUserTest(),

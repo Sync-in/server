@@ -21,6 +21,7 @@ import { isPathExists, removeFiles, sanitizeName, temporaryFilePath } from '../.
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications.js'
 import type { NotificationContent } from '../../notifications/interfaces/notification-properties.interface.js'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service.js'
+import { isLinkExpired } from '../../links/constants/links.js'
 import { GROUP_TYPE } from '../constants/group.js'
 import { MEMBER_TYPE } from '../constants/member.js'
 import {
@@ -87,6 +88,10 @@ export class UsersManager {
     user.authSession = authUser.authSession
     user.exp = authUser.exp
     return user
+  }
+
+  async isLinkExpired(userId: number): Promise<boolean> {
+    return isLinkExpired(await this.usersQueries.getUserLinkExpiration(userId))
   }
 
   async findUser(loginOrEmail: string, removePassword: false): Promise<UserModel | null>

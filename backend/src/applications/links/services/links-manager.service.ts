@@ -14,7 +14,7 @@ import type { UserPasswordDto } from '../../users/dto/user-properties.dto.js'
 import { UserModel } from '../../users/models/user.model.js'
 import { UsersManager } from '../../users/services/users-manager.service.js'
 import { getAvatarBase64 } from '../../users/utils/avatar.js'
-import { LINK_ERROR } from '../constants/links.js'
+import { isLinkExpired, LINK_ERROR } from '../constants/links.js'
 import type { LinkEnv } from '../interfaces/link-env.interface.js'
 import { LinkAsUser } from '../interfaces/link-guest.interface.js'
 import { SpaceLink } from '../interfaces/link-space.interface.js'
@@ -151,7 +151,7 @@ export class LinksManager {
     if (link.user.id !== identity.id && link.limitAccess !== 0 && link.nbAccess >= link.limitAccess) {
       return LINK_ERROR.EXCEEDED
     }
-    if (link.expiresAt && new Date() >= link.expiresAt) {
+    if (isLinkExpired(link.expiresAt)) {
       return LINK_ERROR.EXPIRED
     }
     if (!ignoreAuth && link.requireAuth && link.user.id !== identity.id) {
