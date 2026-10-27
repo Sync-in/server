@@ -6,7 +6,6 @@ import { PassportModule } from '@nestjs/passport'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
 import crypto from 'node:crypto'
-import { USER_ROLE } from '../../applications/users/constants/user.js'
 import { UserModel } from '../../applications/users/models/user.model.js'
 import { UsersManager } from '../../applications/users/services/users-manager.service.js'
 import { configuration } from '../../configuration/config.environment.js'
@@ -28,8 +27,7 @@ describe(AuthTokenRefreshGuard.name, () => {
   let accessTokenSignedWithRefreshSecret: string
   let context: DeepMocked<ExecutionContext>
   const usersManager = {
-    fromAuthToken: vi.fn(async (user: UserModel): Promise<UserModel | null> => user),
-    isLinkExpired: vi.fn(async (): Promise<boolean> => false)
+    fromAuthToken: vi.fn(async (user: UserModel): Promise<UserModel | null> => user)
   }
 
   beforeAll(async () => {
@@ -113,43 +111,6 @@ describe(AuthTokenRefreshGuard.name, () => {
       }
     })
     await expect(authRefreshGuard.canActivate(context)).rejects.toThrow('Unauthorized')
-  })
-
-  it('should reject a link session on refresh when its link has expired', async () => {
-    usersManager.fromAuthToken.mockResolvedValueOnce(new UserModel({ id: 1, login: 'foo', role: USER_ROLE.LINK } as any))
-    usersManager.isLinkExpired.mockResolvedValueOnce(true)
-    context.switchToHttp().getRequest.mockReturnValue({
-      raw: { user: '' },
-      headers: {
-        authorization: `Bearer ${refreshToken}`
-      }
-    })
-    await expect(authRefreshGuard.canActivate(context)).rejects.toThrow('Unauthorized')
-    expect(usersManager.isLinkExpired).toHaveBeenCalledWith(1)
-  })
-
-  it('should pass a link session on refresh when its link has not expired', async () => {
-    usersManager.fromAuthToken.mockResolvedValueOnce(new UserModel({ id: 1, login: 'foo', role: USER_ROLE.LINK } as any))
-    usersManager.isLinkExpired.mockResolvedValueOnce(false)
-    context.switchToHttp().getRequest.mockReturnValue({
-      raw: { user: '' },
-      headers: {
-        authorization: `Bearer ${refreshToken}`
-      }
-    })
-    expect(await authRefreshGuard.canActivate(context)).toBe(true)
-  })
-
-  it('should not look up a link for a regular user on refresh', async () => {
-    usersManager.isLinkExpired.mockClear()
-    context.switchToHttp().getRequest.mockReturnValue({
-      raw: { user: '' },
-      headers: {
-        authorization: `Bearer ${refreshToken}`
-      }
-    })
-    expect(await authRefreshGuard.canActivate(context)).toBe(true)
-    expect(usersManager.isLinkExpired).not.toHaveBeenCalled()
   })
 
   it('should throw an error with an invalid refresh token in cookies', async () => {

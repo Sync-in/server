@@ -16,8 +16,3 @@ export const LINK_DOWNLOAD_RATE_LIMIT_OPTIONS = {
   ttl: 60_000,
   blockDuration: 60_000
 } as const
-
-// A link with no expiration date never expires
-export function isLinkExpired(expiresAt: Date | null): boolean {
-  return !!expiresAt && new Date() >= expiresAt
-}

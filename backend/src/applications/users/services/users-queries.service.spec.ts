@@ -28,33 +28,6 @@ describe(`${UsersQueries.name}.from`, () => {
   })
 })
 
-describe(`${UsersQueries.name}.getUserLinkExpiration`, () => {
-  it('returns the expiration date of the link owned by the user', async () => {
-    const expiresAt = new Date()
-    const query = {
-      from: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockResolvedValue([{ expiresAt }])
-    }
-    const db = { select: vi.fn().mockReturnValue(query) } as unknown as DBSchema
-    const usersQueries = new UsersQueries(db, {} as Cache)
-
-    await expect(usersQueries.getUserLinkExpiration(7)).resolves.toBe(expiresAt)
-  })
-
-  it('returns null when the user has no link', async () => {
-    const query = {
-      from: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockResolvedValue([])
-    }
-    const db = { select: vi.fn().mockReturnValue(query) } as unknown as DBSchema
-    const usersQueries = new UsersQueries(db, {} as Cache)
-
-    await expect(usersQueries.getUserLinkExpiration(7)).resolves.toBeNull()
-  })
-})
-
 describe(`${UsersQueries.name}.WebDAVAuthCache`, () => {
   it('clears only cached WebDAV authentications belonging to the targeted users', async () => {
     const cache = {
