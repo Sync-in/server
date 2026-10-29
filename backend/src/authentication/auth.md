@@ -80,6 +80,10 @@ verification guard with the `sync-in-two-fa-code` header. The password was alrea
 `POST /api/auth/token/refresh` accepts a valid refresh token and returns a new access token plus a refresh token whose expiration is capped by the
 remaining lifetime of the original refresh token.
 
+API token endpoints accept administrator, regular-user, and guest accounts. `LINK` pseudo-users cannot obtain bearer tokens through either
+`POST /api/auth/token` or `POST /api/auth/token/refresh`. They authenticate through the public-link cookie flow and may renew an existing browser
+session through `POST /api/auth/refresh`.
+
 ## TOTP lifecycle
 
 TOTP is controlled by `auth.mfa.totp.enabled`. The default is enabled. A user is considered TOTP-enabled when their secrets contain `twoFaSecret`.

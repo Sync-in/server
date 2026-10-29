@@ -24,6 +24,9 @@ export class AuthManager {
   constructor(private readonly jwt: JwtService) {}
 
   async getTokens(user: UserModel, refresh = false): Promise<TokenResponseDto> {
+    if (user.isLink) {
+      throw new HttpException('Account is not allowed', HttpStatus.FORBIDDEN)
+    }
     const currentTime = currentTimeStamp()
     if (refresh && user.exp! < currentTime) {
       this.logger.error({ tag: this.getTokens.name, msg: `token refresh has incorrect expiration : *${user.login}*` })

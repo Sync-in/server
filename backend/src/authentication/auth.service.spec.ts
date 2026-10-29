@@ -1,3 +1,4 @@
+import { HttpStatus } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { USER_ROLE } from '../applications/users/constants/user.js'
@@ -29,6 +30,23 @@ describe(AuthManager.name, () => {
 
   it('should be defined', () => {
     expect(authManager).toBeDefined()
+  })
+
+  it.each([false, true])('should reject API token issuance for a link user (refresh: %s)', async (refresh) => {
+    const user = new UserModel({
+      id: 1,
+      login: 'link',
+      language: 'en',
+      role: USER_ROLE.LINK,
+      exp: currentTimeStamp() + 3600,
+      preferences: { showHiddenFiles: false }
+    } as any)
+
+    await expect(authManager.getTokens(user, refresh)).rejects.toMatchObject({
+      status: HttpStatus.FORBIDDEN,
+      response: 'Account is not allowed'
+    })
+    expect(jwtService.signAsync).not.toHaveBeenCalled()
   })
 
   it('should preserve the authentication method in cookies and response user', async () => {
