@@ -147,7 +147,8 @@ describe(AuthController.name, () => {
     expect(result).toBeInstanceOf(LoginResponseDto)
     expect(result.user).toBe(userTest)
     expect(res.setCookie).toHaveBeenCalledTimes(4)
-    expect(result.token.access_expiration).toBeCloseTo(convertHumanTimeToSeconds(authConfig.token.access.expiration) + currentTime, -1)
+    // the access token is capped to the remaining refresh lifetime, so it expires with the session
+    expect(result.token.access_expiration).toBe(userTest.exp)
     expect(result.token.refresh_expiration).toBe(userTest.exp)
   })
 
@@ -263,10 +264,8 @@ describe(AuthController.name, () => {
     const result = await authController.refreshToken(userTest)
     expect(result[TOKEN_TYPE.ACCESS]).toBeDefined()
     expect(result[TOKEN_TYPE.REFRESH]).toBeDefined()
-    expect(result[`${TOKEN_TYPE.ACCESS}_expiration`]).toBeCloseTo(
-      convertHumanTimeToSeconds(authConfig.token.access.expiration) + currentTimeStamp(),
-      -1
-    )
+    // the access token is capped to the remaining refresh lifetime, so it expires with the session
+    expect(result[`${TOKEN_TYPE.ACCESS}_expiration`]).toBe(userTest.exp)
     expect(result[`${TOKEN_TYPE.REFRESH}_expiration`]).toBe(userTest.exp)
   })
 
