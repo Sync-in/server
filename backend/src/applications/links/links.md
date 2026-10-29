@@ -148,10 +148,11 @@ access.
 
 Link sessions use the standard authentication cookies. Without `expiresAt`, the configured token lifetimes apply. When an expiring link issues a new
 session, each access, refresh, WebSocket, and CSRF token or cookie lifetime is capped to the smaller of its configured lifetime and the remaining link
-lifetime. The normal login endpoint rejects `LINK` users, but the refresh endpoint accepts an existing valid link refresh token.
+lifetime. The normal login and bearer-token endpoints reject `LINK` users, but `POST /api/auth/refresh` accepts an existing valid link refresh cookie.
+`POST /api/auth/token/refresh` does not issue bearer tokens to `LINK` users.
 
 The refresh token carries the session's absolute boundary. Subsequent refreshes preserve its `exp` without re-reading the `links` row: refresh and
-WebSocket tokens keep the remaining session lifetime, while access and CSRF lifetimes are capped to it. Token refresh does not consume another link
+WebSocket tokens keep the remaining session lifetime, while access and CSRF lifetimes are capped to it. Cookie refresh does not consume another link
 access. Extending a link later does not extend an existing session; the link user must authenticate again to receive the new boundary. Shortening the
 link expiration does not retroactively shorten a session that was already issued.
 

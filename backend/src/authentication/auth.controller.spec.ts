@@ -21,11 +21,20 @@ import { AuthConfig } from './auth.config.js'
 import { AuthController } from './auth.controller.js'
 import { AuthManager } from './auth.service.js'
 import { ACCESS_KEY, CSRF_KEY, TOKEN_PATHS, TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from './constants/auth.js'
-import { API_AUTH_SETTINGS, API_AUTH_TOKEN, API_TWO_FA_ADMIN_RESET_USER, API_TWO_FA_ENABLE, API_TWO_FA_LOGIN_VERIFY } from './constants/routes.js'
+import {
+  API_AUTH_REFRESH,
+  API_AUTH_SETTINGS,
+  API_AUTH_TOKEN,
+  API_AUTH_TOKEN_REFRESH,
+  API_TWO_FA_ADMIN_RESET_USER,
+  API_TWO_FA_ENABLE,
+  API_TWO_FA_LOGIN_VERIFY
+} from './constants/routes.js'
 import { AUTH_TOKEN_SKIP } from './decorators/auth-token-skip.decorator.js'
 import { LoginResponseDto, LoginVerify2FaDto } from './dto/login-response.dto.js'
 import { AuthLocalGuard } from './guards/auth-local.guard.js'
 import { AuthRateLimitGuard } from './guards/auth-rate-limit.guard.js'
+import { AuthTokenRefreshGuard } from './guards/auth-token-refresh.guard.js'
 import type { JwtPayload } from './interfaces/jwt-payload.interface.js'
 import { TOKEN_TYPE } from './interfaces/token.interface.js'
 import { AuthProvider2FA } from './providers/two-fa/auth-provider-two-fa.service.js'
@@ -307,12 +316,14 @@ describe(`${AuthController.name} HTTP`, () => {
         { provide: NotificationsManager, useValue: {} }
       ]
     })
-    testingModuleBuilder.overrideGuard(AuthLocalGuard).useValue({
+    const authenticationGuard = {
       canActivate: (context: ExecutionContext) => {
         context.switchToHttp().getRequest().user = userTest
         return true
       }
-    })
+    }
+    testingModuleBuilder.overrideGuard(AuthLocalGuard).useValue(authenticationGuard)
+    testingModuleBuilder.overrideGuard(AuthTokenRefreshGuard).useValue(authenticationGuard)
     testingModuleBuilder.overrideGuard(AuthRateLimitGuard).useValue({ canActivate: () => true })
     const module: TestingModule = await testingModuleBuilder.compile()
 
@@ -336,6 +347,8 @@ describe(`${AuthController.name} HTTP`, () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     requestUser = undefined
+    userTest.role = USER_ROLE.USER
+    userTest.exp = undefined
   })
 
   function createTwoFaUser(role = USER_ROLE.USER): UserModel {
@@ -350,6 +363,21 @@ describe(`${AuthController.name} HTTP`, () => {
       body: { login: userTest.login, password: userTest.password }
     })
   }
+
+  it.each([
+    [API_AUTH_TOKEN, 403],
+    [API_AUTH_TOKEN_REFRESH, 403],
+    [API_AUTH_REFRESH, 201]
+  ])('%s should return %i for a link user', async (url, status) => {
+    userTest.role = USER_ROLE.LINK
+    userTest.exp = currentTimeStamp() + 60
+    const getTokensSpy = vi.spyOn(authManager, 'getTokens')
+
+    const response = await app.inject({ method: 'POST', url })
+
+    expect(response.statusCode).toBe(status)
+    expect(getTokensSpy).not.toHaveBeenCalled()
+  })
 
   it('should reject token issuance without a 2FA code', async () => {
     vi.spyOn(authProvider2FA, 'loadUser').mockResolvedValueOnce(createTwoFaUser())
