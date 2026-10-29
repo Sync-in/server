@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common'
-import { and, eq, getTableColumns, isNotNull, isNull, lt, or, sql } from 'drizzle-orm'
+import { and, eq, getTableColumns, gt, isNotNull, isNull, lt, or, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/mysql-core'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
@@ -196,7 +196,13 @@ export class LinksQueries {
       await this.db
         .update(links)
         .set({ nbAccess: sql`${links.nbAccess} + 1` } as Record<keyof Link, any>)
-        .where(and(eq(links.uuid, uuid), or(eq(links.limitAccess, 0), lt(links.nbAccess, links.limitAccess))))
+        .where(
+          and(
+            eq(links.uuid, uuid),
+            or(eq(links.limitAccess, 0), lt(links.nbAccess, links.limitAccess)),
+            or(isNull(links.expiresAt), gt(links.expiresAt, sql`CURRENT_TIMESTAMP`))
+          )
+        )
         .limit(1),
       1,
       false

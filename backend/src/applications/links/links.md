@@ -39,7 +39,7 @@ The `links` table stores the following settings:
 | `requireAuth` | Requires the link password before a session is issued.                                                        |
 | `nbAccess`    | Number of accesses consumed, including for unlimited links.                                                   |
 | `limitAccess` | Maximum number of accesses that may be consumed; `0` means unlimited.                                         |
-| `expiresAt`   | Optional date after which public-link entry points reject the link; `null` means that the link never expires. |
+| `expiresAt`   | Optional date that bounds public-link entry points and newly issued sessions; `null` means no link boundary. |
 | `createdAt`   | Link creation timestamp.                                                                                      |
 
 The active state and password belong to the pseudo-user rather than to the `links` row. Disabling a link sets that user's `isActive` state to
@@ -130,11 +130,13 @@ The limit is enforced by a single conditional database update:
 UPDATE links
 SET nbAccess = nbAccess + 1
 WHERE uuid = ?
-  AND (limitAccess = 0 OR nbAccess < limitAccess);
+  AND (limitAccess = 0 OR nbAccess < limitAccess)
+  AND (expiresAt IS NULL OR expiresAt > CURRENT_TIMESTAMP);
 ```
 
-The request proceeds only when one row is updated. This makes the limit decision and counter increment atomic: concurrent requests cannot both
-consume the same remaining slot. The operation is awaited before cookies or a file response are returned, and database errors fail closed.
+The request proceeds only when one row is updated. This makes the expiration check, limit decision, and counter increment atomic: concurrent requests
+cannot both consume the same remaining slot, and an expired link cannot consume an access. The operation is awaited before cookies or a file response
+are returned, and database errors fail closed.
 
 Unlimited links still increment `nbAccess` for reporting. A direct download consumes its slot before the file checks and stream are completed, so a
 later download failure can consume an access. This ordering deliberately prevents a response from being granted when access consumption fails.
@@ -144,20 +146,23 @@ access.
 
 ## Session and expiration behavior
 
-Link sessions use the standard authentication cookies. With the default configuration, the access token lasts 15 minutes and the refresh token has
-a fixed four-hour lifetime. The normal login endpoint rejects `LINK` users, but the refresh endpoint accepts an existing valid link refresh token.
-Token refresh does not consume another link access.
+Link sessions use the standard authentication cookies. Without `expiresAt`, the configured token lifetimes apply. When an expiring link issues a new
+session, each access, refresh, WebSocket, and CSRF token or cookie lifetime is capped to the smaller of its configured lifetime and the remaining link
+lifetime. The normal login endpoint rejects `LINK` users, but the refresh endpoint accepts an existing valid link refresh token.
 
-The public-link endpoints re-read the link and enforce `isActive`, `limitAccess`, and `expiresAt` on every call. Authenticated file, share, and space
-operations use the issued token and membership; they do not re-read the `links` row. Consequently:
+The refresh token carries the session's absolute boundary. Subsequent refreshes preserve its `exp` without re-reading the `links` row: refresh and
+WebSocket tokens keep the remaining session lifetime, while access and CSRF lifetimes are capped to it. Token refresh does not consume another link
+access. Extending a link later does not extend an existing session; the link user must authenticate again to receive the new boundary. Shortening the
+link expiration does not retroactively shorten a session that was already issued.
+
+The public-link endpoints still re-read the link and enforce `isActive`, `limitAccess`, and the current `expiresAt` on every call. Authenticated file,
+share, and space operations use the issued token and membership; they do not re-read the `links` row. Consequently:
 
 - reaching `limitAccess` does not interrupt an existing session;
 - disabling the pseudo-user prevents new public access and token refresh, while an already-issued access token remains valid until its expiration;
 - deleting the link removes its membership and prevents further target resolution;
-- reaching `expiresAt` blocks the public-link entry points but does not itself revoke tokens already issued to the link user.
-
-Any requirement for immediate session revocation or strict expiration during downstream file operations must therefore be enforced separately from
-the current public-entry checks.
+- sessions issued for an expiring link cannot refresh or issue new tokens beyond their original boundary;
+- an already-connected WebSocket is not actively disconnected when its token reaches that boundary and is handled separately.
 
 ## Error and rate-limit responses
 

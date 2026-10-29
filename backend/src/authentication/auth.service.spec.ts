@@ -1,3 +1,4 @@
+import { HttpStatus } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { USER_ROLE } from '../applications/users/constants/user.js'
@@ -6,6 +7,7 @@ import { convertHumanTimeToSeconds } from '../common/functions.js'
 import { currentTimeStamp } from '../common/shared.js'
 import { configuration } from '../configuration/config.environment.js'
 import { AuthManager } from './auth.service.js'
+import { TOKEN_TYPES } from './constants/auth.js'
 import { TOKEN_TYPE } from './interfaces/token.interface.js'
 import { AUTH_SESSION } from './providers/auth-providers.constants.js'
 
@@ -99,7 +101,7 @@ describe(AuthManager.name, () => {
 
       await authManager.setCookies(linkUser() as any, res as any, false, undefined, expiresAt)
 
-      for (const type of [TOKEN_TYPE.REFRESH, TOKEN_TYPE.ACCESS, TOKEN_TYPE.WS, TOKEN_TYPE.CSRF]) {
+      for (const type of TOKEN_TYPES) {
         expect(convertHumanTimeToSeconds(configuration.auth.token[type].expiration)).toBeGreaterThan(remaining)
         expect(res.setCookie).toHaveBeenCalledWith(
           configuration.auth.token[type].name,
@@ -120,7 +122,7 @@ describe(AuthManager.name, () => {
 
       await authManager.setCookies(linkUser() as any, res as any, false, undefined, expiresAt)
 
-      for (const type of [TOKEN_TYPE.REFRESH, TOKEN_TYPE.ACCESS, TOKEN_TYPE.WS, TOKEN_TYPE.CSRF]) {
+      for (const type of TOKEN_TYPES) {
         expect(res.setCookie).toHaveBeenCalledWith(
           configuration.auth.token[type].name,
           expect.any(String),
@@ -152,20 +154,18 @@ describe(AuthManager.name, () => {
       expect(response.token[`${TOKEN_TYPE.ACCESS}_expiration`]).toBe(currentTimeStamp(expiresAt))
     })
 
-    it('never issues a token without expiration for an almost-expired link', async () => {
+    it('rejects an expired link before issuing tokens or cookies', async () => {
       vi.useFakeTimers()
-      // boundary already reached: the remaining lifetime must be clamped to a positive value, not 0 or undefined
       const expiresAt = new Date(currentTimeStamp() * 1000)
       const res = { setCookie: vi.fn() }
 
-      await authManager.setCookies(linkUser() as any, res as any, false, undefined, expiresAt)
+      await expect(authManager.setCookies(linkUser() as any, res as any, false, undefined, expiresAt)).rejects.toMatchObject({
+        status: HttpStatus.FORBIDDEN,
+        response: 'Token has expired'
+      })
 
-      for (const type of [TOKEN_TYPE.REFRESH, TOKEN_TYPE.ACCESS, TOKEN_TYPE.WS, TOKEN_TYPE.CSRF]) {
-        expect(res.setCookie).toHaveBeenCalledWith(configuration.auth.token[type].name, expect.any(String), expect.objectContaining({ maxAge: 1 }))
-      }
-      for (const call of jwtService.signAsync.mock.calls) {
-        expect(call[1].expiresIn).toBe(1)
-      }
+      expect(jwtService.signAsync).not.toHaveBeenCalled()
+      expect(res.setCookie).not.toHaveBeenCalled()
     })
   })
 

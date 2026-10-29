@@ -56,21 +56,23 @@ export class AuthManager {
     authSession: AUTH_SESSION = AUTH_SESSION.LOCAL,
     expiresAt: Date | null = null
   ): Promise<LoginResponseDto | LoginVerify2FaDto> {
+    const currentTime = currentTimeStamp()
+    // A link session carries an expiration date: no token or cookie may outlive it.
+    const remainingSessionLifetime = expiresAt ? currentTimeStamp(expiresAt) - currentTime : null
+    if (remainingSessionLifetime !== null && remainingSessionLifetime <= 0) {
+      throw new HttpException('Token has expired', HttpStatus.FORBIDDEN)
+    }
     // If `verify2Fa` is true, it sets the cookies and response required for valid 2FA authentication.
     const verify2Fa = init2FaVerify && configuration.auth.mfa.totp.enabled && user.twoFaEnabled
     user.authSession = authSession
     const response = verify2Fa ? new LoginVerify2FaDto(serverConfig) : new LoginResponseDto(user, serverConfig)
-    const currentTime = currentTimeStamp()
-    // a link session carries an expiration date: no token or cookie may outlive it (the link boundary)
-    const sessionExpiration: number | null = expiresAt ? currentTimeStamp(expiresAt) : null
     const csrfToken: string = crypto.randomUUID()
     const tokenTypes = verify2Fa ? TOKEN_2FA_TYPES : TOKEN_TYPES
     for (const type of tokenTypes) {
       const isCSRFToken = type === TOKEN_TYPE.CSRF || type === TOKEN_TYPE.CSRF_2FA
       let tokenExpiration = convertHumanTimeToSeconds(configuration.auth.token[type].expiration)
-      if (sessionExpiration !== null) {
-        // keep at least 1s so an almost-expired link never yields a token without expiration
-        tokenExpiration = Math.min(tokenExpiration, Math.max(1, sessionExpiration - currentTime))
+      if (remainingSessionLifetime !== null) {
+        tokenExpiration = Math.min(tokenExpiration, remainingSessionLifetime)
       }
       let cookieValue: string
       if (isCSRFToken) {
