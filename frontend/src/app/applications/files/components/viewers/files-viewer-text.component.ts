@@ -80,17 +80,14 @@ export class FilesViewerTextComponent extends FilesViewerEditableBase implements
     // ESC
     if (event.key === 'Escape' || event.key === 'Esc') {
       event.preventDefault()
+      event.stopImmediatePropagation()
       if (this.isSearchPanelOpen()) {
-        event.stopPropagation()
         this.toggleSearch()
       } else if (this.warnOnUnsavedChanges()) {
-        event.stopPropagation()
         this.warnOnUnsavedChanges.set(false)
       } else if (this.isModified()) {
-        event.stopPropagation()
         this.warnOnUnsavedChanges.set(true)
       } else {
-        event.stopPropagation()
         this.onClose().catch(console.error)
       }
       return

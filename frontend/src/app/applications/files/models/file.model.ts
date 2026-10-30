@@ -86,6 +86,7 @@ export class FileModel implements File {
   isBeingDeleted = false
   isSelected = false
   isDisabled = false
+  markdownFragment?: string
   canBeReShared = false
   haveThumbnail = false
 

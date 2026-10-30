@@ -182,6 +182,10 @@
       margin-top: 1rem;
     }
 
+    a[href] {
+      cursor: pointer;
+    }
+
     ul[data-type='taskList'] {
       padding-left: 0;
       list-style: none;

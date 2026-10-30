@@ -213,17 +213,15 @@ export class FilesService {
   }
 
   compress(op: CompressFileDto) {
-    const dirPath = this.currentRoute
     const outputExtension = op.extension === TAR_EXTENSION && op.compression ? TAR_GZ_EXTENSION : op.extension
-    this.http.post<FileTask>(`${API_FILES_TASK_OPERATION_COMPRESS}/${dirPath}/${op.name}.${outputExtension}`, op).subscribe({
+    this.http.post<FileTask>(`${API_FILES_TASK_OPERATION_COMPRESS}/${this.currentRoute}/${op.name}.${outputExtension}`, op).subscribe({
       next: (t: FileTask) => this.filesTasksService.addTask(t),
       error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Compression failed', op.name, e)
     })
   }
 
   decompress(file: FileModel) {
-    const dirPath = this.currentRoute
-    this.http.post<FileTask>(`${API_FILES_TASK_OPERATION_DECOMPRESS}/${dirPath}/${file.name}`, null).subscribe({
+    this.http.post<FileTask>(`${API_FILES_TASK_OPERATION_DECOMPRESS}/${this.currentRoute}/${file.name}`, null).subscribe({
       next: (t: FileTask) => this.filesTasksService.addTask(t),
       error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Compression failed', file.name, e)
     })
@@ -231,9 +229,8 @@ export class FilesService {
 
   downloadFromUrl(url: string, name: string) {
     if (!this.isValidName(name)) return
-    const dirPath = this.currentRoute
     const op: DownloadFileDto = { url: url }
-    this.http.post<FileTask>(`${API_FILES_TASK_OPERATION_DOWNLOAD}/${dirPath}/${name}`, op).subscribe({
+    this.http.post<FileTask>(`${API_FILES_TASK_OPERATION_DOWNLOAD}/${this.currentRoute}/${name}`, op).subscribe({
       next: (t: FileTask) => this.filesTasksService.addTask(t),
       error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Download failed', url, e)
     })
@@ -370,17 +367,15 @@ export class FilesService {
   }
 
   async openViewerDialog(file: FileModel, directoryFiles: FileModel[], permissions: string): Promise<void> {
-    if (this.useTextProbeAsAvailabilityCheck(file)) {
-      await this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions).catch((e) => this.sendOpenDocumentError(file, e))
-      return
-    }
-    this.http.head(file.dataUrl, { observe: 'response' }).subscribe({
-      next: (response) => {
+    try {
+      if (!this.useTextProbeAsAvailabilityCheck(file)) {
+        const response = await firstValueFrom(this.http.head(file.dataUrl, { observe: 'response' }))
         this.syncFileMetadata(file, response)
-        this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions).catch((e) => this.sendOpenDocumentError(file, e))
-      },
-      error: (e: HttpErrorResponse | any) => this.sendOpenDocumentError(file, e)
-    })
+      }
+      await this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions)
+    } catch (error) {
+      this.sendOpenDocumentError(file, error)
+    }
   }
 
   reconcileMetadataAfterEditorClose(file: FileModel, delay = this.editorMetadataReconciliationDelay): void {
@@ -396,16 +391,11 @@ export class FilesService {
 
   private async openViewerAfterAvailabilityCheck(file: FileModel, directoryFiles: FileModel[], permissions: string): Promise<void> {
     // Client-side editable viewers use this flag; office editors enforce permissions on the backend.
+    const fromMarkdownLink = file.markdownFragment !== undefined
     const isWriteable = !file?.lock?.isExclusive && permissions.includes(SPACE_OPERATION.MODIFY)
     const mode: FILE_MODE = isWriteable ? FILE_MODE.EDIT : FILE_MODE.VIEW
 
-    let hookResult: ViewerHookResult
-    try {
-      hookResult = await this.viewerHook(file)
-    } catch (e) {
-      this.sendOpenDocumentError(file, e)
-      return
-    }
+    const hookResult = await this.viewerHook(file)
 
     if (hookResult.action === 'download') {
       if (hookResult.message) {
@@ -416,7 +406,9 @@ export class FilesService {
     }
 
     const hookedShortMime = hookResult.shortMime
-    if (file?.lock?.isExclusive) {
+    const { FilesViewerDialogComponent } = await import('../components/dialogs/files-viewer-dialog.component')
+    const reopeningMarkdownViewer = fromMarkdownLink && this.layout.modalRefs.get(file.path)?.content instanceof FilesViewerDialogComponent
+    if (file?.lock?.isExclusive && !reopeningMarkdownViewer) {
       this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(file.lock))
     }
 
@@ -450,9 +442,8 @@ export class FilesService {
       }
     }
 
-    const { FilesViewerDialogComponent } = await import('../components/dialogs/files-viewer-dialog.component')
     this.layout.openDialog(FilesViewerDialogComponent, 'full', {
-      id: file.id, // only used to manage the modal
+      id: file.path,
       initialState: {
         currentFile: file,
         directoryFiles: directoryFiles,
@@ -464,12 +455,12 @@ export class FilesService {
     })
   }
 
-  private sendOpenDocumentError(file: FileModel, e: HttpErrorResponse | any): void {
+  sendOpenDocumentError(file: FileModel | string, e: HttpErrorResponse | any): void {
     // Availability checks do not include a body or custom message.
     if (e?.status) {
       e.message = e.status in SEND_FILE_ERROR_MSG ? SEND_FILE_ERROR_MSG[e.status] : e.statusText
     }
-    this.layout.sendNotification('error', 'Unable to open document', file?.name, e)
+    this.layout.sendNotification('error', 'Unable to open document', typeof file === 'string' ? file : file.name, e)
   }
 
   private syncFileMetadata(file: FileModel, response: HttpResponse<unknown>): void {
