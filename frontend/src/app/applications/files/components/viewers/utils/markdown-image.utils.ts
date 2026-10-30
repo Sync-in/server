@@ -4,6 +4,7 @@ import { getRenderedAttributes, mergeAttributes } from '@tiptap/core'
 import Image from '@tiptap/extension-image'
 import type { FileModel } from '../../../models/file.model'
 import type { MarkdownImageOptions } from '../interfaces/markdown-image.interface'
+import { renderMarkdownDestination, resolveMarkdownRelativeUrl } from './markdown.utils'
 
 const MARKDOWN_IMAGE_THUMBNAIL_SIZE = 1024
 
@@ -16,11 +17,9 @@ export const MarkdownImage = Image.extend<MarkdownImageOptions>({
     const src = node.attrs?.src ?? ''
     const alt = node.attrs?.alt ?? ''
     const title = node.attrs?.title ?? ''
-    // TipTap does not escape image fields, so preserve paths and labels containing Markdown delimiters.
+    // TipTap does not escape image labels, so preserve Markdown delimiters.
     const escapedAlt = alt.replace(/[\\[\]]/g, '\\$&')
-    const escapedTitle = title.replace(/["\\]/g, '\\$&')
-    const destination = /[\s()<>\\]/.test(src) ? `<${src.replace(/[\\<>]/g, '\\$&')}>` : src
-    return title ? `![${escapedAlt}](${destination} "${escapedTitle}")` : `![${escapedAlt}](${destination})`
+    return `![${escapedAlt}](${renderMarkdownDestination(src, title)})`
   },
 
   addNodeView() {
@@ -85,19 +84,7 @@ export function isAllowedAbsoluteImageSource(source: string): boolean {
 }
 
 export function resolveMarkdownRelativeImageUrl(file: FileModel, reference: string): string | null {
-  if (!reference || file.root || reference !== reference.trim()) return null
-
-  try {
-    const documentUrl = new URL(file.thumbnailUrl, window.location.href)
-    const scopeUrl = new URL(`${API_FILES_OPERATION_THUMBNAIL}/${encodeUrl(file.basePath)}/`, window.location.href)
-    if (!documentUrl.pathname.startsWith(scopeUrl.pathname)) return null
-
-    const imageUrl = new URL(reference, documentUrl)
-    if (imageUrl.origin !== scopeUrl.origin || !imageUrl.pathname.startsWith(scopeUrl.pathname) || imageUrl.pathname.endsWith('/')) {
-      return null
-    }
-    return `${imageUrl.pathname}?size=${MARKDOWN_IMAGE_THUMBNAIL_SIZE}`
-  } catch {
-    return null
-  }
+  if (file.root) return null
+  const imageUrl = resolveMarkdownRelativeUrl(file.thumbnailUrl, `${API_FILES_OPERATION_THUMBNAIL}/${encodeUrl(file.basePath)}/`, reference)
+  return imageUrl ? `${imageUrl.pathname}?size=${MARKDOWN_IMAGE_THUMBNAIL_SIZE}` : null
 }

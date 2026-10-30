@@ -1,28 +1,36 @@
+import { API_FILES_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/routes'
+import { encodeUrl } from '@sync-in-server/backend/src/common/shared'
 import Link from '@tiptap/extension-link'
+import type { FileModel } from '../../../models/file.model'
 import type { MarkdownLinkTarget } from '../interfaces/markdown-link.interface'
+import { renderMarkdownDestination, resolveMarkdownRelativeUrl } from './markdown.utils'
+
+const FILES_OPERATION_PATH = `${API_FILES_OPERATION}/`
 
 export const MarkdownLink = Link.extend({
   renderMarkdown(node, helpers) {
     const href = node.attrs?.href ?? ''
     const title = node.attrs?.title ?? ''
     const text = helpers.renderChildren(node)
-    const escapedTitle = title.replace(/["\\]/g, '\\$&')
-    const destination = /[\s()<>\\]/.test(href) ? `<${href.replace(/[\\<>]/g, '\\$&')}>` : href
-    return title ? `[${text}](${destination} "${escapedTitle}")` : `[${text}](${destination})`
+    return `[${text}](${renderMarkdownDestination(href, title)})`
   }
 })
 
-export function resolveMarkdownLink(documentPath: string, href: string): MarkdownLinkTarget | null {
-  const hash = href.indexOf('#')
-  const reference = hash < 0 ? href : href.slice(0, hash)
-  let fragment = ''
+export function resolveMarkdownLink(file: FileModel, href: string): MarkdownLinkTarget | null {
+  if (href.startsWith('/') || href.startsWith('?') || href.includes('\\')) return null
+
+  const targetUrl = resolveMarkdownRelativeUrl(file.dataUrl, `${API_FILES_OPERATION}/${encodeUrl(file.basePath)}/`, href)
+  if (!targetUrl || !targetUrl.pathname.startsWith(FILES_OPERATION_PATH)) return null
+  const path = decodeMarkdownPath(targetUrl.pathname.slice(FILES_OPERATION_PATH.length))
+  if (!path) return null
+  const lowerPath = path.toLowerCase()
+  if (!lowerPath.endsWith('.md') && !lowerPath.endsWith('.markdown')) return null
+
   try {
-    fragment = hash < 0 ? '' : decodeURIComponent(href.slice(hash + 1))
+    return { path, fragment: decodeURIComponent(targetUrl.hash.slice(1)) }
   } catch {
     return null
   }
-  const path = !reference && hash === 0 ? documentPath : resolveMarkdownRelativePath(documentPath, reference)
-  return path && /\.(md|markdown)$/i.test(path) ? { path, fragment } : null
 }
 
 export function markdownHeadingSlug(text: string): string {
@@ -33,13 +41,9 @@ export function markdownHeadingSlug(text: string): string {
     .replace(/\s/g, '-')
 }
 
-function resolveMarkdownRelativePath(documentPath: string, reference: string): string | null {
-  if (!reference || /^(?:[a-z][a-z\d+.-]*:|[/#?\\])/i.test(reference)) return null
-  const path = reference.split(/[?#]/, 1)[0]
-  const segments = documentPath.split('/')
-  if (segments.length < 3 || segments.some((segment) => !segment)) return null
-  segments.pop()
-  for (const encodedSegment of path.split('/')) {
+function decodeMarkdownPath(encodedPath: string): string | null {
+  const segments: string[] = []
+  for (const encodedSegment of encodedPath.split('/')) {
     let segment: string
     try {
       segment = decodeURIComponent(encodedSegment)
@@ -53,13 +57,8 @@ function resolveMarkdownRelativePath(documentPath: string, reference: string): s
     ) {
       return null
     }
-    if (!segment || segment === '.') continue
-    if (segment === '..') {
-      if (segments.length <= 2) return null
-      segments.pop()
-    } else {
-      segments.push(segment)
-    }
+    if (!segment || segment === '.' || segment === '..') return null
+    segments.push(segment)
   }
-  return segments.length > 2 ? segments.join('/') : null
+  return segments.join('/')
 }

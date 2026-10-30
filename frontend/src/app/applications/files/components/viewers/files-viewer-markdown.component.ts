@@ -519,7 +519,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
       window.open(href, '_blank', 'noopener,noreferrer')
       return true
     }
-    const target = resolveMarkdownLink(this.file().path, href)
+    const target = resolveMarkdownLink(this.file(), href)
     if (!target) {
       this.layout.sendNotification('warning', 'Unable to open document', href)
       return true
