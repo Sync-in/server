@@ -46,9 +46,9 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   protected currentTheme: UserTheme = USER_THEME.LIGHT
   protected readonly layout = inject(LayoutService)
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly http = inject(HttpClient)
+  protected readonly filesService = inject(FilesService)
   private readonly tooltips = viewChildren(TooltipDirective)
-  private readonly http = inject(HttpClient)
-  private readonly filesServices = inject(FilesService)
   private readonly filesUpload = inject(FilesUploadService)
   private readonly themeSubscription = this.layout.switchTheme.subscribe(() => (this.currentTheme = this.layout.getCurrentTheme()))
   private lockRefreshSubscription: Subscription | null = null
@@ -165,11 +165,10 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   }
 
   protected requestClose(): void {
-    const fileId = this.file().id
     if (this.isModified()) {
       this.warnOnUnsavedChanges.set(true)
-      if (this.layout.windows.getValue().find((w: AppWindow) => w.id === fileId)) {
-        this.layout.restoreDialog(fileId)
+      if (this.layout.windows.getValue().find((window: AppWindow) => window.id === this.file().path)) {
+        this.layout.restoreDialog(this.file().path)
       }
     } else {
       this.onClose().catch(console.error)
@@ -181,13 +180,13 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   }
 
   protected isActiveDialog(): boolean {
-    return this.layout.isDialogActive(this.file().id)
+    return this.layout.isDialogActive(this.file().path)
   }
 
   protected async onClose() {
     if (this.isSaving()) return
     if (this.usesFileLock() && !this.isReadonly() && !(await this.unlockFile())) return
-    this.layout.closeDialog(null, this.file().id)
+    this.layout.closeDialog(null, this.file().path)
   }
 
   protected async loadContent() {
@@ -203,7 +202,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   protected async lockFile(): Promise<boolean> {
     if (!this.isSupported() || !this.isWriteable()) return false
     try {
-      const lock: FileLockProps = await firstValueFrom(this.filesServices.lock(this.file()))
+      const lock: FileLockProps = await firstValueFrom(this.filesService.lock(this.file()))
       this.file.update((f) => {
         f.lock = lock
         return f
@@ -244,7 +243,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
       .pipe(
         filter(() => !this.isReadonly() && this.isWriteable() && !!this.file().lock),
         exhaustMap(() =>
-          this.filesServices.lock(this.file()).pipe(
+          this.filesService.lock(this.file()).pipe(
             tap((lock: FileLockProps) => {
               this.lockRefreshWarningSent = false
               this.file.update((file) => {
@@ -281,7 +280,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
 
   private async releaseLock(): Promise<boolean> {
     try {
-      await firstValueFrom(this.filesServices.unlock(this.file()))
+      await firstValueFrom(this.filesService.unlock(this.file()))
       this.file.update((f) => {
         delete f.lock
         return f
