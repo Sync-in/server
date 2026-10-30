@@ -61,7 +61,7 @@ import { type FilesOverwriteAction, FilesOverwriteDialogComponent } from '../com
 import type { FilesViewerDialogComponent as FilesViewerDialogComponentState } from '../components/dialogs/files-viewer-dialog.component'
 import { FilesViewerSelectDialog } from '../components/dialogs/files-viewer-select-dialog.component'
 import { fileLockPropsToString } from '../components/utils/file-lock.utils'
-import type { MarkdownLinkTarget } from '../components/viewers/interfaces/markdown-link.interface'
+import type { MarkdownLinkTarget } from '../components/viewers/interfaces/markdown.interface'
 import { MAX_CLIENT_EDITOR_FILE_SIZE, SHORT_MIME } from '../files.constants'
 import { FileContentModel } from '../models/file-content.model'
 import { FileFavoriteModel } from '../models/file-favorite.model'
@@ -371,13 +371,13 @@ export class FilesService {
     })
   }
 
-  async openViewerDialog(file: FileModel, directoryFiles: FileModel[], permissions: string, markdownLink?: MarkdownLinkTarget): Promise<boolean> {
+  async openViewerDialog(file: FileModel, directoryFiles: FileModel[], permissions: string): Promise<boolean> {
     try {
       if (!this.useTextProbeAsAvailabilityCheck(file)) {
         const response = await firstValueFrom(this.http.head(file.dataUrl, { observe: 'response' }))
         this.syncFileMetadata(file, response)
       }
-      return await this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions, markdownLink)
+      return await this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions)
     } catch (error) {
       this.sendOpenDocumentError(file, error)
       return false
@@ -395,7 +395,8 @@ export class FilesService {
       const files = listing.files.map((props) => new FileModel(props, base, inSharesRepository, this.store.server().files.editors))
       const file = files.find((candidate) => candidate.path === target.path && !candidate.isDir && candidate.shortMime === SHORT_MIME.MARKDOWN)
       if (!file) throw new Error('Document not found')
-      return await this.openViewerDialog(file, files, listing.permissions, target)
+      file.markdownFragment = target.fragment
+      return await this.openViewerDialog(file, files, listing.permissions)
     } catch (error) {
       this.sendOpenDocumentError(target.path.split('/').pop() || target.path, error)
       return false
@@ -413,14 +414,10 @@ export class FilesService {
       .subscribe((response) => this.syncFileMetadata(file, response))
   }
 
-  private async openViewerAfterAvailabilityCheck(
-    file: FileModel,
-    directoryFiles: FileModel[],
-    permissions: string,
-    markdownLink?: MarkdownLinkTarget
-  ): Promise<boolean> {
+  private async openViewerAfterAvailabilityCheck(file: FileModel, directoryFiles: FileModel[], permissions: string): Promise<boolean> {
     // Client-side editable viewers use this flag; office editors enforce permissions on the backend.
-    const isWriteable = !markdownLink && !file?.lock?.isExclusive && permissions.includes(SPACE_OPERATION.MODIFY)
+    const fromMarkdownLink = file.markdownFragment !== undefined
+    const isWriteable = !fromMarkdownLink && !file?.lock?.isExclusive && permissions.includes(SPACE_OPERATION.MODIFY)
     const mode: FILE_MODE = isWriteable ? FILE_MODE.EDIT : FILE_MODE.VIEW
 
     const hookResult = await this.viewerHook(file)
@@ -434,7 +431,7 @@ export class FilesService {
     }
 
     const hookedShortMime = hookResult.shortMime
-    const restoringMarkdownWindow = !!markdownLink && this.layout.windows.getValue().some((window) => window.id === file.id)
+    const restoringMarkdownWindow = fromMarkdownLink && this.layout.windows.getValue().some((window) => window.id === file.id)
     if (file?.lock?.isExclusive && !restoringMarkdownWindow) {
       this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(file.lock))
     }
@@ -470,7 +467,7 @@ export class FilesService {
     }
 
     const { FilesViewerDialogComponent } = await import('../components/dialogs/files-viewer-dialog.component')
-    const dialog = this.layout.openDialog(FilesViewerDialogComponent, 'full', {
+    this.layout.openDialog(FilesViewerDialogComponent, 'full', {
       id: file.id, // only used to manage the modal
       initialState: {
         currentFile: file,
@@ -481,10 +478,6 @@ export class FilesService {
         editorProvider: editorProvider
       } satisfies Partial<FilesViewerDialogComponentState>
     })
-    if (markdownLink) {
-      const viewer = dialog.content as FilesViewerDialogComponentState
-      viewer.markdownFragment.set({ value: markdownLink.fragment })
-    }
     return true
   }
 

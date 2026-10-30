@@ -17,7 +17,6 @@ import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.compone
 import { FilesViewerOnlyOfficeComponent } from '../viewers/files-viewer-only-office.component'
 import { FilesViewerPdfComponent } from '../viewers/files-viewer-pdf.component'
 import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component'
-import type { MarkdownLinkFragment } from '../viewers/interfaces/markdown-link.interface'
 
 @Component({
   selector: 'app-files-viewer-dialog',
@@ -43,7 +42,6 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   @Input({ required: true }) isWriteable: boolean
   @Input({ required: true }) hookedShortMime: string
   @Input({ required: true }) editorProvider: FileEditorProviders
-  markdownFragment = signal<MarkdownLinkFragment>({ value: '' })
   modalClosing = signal<boolean>(false)
   protected activeViewer = signal<string>('')
   protected editableViewerReady = signal(false)

@@ -3,7 +3,7 @@ import { encodeUrl } from '@sync-in-server/backend/src/common/shared'
 import { getRenderedAttributes, mergeAttributes } from '@tiptap/core'
 import Image from '@tiptap/extension-image'
 import type { FileModel } from '../../../models/file.model'
-import type { MarkdownImageOptions } from '../interfaces/markdown-image.interface'
+import type { MarkdownImageOptions } from '../interfaces/markdown.interface'
 import { renderMarkdownDestination, resolveMarkdownRelativeUrl } from './markdown.utils'
 
 const MARKDOWN_IMAGE_THUMBNAIL_SIZE = 1024

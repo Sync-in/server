@@ -2,10 +2,8 @@ import { API_FILES_OPERATION } from '@sync-in-server/backend/src/applications/fi
 import { encodeUrl } from '@sync-in-server/backend/src/common/shared'
 import Link from '@tiptap/extension-link'
 import type { FileModel } from '../../../models/file.model'
-import type { MarkdownLinkTarget } from '../interfaces/markdown-link.interface'
+import type { MarkdownLinkTarget } from '../interfaces/markdown.interface'
 import { renderMarkdownDestination, resolveMarkdownRelativeUrl } from './markdown.utils'
-
-const FILES_OPERATION_PATH = `${API_FILES_OPERATION}/`
 
 export const MarkdownLink = Link.extend({
   renderMarkdown(node, helpers) {
@@ -20,11 +18,9 @@ export function resolveMarkdownLink(file: FileModel, href: string): MarkdownLink
   if (href.startsWith('/') || href.startsWith('?') || href.includes('\\')) return null
 
   const targetUrl = resolveMarkdownRelativeUrl(file.dataUrl, `${API_FILES_OPERATION}/${encodeUrl(file.basePath)}/`, href)
-  if (!targetUrl || !targetUrl.pathname.startsWith(FILES_OPERATION_PATH)) return null
-  const path = decodeMarkdownPath(targetUrl.pathname.slice(FILES_OPERATION_PATH.length))
+  if (!targetUrl || targetUrl.search) return null
+  const path = decodeMarkdownPath(targetUrl.pathname.slice(API_FILES_OPERATION.length + 1))
   if (!path) return null
-  const lowerPath = path.toLowerCase()
-  if (!lowerPath.endsWith('.md') && !lowerPath.endsWith('.markdown')) return null
 
   try {
     return { path, fragment: decodeURIComponent(targetUrl.hash.slice(1)) }

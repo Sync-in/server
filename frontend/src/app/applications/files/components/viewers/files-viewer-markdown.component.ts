@@ -1,5 +1,5 @@
 import { CodeEditor } from '@acrodata/code-editor'
-import { Component, effect, ElementRef, HostListener, inject, input, OnDestroy, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
+import { Component, effect, ElementRef, HostListener, inject, OnDestroy, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
 import { LanguageDescription } from '@codemirror/language'
@@ -53,7 +53,6 @@ import { CodeMirrorFileViewerSearchAdapter } from './components/files-viewer-cod
 import { FilesViewerSearchComponent } from './components/files-viewer-search.component'
 import { TipTapFileViewerSearchAdapter } from './components/files-viewer-tiptap-search-adapter'
 import { FilesViewerUnsavedChangesComponent } from './components/files-viewer-unsaved-changes.component'
-import type { MarkdownLinkFragment } from './interfaces/markdown-link.interface'
 import { isAllowedAbsoluteImageSource, MarkdownImage, resolveMarkdownRelativeImageUrl } from './utils/markdown-image.utils'
 import { markdownHeadingSlug, MarkdownLink, resolveMarkdownLink } from './utils/markdown-link.utils'
 
@@ -94,7 +93,6 @@ const ExitInlineCodeOnEnter = Extension.create({
   templateUrl: 'files-viewer-markdown.component.html'
 })
 export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implements OnInit, OnDestroy {
-  fragment = input<MarkdownLinkFragment>({ value: '' })
   private readonly linkedFiles = inject(FilesService)
   private openingLink = false
   private headingRafId: number | null = null
@@ -181,10 +179,6 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
 
   constructor() {
     super()
-    effect(() => {
-      const fragment = this.fragment().value
-      this.scrollToHeading(fragment)
-    })
     effect(() => {
       const editable = this.canEditContent() && this.isSupported()
       if (!this.editor.isDestroyed) {
@@ -496,8 +490,11 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     this.sourceContent = content
     this.setMarkdownContent(content)
     this.isModified.set(false)
-    this.scheduleEditorFocus('visual', 'start')
-    this.scrollToHeading(this.fragment().value)
+    const file = this.file()
+    const fragment = file.markdownFragment || ''
+    if (!fragment) this.scheduleEditorFocus('visual', 'start')
+    this.scrollToHeading(fragment)
+    delete file.markdownFragment
   }
 
   protected override onContentSaved(content: string) {
@@ -516,7 +513,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     event.preventDefault()
     const href = anchor.getAttribute('href') || ''
     if (/^(https?:|mailto:)/i.test(href)) {
-      window.open(href, '_blank', 'noopener,noreferrer')
+      this.layout.openUrl(href)
       return true
     }
     const target = resolveMarkdownLink(this.file(), href)
@@ -543,12 +540,19 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
   }
 
   private scrollToHeading(fragment: string) {
-    if (!fragment || this.editor.isDestroyed) return
-    if (this.headingRafId !== null) cancelAnimationFrame(this.headingRafId)
+    if (this.headingRafId !== null) {
+      cancelAnimationFrame(this.headingRafId)
+      this.headingRafId = null
+    }
+    if (this.editor.isDestroyed) return
     const target = fragment.toLowerCase()
     this.headingRafId = requestAnimationFrame(() => {
       this.headingRafId = null
       if (this.editor.isDestroyed || !this.editor.view.dom.isConnected) return
+      if (!target) {
+        this.editor.view.dom.parentElement?.scrollTo({ top: 0 })
+        return
+      }
       const counts = new Map<string, number>()
       const headings = Array.from((this.editor.view.dom as HTMLElement).querySelectorAll('h1,h2,h3,h4,h5,h6'))
       const heading = headings.find((element) => {

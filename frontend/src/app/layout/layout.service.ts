@@ -298,7 +298,7 @@ export class LayoutService {
     if (this.electron.enabled) {
       this.electron.openUrl(url)
     } else {
-      window.open(url, '_blank')
+      window.open(url, '_blank', 'noopener,noreferrer')
     }
   }
 
