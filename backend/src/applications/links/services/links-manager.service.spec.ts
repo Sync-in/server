@@ -18,6 +18,7 @@ import { AdminUsersQueries } from '../../users/services/admin-users-queries.serv
 import { UsersManager } from '../../users/services/users-manager.service.js'
 import { UsersQueries } from '../../users/services/users-queries.service.js'
 import { getAvatarBase64 } from '../../users/utils/avatar.js'
+import { LINK_ERROR } from '../constants/links.js'
 import { LinksManager } from './links-manager.service.js'
 import { LinksQueries } from './links-queries.service.js'
 import { Mocked } from 'vitest'
@@ -207,7 +208,8 @@ describe(LinksManager.name, () => {
     })
 
     it('authenticates and returns cookies when link targets a directory and user is different', async () => {
-      const link = { ...baseLink, requireAuth: false, user: { id: 7, login: 'john', isActive: true } }
+      const expiresAt = new Date(Date.now() + 3_600_000)
+      const link = { ...baseLink, requireAuth: false, expiresAt, user: { id: 7, login: 'john', isActive: true } }
       linksQueriesMock.linkFromUUID.mockResolvedValueOnce(link)
 
       const loginDto: any = { token: 'jwt' }
@@ -222,7 +224,7 @@ describe(LinksManager.name, () => {
       expect(result).toBe(loginDto)
       expect(linksQueriesMock.consumeLinkAccess).toHaveBeenCalledWith(link.uuid)
       expect(usersManagerMock.updateAccesses).toHaveBeenCalledWith(expect.anything(), req.ip, true)
-      expect(authManagerMock.setCookies).toHaveBeenCalled()
+      expect(authManagerMock.setCookies).toHaveBeenCalledWith(expect.objectContaining({ id: link.user.id }), res, false, undefined, expiresAt)
       // should log error when updateAccesses fails
       expect(logErrorSpy).toHaveBeenCalled()
     })
@@ -303,6 +305,22 @@ describe(LinksManager.name, () => {
       })
       expect(authManagerMock.setCookies).not.toHaveBeenCalled()
     })
+
+    it('reports expiration when the link expires during atomic access consumption', async () => {
+      const link = { ...baseLink, expiresAt: new Date(Date.now() + 60_000) }
+      linksQueriesMock.linkFromUUID.mockResolvedValueOnce(link)
+      linksQueriesMock.consumeLinkAccess.mockImplementationOnce(async () => {
+        link.expiresAt = new Date(Date.now() - 1)
+        return false
+      })
+
+      await expect(service.linkAccess(identity, link.uuid, req, res)).rejects.toMatchObject({
+        status: HttpStatus.BAD_REQUEST,
+        response: LINK_ERROR.EXPIRED
+      })
+
+      expect(authManagerMock.setCookies).not.toHaveBeenCalled()
+    })
   })
 
   describe('linkAuthentication', () => {
@@ -310,7 +328,8 @@ describe(LinksManager.name, () => {
     const res: any = {}
 
     it('returns cookies when password is correct', async () => {
-      const link = { ...baseLink, requireAuth: true }
+      const expiresAt = new Date(Date.now() + 3_600_000)
+      const link = { ...baseLink, requireAuth: true, expiresAt }
       linksQueriesMock.linkFromUUID.mockResolvedValueOnce(link)
       usersManagerMock.compareUserPassword.mockResolvedValueOnce(true)
       // usersManagerMock.updateAccesses.mockResolvedValueOnce(undefined) // removed to ensure rejection is hit
@@ -328,9 +347,27 @@ describe(LinksManager.name, () => {
       expect(usersManagerMock.compareUserPassword).toHaveBeenCalledWith(link.user.id, 'secret')
       expect(linksQueriesMock.consumeLinkAccess).toHaveBeenCalledWith(link.uuid)
       expect(usersManagerMock.updateAccesses).toHaveBeenCalledWith(expect.anything(), req.ip, true)
-      expect(authManagerMock.setCookies).toHaveBeenCalled()
+      expect(authManagerMock.setCookies).toHaveBeenCalledWith(expect.objectContaining({ id: link.user.id }), res, false, undefined, expiresAt)
       // should log error when updateAccesses fails in successful authentication
       expect(logErrorSpy).toHaveBeenCalled()
+    })
+
+    it('does not consume access or issue cookies when the link expires during password verification', async () => {
+      const link = { ...baseLink, requireAuth: true, expiresAt: new Date(Date.now() + 60_000) }
+      linksQueriesMock.linkFromUUID.mockResolvedValueOnce(link)
+      usersManagerMock.compareUserPassword.mockImplementationOnce(async () => {
+        link.expiresAt = new Date(Date.now() - 1)
+        return true
+      })
+      usersManagerMock.updateAccesses.mockResolvedValueOnce(undefined)
+
+      await expect(service.linkAuthentication(identity, link.uuid, { password: 'secret' } as any, req, res)).rejects.toMatchObject({
+        status: HttpStatus.BAD_REQUEST,
+        response: LINK_ERROR.EXPIRED
+      })
+
+      expect(linksQueriesMock.consumeLinkAccess).not.toHaveBeenCalled()
+      expect(authManagerMock.setCookies).not.toHaveBeenCalled()
     })
 
     it('throws FORBIDDEN when password is incorrect', async () => {

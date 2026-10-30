@@ -71,7 +71,8 @@ export class LinksManager {
       this.usersManager
         .updateAccesses(user, req.ip, true)
         .catch((e: Error) => this.logger.error({ tag: this.linkAccess.name, msg: toErrorMessage(e) }))
-      return this.authManager.setCookies(user, res)
+      // bound the whole session to the link expiration
+      return this.authManager.setCookies(user, res, false, undefined, link.expiresAt)
     }
     // Already authenticated
     return { user: user, server: serverConfig }
@@ -124,7 +125,8 @@ export class LinksManager {
     await this.consumeLinkAccess(link)
     // authenticate user to allow access
     this.logger.log({ tag: this.linkAuthentication.name, msg: `*${user.login}* (${user.id}) is logged` })
-    return this.authManager.setCookies(user, res)
+    // bound the whole session to the link expiration
+    return this.authManager.setCookies(user, res, false, undefined, link.expiresAt)
   }
 
   private async spaceEnvFromLink(user: UserModel, share: NonNullable<SpaceLink['share']>): Promise<SpaceEnv> {
@@ -151,7 +153,7 @@ export class LinksManager {
     if (link.user.id !== identity.id && link.limitAccess !== 0 && link.nbAccess >= link.limitAccess) {
       return LINK_ERROR.EXCEEDED
     }
-    if (link.expiresAt && new Date() >= link.expiresAt) {
+    if (this.isLinkExpired(link)) {
       return LINK_ERROR.EXPIRED
     }
     if (!ignoreAuth && link.requireAuth && link.user.id !== identity.id) {
@@ -161,8 +163,18 @@ export class LinksManager {
   }
 
   private async consumeLinkAccess(link: LinkAsUser): Promise<void> {
+    if (this.isLinkExpired(link)) {
+      throw new HttpException(LINK_ERROR.EXPIRED, HttpStatus.BAD_REQUEST)
+    }
     if (!(await this.linksQueries.consumeLinkAccess(link.uuid))) {
+      if (this.isLinkExpired(link)) {
+        throw new HttpException(LINK_ERROR.EXPIRED, HttpStatus.BAD_REQUEST)
+      }
       throw new HttpException(LINK_ERROR.EXCEEDED, HttpStatus.BAD_REQUEST)
     }
+  }
+
+  private isLinkExpired(link: LinkAsUser): boolean {
+    return !!link.expiresAt && new Date() >= link.expiresAt
   }
 }
