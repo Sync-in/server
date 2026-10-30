@@ -475,6 +475,7 @@
 }
 
 .breadcrumb {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -496,16 +497,38 @@
     justify-content: flex-start;
     width: 100%;
     min-width: 0;
+    padding: 0;
+    margin: 0;
+    list-style: none;
     @include text-truncate-utility;
     @include no-select-pointer-utility;
 
-    @include media-breakpoint-down(sm) {
-      .breadcrumb-mobile-active > a {
-        color: $gray-lightest !important;
+    &.breadcrumb-content--collapsed {
+      > .breadcrumb-level:not(:first-child):not(:last-child) {
+        display: none;
       }
 
-      .breadcrumb-mobile-hidden {
-        display: none;
+      > .breadcrumb-level:first-child {
+        overflow: hidden;
+      }
+
+      > .breadcrumb-level:last-child {
+        max-width: 100%;
+      }
+    }
+
+    &.breadcrumb-content--measure {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: max-content;
+      min-width: max-content;
+      height: 0;
+      visibility: hidden;
+      pointer-events: none;
+
+      > .breadcrumb-level {
+        flex: 0 0 auto;
       }
     }
 
@@ -514,8 +537,15 @@
         @include text-truncate-utility;
       }
 
-      display: inline;
-      list-style: none;
+      display: flex;
+      align-items: center;
+      min-width: 0;
+
+      > .breadcrumb-separator {
+        flex: 0 0 auto;
+        font-size: $font-size-md;
+        color: $sidebar-light-apps-menu-title-color;
+      }
 
       &.active {
         > a {
@@ -523,16 +553,23 @@
         }
       }
 
+      .breadcrumb-main-label--active {
+        color: $gray-lightest !important;
+      }
+
       &:first-child {
         overflow: visible;
 
-        > a {
+        > a,
+        > .breadcrumb-measure-link {
           gap: .4rem;
           margin-right: .3rem;
         }
       }
 
-      > a {
+      > a,
+      > .breadcrumb-measure-link,
+      > .breadcrumb-current-dropdown > .breadcrumb-current-toggle {
         display: flex;
         align-items: center;
         min-width: 0;
@@ -546,6 +583,7 @@
         }
 
         > .lucide {
+          flex: 0 0 auto;
           font-size: 1.1rem;
         }
 
@@ -554,12 +592,88 @@
           @include text-truncate-utility;
         }
       }
+
+      .breadcrumb-root-icon {
+        flex: 0 0 auto;
+        width: 1.1rem;
+        height: 1.1rem;
+      }
+
+      > .breadcrumb-current-dropdown {
+        display: flex;
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      .breadcrumb-current-toggle {
+        gap: .35rem;
+        max-width: 100%;
+        padding: .2rem .35rem;
+        border: 0;
+        border-radius: $border-radius-base;
+        background: transparent;
+        cursor: pointer;
+        font: inherit;
+
+        &:hover,
+        &:focus-visible,
+        &[aria-expanded='true'] {
+          color: $gray-lightest;
+          background: rgba($black, .12);
+        }
+
+        &:focus-visible {
+          outline: 1px solid rgba($white, .8);
+          outline-offset: 1px;
+        }
+      }
+
+      .breadcrumb-path-chevron {
+        display: block;
+        flex: 0 0 auto;
+        align-self: center;
+        width: $font-size-md;
+        height: $font-size-md;
+        color: $gray-lightest;
+      }
     }
+  }
+}
+
+.breadcrumb-path-menu {
+  width: 19rem;
+  max-width: calc(100vw - 1rem);
+  max-height: calc(100dvh - #{$navbar-height} - 1rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  .breadcrumb-path-item {
+    display: flex !important;
+    align-items: center;
+    gap: $dropdown-item-padding-x;
+    padding: $dropdown-item-padding-y $dropdown-item-padding-x !important;
 
     > .lucide {
-      flex-shrink: 0;
+      flex: 0 0 auto;
       font-size: $font-size-md;
-      color: $sidebar-light-apps-menu-title-color;
     }
+
+    > .breadcrumb-path-label {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .breadcrumb-path-item--current {
+    cursor: default;
+  }
+
+  @include media-breakpoint-down(sm) {
+    width: 16rem;
+    max-height: calc(70dvh - env(safe-area-inset-bottom));
   }
 }
