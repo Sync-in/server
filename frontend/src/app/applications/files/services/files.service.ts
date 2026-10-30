@@ -371,36 +371,33 @@ export class FilesService {
     })
   }
 
-  async openViewerDialog(file: FileModel, directoryFiles: FileModel[], permissions: string): Promise<void> {
-    if (this.useTextProbeAsAvailabilityCheck(file)) {
-      await this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions).catch((e) => this.sendOpenDocumentError(file, e))
-      return
-    }
-    this.http.head(file.dataUrl, { observe: 'response' }).subscribe({
-      next: (response) => {
+  async openViewerDialog(file: FileModel, directoryFiles: FileModel[], permissions: string, markdownLink?: MarkdownLinkTarget): Promise<boolean> {
+    try {
+      if (!this.useTextProbeAsAvailabilityCheck(file)) {
+        const response = await firstValueFrom(this.http.head(file.dataUrl, { observe: 'response' }))
         this.syncFileMetadata(file, response)
-        this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions).catch((e) => this.sendOpenDocumentError(file, e))
-      },
-      error: (e: HttpErrorResponse | any) => this.sendOpenDocumentError(file, e)
-    })
+      }
+      return await this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions, markdownLink)
+    } catch (error) {
+      this.sendOpenDocumentError(file, error)
+      return false
+    }
   }
 
-  /** Resolve metadata and permissions at the destination, never from the source note. */
+  /** Load a linked Markdown target without changing the current browser route. */
   async openMarkdownDocument(target: MarkdownLinkTarget): Promise<boolean> {
     try {
       const pathSegments = target.path.split('/')
       const directory = pathSegments.slice(0, -1).join('/')
-      const base = pathSegments.slice(0, 2).join('/')
+      const inSharesRepository = pathSegments[0] === SPACE_REPOSITORY.SHARES
+      const base = inSharesRepository && pathSegments.length === 2 ? SPACE_REPOSITORY.SHARES : pathSegments.slice(0, 2).join('/')
       const listing = await firstValueFrom(this.http.get<SpaceFiles>(`${API_SPACES_BROWSE}/${encodeUrl(directory)}`))
-      const files = listing.files.map((props) => new FileModel(props, base, pathSegments[0] === 'shares', this.store.server().files.editors))
+      const files = listing.files.map((props) => new FileModel(props, base, inSharesRepository, this.store.server().files.editors))
       const file = files.find((candidate) => candidate.path === target.path && !candidate.isDir && candidate.shortMime === SHORT_MIME.MARKDOWN)
       if (!file) throw new Error('Document not found')
-      // Check the target itself as well as its parent directory before opening a viewer.
-      const response = await firstValueFrom(this.http.head(file.dataUrl, { observe: 'response' }))
-      this.syncFileMetadata(file, response)
-      return await this.openViewerAfterAvailabilityCheck(file, files, listing.permissions, target)
+      return await this.openViewerDialog(file, files, listing.permissions, target)
     } catch (error) {
-      this.layout.sendNotification('error', 'Unable to open document', target.path.split('/').pop(), error as HttpErrorResponse)
+      this.sendOpenDocumentError(target.path.split('/').pop() || target.path, error)
       return false
     }
   }
@@ -423,16 +420,10 @@ export class FilesService {
     markdownLink?: MarkdownLinkTarget
   ): Promise<boolean> {
     // Client-side editable viewers use this flag; office editors enforce permissions on the backend.
-    const isWriteable = !file?.lock?.isExclusive && permissions.includes(SPACE_OPERATION.MODIFY)
-    const mode: FILE_MODE = isWriteable && !markdownLink ? FILE_MODE.EDIT : FILE_MODE.VIEW
+    const isWriteable = !markdownLink && !file?.lock?.isExclusive && permissions.includes(SPACE_OPERATION.MODIFY)
+    const mode: FILE_MODE = isWriteable ? FILE_MODE.EDIT : FILE_MODE.VIEW
 
-    let hookResult: ViewerHookResult
-    try {
-      hookResult = await this.viewerHook(file)
-    } catch (e) {
-      this.sendOpenDocumentError(file, e)
-      return false
-    }
+    const hookResult = await this.viewerHook(file)
 
     if (hookResult.action === 'download') {
       if (hookResult.message) {
@@ -497,12 +488,12 @@ export class FilesService {
     return true
   }
 
-  private sendOpenDocumentError(file: FileModel, e: HttpErrorResponse | any): void {
+  private sendOpenDocumentError(file: FileModel | string, e: HttpErrorResponse | any): void {
     // Availability checks do not include a body or custom message.
     if (e?.status) {
       e.message = e.status in SEND_FILE_ERROR_MSG ? SEND_FILE_ERROR_MSG[e.status] : e.statusText
     }
-    this.layout.sendNotification('error', 'Unable to open document', file?.name, e)
+    this.layout.sendNotification('error', 'Unable to open document', typeof file === 'string' ? file : file.name, e)
   }
 
   private syncFileMetadata(file: FileModel, response: HttpResponse<unknown>): void {
