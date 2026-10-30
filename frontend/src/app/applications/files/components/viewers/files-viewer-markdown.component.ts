@@ -47,15 +47,15 @@ import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { TiptapEditorDirective } from 'ngx-tiptap'
 import type { FileViewerSearchAdapter } from '../../interfaces/file-viewer-search.interface'
+import { FilesService } from '../../services/files.service'
 import { FilesViewerEditableBase } from './files-viewer-editable-base'
 import { CodeMirrorFileViewerSearchAdapter } from './components/files-viewer-codemirror-search-adapter'
 import { FilesViewerSearchComponent } from './components/files-viewer-search.component'
 import { TipTapFileViewerSearchAdapter } from './components/files-viewer-tiptap-search-adapter'
 import { FilesViewerUnsavedChangesComponent } from './components/files-viewer-unsaved-changes.component'
-import { FilesService } from '../../services/files.service'
-import { markdownHeadingSlug, resolveMarkdownLink } from './components/markdown-link'
-import { MarkdownLink } from './components/markdown-link.extension'
+import type { MarkdownLinkFragment } from './interfaces/markdown-link.interface'
 import { isAllowedAbsoluteImageSource, MarkdownImage, resolveMarkdownRelativeImageUrl } from './utils/markdown-image.utils'
+import { markdownHeadingSlug, MarkdownLink, resolveMarkdownLink } from './utils/markdown-link.utils'
 
 type MarkdownHeadingLevel = 1 | 2 | 3 | 4
 type MarkdownInlineMark = 'bold' | 'code' | 'italic' | 'strike' | 'underline'
@@ -94,7 +94,7 @@ const ExitInlineCodeOnEnter = Extension.create({
   templateUrl: 'files-viewer-markdown.component.html'
 })
 export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implements OnInit, OnDestroy {
-  fragment = input<{ value: string }>({ value: '' })
+  fragment = input<MarkdownLinkFragment>({ value: '' })
   private readonly linkedFiles = inject(FilesService)
   private openingLink = false
   private headingRafId: number | null = null
@@ -509,11 +509,11 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
   }
 
   private followLink(event: MouseEvent): boolean {
-    const anchor = (event.target as Element)?.closest('a[href]')
+    const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null
     if (!anchor) return false
     // A normal click places the caret while editing; Ctrl/Cmd-click follows the link.
+    if (this.canEditContent() && !event.ctrlKey && !event.metaKey) return false
     event.preventDefault()
-    if (this.canEditContent() && !event.ctrlKey && !event.metaKey) return true
     const href = anchor.getAttribute('href') || ''
     if (/^(https?:|mailto:)/i.test(href)) {
       window.open(href, '_blank', 'noopener,noreferrer')
@@ -529,7 +529,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     } else if (!this.openingLink) {
       this.openingLink = true
       this.linkedFiles
-        .openMarkdownDocument(target.path, target.fragment)
+        .openMarkdownDocument(target)
         .then((opened) => {
           if (opened && !this.editor.isDestroyed) {
             // Retain the source editor, including unsaved edits and its lock, for return navigation.
@@ -545,6 +545,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
   private scrollToHeading(fragment: string) {
     if (!fragment || this.editor.isDestroyed) return
     if (this.headingRafId !== null) cancelAnimationFrame(this.headingRafId)
+    const target = fragment.toLowerCase()
     this.headingRafId = requestAnimationFrame(() => {
       this.headingRafId = null
       if (this.editor.isDestroyed || !this.editor.view.dom.isConnected) return
@@ -555,7 +556,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
         const slug = markdownHeadingSlug(text)
         const occurrence = counts.get(slug) || 0
         counts.set(slug, occurrence + 1)
-        return text.toLowerCase() === fragment.toLowerCase() || `${slug}${occurrence ? `-${occurrence}` : ''}` === fragment.toLowerCase()
+        return text.toLowerCase() === target || `${slug}${occurrence ? `-${occurrence}` : ''}` === target
       })
       heading?.scrollIntoView({ block: 'start' })
     })

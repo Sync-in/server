@@ -61,6 +61,7 @@ import { type FilesOverwriteAction, FilesOverwriteDialogComponent } from '../com
 import type { FilesViewerDialogComponent as FilesViewerDialogComponentState } from '../components/dialogs/files-viewer-dialog.component'
 import { FilesViewerSelectDialog } from '../components/dialogs/files-viewer-select-dialog.component'
 import { fileLockPropsToString } from '../components/utils/file-lock.utils'
+import type { MarkdownLinkTarget } from '../components/viewers/interfaces/markdown-link.interface'
 import { MAX_CLIENT_EDITOR_FILE_SIZE, SHORT_MIME } from '../files.constants'
 import { FileContentModel } from '../models/file-content.model'
 import { FileFavoriteModel } from '../models/file-favorite.model'
@@ -385,20 +386,21 @@ export class FilesService {
   }
 
   /** Resolve metadata and permissions at the destination, never from the source note. */
-  async openMarkdownDocument(path: string, fragment = ''): Promise<boolean> {
+  async openMarkdownDocument(target: MarkdownLinkTarget): Promise<boolean> {
     try {
-      const directory = path.split('/').slice(0, -1).join('/')
-      const base = path.split('/').slice(0, 2).join('/')
+      const pathSegments = target.path.split('/')
+      const directory = pathSegments.slice(0, -1).join('/')
+      const base = pathSegments.slice(0, 2).join('/')
       const listing = await firstValueFrom(this.http.get<SpaceFiles>(`${API_SPACES_BROWSE}/${encodeUrl(directory)}`))
-      const files = listing.files.map((props) => new FileModel(props, base, path.startsWith('shares/'), this.store.server().files.editors))
-      const file = files.find((candidate) => candidate.path === path && !candidate.isDir && candidate.shortMime === SHORT_MIME.MARKDOWN)
+      const files = listing.files.map((props) => new FileModel(props, base, pathSegments[0] === 'shares', this.store.server().files.editors))
+      const file = files.find((candidate) => candidate.path === target.path && !candidate.isDir && candidate.shortMime === SHORT_MIME.MARKDOWN)
       if (!file) throw new Error('Document not found')
       // Check the target itself as well as its parent directory before opening a viewer.
       const response = await firstValueFrom(this.http.head(file.dataUrl, { observe: 'response' }))
       this.syncFileMetadata(file, response)
-      return await this.openViewerAfterAvailabilityCheck(file, files, listing.permissions, { fragment })
+      return await this.openViewerAfterAvailabilityCheck(file, files, listing.permissions, target)
     } catch (error) {
-      this.layout.sendNotification('error', 'Unable to open document', path.split('/').pop(), error as HttpErrorResponse)
+      this.layout.sendNotification('error', 'Unable to open document', target.path.split('/').pop(), error as HttpErrorResponse)
       return false
     }
   }
@@ -418,7 +420,7 @@ export class FilesService {
     file: FileModel,
     directoryFiles: FileModel[],
     permissions: string,
-    markdownLink?: { fragment: string }
+    markdownLink?: MarkdownLinkTarget
   ): Promise<boolean> {
     // Client-side editable viewers use this flag; office editors enforce permissions on the backend.
     const isWriteable = !file?.lock?.isExclusive && permissions.includes(SPACE_OPERATION.MODIFY)
@@ -441,7 +443,7 @@ export class FilesService {
     }
 
     const hookedShortMime = hookResult.shortMime
-    const restoringMarkdownWindow = markdownLink && this.layout.windows.getValue().some((window) => window.id === file.id)
+    const restoringMarkdownWindow = !!markdownLink && this.layout.windows.getValue().some((window) => window.id === file.id)
     if (file?.lock?.isExclusive && !restoringMarkdownWindow) {
       this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(file.lock))
     }

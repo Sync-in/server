@@ -41,7 +41,5 @@
   "personal_groups_short": "Personal",
   "desktop_app_access": "Desktop app access",
   "desktop_app_sync": "Desktop app synchronization",
-  "webdav_access": "WebDAV access",
-  "Image from relative path": "Image from relative path",
-  "Invalid relative image path": "Invalid relative image path"
+  "webdav_access": "WebDAV access"
 }
