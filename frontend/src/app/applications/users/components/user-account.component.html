@@ -95,13 +95,13 @@
 
                   <div class="row g-2 align-items-center pt-2">
                     <div class="col-5 col-sm-4">WebDAV</div>
-                    <div class="col-7 col-sm-8 text-end text-truncate">
+                    <div class="col-7 col-sm-8 d-flex justify-content-end">
                       <span
                         (click)="clipBoardLink()"
                         [title]="webdavUrl"
-                        class="badge bg-primary d-inline-flex align-items-center gap-1 cursor-pointer">
-                        <svg [lucideIcon]="icons.LucideCopy"></svg>
-                        {{ webdavUrl }}
+                        class="badge bg-primary d-inline-flex align-items-center gap-1 cursor-pointer mw-100">
+                        <svg class="flex-shrink-0" [lucideIcon]="icons.LucideCopy"></svg>
+                        <span class="text-truncate">{{ webdavUrl }}</span>
                       </span>
                     </div>
                   </div>

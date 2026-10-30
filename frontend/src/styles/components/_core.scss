@@ -60,3 +60,11 @@ body {
     --bs-gutter-y: 0;
   }
 }
+
+.content-wrapper:has(.dropdown-menu.show) {
+  z-index: auto;
+}
+
+.content-wrapper .dropdown-menu.show {
+  z-index: $control-sidebar-menu-z-index + 1;
+}
