@@ -64,11 +64,12 @@ export class SpacesBrowser {
       // locks were removed when files were moved to the trash, no need to parse locks
       await this.enrichWithLocks(space, spaceFiles.files)
     }
-    // Keep the user's preference when updating recents, even for an explicit hidden-file lookup.
-    const recentFiles = user.preferences.showHiddenFiles ? spaceFiles.files : spaceFiles.files.filter((file) => !file.name.startsWith('.'))
-    this.filesRecents
-      .updateRecents(user, space, recentFiles)
-      .catch((e: Error) => this.logger.error({ tag: this.browse.name, msg: toErrorMessage(e) }))
+    // A forced hidden-file lookup may expose entries outside the user's preference and must not update their recents snapshot.
+    if (user.preferences.showHiddenFiles || !includeHidden) {
+      this.filesRecents
+        .updateRecents(user, space, spaceFiles.files)
+        .catch((e: Error) => this.logger.error({ tag: this.browse.name, msg: toErrorMessage(e) }))
+    }
     return spaceFiles
   }
 

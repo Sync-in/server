@@ -183,7 +183,7 @@ describe(SpacesBrowser.name, () => {
     const result = await spacesBrowserService.browse(user, space, false, true)
 
     expect(result.files).toEqual([expect.objectContaining({ name: '.hidden' })])
-    expect(updateRecents).toHaveBeenCalledWith(user, space, [])
+    expect(updateRecents).not.toHaveBeenCalled()
   })
 
   it('removes stale database metadata for a hidden file missing from the filesystem', async () => {
