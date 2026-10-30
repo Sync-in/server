@@ -1,5 +1,6 @@
 import { JwtService } from '@nestjs/jwt'
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
+import type { Socket } from 'socket.io'
 import { z } from 'zod'
 import { appBootstrap } from '../app.bootstrap.js'
 import { USER_PERMISSION, USER_ROLE } from '../applications/users/constants/user.js'
@@ -16,6 +17,8 @@ import { currentTimeStamp, decodeUrl } from '../common/shared.js'
 import { configuration } from '../configuration/config.environment.js'
 import { Cache } from '../infrastructure/cache/cache.service.js'
 import { dbCheckConnection } from '../infrastructure/database/utils.js'
+import { WebSocketAdapter } from '../infrastructure/websocket/adapters/web-socket.adapter.js'
+import type { AuthenticatedSocketIO } from '../infrastructure/websocket/interfaces/auth-socket-io.interface.js'
 import { AuthConfig } from './auth.config.js'
 import { CSRF_ERROR, TOKEN_PATHS, TOKEN_TYPES } from './constants/auth.js'
 import { API_AUTH_LOGIN, API_AUTH_LOGOUT, API_AUTH_REFRESH, API_AUTH_TOKEN, API_AUTH_TOKEN_REFRESH } from './constants/routes.js'
@@ -47,6 +50,7 @@ describe('Auth (e2e)', () => {
   let cache: Cache
   let userTest: UserModel
   let refreshToken: string
+  let wsToken: string
   let csrfToken: string
   let clientAddress: string
 
@@ -170,7 +174,30 @@ describe('Auth (e2e)', () => {
         // needed for the following tests
         refreshToken = token
       }
+      if (cookie.type === TOKEN_TYPE.WS) {
+        wsToken = token
+      }
     }
+  })
+
+  it('should authenticate the WebSocket adapter with the issued cookie', async () => {
+    const adapter = new WebSocketAdapter(app)
+    const socket = {
+      request: { headers: { cookie: `${authConfig.token.ws.name}=${wsToken}` } },
+      handshake: {
+        address: '127.0.0.1',
+        headers: { 'user-agent': 'vitest' },
+        url: '/socket.io/?EIO=4&transport=websocket'
+      },
+      id: 'auth-e2e-socket'
+    } as unknown as Socket
+    const next = vi.fn<(error?: Error) => void>()
+
+    await adapter['authenticateSocket'](socket, next)
+
+    expect(next).toHaveBeenCalledOnce()
+    expect(next).toHaveBeenCalledWith()
+    expect((socket as AuthenticatedSocketIO).user).toMatchObject({ id: userTest.id, login: userTest.login })
   })
 
   it(`POST ${API_AUTH_LOGIN} does not reveal an inactive account with an invalid password`, async () => {
@@ -212,7 +239,13 @@ describe('Auth (e2e)', () => {
       body: null as never
     })
     expect(res.statusCode).toEqual(201)
-    expect(res.headers['set-cookie']).toHaveLength(5)
+    const setCookies = res.headers['set-cookie'] as string[]
+    expect(setCookies).toHaveLength(5)
+    expectClearedCookie(setCookies, authConfig.token.access.name, TOKEN_PATHS[TOKEN_TYPE.ACCESS], true)
+    expectClearedCookie(setCookies, authConfig.token.refresh.name, TOKEN_PATHS[TOKEN_TYPE.REFRESH], true)
+    expectClearedCookie(setCookies, authConfig.token.ws.name, TOKEN_PATHS[TOKEN_TYPE.WS], true)
+    expectClearedCookie(setCookies, authConfig.token.csrf.name, TOKEN_PATHS[TOKEN_TYPE.CSRF], true)
+    expectClearedCookie(setCookies, authConfig.token.access.name, TOKEN_PATHS[TOKEN_TYPE.ACCESS_2FA], true)
     /* Access cookie
      [
        'sync-in-access=',
@@ -250,8 +283,9 @@ describe('Auth (e2e)', () => {
       [
         'sync-in-csrf=',
         'Max-Age=0',
-        'Path=/api/auth/refresh',
+        'Path=/',
         'Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+        'HttpOnly',
         'Secure',
         'SameSite=Strict'
       ]
@@ -450,6 +484,22 @@ describe('Auth (e2e)', () => {
         expect(cookie.content[0].split('=')[1]).not.toBe('')
       }
     }
+  }
+
+  function expectClearedCookie(setCookies: string[], name: string, path: string, httpOnly: boolean): void {
+    const serializedCookie = setCookies.find((cookie) => {
+      const content = cookie.split('; ')
+      return content[0].startsWith(`${name}=`) && content.includes(`Path=${path}`)
+    })
+    expect(serializedCookie).toBeDefined()
+    const content = serializedCookie!.split('; ')
+    expect(content[0]).toBe(`${name}=`)
+    expect(content).toContain('Max-Age=0')
+    expect(content).toContain('Expires=Thu, 01 Jan 1970 00:00:00 GMT')
+    expect(content).toContain(`Path=${path}`)
+    expect(content.includes('HttpOnly')).toBe(httpOnly)
+    expect(content).not.toContain('Secure')
+    expect(content.some((attribute) => attribute.toLowerCase() === `samesite=${authConfig.cookieSameSite}`)).toBe(true)
   }
 
   function webDAVRequest(password: string) {

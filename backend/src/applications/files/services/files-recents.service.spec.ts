@@ -67,6 +67,7 @@ describe(FilesRecents.name, () => {
     ({
       id: 7,
       isAdmin: false,
+      preferences: { showHiddenFiles: true },
       applications,
       havePermission: (permission: USER_PERMISSION) => Boolean(props.isAdmin) || applications.includes(permission),
       ...props
@@ -88,7 +89,7 @@ describe(FilesRecents.name, () => {
 
     expect(spacesQueries.spaceIdentities).toHaveBeenCalledWith(7)
     expect(sharesQueries.shareIdentities).toHaveBeenCalledWith(7, 1)
-    expect(filesQueries.getRecentsFromUser).toHaveBeenCalledWith(7, [10, 11], [20], 25)
+    expect(filesQueries.getRecentsFromUser).toHaveBeenCalledWith(7, [10, 11], [20], 25, true)
     expect(result).toBe(recents)
   })
 
@@ -97,7 +98,7 @@ describe(FilesRecents.name, () => {
 
     expect(spacesQueries.spaceIdentities).not.toHaveBeenCalled()
     expect(sharesQueries.shareIdentities).not.toHaveBeenCalled()
-    expect(filesQueries.getRecentsFromUser).toHaveBeenCalledWith(7, [], [], 10)
+    expect(filesQueries.getRecentsFromUser).toHaveBeenCalledWith(7, [], [], 10, true)
   })
 
   it('should only load space recents when user only has spaces permission', async () => {
@@ -107,7 +108,7 @@ describe(FilesRecents.name, () => {
 
     expect(spacesQueries.spaceIdentities).toHaveBeenCalledWith(7)
     expect(sharesQueries.shareIdentities).not.toHaveBeenCalled()
-    expect(filesQueries.getRecentsFromUser).toHaveBeenCalledWith(undefined, [10], [], 10)
+    expect(filesQueries.getRecentsFromUser).toHaveBeenCalledWith(undefined, [10], [], 10, true)
   })
 
   it('should only load share recents when user only has shares permission', async () => {
@@ -117,7 +118,7 @@ describe(FilesRecents.name, () => {
 
     expect(spacesQueries.spaceIdentities).not.toHaveBeenCalled()
     expect(sharesQueries.shareIdentities).toHaveBeenCalledWith(7, 0)
-    expect(filesQueries.getRecentsFromUser).toHaveBeenCalledWith(undefined, [], [20], 10)
+    expect(filesQueries.getRecentsFromUser).toHaveBeenCalledWith(undefined, [], [20], 10, true)
   })
 
   it('should not load any recents source without matching permission', async () => {
@@ -125,7 +126,7 @@ describe(FilesRecents.name, () => {
 
     expect(spacesQueries.spaceIdentities).not.toHaveBeenCalled()
     expect(sharesQueries.shareIdentities).not.toHaveBeenCalled()
-    expect(filesQueries.getRecentsFromUser).toHaveBeenCalledWith(undefined, [], [], 10)
+    expect(filesQueries.getRecentsFromUser).toHaveBeenCalledWith(undefined, [], [], 10, true)
   })
 
   it('should ignore updateRecents when browsing trash repository', async () => {

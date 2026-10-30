@@ -29,7 +29,7 @@ import { SpaceEnv } from './models/space-env.model.js'
 import { SpaceProps } from './models/space-props.model.js'
 import { SpacesBrowser } from './services/spaces-browser.service.js'
 import { SpacesManager } from './services/spaces-manager.service.js'
-import { optionalDeleteSpaceBodySchema, showFilesQuerySchema } from './spaces.schema.js'
+import { includeHiddenQuerySchema, optionalDeleteSpaceBodySchema, showFilesQuerySchema } from './spaces.schema.js'
 
 @Controller(SPACES_ROUTE.BASE)
 @UserHaveRole(USER_ROLE.USER)
@@ -45,8 +45,12 @@ export class SpacesController {
   @UserHaveRole() // override: all roles
   @UserHavePermission() // override: checked in space guard
   @UseGuards(SpaceGuard)
-  async browseSpace(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<SpaceFiles> {
-    return this.spacesBrowser.browse(user, space, true)
+  async browseSpace(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Query('includeHidden', { schema: includeHiddenQuerySchema }) includeHidden = false
+  ): Promise<SpaceFiles> {
+    return this.spacesBrowser.browse(user, space, true, includeHidden)
   }
 
   @Get(`${SPACES_ROUTE.TREE}/${SPACES_BASE_ROUTE}`)

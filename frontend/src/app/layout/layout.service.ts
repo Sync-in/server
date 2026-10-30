@@ -153,14 +153,15 @@ export class LayoutService {
 
   openDialog(dialog: any, size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full', componentState: any = {}, override: ModalOptions = {}): BsModalRef {
     const dialogClass = `modal-${size || 'sm'} modal-primary`
-    if (componentState.id && this.windows.getValue().find((w: AppWindow) => w.id === componentState.id)) {
-      this.restoreDialog(componentState.id)
-      return this.modalRefs.get(componentState.id)
+    const modalRef = componentState.id ? this.modalRefs.get(componentState.id) : null
+    if (modalRef && typeof dialog === 'function' && modalRef.content instanceof dialog) {
+      if (this.activateDialog(componentState.id)) return modalRef
+      this.modalRefs.delete(componentState.id)
     }
     const state: ModalOptions = Object.assign(componentState, { ...this.modalOptions, ...override }, { class: dialogClass })
-    const modalRef = this.bsModal.show(dialog, state)
-    this.modalRefs.set(modalRef.id, modalRef)
-    return modalRef
+    const createdModalRef = this.bsModal.show(dialog, state)
+    this.modalRefs.set(createdModalRef.id, createdModalRef)
+    return createdModalRef
   }
 
   minimizeDialog(modalId: any, element: { name: string; mimeUrl: string }): ModalComponent {
@@ -178,12 +179,7 @@ export class LayoutService {
   }
 
   restoreDialog(modalId: any): ModalComponent {
-    const modal = this.getModalComponent(modalId)
-    if (modal) {
-      this.openModalWithEffect(modal)
-      this.windows.next(this.windows.getValue().filter((m: AppWindow) => m.id !== modalId))
-    }
-    return modal
+    return this.activateDialog(modalId)
   }
 
   isDialogActive(id: number | string): boolean {
@@ -298,7 +294,7 @@ export class LayoutService {
     if (this.electron.enabled) {
       this.electron.openUrl(url)
     } else {
-      window.open(url, '_blank')
+      window.open(url, '_blank', 'noopener,noreferrer')
     }
   }
 
@@ -331,6 +327,29 @@ export class LayoutService {
     setTimeout(() => {
       this.bsModal['_renderer'].addClass(modal['instance']._element.nativeElement, 'show')
     }, 100)
+  }
+
+  private activateDialog(modalId: number | string): ModalComponent {
+    const modal = this.getModalComponent(modalId)
+    if (!modal) return null
+
+    const element = modal['instance']._element.nativeElement as HTMLElement
+    if (this.windows.getValue().some((window) => window.id === modalId)) {
+      this.openModalWithEffect(modal)
+      this.windows.next(this.windows.getValue().filter((window) => window.id !== modalId))
+    }
+    const modalRef = this.modalRefs.get(modalId)
+    if (modalRef) {
+      this.modalRefs.delete(modalId)
+      this.modalRefs.set(modalId, modalRef)
+    }
+    if (element.parentElement) {
+      this.bsModal['_renderer'].appendChild(element.parentElement, element)
+    }
+    queueMicrotask(() => {
+      if (element.isConnected) element.focus({ preventScroll: true })
+    })
+    return modal
   }
 
   private closeModalWithEffect(modal: ModalComponent, hide = false) {

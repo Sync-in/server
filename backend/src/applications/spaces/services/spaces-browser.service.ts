@@ -31,7 +31,7 @@ export class SpacesBrowser {
     private readonly filesRecents: FilesRecents
   ) {}
 
-  async browse(user: UserModel, space: SpaceEnv, withDetails = false): Promise<SpaceFiles> {
+  async browse(user: UserModel, space: SpaceEnv, withDetails = false, includeHidden = false): Promise<SpaceFiles> {
     const details: SpaceBrowseDetails = withDetails
       ? {
           syncs: user.isUser,
@@ -50,7 +50,7 @@ export class SpacesBrowser {
       this.parseRootFiles(user, space, details)
     ])
     this.updateDBFiles(user, space, dbFiles, fsFiles, details)
-    const showHiddenFiles = user.preferences.showHiddenFiles
+    const showHiddenFiles = user.preferences.showHiddenFiles || includeHidden
     const visibleFSFiles = showHiddenFiles ? fsFiles : fsFiles.filter((file) => !file.name.startsWith('.'))
     const visibleRootFiles = rootFiles.filter((file) => !isInternalTemporaryEntry(file.name) && (showHiddenFiles || !file.name.startsWith('.')))
     if (space.inSharesList) {
@@ -64,10 +64,12 @@ export class SpacesBrowser {
       // locks were removed when files were moved to the trash, no need to parse locks
       await this.enrichWithLocks(space, spaceFiles.files)
     }
-    // update recents files
-    this.filesRecents
-      .updateRecents(user, space, spaceFiles.files)
-      .catch((e: Error) => this.logger.error({ tag: this.browse.name, msg: toErrorMessage(e) }))
+    // A forced hidden-file lookup may expose entries outside the user's preference and must not update their recents snapshot.
+    if (user.preferences.showHiddenFiles || !includeHidden) {
+      this.filesRecents
+        .updateRecents(user, space, spaceFiles.files)
+        .catch((e: Error) => this.logger.error({ tag: this.browse.name, msg: toErrorMessage(e) }))
+    }
     return spaceFiles
   }
 

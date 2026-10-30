@@ -24,12 +24,17 @@ export class AuthManager {
   constructor(private readonly jwt: JwtService) {}
 
   async getTokens(user: UserModel, refresh = false): Promise<TokenResponseDto> {
+    if (user.isLink) {
+      throw new HttpException('Account is not allowed', HttpStatus.FORBIDDEN)
+    }
     const currentTime = currentTimeStamp()
     if (refresh && user.exp! < currentTime) {
       this.logger.error({ tag: this.getTokens.name, msg: `token refresh has incorrect expiration : *${user.login}*` })
       throw new HttpException('Token has expired', HttpStatus.FORBIDDEN)
     }
-    const accessExpiration = convertHumanTimeToSeconds(configuration.auth.token.access.expiration)
+    const configuredAccessExpiration = convertHumanTimeToSeconds(configuration.auth.token.access.expiration)
+    // on refresh the access token must not outlive the remaining refresh lifetime (the session boundary)
+    const accessExpiration = refresh ? Math.min(configuredAccessExpiration, user.exp! - currentTime) : configuredAccessExpiration
     const refreshExpiration = refresh ? user.exp! - currentTime : convertHumanTimeToSeconds(configuration.auth.token.refresh.expiration)
     return {
       [TOKEN_TYPE.ACCESS]: await this.jwtSign(user, TOKEN_TYPE.ACCESS, accessExpiration),
@@ -40,23 +45,38 @@ export class AuthManager {
   }
 
   async setCookies(user: UserModel, res: FastifyReply, init2FaVerify: true, authSession?: AUTH_SESSION): Promise<LoginVerify2FaDto>
-  async setCookies(user: UserModel, res: FastifyReply, init2FaVerify?: false, authSession?: AUTH_SESSION): Promise<LoginResponseDto>
+  async setCookies(
+    user: UserModel,
+    res: FastifyReply,
+    init2FaVerify?: false,
+    authSession?: AUTH_SESSION,
+    expiresAt?: Date | null
+  ): Promise<LoginResponseDto>
   async setCookies(
     user: UserModel,
     res: FastifyReply,
     init2FaVerify = false,
-    authSession: AUTH_SESSION = AUTH_SESSION.LOCAL
+    authSession: AUTH_SESSION = AUTH_SESSION.LOCAL,
+    expiresAt: Date | null = null
   ): Promise<LoginResponseDto | LoginVerify2FaDto> {
+    const currentTime = currentTimeStamp()
+    // A link session carries an expiration date: no token or cookie may outlive it.
+    const remainingSessionLifetime = expiresAt ? currentTimeStamp(expiresAt) - currentTime : null
+    if (remainingSessionLifetime !== null && remainingSessionLifetime <= 0) {
+      throw new HttpException('Token has expired', HttpStatus.FORBIDDEN)
+    }
     // If `verify2Fa` is true, it sets the cookies and response required for valid 2FA authentication.
     const verify2Fa = init2FaVerify && configuration.auth.mfa.totp.enabled && user.twoFaEnabled
     user.authSession = authSession
     const response = verify2Fa ? new LoginVerify2FaDto(serverConfig) : new LoginResponseDto(user, serverConfig)
-    const currentTime = currentTimeStamp()
     const csrfToken: string = crypto.randomUUID()
     const tokenTypes = verify2Fa ? TOKEN_2FA_TYPES : TOKEN_TYPES
     for (const type of tokenTypes) {
       const isCSRFToken = type === TOKEN_TYPE.CSRF || type === TOKEN_TYPE.CSRF_2FA
-      const tokenExpiration = convertHumanTimeToSeconds(configuration.auth.token[type].expiration)
+      let tokenExpiration = convertHumanTimeToSeconds(configuration.auth.token[type].expiration)
+      if (remainingSessionLifetime !== null) {
+        tokenExpiration = Math.min(tokenExpiration, remainingSessionLifetime)
+      }
       let cookieValue: string
       if (isCSRFToken) {
         cookieValue = csrfToken
@@ -88,7 +108,8 @@ export class AuthManager {
       throw new HttpException('Token has expired', HttpStatus.FORBIDDEN)
     }
     const refreshTokenExpiration = user.exp - currentTime
-    const accessTokenExpiration = convertHumanTimeToSeconds(configuration.auth.token[TOKEN_TYPE.ACCESS].expiration)
+    // cap the access token to the remaining refresh lifetime so the whole session is bounded by the refresh token
+    const accessTokenExpiration = Math.min(convertHumanTimeToSeconds(configuration.auth.token[TOKEN_TYPE.ACCESS].expiration), refreshTokenExpiration)
     const csrfTokenExpiration = Math.max(accessTokenExpiration, refreshTokenExpiration)
     const csrfToken: string = crypto.randomUUID()
     for (const type of TOKEN_TYPES) {

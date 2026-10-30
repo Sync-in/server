@@ -163,6 +163,29 @@ describe(SpacesBrowser.name, () => {
     expect(deleteDBFile).not.toHaveBeenCalled()
   })
 
+  it('includes hidden files when explicitly requested', async () => {
+    const user = { id: 1, isUser: true, isLink: false, preferences: { showHiddenFiles: false } } as UserModel
+    const space = {
+      alias: 'personal',
+      name: 'Personal',
+      inSharesList: false,
+      inTrashRepository: false,
+      browsePermissions: vi.fn().mockReturnValue('a:m')
+    } as unknown as SpaceEnv
+    const hiddenFSFile = { name: '.hidden', path: '', size: 1 }
+    const hiddenDBFile = { id: 1, name: '.hidden', path: '', size: 1 }
+    vi.spyOn(spacesBrowserService as any, 'parseFS').mockResolvedValue([hiddenFSFile])
+    vi.spyOn(spacesBrowserService as any, 'parseDB').mockResolvedValue([hiddenDBFile])
+    vi.spyOn(spacesBrowserService as any, 'parseRootFiles').mockResolvedValue([])
+    vi.spyOn((spacesBrowserService as any).filesQueries, 'compareAndUpdateFileProps').mockResolvedValue(undefined)
+    const updateRecents = vi.spyOn((spacesBrowserService as any).filesRecents, 'updateRecents').mockResolvedValue(undefined)
+
+    const result = await spacesBrowserService.browse(user, space, false, true)
+
+    expect(result.files).toEqual([expect.objectContaining({ name: '.hidden' })])
+    expect(updateRecents).not.toHaveBeenCalled()
+  })
+
   it('removes stale database metadata for a hidden file missing from the filesystem', async () => {
     const user = { id: 1, isUser: true, isLink: false, preferences: { showHiddenFiles: false } } as UserModel
     const space = {

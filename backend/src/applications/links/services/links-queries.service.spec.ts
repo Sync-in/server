@@ -15,7 +15,7 @@ describe(LinksQueries.name, () => {
     service = new LinksQueries({ update } as any, {} as Cache)
   })
 
-  it('atomically consumes an access only while the current counter is below the limit', async () => {
+  it('atomically consumes an access only while the link is valid and the current counter is below the limit', async () => {
     await expect(service.consumeLinkAccess('uuid-123')).resolves.toBe(true)
     expect(updateLimit).toHaveBeenCalledWith(1)
 
@@ -23,6 +23,8 @@ describe(LinksQueries.name, () => {
     expect(condition.sql).toContain('`links`.`uuid` = ?')
     expect(condition.sql).toContain('`links`.`limitAccess` = ?')
     expect(condition.sql).toContain('`links`.`nbAccess` < `links`.`limitAccess`')
+    expect(condition.sql).toContain('`links`.`expiresAt` is null')
+    expect(condition.sql).toContain('`links`.`expiresAt` > CURRENT_TIMESTAMP')
     expect(condition.params).toEqual(['uuid-123', 0])
 
     updateLimit.mockResolvedValueOnce([{ affectedRows: 0 }])

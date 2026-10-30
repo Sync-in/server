@@ -62,7 +62,8 @@ export class AuthController {
   @Post(AUTH_ROUTE.TOKEN)
   @Header('Cache-Control', 'no-store')
   @AuthTokenSkip()
-  @UseGuards(AuthRateLimitGuard, AuthLocalGuard, AuthTwoFaVerificationWithoutPasswordGuard)
+  @UseGuards(AuthRateLimitGuard, AuthLocalGuard, UserRolesGuard, AuthTwoFaVerificationWithoutPasswordGuard)
+  @UserHaveRole(USER_ROLE.GUEST)
   token(@GetUser() user: UserModel): Promise<TokenResponseDto> {
     return this.authManager.getTokens(user)
   }
@@ -70,7 +71,8 @@ export class AuthController {
   @Post(AUTH_ROUTE.TOKEN_REFRESH)
   @Header('Cache-Control', 'no-store')
   @AuthTokenSkip()
-  @UseGuards(AuthTokenRefreshGuard)
+  @UseGuards(AuthTokenRefreshGuard, UserRolesGuard)
+  @UserHaveRole(USER_ROLE.GUEST)
   refreshToken(@GetUser() user: UserModel): Promise<TokenResponseDto> {
     return this.authManager.getTokens(user, true)
   }

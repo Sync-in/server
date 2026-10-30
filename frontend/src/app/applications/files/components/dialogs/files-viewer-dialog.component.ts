@@ -52,7 +52,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   protected directoryImages = computed(() => this.directoryFiles.filter((file) => file.isImage))
   protected canToggleViewer = false
   protected readonly store = inject(StoreService)
-  private openedFile: { id: string | number; name: string; mimeUrl: string }
+  private openedFile: { path: string; name: string; mimeUrl: string }
   private readonly layout = inject(LayoutService)
   private readonly subscription: Subscription = this.layout.resizeEvent.subscribe(() => this.onResize())
   private readonly offsetTop = 42
@@ -61,7 +61,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
     this.canToggleViewer = this.isWriteable && !!this.currentFile?.isEditable && this.hookedShortMime === SHORT_MIME.PDF
     this.activeViewer.set(this.hookedShortMime)
     this.isReadonly.set(this.hookedShortMime === SHORT_MIME.PDF || this.mode === FILE_MODE.VIEW || !this.currentFile.isEditable)
-    this.openedFile = { id: this.currentFile.id, name: this.currentFile.name, mimeUrl: this.currentFile.mimeUrl }
+    this.openedFile = { path: this.currentFile.path, name: this.currentFile.name, mimeUrl: this.currentFile.mimeUrl }
     this.onResize()
   }
 
@@ -78,12 +78,12 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
       // Force the next state change
       setTimeout(() => this.modalClosing.set(false), 1000)
     } else {
-      this.layout.closeDialog(null, this.openedFile.id)
+      this.layout.closeDialog(null, this.openedFile.path)
     }
   }
 
   onMinimize() {
-    this.layout.minimizeDialog(this.openedFile.id, { name: this.openedFile.name, mimeUrl: this.openedFile.mimeUrl })
+    this.layout.minimizeDialog(this.openedFile.path, { name: this.openedFile.name, mimeUrl: this.openedFile.mimeUrl })
   }
 
   @HostListener('window:beforeunload', ['$event'])

@@ -1,5 +1,5 @@
 import { CodeEditor } from '@acrodata/code-editor'
-import { Component, effect, ElementRef, HostListener, OnDestroy, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
+import { Component, effect, ElementRef, HostListener, inject, OnDestroy, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
 import { LanguageDescription } from '@codemirror/language'
@@ -34,6 +34,10 @@ import {
   LucideUnderline,
   LucideUndo
 } from '@lucide/angular'
+import { API_SPACES_BROWSE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
+import { SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
+import type { SpaceFiles } from '@sync-in-server/backend/src/applications/spaces/interfaces/space-files.interface'
+import { encodeUrl, intersectPermissions } from '@sync-in-server/backend/src/common/shared'
 import { Editor, Extension, isNodeSelection, type Range } from '@tiptap/core'
 import type { SetImageOptions } from '@tiptap/extension-image'
 import { TaskItem } from '@tiptap/extension-list'
@@ -46,13 +50,19 @@ import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { TiptapEditorDirective } from 'ngx-tiptap'
+import { firstValueFrom } from 'rxjs'
+import { StoreService } from '../../../../store/store.service'
 import type { FileViewerSearchAdapter } from '../../interfaces/file-viewer-search.interface'
+import { SHORT_MIME } from '../../files.constants'
+import { FileModel } from '../../models/file.model'
 import { FilesViewerEditableBase } from './files-viewer-editable-base'
 import { CodeMirrorFileViewerSearchAdapter } from './components/files-viewer-codemirror-search-adapter'
 import { FilesViewerSearchComponent } from './components/files-viewer-search.component'
 import { TipTapFileViewerSearchAdapter } from './components/files-viewer-tiptap-search-adapter'
 import { FilesViewerUnsavedChangesComponent } from './components/files-viewer-unsaved-changes.component'
+import type { MarkdownLinkTarget } from './interfaces/markdown.interface'
 import { isAllowedAbsoluteImageSource, MarkdownImage, resolveMarkdownRelativeImageUrl } from './utils/markdown-image.utils'
+import { markdownHeadingSlug, MarkdownLink, resolveMarkdownLink } from './utils/markdown-link.utils'
 
 type MarkdownHeadingLevel = 1 | 2 | 3 | 4
 type MarkdownInlineMark = 'bold' | 'code' | 'italic' | 'strike' | 'underline'
@@ -91,6 +101,9 @@ const ExitInlineCodeOnEnter = Extension.create({
   templateUrl: 'files-viewer-markdown.component.html'
 })
 export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implements OnInit, OnDestroy {
+  private readonly store = inject(StoreService)
+  private openingLink = false
+  private headingRafId: number | null = null
   protected isSourceMode = signal(false)
   protected lineWrapping = signal(false)
   protected sourceContent = ''
@@ -101,10 +114,9 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
   protected readonly editor = new Editor({
     extensions: [
       StarterKit.configure({
-        link: {
-          openOnClick: false
-        }
+        link: false
       }),
+      MarkdownLink.configure({ openOnClick: false }),
       ExitInlineCodeOnEnter,
       TaskList,
       TaskItem.configure({
@@ -126,6 +138,9 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
       Markdown,
       this.visualSearchAdapter.extension
     ],
+    editorProps: {
+      handleDOMEvents: { click: (_view, event) => this.followLink(event) }
+    },
     editable: false,
     content: '',
     contentType: 'markdown',
@@ -189,7 +204,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     if (!this.isActiveDialog()) return
     if (event.key === 'Escape' || event.key === 'Esc') {
       event.preventDefault()
-      event.stopPropagation()
+      event.stopImmediatePropagation()
       if (this.isSearchPanelOpen()) {
         this.toggleSearch()
       } else if (this.warnOnUnsavedChanges()) {
@@ -227,6 +242,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     if (this.focusRafId !== null) {
       cancelAnimationFrame(this.focusRafId)
     }
+    if (this.headingRafId !== null) cancelAnimationFrame(this.headingRafId)
     this.editor.destroy()
   }
 
@@ -410,17 +426,16 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
 
   protected insertImageFromRelativePath() {
     this.runEditorCommand(() => {
-      const file = this.file()
       const imageAttributes = this.editor.getAttributes('image')
       const previousSrc = imageAttributes.src as string | undefined
       const src = window
         .prompt(
           this.layout.translateString('Image from relative path'),
-          previousSrc && resolveMarkdownRelativeImageUrl(file, previousSrc) ? previousSrc : 'images/'
+          previousSrc && resolveMarkdownRelativeImageUrl(this.file(), previousSrc) ? previousSrc : 'images/'
         )
         ?.trim()
       if (!src) return false
-      if (!resolveMarkdownRelativeImageUrl(file, src)) {
+      if (!resolveMarkdownRelativeImageUrl(this.file(), src)) {
         this.layout.sendNotification('error', 'Unable to insert image', 'Invalid relative image path')
         return false
       }
@@ -466,7 +481,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
   }
 
   protected isSelectionActive(name: string, attributes?: object): boolean {
-    return this.editor.isFocused && this.editor.isActive(name, attributes)
+    return this.editor.isActive(name, attributes)
   }
 
   protected canEditVisual(): boolean {
@@ -482,7 +497,13 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     this.sourceContent = content
     this.setMarkdownContent(content)
     this.isModified.set(false)
-    this.scheduleEditorFocus('visual', 'start')
+    const fragment = this.file().markdownFragment || ''
+    if (fragment) {
+      this.scrollToHeading(fragment)
+    } else {
+      this.scheduleEditorFocus('visual', 'start')
+    }
+    delete this.file().markdownFragment
   }
 
   protected override onContentSaved(content: string) {
@@ -491,6 +512,86 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
 
   protected override onSaveFinished(_success: boolean) {
     this.scheduleEditorFocus(this.isSourceMode() ? 'source' : 'visual', undefined, true)
+  }
+
+  private followLink(event: MouseEvent): boolean {
+    const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null
+    if (!anchor) return false
+    event.preventDefault()
+    const href = anchor.getAttribute('href') || ''
+    if (/^(https?:|mailto:)/i.test(href)) {
+      this.layout.openUrl(href)
+      return true
+    }
+    const target = resolveMarkdownLink(this.file(), href)
+    if (!target) {
+      this.layout.sendNotification('warning', 'Unable to open document', href)
+      return true
+    }
+    if (target.path === this.file().path) {
+      this.scrollToHeading(target.fragment)
+    } else if (!this.openingLink) {
+      this.openingLink = true
+      this.openMarkdownDocument(target).finally(() => (this.openingLink = false))
+    }
+    return true
+  }
+
+  private async openMarkdownDocument(target: MarkdownLinkTarget): Promise<void> {
+    try {
+      const pathSegments = target.path.split('/')
+      const directory = pathSegments.slice(0, -1).join('/')
+      const inSharesRepository = pathSegments[0] === SPACE_REPOSITORY.SHARES
+      const base = inSharesRepository && pathSegments.length === 2 ? SPACE_REPOSITORY.SHARES : pathSegments.slice(0, 2).join('/')
+      // A visible root alias can point to a hidden filesystem entry.
+      const listing = await firstValueFrom(
+        this.http.get<SpaceFiles>(`${API_SPACES_BROWSE}/${encodeUrl(directory)}`, {
+          params: { includeHidden: true }
+        })
+      )
+      const files = listing.files.map((props) => new FileModel(props, base, inSharesRepository, this.store.server().files.editors))
+      const file = files.find((candidate) => candidate.path === target.path && !candidate.isDir && candidate.shortMime === SHORT_MIME.MARKDOWN)
+      if (!file) throw new Error('Document not found')
+      let permissions = listing.permissions
+      if (pathSegments[0] === SPACE_REPOSITORY.TRASH) {
+        permissions = ''
+      } else if (inSharesRepository && pathSegments.length === 2) {
+        permissions = file.root?.permissions || ''
+      } else if (file.root) {
+        permissions = intersectPermissions(permissions, file.root.permissions)
+      }
+      file.markdownFragment = target.fragment
+      await this.filesService.openViewerDialog(file, files, permissions)
+    } catch (error) {
+      this.filesService.sendOpenDocumentError(target.path.split('/').pop() || target.path, error)
+    }
+  }
+
+  private scrollToHeading(fragment: string) {
+    if (this.headingRafId !== null) {
+      cancelAnimationFrame(this.headingRafId)
+      this.headingRafId = null
+    }
+    if (this.editor.isDestroyed) return
+    const target = fragment.toLowerCase()
+    this.headingRafId = requestAnimationFrame(() => {
+      this.headingRafId = null
+      if (this.editor.isDestroyed || !this.editor.view.dom.isConnected) return
+      if (!target) {
+        this.editor.view.dom.parentElement?.scrollTo({ top: 0 })
+        return
+      }
+      const counts = new Map<string, number>()
+      const headings = Array.from((this.editor.view.dom as HTMLElement).querySelectorAll('h1,h2,h3,h4,h5,h6'))
+      const heading = headings.find((element) => {
+        const text = element.textContent || ''
+        const slug = markdownHeadingSlug(text)
+        const occurrence = counts.get(slug) || 0
+        counts.set(slug, occurrence + 1)
+        return text.toLowerCase() === target || `${slug}${occurrence ? `-${occurrence}` : ''}` === target
+      })
+      heading?.scrollIntoView({ block: 'start' })
+    })
   }
 
   private runEditorCommand(command: () => boolean) {

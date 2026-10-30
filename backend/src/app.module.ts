@@ -1,5 +1,5 @@
 import { HttpModule } from '@nestjs/axios'
-import { Module } from '@nestjs/common'
+import { Module, RequestMethod } from '@nestjs/common'
 import { LoggerModule } from 'nestjs-pino'
 import { USER_AGENT } from './app.constants.js'
 import { AppService } from './app.service.js'
@@ -20,7 +20,8 @@ import { SchedulerModule } from './infrastructure/scheduler/scheduler.module.js'
   imports: [
     LoggerModule.forRootAsync<FastifyLoggerRequest>({
       useFactory: async () => ({
-        pinoHttp: IS_TEST_ENV ? { level: 'silent' } : configLogger(configuration.logger)
+        pinoHttp: IS_TEST_ENV ? { level: 'silent' } : configLogger(configuration.logger),
+        forRoutes: [{ path: '{*splat}', method: RequestMethod.ALL }]
       })
     }),
     AvailabilityModule,

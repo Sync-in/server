@@ -1,6 +1,7 @@
 <div class="files-viewer-markdown" [style.height.px]="currentHeight()">
   <div (pointerdown)="hideTooltips()"
        class="app-top-menu app-top-menu-tool-bar files-markdown-toolbar"
+       [class.files-markdown-toolbar--source]="isSourceMode()"
        [attr.aria-label]="'Actions' | translate:locale.language"
        role="toolbar">
     <button

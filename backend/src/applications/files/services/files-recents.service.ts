@@ -32,7 +32,8 @@ export class FilesRecents {
       ownerId,
       spaces.map(({ id }) => id),
       shares.map(({ id }) => id),
-      limit
+      limit,
+      user.preferences.showHiddenFiles
     )
   }
 

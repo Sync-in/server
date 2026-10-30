@@ -182,6 +182,10 @@
       margin-top: 1rem;
     }
 
+    a[href] {
+      cursor: pointer;
+    }
+
     ul[data-type='taskList'] {
       padding-left: 0;
       list-style: none;
@@ -342,14 +346,47 @@
 
   @media (max-width: 767.98px) {
     .files-markdown-toolbar {
-      flex-wrap: wrap !important;
+      display: grid;
+      grid-template-columns: repeat(9, minmax(0, 1fr));
+      grid-auto-rows: minmax(2.25rem, auto);
+      align-items: center;
+      gap: 0.125rem 0;
       height: auto;
       min-height: 40px;
+      padding: 0.125rem 0.5rem;
+
+      &.files-markdown-toolbar--source {
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+      }
+
+      .btn,
+      .btn-group {
+        width: 100%;
+        max-width: 2.25rem;
+        justify-self: center;
+      }
+
+      .btn {
+        min-width: 0;
+        min-height: 2.25rem;
+        padding-inline: 0;
+      }
     }
 
     .files-markdown-toolbar-group,
     .files-markdown-mode-group {
       display: contents;
+    }
+
+    .files-markdown-toolbar-separator,
+    .files-markdown-mode-separator {
+      display: none;
+    }
+  }
+
+  @media (max-width: 359.98px) {
+    .files-markdown-toolbar:not(.files-markdown-toolbar--source) {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
     }
   }
 }

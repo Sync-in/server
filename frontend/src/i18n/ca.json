@@ -216,6 +216,7 @@
   "Unable to update notification preference": "No es pot actualitzar la preferència de notificacions",
   "Unable to update full-text search preference": "No es pot actualitzar la preferència de cerca de text complet",
   "Unable to open document": "No es pot obrir el document",
+  "Document not found": "Document no trobat",
   "No preview available for this file": "No hi ha cap vista prèvia disponible per a aquest fitxer",
   "Click to download": "Feu clic per descarregar",
   "Unable to save document": "No es pot desar el document",

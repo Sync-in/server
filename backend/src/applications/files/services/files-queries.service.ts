@@ -1,6 +1,6 @@
 import { toErrorMessage } from '../../../common/errors.js'
 import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common'
-import { and, desc, eq, getTableColumns, inArray, isNotNull, isNull, or, sql, SQL } from 'drizzle-orm'
+import { and, desc, eq, getTableColumns, inArray, isNotNull, isNull, notLike, or, sql, SQL } from 'drizzle-orm'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import { type DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
 import { concatDistinctObjectsInArray, convertToWhere, dbCheckAffectedRows, dbGetInsertedId } from '../../../infrastructure/database/utils.js'
@@ -287,7 +287,13 @@ export class FilesQueries {
     }
   }
 
-  getRecentsFromUser(userId: number | undefined, spaceIds: number[], shareIds: number[], limit: number): Promise<FileRecent[]> {
+  getRecentsFromUser(
+    userId: number | undefined,
+    spaceIds: number[],
+    shareIds: number[],
+    limit: number,
+    showHiddenFiles: boolean
+  ): Promise<FileRecent[]> {
     const recentsLimit = Math.min(limit, FILES_RECENTS_MAX_LIMIT)
     const where: SQL[] = [
       ...(userId !== undefined ? [eq(filesRecents.ownerId, userId)] : []),
@@ -312,7 +318,7 @@ export class FilesQueries {
       .from(filesRecents)
       .leftJoin(spaces, eq(spaces.id, filesRecents.spaceId))
       .leftJoin(shares, eq(shares.id, filesRecents.shareId))
-      .where(or(...where))
+      .where(showHiddenFiles ? or(...where) : and(or(...where), notLike(sql`CONCAT('/', ${filesRecents.path}, '/', ${filesRecents.name})`, '%/.%')))
       .groupBy(filesRecents.id)
       .orderBy(desc(filesRecents.mtime))
       .limit(recentsLimit) as Promise<FileRecent[]>
