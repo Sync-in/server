@@ -10,10 +10,10 @@ export async function copyMimesForProd() {
   const destDir = path.join(__dirname, '..', '..', 'dist', 'static', 'assets', 'mimes')
 
   try {
-    // Copy mimes directory in order to keep relative symlinks
+    // Materialize MIME symlinks so npm includes every icon in the package
     await fs.cp(srcDir, destDir, {
       recursive: true,
-      verbatimSymlinks: true
+      dereference: true
     })
     console.log('postbuild - mimes directory copied succesfully')
   } catch (err) {
