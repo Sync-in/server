@@ -2,7 +2,7 @@ import { afterNextRender, ChangeDetectorRef, Component, ElementRef, inject, OnDe
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { RouterLink, RouterLinkActive } from '@angular/router'
 import type { LucideIcon } from '@lucide/angular'
-import { LucideChevronDown, LucideChevronRight, LucideDynamicIcon, LucideFolder } from '@lucide/angular'
+import { LucideChevronDown, LucideChevronRight, LucideCornerDownRight, LucideDynamicIcon, LucideFolder } from '@lucide/angular'
 import { type BsDropdownDirective, BsDropdownModule } from 'ngx-bootstrap/dropdown'
 import { LayoutService } from '../layout.service'
 import { BreadCrumbUrl } from './breadcrumb.interfaces'
@@ -16,11 +16,11 @@ export class BreadcrumbComponent implements OnDestroy {
   @ViewChild('breadcrumbContent') private breadcrumbContent: ElementRef<HTMLElement>
   @ViewChild('breadcrumbMeasure') private breadcrumbMeasure: ElementRef<HTMLElement>
   @ViewChild('pathToggle') private pathToggle: ElementRef<HTMLButtonElement>
-  protected readonly icons = { LucideChevronDown, LucideChevronRight, LucideFolder }
+  protected readonly icons = { LucideChevronDown, LucideChevronRight, LucideCornerDownRight, LucideFolder }
   protected breadcrumbIcon: LucideIcon = null
+  protected fullPathLabels: string[] = []
   protected isOverflowing = false
   protected levels: { link: string[] | string; title: string }[] = []
-  protected pathLevels = this.levels
   private readonly cdr = inject(ChangeDetectorRef)
   private readonly layout = inject(LayoutService)
   private menuFocusFrame: number = null
@@ -87,8 +87,12 @@ export class BreadcrumbComponent implements OnDestroy {
         this.levels.push({ link: index === 0 && firstLink ? firstLink : link, title: sanitized_item })
       }
     }
-    // The compact menu lists the current directory first, then walks back to the root.
-    this.pathLevels = [...this.levels].reverse()
+    this.fullPathLabels = this.levels.map((_, index) =>
+      this.levels
+        .slice(0, index + 1)
+        .map(({ title }) => title)
+        .join(' / ')
+    )
     this.scheduleOverflowMeasure()
   }
 

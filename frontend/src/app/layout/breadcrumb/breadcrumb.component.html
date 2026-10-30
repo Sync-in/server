@@ -34,28 +34,45 @@
               (keydown)="onPathMenuKeydown($event, pathDropdown)"
               class="dropdown-menu dropdown-menu-end breadcrumb-path-menu"
               role="menu">
-              @for (pathItem of pathLevels; track $index; let isCurrent = $first, isRoot = $last) {
-                <li role="none">
+              @for (pathItem of levels; track $index; let isCurrent = $last, isRoot = $first, pathIndex = $index) {
+                <li
+                  [style.--breadcrumb-path-indent]="((pathIndex > 8 ? 8 : pathIndex) * 0.25) + 'rem'"
+                  class="breadcrumb-path-level"
+                  role="none">
                   @if (isCurrent) {
                     <button
                       (click)="preventCurrentNavigation($event)"
-                      [attr.title]="pathItem.title"
+                      [attr.aria-label]="fullPathLabels[pathIndex]"
+                      [attr.title]="fullPathLabels[pathIndex]"
                       aria-current="page"
                       aria-disabled="true"
-                      class="dropdown-item active breadcrumb-path-item breadcrumb-path-item--current"
+                      class="dropdown-item breadcrumb-path-item breadcrumb-path-item--current"
                       role="menuitem"
                       tabindex="-1"
                       type="button">
+                      @if (!isRoot) {
+                        <svg
+                          aria-hidden="true"
+                          [lucideIcon]="icons.LucideCornerDownRight"
+                          class="breadcrumb-path-branch"></svg>
+                      }
                       <svg [lucideIcon]="icons.LucideFolder"></svg>
                       <span class="breadcrumb-path-label">{{ pathItem.title }}</span>
                     </button>
                   } @else {
                     <a
                       (click)="pathDropdown.hide()"
-                      [attr.title]="pathItem.title"
+                      [attr.aria-label]="fullPathLabels[pathIndex]"
+                      [attr.title]="fullPathLabels[pathIndex]"
                       [routerLink]="pathItem.link"
                       class="dropdown-item breadcrumb-path-item"
                       role="menuitem">
+                      @if (!isRoot) {
+                        <svg
+                          aria-hidden="true"
+                          [lucideIcon]="icons.LucideCornerDownRight"
+                          class="breadcrumb-path-branch"></svg>
+                      }
                       <svg [lucideIcon]="isRoot && breadcrumbIcon ? breadcrumbIcon : icons.LucideFolder"></svg>
                       <span class="breadcrumb-path-label">{{ pathItem.title }}</span>
                     </a>
