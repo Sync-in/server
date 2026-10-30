@@ -145,8 +145,8 @@ access.
 ## Session and expiration behavior
 
 Link sessions use the standard authentication cookies. With the default configuration, the access token lasts 15 minutes and the refresh token has
-a fixed four-hour lifetime. The normal login endpoint rejects `LINK` users, but the refresh endpoint accepts an existing valid link refresh token.
-Token refresh does not consume another link access.
+a fixed four-hour lifetime. The normal login and bearer-token endpoints reject `LINK` users, but `POST /api/auth/refresh` accepts an existing valid
+link refresh cookie. `POST /api/auth/token/refresh` does not issue bearer tokens to `LINK` users. Cookie refresh does not consume another link access.
 
 The public-link endpoints re-read the link and enforce `isActive`, `limitAccess`, and `expiresAt` on every call. Authenticated file, share, and space
 operations use the issued token and membership; they do not re-read the `links` row. Consequently:

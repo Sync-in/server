@@ -42,6 +42,7 @@
     "@tiptap/extension-task-list": "^3.25.0",
     "@tiptap/markdown": "^3.25.0",
     "@tiptap/starter-kit": "^3.25.0",
+    "@videojs/html": "^10.2.0",
     "angular-l10n": "^17.0.1",
     "codemirror": "^6.0.2",
     "dayjs": "^1.11.21",
@@ -52,7 +53,6 @@
     "ngx-tiptap": "^14.0.1",
     "ngx-toastr": "^20.0.5",
     "pdfjs-dist": "6.4.299",
-    "plyr": "^3.8.4",
     "rxjs": "^7.8.2",
     "tslib": "^2.7.0",
     "zone.js": "^0.15.1"
