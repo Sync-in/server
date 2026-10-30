@@ -216,6 +216,7 @@
   "Unable to update notification preference": "알림 설정을 업데이트할 수 없습니다",
   "Unable to update full-text search preference": "전문 검색 설정을 업데이트할 수 없습니다",
   "Unable to open document": "문서를 열 수 없습니다",
+  "Document not found": "문서를 찾을 수 없습니다",
   "No preview available for this file": "이 파일은 미리보기를 지원하지 않습니다",
   "Click to download": "클릭하여 다운로드",
   "Unable to save document": "문서를 저장할 수 없습니다",

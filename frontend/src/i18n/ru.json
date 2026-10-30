@@ -216,6 +216,7 @@
   "Unable to update notification preference": "Не удалось обновить настройки уведомлений",
   "Unable to update full-text search preference": "Не удалось обновить настройки полнотекстового поиска",
   "Unable to open document": "Не удалось открыть документ",
+  "Document not found": "Документ не найден",
   "No preview available for this file": "Предварительный просмотр этого файла недоступен",
   "Click to download": "Нажмите, чтобы скачать",
   "Unable to save document": "Не удалось сохранить документ",

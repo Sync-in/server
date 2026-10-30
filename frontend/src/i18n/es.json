@@ -216,6 +216,7 @@
   "Unable to update notification preference": "No se puede actualizar la preferencia de notificaciones",
   "Unable to update full-text search preference": "No se puede actualizar la preferencia de búsqueda de texto completo",
   "Unable to open document": "No se puede abrir el documento",
+  "Document not found": "Documento no encontrado",
   "No preview available for this file": "No hay una vista previa disponible para este archivo",
   "Click to download": "Haga clic para descargar",
   "Unable to save document": "No se puede guardar el documento",

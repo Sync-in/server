@@ -216,6 +216,7 @@
   "Unable to update notification preference": "通知設定を更新できません",
   "Unable to update full-text search preference": "フルテキスト検索設定を更新できません",
   "Unable to open document": "ドキュメントを開けません",
+  "Document not found": "ドキュメントが見つかりません",
   "No preview available for this file": "このファイルのプレビューは利用できません",
   "Click to download": "クリックしてダウンロード",
   "Unable to save document": "ドキュメントを保存できません",
