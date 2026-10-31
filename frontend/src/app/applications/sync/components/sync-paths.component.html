@@ -181,7 +181,7 @@
       @for (s of store.clientSyncPaths() | searchFilter:navbarSearch.viewFilter(); track s.id) {
         <tr (click)="onSelect(s)"
             (contextmenu)="onSyncPathContextMenu($event, s)"
-            (dblclick)="openSettingsDialog()"
+            (appTap)="onSyncPathActivate(s)"
             [class.selected]="syncPathSelected && syncPathSelected.id === s.id">
           @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
             @if (th.value.show) {
@@ -203,7 +203,7 @@
                           </span>
                         }
                         @if (s.lastErrors.length) {
-                          <span (click)="showErrors(s)" class="badge bg-danger cursor-pointer ms-1">
+                          <span (click)="showErrors(s)" class="badge bg-danger cursor-pointer ms-1" data-app-tap-ignore>
                             <svg [lucideIcon]="icons.LucideTriangleAlert" class="me-1"></svg>
                             {{ s.lastErrors.length }}
                           </span>

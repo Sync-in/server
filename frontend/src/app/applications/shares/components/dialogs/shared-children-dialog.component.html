@@ -14,7 +14,10 @@
     <ng-template #recursiveList let-shares>
       @for (s of toShares(shares); track s.id) {
         <li>
-          <div (click)="onSelect(s)" (dblclick)="openChildShare()" [class.selected]="selected && selected.id === s.id" class="app-div-hovered">
+          <div (click)="onSelect(s)"
+               (appTap)="onShareActivate(s)"
+               [class.selected]="selected && selected.id === s.id"
+               class="app-div-hovered">
             <div class="me-auto text-truncate">
               <img [src]="s.mimeUrl" alt="" draggable="false" height="28" (error)="s.fallBackMimeUrl()">
               @if (s.isShareLink) {

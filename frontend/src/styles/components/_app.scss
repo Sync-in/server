@@ -175,7 +175,7 @@
       background-color: transparent;
     }
 
-    &.selected {
+    &:is(.selected, :active) {
       background-color: transparent;
     }
 
@@ -499,7 +499,7 @@ app-input-filter {
     background-color: transparent;
   }
 
-  &.selected {
+  &:is(.selected, :active) {
     background-color: transparent;
   }
 }

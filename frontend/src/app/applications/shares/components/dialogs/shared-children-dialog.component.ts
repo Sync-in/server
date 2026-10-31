@@ -8,6 +8,7 @@ import { BsModalRef } from 'ngx-bootstrap/modal'
 import { Observable } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
+import { TapDirective } from '../../../../common/directives/tap.directive'
 import { LayoutService } from '../../../../layout/layout.service'
 import { LinkDialogComponent } from '../../../links/components/dialogs/link-dialog.component'
 import { ShareLinkModel } from '../../../links/models/share-link.model'
@@ -25,7 +26,7 @@ import { ShareDialogComponent } from './share-dialog.component'
 @Component({
   selector: 'app-shared-children-dialog',
   templateUrl: 'shared-children-dialog.component.html',
-  imports: [AutoResizeDirective, NgTemplateOutlet, L10nTranslateDirective, LucideDynamicIcon, UserAvatarComponent],
+  imports: [AutoResizeDirective, NgTemplateOutlet, L10nTranslateDirective, LucideDynamicIcon, TapDirective, UserAvatarComponent],
   styleUrls: ['shared-children-dialog.component.scss']
 })
 export class SharedChildrenDialogComponent implements OnInit {
@@ -81,6 +82,11 @@ export class SharedChildrenDialogComponent implements OnInit {
 
   onSelect(share: ShareChildModel) {
     this.selected = share
+  }
+
+  onShareActivate(share: ShareChildModel) {
+    this.onSelect(share)
+    this.openChildShare()
   }
 
   openChildShare() {

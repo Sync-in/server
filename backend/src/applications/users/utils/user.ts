@@ -6,6 +6,7 @@ export function normalizeUserPreferences(preferences?: Partial<UserPreferences> 
     theme: preferences?.theme ?? USER_THEME.AUTO,
     editor: preferences?.editor ?? null,
     showHiddenFiles: preferences?.showHiddenFiles ?? true,
+    singleClickNavigation: preferences?.singleClickNavigation ?? false,
     useSystemNotifications: preferences?.useSystemNotifications ?? true,
     sidebarQuickAccessVisibility: preferences?.sidebarQuickAccessVisibility ?? USER_SIDEBAR_QUICK_ACCESS_VISIBILITY.BOTH,
     sidebarQuickAccessPosition: preferences?.sidebarQuickAccessPosition ?? USER_SIDEBAR_QUICK_ACCESS_POSITION.TOP

@@ -191,6 +191,11 @@ export class FavoritesComponent implements OnInit {
     this.selected = favorite
   }
 
+  onFavoriteActivate(favorite: FileFavoriteModel) {
+    this.onSelect(favorite)
+    this.goTo(favorite)
+  }
+
   onContextMenu(ev: Event) {
     ev.preventDefault()
     ev.stopPropagation()

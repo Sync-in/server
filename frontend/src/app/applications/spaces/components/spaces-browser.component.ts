@@ -436,10 +436,19 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.layout.openContextMenu(ev, this.fileContextMenu)
   }
 
-  onFileActivate(file: FileModel) {
+  onFileActivate(file: FileModel, sourceEvent?: PointerEvent) {
     const multiSelectionWasActive = this.showSelectionChecks
     const selectOnly = this.closeOpenContextMenu() || multiSelectionWasActive
     if (this.loading || !this.files.includes(file)) return
+
+    if (
+      sourceEvent &&
+      ((this.userService.user?.preferences?.singleClickNavigation ?? false) || sourceEvent.pointerType === 'touch') &&
+      (sourceEvent.ctrlKey || sourceEvent.metaKey || sourceEvent.shiftKey)
+    ) {
+      this.onSelect(sourceEvent, file)
+      return
+    }
 
     if (multiSelectionWasActive || this.selection[0] !== file) {
       this.setSelection([file], file, file)

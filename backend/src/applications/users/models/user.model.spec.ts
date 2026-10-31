@@ -2,12 +2,19 @@ import { USER_ROLE } from '../constants/user.js'
 import { UserModel } from './user.model.js'
 
 describe(UserModel.name, () => {
-  it('shows hidden files by default and preserves an explicit opt-out', () => {
+  it('normalizes file preferences and preserves explicit values', () => {
     const defaultUser = new UserModel({ id: 1, login: 'alice', role: USER_ROLE.USER })
-    const optOutUser = new UserModel({ id: 2, login: 'bob', role: USER_ROLE.USER, preferences: { showHiddenFiles: false } })
+    const customizedUser = new UserModel({
+      id: 2,
+      login: 'bob',
+      role: USER_ROLE.USER,
+      preferences: { showHiddenFiles: false, singleClickNavigation: true }
+    })
 
     expect(defaultUser.preferences.showHiddenFiles).toBe(true)
-    expect(optOutUser.preferences.showHiddenFiles).toBe(false)
+    expect(defaultUser.preferences.singleClickNavigation).toBe(false)
+    expect(customizedUser.preferences.showHiddenFiles).toBe(false)
+    expect(customizedUser.preferences.singleClickNavigation).toBe(true)
   })
 
   it('serializes only public user properties', () => {

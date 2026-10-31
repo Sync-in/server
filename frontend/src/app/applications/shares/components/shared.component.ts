@@ -183,6 +183,11 @@ export class SharedComponent implements OnInit {
     this.store.shareSelection.set(this.selected)
   }
 
+  onShareActivate(share: ShareFileModel) {
+    this.onSelect(share)
+    this.openShareDialog()
+  }
+
   openShareDialog(add = false) {
     if (add) {
       const modalRef: BsModalRef<ShareDialogComponent> = this.layout.openDialog(ShareDialogComponent, 'lg')

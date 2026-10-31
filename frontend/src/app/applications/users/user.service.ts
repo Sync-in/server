@@ -256,9 +256,11 @@ export class UserService {
               ? 'Unable to update editor preference'
               : patch.showHiddenFiles !== undefined
                 ? 'Unable to update hidden files preference'
-                : patch.sidebarQuickAccessVisibility !== undefined || patch.sidebarQuickAccessPosition !== undefined
-                  ? 'Unable to update sidebar preference'
-                  : 'Unable to update notification preference'
+                : patch.singleClickNavigation !== undefined
+                  ? 'Unable to update single-click preference'
+                  : patch.sidebarQuickAccessVisibility !== undefined || patch.sidebarQuickAccessPosition !== undefined
+                    ? 'Unable to update sidebar preference'
+                    : 'Unable to update notification preference'
         this.layout.sendNotification('error', 'Configuration', message, e)
         return EMPTY
       }),

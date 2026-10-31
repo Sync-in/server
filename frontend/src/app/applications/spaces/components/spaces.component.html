@@ -72,7 +72,7 @@
         @for (s of scrollView?.viewPortItems; track s.id) {
           <div (click)="onSelect(s)"
                (contextmenu)="onTargetContextMenu($event, s)"
-               (appTap)="browse(s)"
+               (appTap)="onSpaceActivate(s)"
                [class.disabled]="!s.enabled"
                [class.selected]="s.id === selected?.id"
                class="card">
@@ -98,13 +98,13 @@
               }
               <span class="label-bottom-right">
                 @if (s.counts?.roots) {
-                  <span (click)="openSpaceRootsDialog()" class="badge bg-primary cursor-pointer me-1">
+                  <span (click)="openSpaceRootsDialog()" class="badge bg-primary cursor-pointer me-1" data-app-tap-ignore>
                           <svg [lucideIcon]="icons.LucideAnchor"></svg>
                     {{ s.counts.roots }}
                         </span>
                 }
                 @if (s.role === SPACE_ROLE.IS_MANAGER && s.counts.shares) {
-                  <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
+                  <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1" data-app-tap-ignore>
                           <svg [lucideIcon]="icons.SHARES"></svg>
                     {{ s.counts.shares }}
                         </span>
@@ -151,7 +151,7 @@
         @for (s of scrollView?.viewPortItems; track s.id) {
           <tr (click)="onSelect(s)"
               (contextmenu)="onTargetContextMenu($event, s)"
-              (appTap)="browse(s)"
+              (appTap)="onSpaceActivate(s)"
               [class.disabled]="!s.enabled"
               [class.selected]="s.id === selected?.id">
             @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
@@ -179,13 +179,13 @@
                     }
                     @case ('info') {
                       @if (s.counts?.roots) {
-                        <span (click)="openSpaceRootsDialog()" class="badge bg-primary cursor-pointer me-1">
+                        <span (click)="openSpaceRootsDialog()" class="badge bg-primary cursor-pointer me-1" data-app-tap-ignore>
                           <svg [lucideIcon]="icons.LucideAnchor"></svg>
                           {{ s.counts.roots }}
                         </span>
                       }
                       @if (s.role === SPACE_ROLE.IS_MANAGER && s.counts.shares) {
-                        <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
+                        <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1" data-app-tap-ignore>
                           <svg [lucideIcon]="icons.SHARES"></svg>
                           {{ s.counts.shares }}
                         </span>

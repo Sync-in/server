@@ -173,6 +173,11 @@ export class AdminGroupsComponent {
     this.selected = member
   }
 
+  onMemberActivate(member: MemberModel) {
+    this.onSelect(member)
+    this.browse(member)
+  }
+
   onContextMenu(ev: any) {
     ev.preventDefault()
     ev.stopPropagation()

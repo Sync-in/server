@@ -15,6 +15,7 @@ $sync-client-card-radius: 0.9rem;
   --sync-client-path-empty-bg: transparent;
   --sync-path-actions-separator: transparent;
   --sync-path-border: transparent;
+  --sync-path-active-border: transparent;
   --sync-path-hover-border: transparent;
   --sync-path-hover-bg: transparent;
 
@@ -145,6 +146,10 @@ $sync-client-card-radius: 0.9rem;
     background: var(--sync-path-hover-bg);
     border-color: var(--sync-path-hover-border);
     box-shadow: 0 2px 5px rgb(0 0 0 / 8%);
+  }
+
+  .sync-path-card.dialog-check-card--interactive:active {
+    border-color: var(--sync-path-active-border);
   }
 
   .sync-path-image {

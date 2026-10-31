@@ -194,6 +194,7 @@ export class UsersQueries {
         preferences.theme === currentPreferences.theme &&
         preferences.editor === currentPreferences.editor &&
         preferences.showHiddenFiles === currentPreferences.showHiddenFiles &&
+        preferences.singleClickNavigation === currentPreferences.singleClickNavigation &&
         preferences.useSystemNotifications === currentPreferences.useSystemNotifications &&
         preferences.sidebarQuickAccessVisibility === currentPreferences.sidebarQuickAccessVisibility &&
         preferences.sidebarQuickAccessPosition === currentPreferences.sidebarQuickAccessPosition

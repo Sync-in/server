@@ -254,6 +254,7 @@ export class UsersManager {
     if (dto.theme !== undefined) patch.theme = dto.theme
     if (dto.editor !== undefined) patch.editor = dto.editor
     if (dto.showHiddenFiles !== undefined) patch.showHiddenFiles = dto.showHiddenFiles
+    if (dto.singleClickNavigation !== undefined) patch.singleClickNavigation = dto.singleClickNavigation
     if (dto.useSystemNotifications !== undefined) patch.useSystemNotifications = dto.useSystemNotifications
     if (dto.sidebarQuickAccessVisibility !== undefined) patch.sidebarQuickAccessVisibility = dto.sidebarQuickAccessVisibility
     if (dto.sidebarQuickAccessPosition !== undefined) patch.sidebarQuickAccessPosition = dto.sidebarQuickAccessPosition

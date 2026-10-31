@@ -65,7 +65,7 @@
         @for (s of scrollView?.viewPortItems; track s.id) {
           <div (click)="onSelect(s)"
                (contextmenu)="onTargetContextMenu($event, s)"
-               (appTap)="openShareDialog()"
+               (appTap)="onShareActivate(s)"
                [class.disabled]="!s.enabled"
                [class.selected]="s.id === selected?.id"
                class="card">
@@ -83,12 +83,14 @@
               <span class="label-bottom-right">
                 @if (s.hasComments) {
                   <span (click)="goToComments(s)"
+                        data-app-tap-ignore
                         class="badge bg-success cursor-pointer">
                     <svg [lucideIcon]="icons.LucideMessageSquareMore"></svg>
                   </span>
                 }
                 @if (s.counts.shares) {
                   <div (click)="openChildShareDialog(s)"
+                       data-app-tap-ignore
                        class="badge bg-purple cursor-pointer">
                     <svg [lucideIcon]="icons.SHARES"></svg>
                     {{ s.counts.shares }}
@@ -140,7 +142,7 @@
         @for (s of scrollView?.viewPortItems; track s.id) {
           <tr (click)="onSelect(s)"
               (contextmenu)="onTargetContextMenu($event, s)"
-              (appTap)="openShareDialog()"
+              (appTap)="onShareActivate(s)"
               [class.disabled]="!s.enabled"
               [class.selected]="s.id === selected?.id">
             @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
@@ -166,13 +168,13 @@
                     }
                     @case ('info') {
                       @if (s.counts.shares) {
-                        <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
+                        <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1" data-app-tap-ignore>
                           <svg [lucideIcon]="icons.SHARES"></svg>
                           {{ s.counts.shares }}
                         </span>
                       }
                       @if (s.hasComments) {
-                        <span (click)="goToComments(s)" class="badge bg-success cursor-pointer">
+                        <span (click)="goToComments(s)" class="badge bg-success cursor-pointer" data-app-tap-ignore>
                           <svg [lucideIcon]="icons.LucideMessageSquareMore"></svg>
                         </span>
                       }

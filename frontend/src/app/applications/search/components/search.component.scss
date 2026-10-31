@@ -27,22 +27,14 @@
     background-color: var(--search-result-hover-bg);
   }
 
-  &:active {
-    background-color: var(--search-result-hover-bg);
-  }
-
   &:focus-visible {
     z-index: 1;
     outline: 2px solid var(--search-result-focus-ring);
     outline-offset: -2px;
   }
 
-  &.selected {
+  &:is(.selected, :active) {
     background-color: var(--search-result-selected-bg);
-
-    &:active {
-      background-color: var(--search-result-hover-bg);
-    }
 
     &::before {
       position: absolute;
@@ -88,6 +80,9 @@
   display: flex;
   flex-direction: column;
   gap: .3rem;
+  cursor: text;
+  user-select: text;
+  -webkit-touch-callout: default;
 }
 
 .search-result-match {

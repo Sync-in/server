@@ -182,6 +182,11 @@ export class TrashComponent implements OnInit, OnDestroy {
     }
   }
 
+  onTrashActivate(trash: TrashModel) {
+    this.onSelect(trash)
+    this.browse(trash)
+  }
+
   openEmptyTrashDialog(trash: TrashModel) {
     if (!trash?.enabled || !trash.nb) return
     this.layout.openDialog(FilesTrashEmptyDialogComponent, null, {

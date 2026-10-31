@@ -22,6 +22,7 @@ import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { PlatformIconComponent } from '../../../common/components/platform-icon.component'
 import { AutoResizeDirective } from '../../../common/directives/auto-resize.directive'
+import { TapDirective } from '../../../common/directives/tap.directive'
 import { TimeAgoPipe } from '../../../common/pipes/time-ago.pipe'
 import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
 import { sortCollectionByNumber } from '../../../common/utils/sort'
@@ -42,6 +43,7 @@ import { SyncPathSettingsDialogComponent } from './dialogs/sync-path-settings.di
     LucideDynamicIcon,
     PlatformIconComponent,
     AutoResizeDirective,
+    TapDirective,
     L10nTranslateDirective,
     TimeDateFormatPipe,
     TimeAgoPipe

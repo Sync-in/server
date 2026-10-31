@@ -67,7 +67,7 @@
       @for (s of scrollView?.viewPortItems; track s.id) {
         <tr (click)="onSelect(s)"
             (contextmenu)="onTargetContextMenu($event, s)"
-            (appTap)="openSpaceDialog()"
+            (appTap)="onSpaceActivate(s)"
             [class.disabled]="!s.enabled"
             [class.selected]="s.id === selected?.id">
           @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
@@ -100,7 +100,7 @@
                   }
                   @case ('info') {
                     @if (s.counts.shares) {
-                      <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
+                      <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1" data-app-tap-ignore>
                         <svg [lucideIcon]="icons.SHARES"></svg>
                         {{ s.counts.shares }}
                       </span>

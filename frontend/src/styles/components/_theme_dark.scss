@@ -338,7 +338,7 @@
         background-color: $dark-table-row-hover-bg !important;
       }
 
-      &.selected {
+      &:is(.selected, :active) {
         background-color: $sidebar-dark-apps-menu-title-bg !important;
         box-shadow: inset 2px 0 0 $primary;
       }
@@ -400,7 +400,7 @@
       background-color: darken($sidebar-dark-apps-menu-bg, 4%) !important;
     }
 
-    &.selected {
+    &:is(.selected, :active) {
       background-color: $sidebar-dark-apps-menu-title-bg !important;
     }
   }
@@ -421,7 +421,7 @@
         background-color: $sidebar-dark-icons-menu-bg;
         border-color: $sidebar-dark-icons-menu-border-color;
 
-        &.selected {
+        &:is(.selected, :active) {
           background-color: $sidebar-dark-apps-menu-title-bg;
 
           .card-footer {
@@ -454,6 +454,7 @@
     --sync-client-path-empty-border: #{$dark-dialog-check-card-hover-border-color};
     --sync-client-path-empty-bg: #{mix($dark-dialog-tab-bg, $sidebar-dark-apps-menu-title-bg, 70%)};
     --sync-path-actions-separator: #{$dark-dialog-check-card-border-color};
+    --sync-path-active-border: #{$dark-dialog-check-card-active-border-color};
     --sync-path-hover-bg: #{$sidebar-dark-icons-menu-bg};
   }
   .list-group-item {

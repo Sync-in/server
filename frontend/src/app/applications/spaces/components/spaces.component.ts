@@ -196,6 +196,11 @@ export class SpacesComponent implements OnInit {
     }
   }
 
+  onSpaceActivate(space: SpaceModel) {
+    this.onSelect(space)
+    this.browse(space)
+  }
+
   onSelect(space: SpaceModel = null) {
     if (space) {
       this.selected = space

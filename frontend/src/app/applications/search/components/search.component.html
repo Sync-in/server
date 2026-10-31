@@ -1,11 +1,15 @@
-<div appAutoResize [resizeOffset]="45" class="search-results-list" role="list">
+<div appAutoResize
+     [resizeOffset]="45"
+     class="search-results-list"
+     role="list">
   @if (errorMessage) {
     <div class="p-3 text-danger fw-500" l10nTranslate>{{ errorMessage }}</div>
   }
   @for (file of store.filesSearch() | searchFilter:navbarSearch.viewFilter(); track $index) {
     <article
       (click)="selectedId = $index"
-      (appTap)="goTo(file)"
+      (appTap)="onFileActivate(file, $index)"
+      [enableDoubleTap]="false"
       (keydown.enter)="goTo(file)"
       (keydown.space)="$event.preventDefault(); selectedId = $index"
       [class.selected]="$index === selectedId"
@@ -20,7 +24,7 @@
         </div>
       </div>
       @if (file.matches?.length) {
-        <div class="search-result-matches">
+        <div class="search-result-matches" data-app-tap-ignore>
           @for (match of file.matches; track $index) {
             <p class="search-result-match" [innerHTML]="match"></p>
           }

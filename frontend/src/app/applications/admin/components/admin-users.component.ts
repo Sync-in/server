@@ -68,6 +68,7 @@ export class AdminUsersComponent {
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly navbarSearch = inject(NavbarSearchService)
+  private readonly userService = inject(UserService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = {
     LucideRotateCw,
@@ -147,7 +148,6 @@ export class AdminUsersComponent {
   private readonly activatedRoute = inject(ActivatedRoute)
   private readonly layout = inject(LayoutService)
   private readonly adminService = inject(AdminService)
-  private readonly userService = inject(UserService)
   private readonly sortSettings: SortSettings = {
     default: [{ prop: 'login', type: 'string' }],
     login: [{ prop: 'login', type: 'string' }],
@@ -187,6 +187,11 @@ export class AdminUsersComponent {
 
   onSelect(user: AdminUserModel = null) {
     this.selected = user
+  }
+
+  onUserActivate(user: AdminUserModel) {
+    this.onSelect(user)
+    this.openDialog()
   }
 
   onGuestsView(state: boolean) {

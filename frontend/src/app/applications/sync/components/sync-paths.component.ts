@@ -28,6 +28,7 @@ import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { Subscription } from 'rxjs'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { AutoResizeDirective } from '../../../common/directives/auto-resize.directive'
+import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
 import { CapitalizePipe } from '../../../common/pipes/capitalize.pipe'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
@@ -65,7 +66,8 @@ import { LiveTimeAgoPipe } from '../../../common/pipes/time-ago-live.pipe'
     SyncPathSchedulerComponent,
     VirtualScrollComponent,
     CapitalizePipe,
-    LiveTimeAgoPipe
+    LiveTimeAgoPipe,
+    TapDirective
   ],
   templateUrl: 'sync-paths.component.html'
 })
@@ -302,6 +304,11 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
     this.layout.openDialog(SyncPathSettingsDialogComponent, 'md', {
       initialState: { syncPathSelected: this.syncPathSelected } as SyncPathSettingsDialogComponent
     })
+  }
+
+  onSyncPathActivate(syncPath: SyncPathModel) {
+    this.onSelect(syncPath)
+    this.openSettingsDialog()
   }
 
   goToPath(local = true) {

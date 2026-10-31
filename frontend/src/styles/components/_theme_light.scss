@@ -342,7 +342,7 @@
         background-color: $light-table-row-hover-bg !important;
       }
 
-      &.selected {
+      &:is(.selected, :active) {
         background-color: $light-table-row-selected-bg !important;
         box-shadow: inset 2px 0 0 darken($primary, 4%);
       }
@@ -392,7 +392,7 @@
         background-color: $white;
         border-color: $gray-mid;
 
-        &.selected {
+        &:is(.selected, :active) {
           background-color: $table-bg-hover;
 
           .card-footer {
@@ -420,6 +420,7 @@
     --sync-client-path-empty-border: #{$light-dialog-check-card-hover-border-color};
     --sync-client-path-empty-bg: #{mix($light-dialog-check-card-hover-bg, $white, 72%)};
     --sync-path-actions-separator: #{$light-dialog-check-card-border-color};
+    --sync-path-active-border: #{$light-dialog-check-card-active-border-color};
     --sync-path-hover-bg: #{$light-dialog-check-card-bg};
   }
   .app-div-hovered {
@@ -427,7 +428,7 @@
       background-color: $light-menu-item-hover-bg !important;
     }
 
-    &.selected {
+    &:is(.selected, :active) {
       background-color: darken($light-menu-item-hover-bg, 4%) !important;
     }
   }
