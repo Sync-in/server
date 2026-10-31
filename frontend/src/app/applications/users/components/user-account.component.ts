@@ -229,6 +229,10 @@ export class UserAccountComponent implements OnInit, OnDestroy {
     this.userService.changePreferences({ editor }).subscribe()
   }
 
+  updateSingleClickNavigation(singleClickNavigation: UserPreferences['singleClickNavigation']) {
+    this.userService.changePreferences({ singleClickNavigation }).subscribe()
+  }
+
   updateShowHiddenFiles(showHiddenFiles: UserPreferences['showHiddenFiles']) {
     if (this.updatingShowHiddenFiles) return
     this.updatingShowHiddenFiles = true

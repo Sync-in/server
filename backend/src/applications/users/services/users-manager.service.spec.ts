@@ -258,6 +258,18 @@ describe(UsersManager.name, () => {
     expect(clearWebDAVAuthCache).toHaveBeenCalledWith(userTest.id)
   })
 
+  it('should update the single-click preference without clearing the WebDAV auth cache', async () => {
+    const preferences = { ...userTest.preferences, singleClickNavigation: true }
+    const updatePreferences = vi.spyOn(usersQueriesService, 'updateUserPreferences').mockResolvedValue(preferences)
+    const clearWebDAVAuthCache = vi.spyOn(usersQueriesService, 'clearWebDAVAuthCache').mockResolvedValue()
+    clearWebDAVAuthCache.mockClear()
+
+    await expect(usersManager.updatePreferences(userTest, { singleClickNavigation: true })).resolves.toEqual(preferences)
+
+    expect(updatePreferences).toHaveBeenCalledWith(userTest.id, { singleClickNavigation: true })
+    expect(clearWebDAVAuthCache).not.toHaveBeenCalled()
+  })
+
   it('paths + avatars (default/generate) + create/delete user', async () => {
     await expect(ensurePaths()).resolves.not.toThrow()
     expect(await isPathExists(userTest.filesPath)).toBe(true)

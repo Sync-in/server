@@ -254,6 +254,38 @@
                 </div>
               </div>
 
+              <div class="row g-0 mb-2">
+                <div class="col-12">
+                  <div class="card dialog-check-card dialog-check-card--interactive"
+                       [class.dialog-check-card--active]="user.preferences.singleClickNavigation"
+                       (click)="updateSingleClickNavigation(!user.preferences.singleClickNavigation)">
+                    <div class="card-body p-2">
+                      <div class="d-flex align-items-center cursor-pointer">
+                        <label
+                          for="singleClickNavigation"
+                          class="form-label me-auto"
+                          (click)="$event.stopPropagation()"
+                          l10nTranslate>Single-click navigation</label>
+                        <div class="d-flex align-items-center form-check form-switch ps-0 mb-0">
+                          <label class="form-check-label" for="singleClickNavigation" (click)="$event.stopPropagation()"></label>
+                          <input
+                            [ngModel]="user.preferences.singleClickNavigation"
+                            (ngModelChange)="updateSingleClickNavigation($event)"
+                            (click)="$event.stopPropagation()"
+                            class="form-check-input ms-2"
+                            id="singleClickNavigation"
+                            type="checkbox"
+                            role="button">
+                        </div>
+                      </div>
+                      <div class="text-muted fs-sm mt-2 px-1" l10nTranslate>
+                        Open items with a single click instead of a double click.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div class="text-muted text-uppercase text-bold fs-xs mt-3 mb-2" l10nTranslate>Quick access</div>
 
               <div class="row g-2 align-items-center mb-2">
@@ -286,102 +318,100 @@
             </div>
           </div>
 
-          @if (!user.isLink) {
-            <div class="card dialog-tab-card">
-              <div class="card-body">
-                <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Files</div>
+          <div class="card dialog-tab-card">
+            <div class="card-body">
+              <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Files</div>
 
-                @if (showEditorPreference) {
-                  <div class="row g-2 align-items-center mb-2">
-                    <label class="col-12 col-sm-6" for="documentEditor" l10nTranslate>Document editor</label>
-                    <div class="col-12 col-sm-6">
-                      <select
-                        id="documentEditor"
-                        class="form-select"
-                        [ngModel]="userEditorPreference"
-                        (ngModelChange)="updateEditorPreference($event)">
-                        <option [ngValue]="null" l10nTranslate>Ask Me</option>
-                        @for (e of editors | keyvalue: originalOrderKeyValue; track e.key) {
-                          <option [ngValue]="e.value">{{ e.key }}</option>
-                        }
-                      </select>
+              @if (showEditorPreference) {
+                <div class="row g-2 align-items-center mb-2">
+                  <label class="col-12 col-sm-6" for="documentEditor" l10nTranslate>Document editor</label>
+                  <div class="col-12 col-sm-6">
+                    <select
+                      id="documentEditor"
+                      class="form-select"
+                      [ngModel]="userEditorPreference"
+                      (ngModelChange)="updateEditorPreference($event)">
+                      <option [ngValue]="null" l10nTranslate>Ask Me</option>
+                      @for (e of editors | keyvalue: originalOrderKeyValue; track e.key) {
+                        <option [ngValue]="e.value">{{ e.key }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+                <div class="text-muted fs-sm mb-3" l10nTranslate>
+                  Used when both editors support the file type.
+                </div>
+              }
+
+              <div class="row g-0 mb-2">
+                <div class="col-12">
+                  <div class="card dialog-check-card"
+                       [class.dialog-check-card--interactive]="!updatingShowHiddenFiles"
+                       [class.dialog-check-card--active]="user.preferences.showHiddenFiles"
+                       [class.opacity-50]="updatingShowHiddenFiles"
+                       [class.pe-none]="updatingShowHiddenFiles"
+                       [attr.aria-busy]="updatingShowHiddenFiles"
+                       [attr.aria-disabled]="updatingShowHiddenFiles"
+                       (click)="updateShowHiddenFiles(!user.preferences.showHiddenFiles)">
+                    <div class="card-body p-2">
+                      <div class="d-flex align-items-center cursor-pointer">
+                        <label
+                          for="showHiddenFiles"
+                          class="form-label me-auto text-nowrap"
+                          (click)="$event.stopPropagation()"
+                          l10nTranslate>Show hidden files</label>
+                        <div class="d-flex align-items-center form-check form-switch ps-0 mb-0">
+                          <label class="form-check-label" for="showHiddenFiles" (click)="$event.stopPropagation()"></label>
+                          <input
+                            [ngModel]="user.preferences.showHiddenFiles"
+                            [disabled]="updatingShowHiddenFiles"
+                            (ngModelChange)="updateShowHiddenFiles($event)"
+                            (click)="$event.stopPropagation()"
+                            class="form-check-input ms-2"
+                            id="showHiddenFiles"
+                            type="checkbox"
+                            role="button">
+                        </div>
+                      </div>
+                      <div class="text-muted fs-sm mt-2 px-1" l10nTranslate>
+                        Show files and folders whose names start with a dot.
+                      </div>
                     </div>
                   </div>
-                  <div class="text-muted fs-sm mb-3" l10nTranslate>
-                    Used when both editors support the file type.
-                  </div>
-                }
+                </div>
+              </div>
 
-                <div class="row g-0 mb-2">
+              @if (user.isUser) {
+                <div class="row g-0">
                   <div class="col-12">
-                    <div class="card dialog-check-card"
-                         [class.dialog-check-card--interactive]="!updatingShowHiddenFiles"
-                         [class.dialog-check-card--active]="user.preferences.showHiddenFiles"
-                         [class.opacity-50]="updatingShowHiddenFiles"
-                         [class.pe-none]="updatingShowHiddenFiles"
-                         [attr.aria-busy]="updatingShowHiddenFiles"
-                         [attr.aria-disabled]="updatingShowHiddenFiles"
-                         (click)="updateShowHiddenFiles(!user.preferences.showHiddenFiles)">
+                    <div class="card dialog-check-card dialog-check-card--interactive"
+                         [class.dialog-check-card--active]="user.storageIndexing"
+                         (click)="updateStorageIndexing(!user.storageIndexing)">
                       <div class="card-body p-2">
                         <div class="d-flex align-items-center cursor-pointer">
-                          <label
-                            for="showHiddenFiles"
-                            class="form-label me-auto text-nowrap"
-                            (click)="$event.stopPropagation()"
-                            l10nTranslate>Show hidden files</label>
+                          <label for="prefSwitchFullText" class="form-label me-auto text-nowrap" l10nTranslate>Full-text search</label>
                           <div class="d-flex align-items-center form-check form-switch ps-0 mb-0">
-                            <label class="form-check-label" for="showHiddenFiles" (click)="$event.stopPropagation()"></label>
+                            <label class="form-check-label" for="prefSwitchFullText" (click)="$event.stopPropagation()"></label>
                             <input
-                              [ngModel]="user.preferences.showHiddenFiles"
-                              [disabled]="updatingShowHiddenFiles"
-                              (ngModelChange)="updateShowHiddenFiles($event)"
+                              [ngModel]="user.storageIndexing"
+                              (ngModelChange)="updateStorageIndexing($event)"
                               (click)="$event.stopPropagation()"
                               class="form-check-input ms-2"
-                              id="showHiddenFiles"
+                              id="prefSwitchFullText"
                               type="checkbox"
                               role="button">
                           </div>
                         </div>
                         <div class="text-muted fs-sm mt-2 px-1" l10nTranslate>
-                          Show files and folders whose names start with a dot.
+                          Enable content indexation for personal files.
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                @if (user.isUser) {
-                  <div class="row g-0">
-                    <div class="col-12">
-                      <div class="card dialog-check-card dialog-check-card--interactive"
-                           [class.dialog-check-card--active]="user.storageIndexing"
-                           (click)="updateStorageIndexing(!user.storageIndexing)">
-                        <div class="card-body p-2">
-                          <div class="d-flex align-items-center cursor-pointer">
-                            <label for="prefSwitchFullText" class="form-label me-auto text-nowrap" l10nTranslate>Full-text search</label>
-                            <div class="d-flex align-items-center form-check form-switch ps-0 mb-0">
-                              <label class="form-check-label" for="prefSwitchFullText" (click)="$event.stopPropagation()"></label>
-                              <input
-                                [ngModel]="user.storageIndexing"
-                                (ngModelChange)="updateStorageIndexing($event)"
-                                (click)="$event.stopPropagation()"
-                                class="form-check-input ms-2"
-                                id="prefSwitchFullText"
-                                type="checkbox"
-                                role="button">
-                            </div>
-                          </div>
-                          <div class="text-muted fs-sm mt-2 px-1" l10nTranslate>
-                            Enable content indexation for personal files.
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                }
-              </div>
+              }
             </div>
-          }
+          </div>
 
           <div class="card dialog-tab-card">
             <div class="card-body">

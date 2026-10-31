@@ -7,6 +7,7 @@ export interface UserPreferences {
   theme: USER_THEME
   editor: Exclude<keyof FileEditorProviders, 'drawio'> | null
   showHiddenFiles: boolean
+  singleClickNavigation: boolean
   useSystemNotifications: boolean
   sidebarQuickAccessVisibility: USER_SIDEBAR_QUICK_ACCESS_VISIBILITY
   sidebarQuickAccessPosition: USER_SIDEBAR_QUICK_ACCESS_POSITION

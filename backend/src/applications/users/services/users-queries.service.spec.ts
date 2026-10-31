@@ -64,3 +64,36 @@ describe(`${UsersQueries.name}.WebDAVAuthCache`, () => {
     expect(clearWebDAVAuthCache).toHaveBeenCalledWith(42)
   })
 })
+
+describe(`${UsersQueries.name}.updateUserPreferences`, () => {
+  it('persists a change to the single-click preference', async () => {
+    const forUpdate = vi.fn().mockResolvedValue([{ preferences: {} }])
+    const selectWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockReturnValue({ for: forUpdate }) })
+    const select = vi.fn().mockReturnValue({ from: vi.fn().mockReturnValue({ where: selectWhere }) })
+    const updateWhere = vi.fn().mockResolvedValue([{ affectedRows: 1 }])
+    const set = vi.fn().mockReturnValue({ where: updateWhere })
+    const transaction = vi.fn(async (callback: (tx: object) => unknown) => callback({ select, update: vi.fn().mockReturnValue({ set }) }))
+    const usersQueries = new UsersQueries({ transaction } as unknown as DBSchema, {} as Cache)
+
+    await expect(usersQueries.updateUserPreferences(42, { singleClickNavigation: true })).resolves.toEqual(
+      expect.objectContaining({ singleClickNavigation: true })
+    )
+
+    expect(set).toHaveBeenCalledWith({ preferences: expect.objectContaining({ singleClickNavigation: true }) })
+  })
+
+  it('does not write the default single-click preference when it is unchanged', async () => {
+    const forUpdate = vi.fn().mockResolvedValue([{ preferences: {} }])
+    const selectWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockReturnValue({ for: forUpdate }) })
+    const select = vi.fn().mockReturnValue({ from: vi.fn().mockReturnValue({ where: selectWhere }) })
+    const update = vi.fn()
+    const transaction = vi.fn(async (callback: (tx: object) => unknown) => callback({ select, update }))
+    const usersQueries = new UsersQueries({ transaction } as unknown as DBSchema, {} as Cache)
+
+    await expect(usersQueries.updateUserPreferences(42, { singleClickNavigation: false })).resolves.toEqual(
+      expect.objectContaining({ singleClickNavigation: false })
+    )
+
+    expect(update).not.toHaveBeenCalled()
+  })
+})
