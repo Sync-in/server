@@ -230,7 +230,7 @@ export class OnlyOfficeManager {
             zoom: documentType === 'slide' ? 60 : 90,
             help: false,
             features: { featuresTips: false },
-            plugins: false
+            plugins: true
           }
         }
       }
