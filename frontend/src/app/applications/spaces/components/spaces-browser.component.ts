@@ -488,7 +488,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     } else if (file.isViewable || file.isEditable) {
       this.openViewerDialog(file)
     } else {
-      this.notifyPreviewUnavailable(file)
+      this.filesService.offerDownload(file)
     }
   }
 
@@ -746,17 +746,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       f.space = { alias: spaceAlias, name: spaceAlias, root: { alias: rootAlias, name: rootAlias } }
     }
     return f
-  }
-
-  private notifyPreviewUnavailable(file: FileModel) {
-    const message = `
-      <div>${this.layout.translateString('No preview available for this file')}</div>
-      <div class="mt-3 fw-bold">${this.layout.translateString('Click to download')}</div>
-    `
-    const notification = this.layout.sendNotification('info', file.name, message, null, { enableHtml: true }, true)
-    if (notification) {
-      notification.onTap.pipe(take(1)).subscribe(() => this.filesService.download(file))
-    }
   }
 
   private openViewerDialog(f: FileModel) {

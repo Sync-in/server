@@ -49,7 +49,22 @@ import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces
 import { SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'
 import { BsModalRef } from 'ngx-bootstrap/modal'
-import { BehaviorSubject, catchError, EMPTY, filter, firstValueFrom, map, Observable, of, shareReplay, Subject, switchMap, tap, timer } from 'rxjs'
+import {
+  BehaviorSubject,
+  catchError,
+  EMPTY,
+  filter,
+  firstValueFrom,
+  map,
+  Observable,
+  of,
+  shareReplay,
+  Subject,
+  switchMap,
+  take,
+  tap,
+  timer
+} from 'rxjs'
 import { downloadWithAnchor } from '../../../common/utils/functions'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
@@ -67,7 +82,7 @@ import { FileRecentModel } from '../models/file-recent.model'
 import { FileModel } from '../models/file.model'
 import { FilesTasksService } from './files-tasks.service'
 
-type ViewerHookResult = { action: 'open'; shortMime: string } | { action: 'download'; message?: string }
+type ViewerHookResult = { action: 'open'; shortMime: string } | { action: 'offerDownload'; message?: string }
 
 @Injectable({ providedIn: 'root' })
 export class FilesService {
@@ -140,6 +155,17 @@ export class FilesService {
 
   download(file: FileModel) {
     downloadWithAnchor(file.dataUrl)
+  }
+
+  offerDownload(file: FileModel, reason = 'No preview available for this file') {
+    const message = `
+      <div>${this.layout.translateString(reason)}</div>
+      <div class="mt-3 fw-bold">${this.layout.translateString('Click to download')}</div>
+    `
+    const notification = this.layout.sendNotification('info', file.name, message, null, { enableHtml: true }, true)
+    if (notification) {
+      notification.onTap.pipe(take(1)).subscribe(() => this.download(file))
+    }
   }
 
   async copyMove(files: FileModel[], dstDirectory: string, type: FILE_OPERATION.COPY | FILE_OPERATION.MOVE): Promise<void> {
@@ -397,11 +423,8 @@ export class FilesService {
 
     const hookResult = await this.viewerHook(file)
 
-    if (hookResult.action === 'download') {
-      if (hookResult.message) {
-        this.layout.sendNotification('warning', 'Download', hookResult.message)
-      }
-      this.download(file)
+    if (hookResult.action === 'offerDownload') {
+      this.offerDownload(file, hookResult.message)
       return
     }
 
@@ -480,15 +503,14 @@ export class FilesService {
 
   private async viewerHook(file: FileModel): Promise<ViewerHookResult> {
     if (file.shortMime === SHORT_MIME.DIAGRAM && file.size >= MAX_CLIENT_EDITOR_FILE_SIZE) {
-      return { action: 'download', message: this.fileSizeLimitExceededMessage }
+      return { action: 'offerDownload', message: this.fileSizeLimitExceededMessage }
     }
     if (file.shortMime === SHORT_MIME.TEXT || file.shortMime === SHORT_MIME.MARKDOWN) {
       if (file.shortMime === SHORT_MIME.TEXT && (await this.hasBinaryContent(file))) {
-        return { action: 'download' }
+        return { action: 'offerDownload', message: 'This file contains binary data that can not be read' }
       }
       if (file.size >= MAX_CLIENT_EDITOR_FILE_SIZE) {
-        // Download if too large
-        return { action: 'download', message: this.fileSizeLimitExceededMessage }
+        return { action: 'offerDownload', message: this.fileSizeLimitExceededMessage }
       }
       return { action: 'open', shortMime: file.shortMime }
     }
