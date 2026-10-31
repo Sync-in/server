@@ -1,4 +1,28 @@
 
+## [2.6.2](https://github.com/Sync-in/server/compare/v2.6.1...v2.6.2) (2026-10-31)
+
+### Features
+
+* **frontend:breadcrumb:** add responsive compact navigation dropdown ([d4f77e6](https://github.com/Sync-in/server/commit/d4f77e62ff9707329cc503312f496420d20abeba))
+* **frontend:** breadcrumb overflow dropdown ([#319](https://github.com/Sync-in/server/issues/319)) ([b6304a1](https://github.com/Sync-in/server/commit/b6304a1cc6288b9614cc617569d7a07c757a237f))
+* **frontend:** navigate relative markdown note links ([#311](https://github.com/Sync-in/server/issues/311)) ([bd8aa12](https://github.com/Sync-in/server/commit/bd8aa12d7c1bbf55f6f38c0f10eb1d83fb51e98e))
+* navigation single click preference ([#321](https://github.com/Sync-in/server/issues/321)) ([43683d1](https://github.com/Sync-in/server/commit/43683d1c2b2ee7fe140f53ad9602209dcedb85b8))
+* **onlyoffice:** enable plugins ([#322](https://github.com/Sync-in/server/issues/322)) ([505219f](https://github.com/Sync-in/server/commit/505219f9f8184b727ed57855cacac3e2b033c32a))
+* **users:** move user preferences to a dedicated page ([01e798e](https://github.com/Sync-in/server/commit/01e798e246017da1b17e1bbaed426dc3c225ee7a))
+
+### Bug Fixes
+
+* **backend:auth:** enforce link expiration on token refresh ([#315](https://github.com/Sync-in/server/issues/315)) ([c0148f0](https://github.com/Sync-in/server/commit/c0148f0fda8d78814d6abb8cba1dee439137d749))
+* **backend:auth:** prevent link accounts from receiving API tokens ([24e14b6](https://github.com/Sync-in/server/commit/24e14b65c194dd34fa8a7fb133f8a119153cfa84))
+* **backend:database:** recycle idle pool connections before MariaDB timeout ([2584b30](https://github.com/Sync-in/server/commit/2584b30d112c3b79c61b08cc717832d34fba1c13))
+* **backend:files:** respect hidden-file preference in recents ([e4144db](https://github.com/Sync-in/server/commit/e4144db11aab225d96f0731bd1de1da1d83584b3))
+* **build:** include MIME symlink targets in npm package ([#318](https://github.com/Sync-in/server/issues/318)) ([b922b25](https://github.com/Sync-in/server/commit/b922b25a98768f8fd52e82c0cabb3576197600b6))
+* **frontend:breadcrumb:** align compact dropdown across breakpoints ([00b22a4](https://github.com/Sync-in/server/commit/00b22a44ca492ffbcdb480948398184414163cf9))
+* **frontend:files:** prompt before downloading unpreviewable files ([0cbffc7](https://github.com/Sync-in/server/commit/0cbffc755fa6d1bbd0bc56ceecc4efe5122d9ced))
+* **frontend:i18n:** add missing document not found translations ([e6c0038](https://github.com/Sync-in/server/commit/e6c0038b97eca145c2790e3623043ed8a1f0c47d))
+* **frontend:** improve responsive permissions layout ([d610696](https://github.com/Sync-in/server/commit/d6106968b8ba9146c82d61d6275fcad87df782b6))
+* **frontend:** refine mobile toolbar layout and dropdown layering ([bbbc4ea](https://github.com/Sync-in/server/commit/bbbc4ea7a77a6e597955459ed934550b18986274))
+
 ## [2.6.1](https://github.com/Sync-in/server/compare/v2.6.0...v2.6.1) (2026-10-25)
 
 ### Features
