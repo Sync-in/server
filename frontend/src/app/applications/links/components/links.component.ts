@@ -192,6 +192,11 @@ export class LinksComponent implements OnInit {
     this.store.linkSelection.set(this.selected)
   }
 
+  onLinkActivate(share: ShareLinkModel) {
+    this.onSelect(share)
+    this.openLinkDialog()
+  }
+
   openLinkDialog() {
     this.linksService.shareLink(this.selected.id).subscribe((share: ShareLinkModel) => {
       const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'lg', {

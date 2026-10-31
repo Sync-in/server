@@ -400,7 +400,7 @@
       background-color: darken($sidebar-dark-apps-menu-bg, 4%) !important;
     }
 
-    &.selected {
+    &:is(.selected, :active) {
       background-color: $sidebar-dark-apps-menu-title-bg !important;
     }
   }
@@ -454,6 +454,7 @@
     --sync-client-path-empty-border: #{$dark-dialog-check-card-hover-border-color};
     --sync-client-path-empty-bg: #{mix($dark-dialog-tab-bg, $sidebar-dark-apps-menu-title-bg, 70%)};
     --sync-path-actions-separator: #{$dark-dialog-check-card-border-color};
+    --sync-path-active-border: #{$dark-dialog-check-card-active-border-color};
     --sync-path-hover-bg: #{$sidebar-dark-icons-menu-bg};
   }
   .list-group-item {

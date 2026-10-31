@@ -96,6 +96,11 @@ export class SearchComponent {
     this.router.navigate([SPACES_PATH.SPACES, ...file.path.split('/')], { queryParams: { select: file.name } }).catch(console.error)
   }
 
+  protected onFileActivate(file: FileContentModel, index: number) {
+    this.selectedId = index
+    this.goTo(file)
+  }
+
   private searchFromParams(params: ParamMap): NavbarGlobalSearch | null {
     const content = params.get(SEARCH_QUERY_PARAM.QUERY)?.trim() ?? ''
     const mode = params.get(SEARCH_QUERY_PARAM.SCOPE)

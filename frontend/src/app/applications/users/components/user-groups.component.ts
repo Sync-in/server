@@ -252,6 +252,11 @@ export class UserGroupsComponent {
     }
   }
 
+  onMemberActivate(member: MemberModel) {
+    this.onSelect(member)
+    this.browse(member)
+  }
+
   onSelect(member: MemberModel = null) {
     this.selected = member
     if (!this.selected) {

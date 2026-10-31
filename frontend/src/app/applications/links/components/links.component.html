@@ -60,7 +60,7 @@
         @for (s of scrollView?.viewPortItems; track s.id) {
           <div (click)="onSelect(s)"
                (contextmenu)="onTargetContextMenu($event, s)"
-               (appTap)="openLinkDialog()"
+               (appTap)="onLinkActivate(s)"
                [class.selected]="s.id === selected?.id"
                [class.disabled]="!s.link.isActive"
                class="card">
@@ -134,7 +134,7 @@
         @for (s of scrollView?.viewPortItems; track s.id) {
           <tr (click)="onSelect(s)"
               (contextmenu)="onTargetContextMenu($event, s)"
-              (appTap)="openLinkDialog()"
+              (appTap)="onLinkActivate(s)"
               [class.selected]="s.id === selected?.id"
               [class.disabled]="!s.link.isActive">
             @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {

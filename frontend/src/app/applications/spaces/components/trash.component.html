@@ -51,7 +51,7 @@
         @for (t of scrollView?.viewPortItems; track t.id) {
           <div (click)="onSelect(t)"
                (contextmenu)="onTargetContextMenu($event, t)"
-               (appTap)="browse(t)"
+               (appTap)="onTrashActivate(t)"
                [class.disabled]="!t.enabled"
                [class.selected]="t.id === selected?.id"
                class="card">
@@ -112,7 +112,7 @@
         @for (t of scrollView?.viewPortItems; track t.id) {
           <tr (click)="onSelect(t)"
               (contextmenu)="onTargetContextMenu($event, t)"
-              (appTap)="browse(t)"
+              (appTap)="onTrashActivate(t)"
               [class.disabled]="!t.enabled"
               [class.selected]="t.id === selected?.id">
             @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {

@@ -80,7 +80,7 @@
             @if (client.paths.length) {
               @for (path of client.paths; track path.id) {
                 <div (click)="onSelectPath(path)"
-                     (dblclick)="onEditPath(path, client)"
+                     (appTap)="onEditPath(path, client)"
                      [class.dialog-check-card--active]="selectedPath && selectedPath.id === path.id"
                      class="card dialog-check-card dialog-check-card--interactive sync-path-card">
                   <div class="card-body p-2">

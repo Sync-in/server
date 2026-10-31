@@ -157,6 +157,11 @@ export class UserGuestsComponent {
     this.selected = user
   }
 
+  onGuestActivate(user: GuestUserModel) {
+    this.onSelect(user)
+    this.openGuestDialog()
+  }
+
   onContextMenu(ev: any) {
     ev.preventDefault()
     ev.stopPropagation()

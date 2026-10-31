@@ -252,7 +252,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   private readonly zone = inject(NgZone)
   private readonly renderer = inject(Renderer2)
   private readonly store = inject(StoreService)
-  protected readonly userService = inject(UserService)
+  private readonly userService = inject(UserService)
   protected isElectronApp = this.store.isElectronApp()
   private readonly spacesBrowser = inject(SpacesBrowserService)
   private readonly filesService = inject(FilesService)

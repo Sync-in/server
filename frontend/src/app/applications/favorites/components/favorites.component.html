@@ -48,7 +48,7 @@
         @for (f of scrollView?.viewPortItems; track f.fileId) {
           <div (click)="onSelect(f)"
                (contextmenu)="onTargetContextMenu($event, f)"
-               (appTap)="goTo(f)"
+               (appTap)="onFavoriteActivate(f)"
                [class.disabled]="f.isDisabled"
                [class.selected]="f.fileId === selected?.fileId"
                class="card">
@@ -71,12 +71,14 @@
                     @switch (badge) {
                       @case ('comments') {
                         <span (click)="goToDetails($event, f, TAB_MENU.COMMENTS)"
+                              data-app-tap-ignore
                               class="badge bg-success cursor-pointer">
                           <svg [lucideIcon]="icons.LucideMessageSquareMore"></svg>
                         </span>
                       }
                       @case ('shares') {
                         <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              data-app-tap-ignore
                               class="badge bg-primary cursor-pointer">
                           <svg [lucideIcon]="icons.SHARED"></svg>
                           @if (f.shares.length > 1) {
@@ -86,6 +88,7 @@
                       }
                       @case ('spaces') {
                         <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              data-app-tap-ignore
                               class="badge bg-primary cursor-pointer">
                           <svg [lucideIcon]="icons.SPACES"></svg>
                           @if (f.spaces.length > 1) {
@@ -95,6 +98,7 @@
                       }
                       @case ('links') {
                         <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              data-app-tap-ignore
                               class="badge bg-primary cursor-pointer">
                           <svg [lucideIcon]="icons.LINKS"></svg>
                           @if (f.links.length > 1) {
@@ -104,6 +108,7 @@
                       }
                       @case ('syncs') {
                         <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              data-app-tap-ignore
                               class="badge bg-primary cursor-pointer">
                           <svg [lucideIcon]="icons.SYNC"></svg>
                           @if (f.syncs.length > 1) {
@@ -116,6 +121,7 @@
                 }
                 @if (hiddenBadges > 0) {
                   <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                        data-app-tap-ignore
                         class="badge bg-primary cursor-pointer">
                     <svg [lucideIcon]="icons.LucideCirclePlus"></svg>
                     {{ hiddenBadges }}
@@ -172,7 +178,7 @@
         @for (f of scrollView?.viewPortItems; track f.fileId) {
           <tr (click)="onSelect(f)"
               (contextmenu)="onTargetContextMenu($event, f)"
-              (appTap)="goTo(f)"
+              (appTap)="onFavoriteActivate(f)"
               [class.disabled]="f.isDisabled"
               [class.selected]="f.fileId === selected?.fileId">
             @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
@@ -205,12 +211,14 @@
                     @case ('info') {
                       @if (f.hasComments) {
                         <span (click)="goToDetails($event, f, TAB_MENU.COMMENTS)"
+                              data-app-tap-ignore
                               class="badge bg-success cursor-pointer me-1">
                           <svg [lucideIcon]="icons.LucideMessageSquareMore"></svg>
                         </span>
                       }
                       @if (f.shares.length) {
                         <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              data-app-tap-ignore
                               class="badge bg-primary cursor-pointer me-1">
                           <svg [lucideIcon]="icons.SHARED"></svg>
                           @if (f.shares.length > 1) {
@@ -220,6 +228,7 @@
                       }
                       @if (f.links.length) {
                         <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              data-app-tap-ignore
                               class="badge bg-primary cursor-pointer me-1">
                           <svg [lucideIcon]="icons.LINKS"></svg>
                           @if (f.links.length > 1) {
@@ -229,6 +238,7 @@
                       }
                       @if (f.spaces.length) {
                         <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              data-app-tap-ignore
                               class="badge bg-primary cursor-pointer me-1">
                           <svg [lucideIcon]="icons.SPACES"></svg>
                           @if (f.spaces.length > 1) {
@@ -238,6 +248,7 @@
                       }
                       @if (f.syncs.length) {
                         <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              data-app-tap-ignore
                               class="badge bg-primary cursor-pointer">
                           <svg [lucideIcon]="icons.SYNC"></svg>
                           @if (f.syncs.length > 1) {

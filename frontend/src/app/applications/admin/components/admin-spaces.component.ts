@@ -165,6 +165,11 @@ export class AdminSpacesComponent {
     this.selected = space ?? null
   }
 
+  onSpaceActivate(space: SpaceModel) {
+    this.onSelect(space)
+    this.openSpaceDialog()
+  }
+
   sortBy(column: string, toUpdate = true, collection?: SpaceModel[]) {
     this.spaces = this.sortTable.sortBy(column, toUpdate, collection || this.spaces)
   }

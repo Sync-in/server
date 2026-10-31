@@ -1,5 +1,6 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common'
 import { DestroyRef, Directive, ElementRef, EventEmitter, inject, Injectable, Input, NgZone, OnDestroy, Output, PLATFORM_ID } from '@angular/core'
+import { UserService } from '../../applications/users/user.service'
 
 interface TapPoint {
   x: number
@@ -61,17 +62,17 @@ class TapGhostClickGuard {
   selector: '[appTap]',
   standalone: true,
   host: {
-    style: 'touch-action: manipulation; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none;'
+    style: 'touch-action: manipulation; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none;',
+    '[style.cursor]': 'singleClickEnabled ? "pointer" : null'
   }
 })
 export class TapDirective implements OnDestroy {
-  /** Enables or disables double-tap detection */
-  @Input() enableDoubleTap = true
-  /** Emits a single tap immediately for touch pointers. */
-  @Input() singleTapOnTouch = false
+  /** Overrides the double-tap behavior derived from the user's navigation preference. */
+  @Input() enableDoubleTap: boolean | null = null
   @Output() appTap = new EventEmitter<PointerEvent>()
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef as any).nativeElement
   private readonly zone = inject(NgZone)
+  private readonly userService = inject(UserService)
   private readonly ghostClickGuard = inject(TapGhostClickGuard)
   private readonly removeFns: (() => void)[] = []
   private pointerId: number | null = null
@@ -85,7 +86,7 @@ export class TapDirective implements OnDestroy {
   private longPressTriggered = false
   private longPressStartX = 0
   private longPressStartY = 0
-  private lastImmediateTouchTap: TapPoint | null = null
+  private lastImmediateTap: TapPoint | null = null
   private pendingTap: TapPoint | null = null
 
   constructor() {
@@ -196,17 +197,10 @@ export class TapDirective implements OnDestroy {
       return
     }
 
-    const isImmediateTouchTap = this.singleTapOnTouch && ev.pointerType === 'touch'
-    if (!isImmediateTouchTap && !this.enableDoubleTap) {
-      this.pendingTap = null
-      this.emit(ev)
-      return
-    }
-
     const tap: TapPoint = { x: ev.clientX, y: ev.clientY, timestamp: performance.now() }
-    if (isImmediateTouchTap) {
+    if (!this.isDoubleTapEnabled(ev.pointerType)) {
       this.pendingTap = null
-      this.handleImmediateTouchTap(ev, tap)
+      this.handleImmediateTap(ev, tap)
       return
     }
 
@@ -228,12 +222,12 @@ export class TapDirective implements OnDestroy {
     }
   }
 
-  private handleImmediateTouchTap(event: PointerEvent, tap: TapPoint) {
-    const isRepeatedTap = this.isNearbyTap(this.lastImmediateTouchTap, tap)
+  private handleImmediateTap(event: PointerEvent, tap: TapPoint) {
+    const isRepeatedTap = this.isNearbyTap(this.lastImmediateTap, tap)
     // Refresh the reference even when suppressing, so a rapid tap sequence stays throttled until it stops.
-    this.lastImmediateTouchTap = tap
+    this.lastImmediateTap = tap
     if (isRepeatedTap) {
-      // A suppressed pointerup may still produce a compatibility click.
+      // A suppressed pointerup may still produce a native click.
       this.armGhostClickGuard(event)
       return
     }
@@ -256,6 +250,14 @@ export class TapDirective implements OnDestroy {
       current.timestamp - previous.timestamp <= DOUBLE_TAP_INTERVAL &&
       Math.hypot(current.x - previous.x, current.y - previous.y) <= DOUBLE_TAP_SLOP
     )
+  }
+
+  protected get singleClickEnabled(): boolean {
+    return !this.isDoubleTapEnabled('mouse')
+  }
+
+  private isDoubleTapEnabled(pointerType: string): boolean {
+    return this.enableDoubleTap ?? (pointerType !== 'touch' && !(this.userService.user?.preferences?.singleClickNavigation ?? false))
   }
 
   private armGhostClickGuard(event: PointerEvent) {
