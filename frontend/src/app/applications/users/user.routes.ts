@@ -15,6 +15,10 @@ export const userRoutes: Routes = [
         loadComponent: () => import('./components/user-account.component').then((c) => c.UserAccountComponent)
       },
       {
+        path: USER_PATH.PREFERENCES,
+        loadComponent: () => import('./components/user-preferences.component').then((c) => c.UserPreferencesComponent)
+      },
+      {
         path: USER_PATH.CLIENTS,
         canActivate: [userHaveDesktopAppPermission],
         loadComponent: () => import('../sync/components/sync-clients.component').then((c) => c.SyncClientsComponent)

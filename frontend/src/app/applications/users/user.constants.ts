@@ -1,10 +1,11 @@
-import { LucideLaptopMinimal, LucideStore, LucideUserRound, LucideUserRoundGroup, LucideUsersRound } from '@lucide/angular'
+import { LucideLaptopMinimal, LucideSlidersHorizontal, LucideStore, LucideUserRound, LucideUserRoundGroup, LucideUsersRound } from '@lucide/angular'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { AppMenu } from '../../layout/layout.interfaces'
 
 export const USER_PATH = {
   BASE: 'user',
   ACCOUNT: 'account',
+  PREFERENCES: 'preferences',
   CLIENTS: 'clients',
   GROUPS: 'groups',
   GUESTS: 'guests',
@@ -13,6 +14,7 @@ export const USER_PATH = {
 
 export const USER_TITLE = {
   ACCOUNT: 'Account',
+  PREFERENCES: 'Preferences',
   CLIENTS: 'Clients',
   GROUPS: 'Groups',
   GUESTS: 'Guests',
@@ -29,6 +31,7 @@ export const USER_ONLINE_STATUS_LIST = ['available', 'busy', 'absent', 'offline'
 
 export const USER_ICON = {
   ACCOUNT: LucideUserRound,
+  PREFERENCES: LucideSlidersHorizontal,
   CLIENTS: LucideLaptopMinimal,
   GROUPS: LucideUsersRound,
   GUESTS: LucideUserRoundGroup,
@@ -51,6 +54,12 @@ export const USER_MENU: AppMenu = {
       icon: USER_ICON.ACCOUNT,
       link: `${USER_PATH.BASE}/${USER_PATH.ACCOUNT}`,
       matchLink: RegExp(`^${USER_PATH.BASE}/${USER_PATH.ACCOUNT}$`)
+    },
+    {
+      title: USER_TITLE.PREFERENCES,
+      icon: USER_ICON.PREFERENCES,
+      link: `${USER_PATH.BASE}/${USER_PATH.PREFERENCES}`,
+      matchLink: RegExp(`^${USER_PATH.BASE}/${USER_PATH.PREFERENCES}$`)
     },
     {
       id: USER_PERMISSION.DESKTOP_APP,
