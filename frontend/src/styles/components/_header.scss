@@ -609,6 +609,7 @@
         gap: .35rem;
         max-width: 100%;
         padding: .2rem .35rem;
+        margin-inline-start: calc(.125rem - .35rem);
         border: 0;
         border-radius: $border-radius-base;
         background: transparent;
@@ -647,12 +648,8 @@
   overflow-x: hidden;
   overflow-y: auto;
 
-  .breadcrumb-path-level {
-    --breadcrumb-path-indent: 0rem;
-  }
-
   .breadcrumb-path-item {
-    display: flex !important;
+    display: flex;
     align-items: center;
     gap: .4rem;
 
@@ -665,9 +662,7 @@
       display: block;
       flex: 1 1 auto;
       min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      @include text-truncate-utility;
     }
   }
 
@@ -679,15 +674,15 @@
   }
 
   .dropdown-item.breadcrumb-path-item--current[aria-disabled='true'] {
+    cursor: default;
+    font-weight: 500;
+
     &,
     &:is(:hover, :focus-visible, .active, :active) {
       color: var(--app-action-state-color) !important;
       background-color: var(--app-action-state-bg) !important;
       box-shadow: none !important;
     }
-
-    cursor: default;
-    font-weight: 500;
 
     &:focus-visible {
       outline: 2px solid currentColor;
@@ -697,6 +692,5 @@
 
   @include media-breakpoint-down(sm) {
     width: 16rem;
-    max-height: calc(70dvh - env(safe-area-inset-bottom));
   }
 }

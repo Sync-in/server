@@ -3,14 +3,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { RouterLink, RouterLinkActive } from '@angular/router'
 import type { LucideIcon } from '@lucide/angular'
 import { LucideChevronDown, LucideChevronRight, LucideCornerDownRight, LucideDynamicIcon, LucideFolder } from '@lucide/angular'
-import { type BsDropdownDirective, BsDropdownModule } from 'ngx-bootstrap/dropdown'
+import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
 import { LayoutService } from '../layout.service'
-import { BreadCrumbUrl } from './breadcrumb.interfaces'
+import type { BreadcrumbLevel, BreadCrumbUrl } from './breadcrumb.interfaces'
 
 @Component({
   selector: 'app-breadcrumb',
   templateUrl: 'breadcrumb.component.html',
-  imports: [RouterLink, RouterLinkActive, LucideDynamicIcon, BsDropdownModule]
+  imports: [RouterLink, RouterLinkActive, LucideDynamicIcon, BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective]
 })
 export class BreadcrumbComponent implements OnDestroy {
   @ViewChild('breadcrumbContent') private breadcrumbContent: ElementRef<HTMLElement>
@@ -20,7 +20,7 @@ export class BreadcrumbComponent implements OnDestroy {
   protected breadcrumbIcon: LucideIcon = null
   protected fullPathLabels: string[] = []
   protected isOverflowing = false
-  protected levels: { link: string[] | string; title: string }[] = []
+  protected levels: BreadcrumbLevel[] = []
   private readonly cdr = inject(ChangeDetectorRef)
   private readonly layout = inject(LayoutService)
   private menuFocusFrame: number = null
@@ -69,22 +69,22 @@ export class BreadcrumbComponent implements OnDestroy {
     this.levels = []
     if (urlTabs[0]) {
       let link = `/${urlTabs.splice(0, splicing).join('/')}`
-      for (const { index, item } of urlTabs.filter((i) => i !== '').map((item, index) => ({ index, item }))) {
+      for (const [index, item] of urlTabs.filter((item) => item !== '').entries()) {
         // ignore url args (ex: ?select=...)
-        let sanitized_item = item.split('?')[0]
+        let sanitizedItem = item.split('?')[0]
         const mutation = mutateLevel?.[index]
         if (!sameLink || mutation?.setUrl) {
-          link += '/' + sanitized_item
+          link += '/' + sanitizedItem
         }
         if (mutation) {
           if (mutation.hide) continue
           if (mutation.setTitle) {
-            sanitized_item = mutation.translateTitle ? this.layout.translateString(mutation.setTitle) : mutation.setTitle
+            sanitizedItem = mutation.translateTitle ? this.layout.translateString(mutation.setTitle) : mutation.setTitle
           }
         } else if (translating) {
-          sanitized_item = this.layout.translateString(sanitized_item)
+          sanitizedItem = this.layout.translateString(sanitizedItem)
         }
-        this.levels.push({ link: index === 0 && firstLink ? firstLink : link, title: sanitized_item })
+        this.levels.push({ link: index === 0 && firstLink ? firstLink : link, title: sanitizedItem })
       }
     }
     this.fullPathLabels = this.levels.map((_, index) =>
