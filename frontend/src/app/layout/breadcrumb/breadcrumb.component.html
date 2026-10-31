@@ -6,95 +6,100 @@
   container="body"
   dropdown
   placement="bottom start">
-  <ol
-    #breadcrumbContent
-    [class.breadcrumb-content--collapsed]="isOverflowing"
-    class="breadcrumb-content">
-    @for (item of levels; track $index; let isFirst = $first, isLast = $last) {
+  <ol #breadcrumbContent class="breadcrumb-content">
+    @if (isOverflowing) {
       <li
-        class="breadcrumb-level"
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{matrixParams: 'ignored', queryParams: 'ignored', paths: 'exact', fragment: 'ignored'}">
-        @if (!isFirst) {
+        (mouseenter)="onPathMenuHoverEnter(pathDropdown)"
+        (mouseleave)="onPathMenuHoverLeave(pathDropdown)"
+        class="breadcrumb-compact-level">
+        <button
+          #pathToggle
+          (pointerdown)="preparePathMenuClick(pathDropdown)"
+          aria-current="page"
+          aria-haspopup="menu"
+          class="breadcrumb-compact-toggle"
+          dropdownToggle
+          type="button">
+          <span class="breadcrumb-compact-root">
+            @if (breadcrumbIcon) {
+              <svg [lucideIcon]="breadcrumbIcon" class="breadcrumb-root-icon"></svg>
+            }
+            <span>{{ levels[0]?.title }}</span>
+          </span>
           <svg aria-hidden="true" [lucideIcon]="icons.LucideChevronRight" class="breadcrumb-separator"></svg>
-        }
-        @if (isLast && isOverflowing) {
-          <div class="breadcrumb-current-dropdown">
-            <button
-              #pathToggle
-              aria-current="page"
-              aria-haspopup="menu"
-              class="breadcrumb-current-toggle dropdown-toggle"
-              dropdownToggle
-              type="button">
-              <span class="breadcrumb-main-label breadcrumb-main-label--active">{{ item.title }}</span>
-              <svg aria-hidden="true" [lucideIcon]="icons.LucideChevronDown" class="breadcrumb-path-chevron"></svg>
-            </button>
-          </div>
-        } @else {
+          <span class="breadcrumb-compact-current">
+            {{ levels[levels.length - 1]?.title }}
+          </span>
+          <svg aria-hidden="true" [lucideIcon]="icons.LucideChevronDown" class="breadcrumb-path-chevron"></svg>
+        </button>
+      </li>
+    } @else {
+      @for (item of levels; track $index; let isFirst = $first, isLast = $last) {
+        <li [class.active]="isLast">
+          @if (!isFirst) {
+            <svg aria-hidden="true" [lucideIcon]="icons.LucideChevronRight" class="breadcrumb-separator"></svg>
+          }
           <a [attr.aria-current]="isLast ? 'page' : null" [routerLink]="item.link">
             @if (isFirst && breadcrumbIcon) {
               <svg [lucideIcon]="breadcrumbIcon" class="breadcrumb-root-icon"></svg>
             }
-            <span class="breadcrumb-main-label">{{ item.title }}</span>
+            <span>{{ item.title }}</span>
+          </a>
+        </li>
+      }
+    }
+  </ol>
+  <ul
+    *dropdownMenu
+    (keydown)="onPathMenuKeydown($event, pathDropdown)"
+    (mouseenter)="onPathMenuHoverEnter(pathDropdown)"
+    (mouseleave)="onPathMenuHoverLeave(pathDropdown)"
+    class="dropdown-menu dropdown-menu-start breadcrumb-path-menu"
+    role="menu">
+    @for (pathItem of levels; track $index; let isCurrent = $last, isRoot = $first, pathIndex = $index) {
+      <li
+        [style.--breadcrumb-path-indent]="((pathIndex > 8 ? 8 : pathIndex) * 0.25) + 'rem'"
+        role="none">
+        @if (isCurrent) {
+          <button
+            (click)="$event.stopPropagation()"
+            aria-current="page"
+            aria-disabled="true"
+            class="dropdown-item active breadcrumb-path-item breadcrumb-path-item--current"
+            role="menuitem"
+            tabindex="-1"
+            type="button">
+            @if (!isRoot) {
+              <svg
+                aria-hidden="true"
+                [lucideIcon]="icons.LucideCornerDownRight"
+                class="breadcrumb-path-branch"></svg>
+            }
+            <svg [lucideIcon]="icons.LucideFolder"></svg>
+            <span class="breadcrumb-path-label">{{ pathItem.title }}</span>
+          </button>
+        } @else {
+          <a
+            (click)="pathDropdown.hide()"
+            [routerLink]="pathItem.link"
+            class="dropdown-item breadcrumb-path-item"
+            role="menuitem">
+            @if (!isRoot) {
+              <svg
+                aria-hidden="true"
+                [lucideIcon]="icons.LucideCornerDownRight"
+                class="breadcrumb-path-branch"></svg>
+            }
+            <svg [lucideIcon]="isRoot && breadcrumbIcon ? breadcrumbIcon : icons.LucideFolder"></svg>
+            <span class="breadcrumb-path-label">{{ pathItem.title }}</span>
           </a>
         }
       </li>
     }
-    <ul
-      *dropdownMenu
-      (keydown)="onPathMenuKeydown($event, pathDropdown)"
-      class="dropdown-menu dropdown-menu-start breadcrumb-path-menu"
-      role="menu">
-      @for (pathItem of levels; track $index; let isCurrent = $last, isRoot = $first, pathIndex = $index) {
-        <li
-          [style.--breadcrumb-path-indent]="((pathIndex > 8 ? 8 : pathIndex) * 0.25) + 'rem'"
-          role="none">
-          @if (isCurrent) {
-            <button
-              (click)="preventCurrentNavigation($event)"
-              [attr.aria-label]="fullPathLabels[pathIndex]"
-              [attr.title]="fullPathLabels[pathIndex]"
-              aria-current="page"
-              aria-disabled="true"
-              class="dropdown-item breadcrumb-path-item breadcrumb-path-item--current"
-              role="menuitem"
-              tabindex="-1"
-              type="button">
-              @if (!isRoot) {
-                <svg
-                  aria-hidden="true"
-                  [lucideIcon]="icons.LucideCornerDownRight"
-                  class="breadcrumb-path-branch"></svg>
-              }
-              <svg [lucideIcon]="icons.LucideFolder"></svg>
-              <span class="breadcrumb-path-label">{{ pathItem.title }}</span>
-            </button>
-          } @else {
-            <a
-              (click)="pathDropdown.hide()"
-              [attr.aria-label]="fullPathLabels[pathIndex]"
-              [attr.title]="fullPathLabels[pathIndex]"
-              [routerLink]="pathItem.link"
-              class="dropdown-item breadcrumb-path-item"
-              role="menuitem">
-              @if (!isRoot) {
-                <svg
-                  aria-hidden="true"
-                  [lucideIcon]="icons.LucideCornerDownRight"
-                  class="breadcrumb-path-branch"></svg>
-              }
-              <svg [lucideIcon]="isRoot && breadcrumbIcon ? breadcrumbIcon : icons.LucideFolder"></svg>
-              <span class="breadcrumb-path-label">{{ pathItem.title }}</span>
-            </a>
-          }
-        </li>
-      }
-    </ul>
-  </ol>
+  </ul>
   <ol #breadcrumbMeasure aria-hidden="true" class="breadcrumb-content breadcrumb-content--measure">
     @for (item of levels; track $index; let isFirst = $first) {
-      <li class="breadcrumb-level">
+      <li>
         @if (!isFirst) {
           <svg aria-hidden="true" [lucideIcon]="icons.LucideChevronRight" class="breadcrumb-separator"></svg>
         }

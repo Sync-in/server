@@ -1,6 +1,6 @@
 import { afterNextRender, ChangeDetectorRef, Component, ElementRef, inject, OnDestroy, ViewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
-import { RouterLink, RouterLinkActive } from '@angular/router'
+import { RouterLink } from '@angular/router'
 import type { LucideIcon } from '@lucide/angular'
 import { LucideChevronDown, LucideChevronRight, LucideCornerDownRight, LucideDynamicIcon, LucideFolder } from '@lucide/angular'
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
@@ -10,7 +10,7 @@ import type { BreadcrumbLevel, BreadCrumbUrl } from './breadcrumb.interfaces'
 @Component({
   selector: 'app-breadcrumb',
   templateUrl: 'breadcrumb.component.html',
-  imports: [RouterLink, RouterLinkActive, LucideDynamicIcon, BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective]
+  imports: [RouterLink, LucideDynamicIcon, BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective]
 })
 export class BreadcrumbComponent implements OnDestroy {
   @ViewChild('breadcrumbContent') private breadcrumbContent: ElementRef<HTMLElement>
@@ -18,13 +18,14 @@ export class BreadcrumbComponent implements OnDestroy {
   @ViewChild('pathToggle') private pathToggle: ElementRef<HTMLButtonElement>
   protected readonly icons = { LucideChevronDown, LucideChevronRight, LucideCornerDownRight, LucideFolder }
   protected breadcrumbIcon: LucideIcon = null
-  protected fullPathLabels: string[] = []
   protected isOverflowing = false
   protected levels: BreadcrumbLevel[] = []
+  private readonly canHoverPathMenu = window.matchMedia('(hover: hover) and (pointer: fine)')
   private readonly cdr = inject(ChangeDetectorRef)
   private readonly layout = inject(LayoutService)
   private menuFocusFrame: number = null
-  private resizeFallback: () => void = null
+  private pathMenuHoverCloseTimeout: ReturnType<typeof setTimeout> = null
+  private pathMenuOpenedByHover = false
   private resizeFrame: number = null
   private resizeObserver: ResizeObserver = null
 
@@ -40,11 +41,6 @@ export class BreadcrumbComponent implements OnDestroy {
       if (!content || !measure) return
 
       this.scheduleOverflowMeasure()
-      if (typeof ResizeObserver === 'undefined') {
-        this.resizeFallback = () => this.scheduleOverflowMeasure()
-        window.addEventListener('resize', this.resizeFallback)
-        return
-      }
       // Observe both the available width and the full breadcrumb because either can change independently.
       this.resizeObserver = new ResizeObserver(() => this.scheduleOverflowMeasure())
       this.resizeObserver.observe(content)
@@ -54,45 +50,33 @@ export class BreadcrumbComponent implements OnDestroy {
 
   ngOnDestroy() {
     this.resizeObserver?.disconnect()
-    if (this.resizeFallback) window.removeEventListener('resize', this.resizeFallback)
     if (this.menuFocusFrame !== null) cancelAnimationFrame(this.menuFocusFrame)
+    this.clearPathMenuHoverClose()
     if (this.resizeFrame !== null) cancelAnimationFrame(this.resizeFrame)
   }
 
   private updateNav(url: BreadCrumbUrl) {
-    const splicing = url.splicing ?? 1
-    const translating = url.translating ?? false
-    const sameLink = url.sameLink ?? false
-    const firstLink = url.firstLink ?? null
-    const mutateLevel = url.mutateLevel ?? null
     const urlTabs = url.url.split('/').slice(1)
     this.levels = []
     if (urlTabs[0]) {
-      let link = `/${urlTabs.splice(0, splicing).join('/')}`
+      let link = `/${urlTabs.splice(0, url.splicing ?? 1).join('/')}`
       for (const [index, item] of urlTabs.filter((item) => item !== '').entries()) {
         // ignore url args (ex: ?select=...)
         let sanitizedItem = item.split('?')[0]
-        const mutation = mutateLevel?.[index]
-        if (!sameLink || mutation?.setUrl) {
+        const mutation = url.mutateLevel?.[index]
+        if (!url.sameLink || mutation?.setUrl) {
           link += '/' + sanitizedItem
         }
         if (mutation) {
-          if (mutation.hide) continue
           if (mutation.setTitle) {
             sanitizedItem = mutation.translateTitle ? this.layout.translateString(mutation.setTitle) : mutation.setTitle
           }
-        } else if (translating) {
+        } else if (url.translating) {
           sanitizedItem = this.layout.translateString(sanitizedItem)
         }
-        this.levels.push({ link: index === 0 && firstLink ? firstLink : link, title: sanitizedItem })
+        this.levels.push({ link: index === 0 && url.firstLink ? url.firstLink : link, title: sanitizedItem })
       }
     }
-    this.fullPathLabels = this.levels.map((_, index) =>
-      this.levels
-        .slice(0, index + 1)
-        .map(({ title }) => title)
-        .join(' / ')
-    )
     this.scheduleOverflowMeasure()
   }
 
@@ -101,8 +85,37 @@ export class BreadcrumbComponent implements OnDestroy {
       cancelAnimationFrame(this.menuFocusFrame)
       this.menuFocusFrame = null
     }
-    if (!isOpen || typeof requestAnimationFrame === 'undefined') return
+    if (!isOpen) {
+      this.pathMenuOpenedByHover = false
+      this.clearPathMenuHoverClose()
+      return
+    }
+    if (this.pathMenuOpenedByHover) return
     this.focusFirstPathItem()
+  }
+
+  protected onPathMenuHoverEnter(dropdown: BsDropdownDirective) {
+    if (!this.canHoverPathMenu.matches) return
+
+    this.clearPathMenuHoverClose()
+    if (dropdown.isOpen) return
+
+    this.pathMenuOpenedByHover = true
+    dropdown.show()
+  }
+
+  protected onPathMenuHoverLeave(dropdown: BsDropdownDirective) {
+    if (!this.canHoverPathMenu.matches || !this.pathMenuOpenedByHover) return
+
+    this.clearPathMenuHoverClose()
+    this.pathMenuHoverCloseTimeout = setTimeout(() => {
+      this.pathMenuHoverCloseTimeout = null
+      dropdown.hide()
+    }, 150)
+  }
+
+  protected preparePathMenuClick(dropdown: BsDropdownDirective) {
+    if (this.pathMenuOpenedByHover && dropdown.isOpen) dropdown.hide()
   }
 
   private focusFirstPathItem(attempt = 0) {
@@ -153,13 +166,14 @@ export class BreadcrumbComponent implements OnDestroy {
     items[nextIndex].focus()
   }
 
-  protected preventCurrentNavigation(event: Event) {
-    event.preventDefault()
-    event.stopPropagation()
+  private clearPathMenuHoverClose() {
+    if (this.pathMenuHoverCloseTimeout === null) return
+    clearTimeout(this.pathMenuHoverCloseTimeout)
+    this.pathMenuHoverCloseTimeout = null
   }
 
   private scheduleOverflowMeasure() {
-    if (!this.breadcrumbContent?.nativeElement || typeof requestAnimationFrame === 'undefined') return
+    if (!this.breadcrumbContent?.nativeElement || !this.breadcrumbMeasure?.nativeElement) return
     // Coalesce consecutive resize and content updates into a single post-layout measurement.
     if (this.resizeFrame !== null) cancelAnimationFrame(this.resizeFrame)
     this.resizeFrame = requestAnimationFrame(() => {

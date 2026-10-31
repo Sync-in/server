@@ -1,5 +1,5 @@
 export interface BreadcrumbLevel {
-  link: string[] | string
+  link: string
   title: string
 }
 
@@ -7,7 +7,6 @@ export interface BreadcrumbLevelMutation {
   setTitle?: string
   translateTitle?: boolean
   setUrl?: boolean
-  hide?: boolean
 }
 
 export interface BreadCrumbUrl {
