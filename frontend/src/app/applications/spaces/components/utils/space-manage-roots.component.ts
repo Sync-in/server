@@ -41,6 +41,28 @@ import { ExternalFilePathEvent } from '../dialogs/space-root-path-dialog.compone
       margin: 2px;
       font-size: 1rem;
     }
+
+    .space-root-row {
+      max-height: 38px;
+    }
+
+    @media (max-width: 767.98px) {
+      .space-root-row {
+        align-items: stretch !important;
+        flex-direction: column;
+        max-height: none;
+      }
+
+      .space-root-actions {
+        justify-content: flex-start;
+        margin-top: 0.5rem;
+        width: 100%;
+      }
+
+      .space-root-actions__separator {
+        display: none;
+      }
+    }
   `
 })
 export class SpaceManageRootsComponent implements OnInit, OnDestroy {

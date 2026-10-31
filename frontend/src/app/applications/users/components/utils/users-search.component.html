@@ -47,37 +47,41 @@
 <div class="col-12 mt-1">
   @for (member of members; track member.mid) {
     <div class="{{rowBackgroundClass}} mb-1 px-3 py-2" style="border-radius: 4px">
-      <div class="d-flex align-items-center text-truncate no-select" style="max-height: 38px">
+      <div
+        class="d-flex align-items-center text-truncate no-select user-search-member-row"
+        [class.user-search-member-row--with-permissions]="withPermissions">
         <div class="d-flex align-items-center text-truncate w-100">
-          @if (member.isUser) {
-            <img alt="" class="avatar-base-img" height="32" width="32" [src]="member.avatarUrl" />
-          } @else if (member.isLink) {
-            <span class="circle-primary-icon">
-              <svg [lucideIcon]="icons.LINKS"></svg>
-            </span>
-          } @else {
-            <span class="{{member.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}">
-              <svg [lucideIcon]="icons.GROUPS"></svg>
-            </span>
-          }
-          <div class="d-flex flex-column text-truncate ms-2">
-            <div class="text-truncate">{{ member.name }}</div>
-            <div class="fs-xs text-truncate text-muted">
-              @if (member.description) {
-                <span>{{ member.description }}</span>
-              } @else if (!member.linkId) {
-                <span l10nTranslate>{{ member.type }}</span>
-              }
+          <div class="d-flex align-items-center text-truncate w-100">
+            @if (member.isUser) {
+              <img alt="" class="avatar-base-img" height="32" width="32" [src]="member.avatarUrl" />
+            } @else if (member.isLink) {
+              <span class="circle-primary-icon">
+                <svg [lucideIcon]="icons.LINKS"></svg>
+              </span>
+            } @else {
+              <span class="{{member.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}">
+                <svg [lucideIcon]="icons.GROUPS"></svg>
+              </span>
+            }
+            <div class="d-flex flex-column text-truncate ms-2">
+              <div class="text-truncate">{{ member.name }}</div>
+              <div class="fs-xs text-truncate text-muted">
+                @if (member.description) {
+                  <span>{{ member.description }}</span>
+                } @else if (!member.linkId) {
+                  <span l10nTranslate>{{ member.type }}</span>
+                }
+              </div>
             </div>
           </div>
-        </div>
-        <div class="d-flex flex-column fs-2xs text-muted d-none d-lg-block ms-3">
-          <div class="d-flex justify-content-end" l10nTranslate>{{ member.isLink ? MEMBER_TYPE.LINK : member.type }}</div>
-          <div class="d-flex justify-content-end">{{ member.createdAt | amTimeAgo }}</div>
+          <div class="d-flex flex-column flex-shrink-0 fs-2xs text-muted ms-3">
+            <div class="d-flex justify-content-end" l10nTranslate>{{ member.isLink ? MEMBER_TYPE.LINK : member.type }}</div>
+            <div class="d-flex justify-content-end">{{ member.createdAt | amTimeAgo }}</div>
+          </div>
         </div>
         @if (editMode) {
-          <div class="d-flex no-select">
-            <div class="vr mx-2"></div>
+          <div class="d-flex no-select user-search-member-actions">
+            <div class="vr mx-2 user-search-member-actions__separator"></div>
             @if (withPermissions) {
               @for (p of member.hPerms| keyvalue: originalOrderKeyValue; track p.key) {
                 @if (!filterPermissions || (filterPermissions && allowedPermissions.indexOf($any(p.key))) > -1) {

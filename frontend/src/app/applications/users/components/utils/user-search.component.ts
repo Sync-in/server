@@ -38,6 +38,28 @@ import { USER_ICON } from '../../user.constants'
       margin: 2px;
       font-size: 1rem;
     }
+
+    .user-search-member-row {
+      max-height: 38px;
+    }
+
+    @media (max-width: 767.98px) {
+      .user-search-member-row--with-permissions {
+        align-items: stretch !important;
+        flex-direction: column;
+        max-height: none;
+      }
+
+      .user-search-member-row--with-permissions .user-search-member-actions {
+        justify-content: flex-start;
+        margin-top: 0.5rem;
+        width: 100%;
+      }
+
+      .user-search-member-row--with-permissions .user-search-member-actions__separator {
+        display: none;
+      }
+    }
   `
 })
 export class UserSearchComponent implements OnInit {
