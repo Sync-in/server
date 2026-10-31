@@ -89,7 +89,8 @@ describe(DatabaseModule.name, () => {
     const waitRetryDelay = vi.spyOn(databaseModule as any, 'waitRetryDelay').mockResolvedValue(true)
 
     connectionError(retryableError)
-    await databaseModule['recoveryPromise']
+    const recoveryPromise = databaseModule['recoveryPromise']
+    await recoveryPromise
 
     expect(query).toHaveBeenCalledTimes(3)
     expect(waitRetryDelay).toHaveBeenCalledOnce()

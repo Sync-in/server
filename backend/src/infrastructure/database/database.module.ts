@@ -19,7 +19,12 @@ import * as schema from './schema.js'
       useFactory: (): DrizzleMySqlConfig => ({
         mysql: {
           connection: 'pool',
-          config: configuration.mysql.url
+          config: {
+            uri: configuration.mysql.url,
+            connectionLimit: 10,
+            maxIdle: 5,
+            idleTimeout: 60 * 60_000
+          }
         },
         config: {
           schema: { ...schema },
