@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<svg width="64" version="1.1" viewBox="0 0 64 64" height="64" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="64" version="1.1" viewBox="0 0 512 512" height="64" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <svg x="-12.3586" y="-12.3586" width="536.7172" height="536.7172" viewBox="0 0 64 64" preserveAspectRatio="xMidYMid meet" overflow="hidden">
   <defs id="defs4">
     <linearGradient id="linearGradient4306" y1="61" y2="3" x2="0" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1.136364, 0, 0, 1, -4.363636, 0)" xlink:href="#linearGradient4300-7"/>
     <linearGradient id="linearGradient4427" y1="31" x1="54" y2="17" x2="40" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1.136364, 0, 0, -1, -20.272728, 78)" xlink:href="#linearGradient4410"/>
@@ -23,4 +24,5 @@
   <path style="fill:url(#linearGradient4357);fill-rule:evenodd" id="path4314" d="M 57 47 L 41.091 61 L 41.091 47 L 57 47 Z"/>
   <path style="fill:url(#linearGradient4427);opacity:0.2;fill-rule:evenodd" id="path4320" d="M 25.182 61 L 41.091 47 L 41.091 61 L 25.182 61 Z"/>
   <path style="fill:#fbfbfb" id="rect3367" d="M 17.227 24 L 17.227 40 L 46.773 40 L 46.773 24 L 17.227 24 Z M 18.364 25 L 45.636 25 L 45.636 39 L 18.364 39 L 18.364 25 Z M 19.5 26 L 19.5 26.826 L 19.5 38 L 21.773 38 L 21.773 28.826 L 26.318 32.826 L 30.864 28.826 L 30.864 38 L 33.136 38 L 33.136 26.826 L 33.136 26 L 30.861 26 L 26.318 29.998 L 21.775 26 L 21.773 26 L 19.5 26 Z M 38.818 26 L 38.818 34 L 35.409 34 L 39.954 38 L 44.5 34 L 41.091 34 L 41.091 26 L 38.818 26 Z"/>
+  </svg>
 </svg>

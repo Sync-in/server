@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <svg x="12.8" y="12.8" width="486.4" height="486.4" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" overflow="hidden">
   <defs/>
   <g fill-opacity=".078">
     <path d="m32.563 0c-4.774 0-8.594 3.266-8.594 7.313v497.38c0 4.047 3.82 7.313 8.594 7.313h446.88c4.774 0 8.594-3.266 8.594-7.313v-360.03l-144.66-144.66h-310.81"/>
@@ -15,4 +16,5 @@
   <path d="m478.53 146.44-135.97-135.94 215.95 215.95 135.97 135.94z" fill-opacity=".196"/>
   <use width="1" height="1" xlink:href="#0"/>
   <path d="m345.03 144.56l133.5 129.38v-127.5h-127.72c-2.185 0-4.154-0.71-5.625-1.875h-0.156" fill-opacity=".196"/>
+  </svg>
 </svg>

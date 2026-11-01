@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Diagram">
+  <svg x="12.8" y="12.8" width="486.4" height="486.4" viewBox="0 0 64 64" preserveAspectRatio="xMidYMid meet" overflow="hidden">
   <rect width="64" height="64" rx="12" fill="#f08705"/>
   <path d="M20 21h24v22H20z" fill="none" stroke="#fff" stroke-width="4"/>
   <circle cx="20" cy="21" r="5" fill="#fff"/>
@@ -7,5 +8,6 @@
   <circle cx="20" cy="43" r="5" fill="#fff"/>
   <circle cx="44" cy="43" r="5" fill="#fff"/>
   <circle cx="32" cy="32" r="5" fill="#fff"/>
+  </svg>
 </svg>
 

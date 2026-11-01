@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" id="Livello_1" xmlns:x="http://ns.adobe.com/Extensibility/1.0/" xmlns:i="http://ns.adobe.com/AdobeIllustrator/10.0/" xmlns:graph="http://ns.adobe.com/Graphs/1.0/" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 2112.25 2011.641" enable-background="new 0 0 2112.25 2011.641" xml:space="preserve">
+<svg version="1.1" id="Livello_1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 512 512"
+     enable-background="new 0 0 2112.25 2011.641" xml:space="preserve">
+  <svg x="12.8" y="12.8" width="486.4" height="486.4" viewBox="0 0 2112.25 2011.641" preserveAspectRatio="xMidYMid meet" overflow="hidden">
 <metadata>
 	<sfw xmlns="http://ns.adobe.com/SaveForWeb/1.0/">
 		<slices/>
@@ -23,4 +25,5 @@
 </linearGradient>
 <path fill="url(#SVGID_1_)" d="M92.185,502.913h922.047c50.912,0,92.185,41.272,92.185,92.185v922.047  c0,50.912-41.272,92.185-92.185,92.185H92.185C41.272,1609.33,0,1568.057,0,1517.145V595.098  C0,544.186,41.272,502.913,92.185,502.913z"/>
 <path fill="#FFFFFF" d="M523.033,1153.084c16.932,49.889,26.99,81.372,30.175,94.448h2.062  c3.051-13.076,13.931-46.788,32.639-101.136l134.128-389.962h123.315l-227.57,599.326H485.717l-224.2-599.326h126.836  L523.033,1153.084z"/>
+  </svg>
 </svg>

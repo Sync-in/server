@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512">
+  <svg x="12.8" y="12.8" width="486.4" height="486.4" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" overflow="hidden">
  <text style="word-spacing:0;letter-spacing:0" font-size="129.23" y="148.92" x="-109.95" font-family="Gentium Book Basic" line-height="125%">
   <tspan y="148.92" x="-109.95"/>
  </text>
@@ -119,4 +120,5 @@
   <tspan y="522.33" x="-489.9"/>
  </text>
  <path d="m89.5 197.03v76.844h102.47v-76.844h-102.47m243.34 0v89.69h89.66c0-49.51-40.1-89.69-89.66-89.69m-13 12.813c-49.51 0-89.66 40.1-89.66 89.66 0 49.51 40.1 89.69 89.66 89.69 49.51 0 89.69-40.13 89.69-89.69h-89.69v-89.66m-230.34 102.47v76.81h102.47v-76.81h-102.47m0 115.22v25.594h333v-25.594h-333" fill="#f9f9f9"/>
+  </svg>
 </svg>
