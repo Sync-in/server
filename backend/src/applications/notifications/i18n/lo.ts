@@ -1,0 +1,49 @@
+export const lo = {
+  'If you no longer wish to receive notifications, change your preferences directly from your user space.':
+    'ຖ້າທ່ານບໍ່ຕ້ອງການຮັບການແຈ້ງເຕືອນອີກຕໍ່ໄປ ໃຫ້ປ່ຽນການຕັ້ງຄ່າໂດຍກົງຈາກພື້ນທີ່ຜູ້ໃຊ້ຂອງທ່ານ.',
+  'Access it from': 'ເຂົ້າເຖິງໄດ້ຈາກ:',
+  Comment: 'ຄຳເຫັນ',
+  commented: 'ໄດ້ສະແດງຄຳເຫັນໃສ່',
+  'You receive this notification if you are the owner of the file or if you have also commented on this file':
+    'ທ່ານໄດ້ຮັບການແຈ້ງເຕືອນນີ້ຫາກທ່ານເປັນເຈົ້າຂອງໄຟລ໌ ຫຼືທ່ານໄດ້ສະແດງຄຳເຫັນໃສ່ໄຟລ໌ນີ້',
+  Space: 'ພື້ນທີ່',
+  'from the space': 'ຈາກພື້ນທີ່',
+  'to the space': 'ໄປຍັງພື້ນທີ່',
+  'Access your spaces from': 'ເຂົ້າເຖິງພື້ນທີ່ຂອງທ່ານໄດ້ຈາກ:',
+  'Access this space from': 'ເຂົ້າເຖິງພື້ນທີ່ນີ້ໄດ້ຈາກ:',
+  'You now have access to the space': 'ຕອນນີ້ທ່ານສາມາດເຂົ້າເຖິງພື້ນທີ່ໄດ້ແລ້ວ',
+  'You no longer have access to the space': 'ທ່ານບໍ່ສາມາດເຂົ້າເຖິງພື້ນທີ່ໄດ້ອີກຕໍ່ໄປ',
+  'This space has been permanently deleted': 'ພື້ນທີ່ນີ້ຖືກລຶບຖາວອນແລ້ວ',
+  anchored: 'ໄດ້ປັກໝຸດ',
+  unanchored: 'ໄດ້ຖອນປັກໝຸດ',
+  Share: 'ການແບ່ງປັນ',
+  'shared with you': 'ໄດ້ແບ່ງປັນກັບທ່ານ',
+  'no longer share with you': 'ບໍ່ໄດ້ແບ່ງປັນກັບທ່ານອີກຕໍ່ໄປ',
+  'You now have access to the share': 'ຕອນນີ້ທ່ານສາມາດເຂົ້າເຖິງການແບ່ງປັນໄດ້ແລ້ວ',
+  'You no longer have access to the share': 'ທ່ານບໍ່ສາມາດເຂົ້າເຖິງການແບ່ງປັນໄດ້ອີກຕໍ່ໄປ',
+  'You are no longer a member of the parent share, your child share has been deleted':
+    'ທ່ານບໍ່ແມ່ນສະມາຊິກຂອງການແບ່ງປັນຫຼັກອີກຕໍ່ໄປ ການແບ່ງປັນຍ່ອຍຂອງທ່ານຈຶ່ງຖືກລຶບແລ້ວ',
+  'Access your shares from': 'ເຂົ້າເຖິງການແບ່ງປັນຂອງທ່ານໄດ້ຈາກ:',
+  'Access password': 'ລະຫັດຜ່ານສຳລັບການເຂົ້າເຖິງ',
+  Sync: 'ການຊິງຂໍ້ມູນ',
+  'Access your syncs from': 'ເຂົ້າເຖິງການຊິງຂໍ້ມູນຂອງທ່ານໄດ້ຈາກ:',
+  'You are no longer synchronizing': 'ທ່ານບໍ່ໄດ້ຊິງຂໍ້ມູນຕໍ່ໄປນີ້ແລ້ວ',
+  'Unlock Request': 'ຄຳຮ້ອງຂໍປົດລັອກ',
+  'You receive this notification because you have a lock on this file.': 'ທ່ານໄດ້ຮັບການແຈ້ງເຕືອນນີ້ເພາະທ່ານໄດ້ລັອກໄຟລ໌ນີ້.',
+  'sends you a request to unlock the file': 'ສົ່ງຄຳຮ້ອງຂໍໃຫ້ທ່ານປົດລັອກໄຟລ໌',
+  'Security notification': 'ການແຈ້ງເຕືອນຄວາມປອດໄພ',
+  'Your account is temporarily locked for 15 minutes due to too many failed sign-in attempts':
+    'ບັນຊີຂອງທ່ານຖືກລັອກຊົ່ວຄາວເປັນເວລາ 15 ນາທີ ເນື່ອງຈາກການພະຍາຍາມເຂົ້າສູ່ລະບົບທີ່ລົ້ມເຫຼວຫຼາຍເກີນໄປ',
+  'You can try signing in again after 15 minutes. If you did not make these attempts, please contact your administrator.':
+    'ທ່ານສາມາດລອງເຂົ້າສູ່ລະບົບອີກຄັ້ງຫຼັງຈາກ 15 ນາທີ. ຖ້າທ່ານບໍ່ໄດ້ເຮັດການພະຍາຍາມເຫຼົ່ານີ້ ກະລຸນາຕິດຕໍ່ຜູ້ຄຸ້ມຄອງລະບົບ.',
+  'Two-factor authentication (2FA) on your account has been disabled': 'ການພິສູດຕົວຕົນສອງຂັ້ນຕອນ (2FA) ໃນບັນຊີຂອງທ່ານຖືກປິດໃຊ້ງານແລ້ວ',
+  'Two-factor authentication (2FA) on your account has been enabled': 'ການພິສູດຕົວຕົນສອງຂັ້ນຕອນ (2FA) ໃນບັນຊີຂອງທ່ານຖືກເປີດໃຊ້ງານແລ້ວ',
+  'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':
+    'ທ່ານໄດ້ຮັບການແຈ້ງເຕືອນນີ້ເນື່ອງຈາກຄວາມປອດໄພຂອງບັນຊີ Sync-in ຂອງທ່ານໄດ້ປ່ຽນແປງ. ຖ້າທ່ານຄິດວ່ານີ້ແມ່ນຄວາມຜິດພາດ ກະລຸນາກວດສອບການຕັ້ງຄ່າຄວາມປອດໄພ ຫຼືຕິດຕໍ່ຜູ້ຄຸ້ມຄອງລະບົບ.',
+  'Address IP': 'ທີ່ຢູ່ IP',
+  Browser: 'ບຣາວເຊີ',
+  'New Version Available': 'ມີເວີຊັນໃໝ່',
+  'You receive this notification because you are the administrator of this server.':
+    'ທ່ານໄດ້ຮັບການແຈ້ງເຕືອນນີ້ເນື່ອງຈາກທ່ານເປັນຜູ້ຄຸ້ມຄອງເຊີບເວີນີ້.',
+  'A new update is available': 'ມີການອັບເດດໃໝ່'
+} as const
