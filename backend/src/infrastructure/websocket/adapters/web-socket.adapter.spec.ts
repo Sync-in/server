@@ -48,9 +48,15 @@ describe(WebSocketAdapter.name, () => {
         },
         url: '/'
       },
-      id: 'socket-id'
+      id: 'socket-id',
+      disconnect: vi.fn(),
+      once: vi.fn()
     } as unknown as Socket
     next = vi.fn<(err?: Error) => void>()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('should authenticate a socket with a WebSocket token', async () => {
@@ -98,5 +104,69 @@ describe(WebSocketAdapter.name, () => {
     expect(next.mock.calls[0][0]).toMatchObject({
       message: 'Unauthorized'
     })
+  })
+
+  it('should disconnect the socket when the token expires', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2030-01-01T00:00:00Z'))
+    const exp = Date.now() / 1000 + 3600
+    jwtService.verify.mockReturnValue({ tokenType: TOKEN_TYPE.WS, identity, exp })
+
+    await adapter['authenticateSocket'](socket, next)
+
+    expect(next).toHaveBeenCalledWith()
+    vi.advanceTimersByTime(3600 * 1000 - 1)
+    expect(socket.disconnect).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(1)
+    expect(socket.disconnect).toHaveBeenCalledTimes(1)
+    expect(socket.disconnect).toHaveBeenCalledWith(true)
+  })
+
+  it('should clear the timer when the socket disconnects first', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2030-01-01T00:00:00Z'))
+    const exp = Date.now() / 1000 + 3600
+    let disconnectHandler: (() => void) | undefined
+    ;(socket.once as Mock).mockImplementation((event: string, cb: () => void) => {
+      if (event === 'disconnect') disconnectHandler = cb
+    })
+    jwtService.verify.mockReturnValue({ tokenType: TOKEN_TYPE.WS, identity, exp })
+
+    await adapter['authenticateSocket'](socket, next)
+
+    expect(socket.once).toHaveBeenCalledWith('disconnect', expect.any(Function))
+    disconnectHandler?.()
+    vi.advanceTimersByTime(3600 * 1000)
+    expect(socket.disconnect).not.toHaveBeenCalled()
+  })
+
+  it('should re-arm past the setTimeout ceiling and disconnect at exp', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2030-01-01T00:00:00Z'))
+    const maxDelay = 2147483647
+    const totalMs = 2_500_000_000 // beyond the setTimeout ceiling
+    const exp = (Date.now() + totalMs) / 1000
+    jwtService.verify.mockReturnValue({ tokenType: TOKEN_TYPE.WS, identity, exp })
+
+    await adapter['authenticateSocket'](socket, next)
+
+    vi.advanceTimersByTime(maxDelay)
+    expect(socket.disconnect).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(totalMs - maxDelay - 1)
+    expect(socket.disconnect).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(1)
+    expect(socket.disconnect).toHaveBeenCalledWith(true)
+  })
+
+  it('should not schedule a timer when authentication fails', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2030-01-01T00:00:00Z'))
+    jwtService.verify.mockReturnValue({ tokenType: TOKEN_TYPE.ACCESS, identity, exp: Date.now() / 1000 + 3600 })
+
+    await adapter['authenticateSocket'](socket, next)
+
+    expect(socket.once).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(3600 * 1000)
+    expect(socket.disconnect).not.toHaveBeenCalled()
   })
 })

@@ -114,6 +114,19 @@ export class WebSocketAdapter extends IoAdapter {
       return
     }
     Object.assign(socket, { user })
+    // WS authentication only runs during the handshake, so disconnect the socket when its token
+    // expires to enforce the session boundary without another database query.
+    if (payload.exp * 1000 > Date.now()) {
+      // setTimeout caps delays at ~24.8 days, re-arm for a longer configured token lifetime
+      const maxDelay = 2147483647
+      let expiryTimer: ReturnType<typeof setTimeout>
+      const scheduleExpiry = () => {
+        const delay = payload.exp * 1000 - Date.now()
+        expiryTimer = delay > maxDelay ? setTimeout(scheduleExpiry, maxDelay) : setTimeout(() => socket.disconnect(true), delay)
+      }
+      scheduleExpiry()
+      socket.once('disconnect', () => clearTimeout(expiryTimer))
+    }
     next()
   }
 
