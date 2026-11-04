@@ -22,7 +22,7 @@ import { SyncPathModel } from '../../models/sync-path.model'
     } @else {
       <span>
         <span>{{ s.settings.scheduler.value }}&nbsp;</span>
-        <span l10nTranslate>{{ s.settings.scheduler.unit + 's' }}</span>
+        <span l10nTranslate>{{ 'scheduler_unit_' + s.settings.scheduler.unit }}</span>
       </span>
     }
   </span>`
