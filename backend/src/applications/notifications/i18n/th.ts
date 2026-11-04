@@ -1,0 +1,49 @@
+export const th = {
+  'If you no longer wish to receive notifications, change your preferences directly from your user space.':
+    'หากคุณไม่ต้องการรับการแจ้งเตือนอีกต่อไป ให้เปลี่ยนการตั้งค่าโดยตรงจากพื้นที่ผู้ใช้ของคุณ',
+  'Access it from': 'เข้าถึงได้จาก',
+  Comment: 'ความคิดเห็น',
+  commented: 'แสดงความคิดเห็นแล้ว',
+  'You receive this notification if you are the owner of the file or if you have also commented on this file':
+    'คุณได้รับการแจ้งเตือนนี้หากคุณเป็นเจ้าของไฟล์หรือเคยแสดงความคิดเห็นในไฟล์นี้',
+  Space: 'พื้นที่',
+  'from the space': 'จากพื้นที่',
+  'to the space': 'ไปยังพื้นที่',
+  'Access your spaces from': 'เข้าถึงพื้นที่ของคุณได้จาก',
+  'Access this space from': 'เข้าถึงพื้นที่นี้ได้จาก',
+  'You now have access to the space': 'ขณะนี้คุณเข้าถึงพื้นที่ได้แล้ว',
+  'You no longer have access to the space': 'คุณไม่สามารถเข้าถึงพื้นที่ได้อีกต่อไป',
+  'This space has been permanently deleted': 'พื้นที่นี้ถูกลบอย่างถาวรแล้ว',
+  anchored: 'เชื่อมโยงแล้ว',
+  unanchored: 'ยกเลิกการเชื่อมโยงแล้ว',
+  Share: 'การแชร์',
+  'shared with you': 'แชร์กับคุณแล้ว',
+  'no longer share with you': 'ไม่ได้แชร์กับคุณอีกต่อไป',
+  'You now have access to the share': 'ขณะนี้คุณเข้าถึงการแชร์ได้แล้ว',
+  'You no longer have access to the share': 'คุณไม่สามารถเข้าถึงการแชร์ได้อีกต่อไป',
+  'You are no longer a member of the parent share, your child share has been deleted':
+    'คุณไม่ได้เป็นสมาชิกของการแชร์หลักอีกต่อไป การแชร์ย่อยของคุณจึงถูกลบแล้ว',
+  'Access your shares from': 'เข้าถึงการแชร์ของคุณได้จาก',
+  'Access password': 'รหัสผ่านสำหรับเข้าถึง',
+  Sync: 'การซิงค์',
+  'Access your syncs from': 'เข้าถึงการซิงค์ของคุณได้จาก',
+  'You are no longer synchronizing': 'คุณไม่ได้ซิงค์อีกต่อไป',
+  'Unlock Request': 'คำขอปลดล็อก',
+  'You receive this notification because you have a lock on this file.': 'คุณได้รับการแจ้งเตือนนี้เนื่องจากคุณเป็นผู้ล็อกไฟล์นี้',
+  'sends you a request to unlock the file': 'ส่งคำขอให้คุณปลดล็อกไฟล์',
+  'Security notification': 'การแจ้งเตือนด้านความปลอดภัย',
+  'Your account is temporarily locked for 15 minutes due to too many failed sign-in attempts':
+    'บัญชีของคุณถูกล็อกชั่วคราวเป็นเวลา 15 นาที เนื่องจากพยายามเข้าสู่ระบบไม่สำเร็จหลายครั้งเกินไป',
+  'You can try signing in again after 15 minutes. If you did not make these attempts, please contact your administrator.':
+    'คุณสามารถลองเข้าสู่ระบบอีกครั้งหลังจาก 15 นาที หากคุณไม่ได้เป็นผู้พยายามเข้าสู่ระบบ โปรดติดต่อผู้ดูแลระบบ',
+  'Two-factor authentication (2FA) on your account has been disabled': 'ปิดใช้การยืนยันตัวตนแบบสองปัจจัย (2FA) ในบัญชีของคุณแล้ว',
+  'Two-factor authentication (2FA) on your account has been enabled': 'เปิดใช้การยืนยันตัวตนแบบสองปัจจัย (2FA) ในบัญชีของคุณแล้ว',
+  'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':
+    'คุณได้รับการแจ้งเตือนนี้เนื่องจากการตั้งค่าความปลอดภัยของบัญชี Sync-in เปลี่ยนแปลง หากคุณคิดว่าเป็นข้อผิดพลาด โปรดตรวจสอบการตั้งค่าความปลอดภัยหรือติดต่อผู้ดูแลระบบ',
+  'Address IP': 'ที่อยู่ IP',
+  Browser: 'เบราว์เซอร์',
+  'New Version Available': 'มีเวอร์ชันใหม่พร้อมใช้งาน',
+  'You receive this notification because you are the administrator of this server.':
+    'คุณได้รับการแจ้งเตือนนี้เนื่องจากคุณเป็นผู้ดูแลระบบของเซิร์ฟเวอร์นี้',
+  'A new update is available': 'มีอัปเดตใหม่พร้อมใช้งาน'
+} as const

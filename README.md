@@ -34,6 +34,7 @@ Sync-in is designed to stay fast, lightweight, and centered on your data, keepin
 ## Features
 
 - 🖥️ Modern web interface with drag and drop, smart clipboard, gallery view, sorting, filtering, and enhanced file previews
+- 🌐 Multilingual interface available in more than 50 languages
 - 🆔 Authentication with local accounts, OIDC, LDAP, MFA, recovery codes, and application passwords
 - 🔑 Spaces, shares, guests, personal groups, roles, and fine-grained permissions for controlled collaboration
 - 🔐 Protected public links with access limits, expiration dates, passwords, and full control over shared content
