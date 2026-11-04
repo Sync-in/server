@@ -114,8 +114,8 @@ export class WebSocketAdapter extends IoAdapter {
       return
     }
     Object.assign(socket, { user })
-    // #315 bounds every token (WS included) to the session, but WS auth runs only at the handshake,
-    // so disconnect the socket once its token expires to honor that boundary (no DB query, exp is in hand).
+    // WS authentication only runs during the handshake, so disconnect the socket when its token
+    // expires to enforce the session boundary without another database query.
     if (payload.exp * 1000 > Date.now()) {
       // setTimeout caps delays at ~24.8 days, re-arm for a longer configured token lifetime
       const maxDelay = 2147483647
