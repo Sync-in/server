@@ -69,6 +69,7 @@ describe('configuration contracts', () => {
         files: {
           ...filePaths,
           maxUploadSize: 5368709120,
+          links: { sendPasswordByEmail: false },
           contentIndexing: { enabled: true, ocr: { enabled: true, languages: ['eng'], offline: false } },
           trashRetention: { users: false, spaces: false },
           sampleDocuments: [...SAMPLE_DOCUMENT_GROUPS],

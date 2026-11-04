@@ -146,7 +146,7 @@ export class NotificationsManager {
           publicUrl: this.publicUrl,
           author: notification.options.author,
           linkUUID: notification.options.linkUUID,
-          linkPassword: notification.options.linkPassword,
+          linkPassword: configuration.applications.files.links.sendPasswordByEmail ? notification.options.linkPassword : undefined,
           action: notification.options.action
         })
       case NOTIFICATION_APP.SYNC:

@@ -51,6 +51,10 @@ export const FilesTrashRetentionConfigSchema = z.looseObject({
   spaces: retentionPeriodSchema.default(false)
 })
 
+export const FilesLinksConfigSchema = z.looseObject({
+  sendPasswordByEmail: z.boolean().default(false)
+})
+
 export const FilesEditorsConfigSchema = z.looseObject({
   onlyoffice: OnlyOfficeConfigSchema.default(() => OnlyOfficeConfigSchema.parse({})),
   eurooffice: OnlyOfficeConfigSchema.default(() => OnlyOfficeConfigSchema.parse({})),
@@ -75,6 +79,7 @@ export const FilesConfigSchema = z.looseObject({
   spacesPath: nonEmptyStringSchema,
   linksPath: nonEmptyStringSchema,
   maxUploadSize: integerNumberSchema.default(5368709120), // 5 GB
+  links: FilesLinksConfigSchema.prefault({}),
   contentIndexing: FilesContentIndexingConfigSchema.prefault({}),
   trashRetention: FilesTrashRetentionConfigSchema.prefault({}),
   sampleDocuments: sampleDocumentsSchema.default(() => [...SAMPLE_DOCUMENT_GROUPS]),

@@ -346,6 +346,11 @@ applications:
     # maxUploadSize: Maximum size in bytes for a file received through uploads, WebDAV, sync, remote downloads, or editor callbacks.
     # default: 5368709120 (5 GB)
     maxUploadSize: 5368709120
+    links:
+      # Include the public link password in notification emails.
+      # Keep disabled so the password can be shared through a separate channel.
+      # default: false
+      sendPasswordByEmail: false
     contentIndexing:
       # Enable indexing of file contents for search (disabling this turns off full-text search)
       # default: true

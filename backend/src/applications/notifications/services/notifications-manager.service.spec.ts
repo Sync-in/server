@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
+import { configuration } from '../../../configuration/config.environment.js'
 import { Mailer } from '../../../infrastructure/mailer/mailer.service.js'
 import { USER_NOTIFICATION } from '../../users/constants/user.js'
 import { UsersManager } from '../../users/services/users-manager.service.js'
@@ -25,7 +26,10 @@ vi.mock('../../users/utils/avatar.js', () => ({
 }))
 
 vi.mock('../../../configuration/config.environment.js', () => ({
-  configuration: { server: { publicUrl: 'https://sync-in.example' } }
+  configuration: {
+    server: { publicUrl: 'https://sync-in.example' },
+    applications: { files: { links: { sendPasswordByEmail: false } } }
+  }
 }))
 
 describe(NotificationsManager.name, () => {
@@ -46,6 +50,7 @@ describe(NotificationsManager.name, () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
+    configuration.applications.files.links.sendPasswordByEmail = false
     mailerMock.available = true
     mailerMock.sendMails.mockResolvedValue(undefined)
     notificationsQueriesMock.create.mockResolvedValue(undefined)
@@ -259,6 +264,17 @@ describe(NotificationsManager.name, () => {
       const mailOptions = vi.mocked(mailModels.commentMail).mock.calls[0][2]
       expect(mailOptions).toMatchObject({ publicUrl: 'https://sync-in.example' })
       expect(mailOptions).not.toHaveProperty('currentUrl')
+    })
+
+    it.each([false, true])('applies sendPasswordByEmail=%s to public link emails', (sendPasswordByEmail) => {
+      configuration.applications.files.links.sendPasswordByEmail = sendPasswordByEmail
+      ;(service as any).genMail(
+        'en',
+        { app: NOTIFICATION_APP.LINKS } as any,
+        { action: 'ADD', linkUUID: 'uuid', linkPassword: 'secret-password' } as any
+      )
+
+      expect(vi.mocked(mailModels.linkMail).mock.calls[0][2].linkPassword).toBe(sendPasswordByEmail ? 'secret-password' : undefined)
     })
 
     it('logs error for unhandled app', () => {
