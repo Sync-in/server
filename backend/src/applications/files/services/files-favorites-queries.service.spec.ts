@@ -9,7 +9,7 @@ describe(FilesFavoritesQueries.name, () => {
   const service = new FilesFavoritesQueries(drizzle.mock() as unknown as DBSchema)
 
   it('builds the space UNION ALL using schema collations without query-level overrides', () => {
-    const query = service.getFavoriteLocationsFromSpaces(7, [11]) as unknown as SQLWrapper
+    const query = service.getFavoriteLocationsFromSpaces(7, [11], true) as unknown as SQLWrapper
     const statement = dialect.sqlToQuery(sql`${query}`).sql
 
     expect(statement.match(/union all/gi)).toHaveLength(1)

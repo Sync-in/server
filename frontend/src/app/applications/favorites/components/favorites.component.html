@@ -2,10 +2,18 @@
 <div class="app-top-menu app-top-menu-tool-bar"
      [attr.aria-label]="'Actions' | translate:locale.language"
      role="toolbar">
+  <button (click)="open()"
+          [attr.aria-label]="'Open' | translate:locale.language"
+          [disabled]="!selected || selected.isDisabled"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
+          type="button">
+    <svg [lucideIcon]="selected?.isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>Open</span>
+  </button>
   <button (click)="goTo()"
           [attr.aria-label]="'Go to' | translate:locale.language"
           [disabled]="!selected || selected.isDisabled"
-          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet"
           type="button">
     <svg [lucideIcon]="icons.LucideMapPin"></svg>
     <span class="app-top-menu-tool-bar__label" l10nTranslate>Go to</span>
@@ -301,6 +309,9 @@
 </context-menu>
 <context-menu #TargetContextMenu>
   @if (!selected?.isDisabled) {
+    <ng-template (execute)="open()" contextMenuItem>
+      <span l10nTranslate><svg [lucideIcon]="selected?.isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>Open</span>
+    </ng-template>
     <ng-template (execute)="goTo()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.LucideMapPin"></svg>Go to</span>
     </ng-template>

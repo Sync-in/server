@@ -94,9 +94,10 @@ describe(FilesFavoritesManager.name, () => {
         repository: SPACE_ALIAS.PERSONAL,
         name: 'personal.txt',
         path: 'files/personal/docs',
+        targetPath: 'files/personal/docs/personal.txt',
         isDisabled: false
       },
-      { fileId: 2, id: 2, name: 'missing.txt', path: 'missing', isDisabled: true }
+      { fileId: 2, id: 2, name: 'missing.txt', path: 'missing', targetPath: null, isDisabled: true }
     ])
     spacesQueries.spaceIdentities.mockResolvedValueOnce([{ id: 10 }])
     sharesQueries.shareIdentities.mockResolvedValueOnce([{ id: 20 }])
@@ -107,6 +108,7 @@ describe(FilesFavoritesManager.name, () => {
         path: 'files/project/docs',
         name: 'space.txt',
         displayRootName: 'Project',
+        targetPath: 'files/project/docs/space.txt',
         contextId: 10,
         rootId: 0
       }
@@ -117,6 +119,7 @@ describe(FilesFavoritesManager.name, () => {
         repository: FILE_REPOSITORY.SHARE,
         path: 'shares/public/docs',
         name: 'share.txt',
+        targetPath: 'shares/public/docs/share.txt',
         contextId: 20,
         rootId: 0
       }
@@ -129,13 +132,14 @@ describe(FilesFavoritesManager.name, () => {
     expect(spacesQueries.spaceIdentities).toHaveBeenCalledWith(7)
     expect(sharesQueries.shareIdentities).toHaveBeenCalledWith(7, 1)
     expect(filesFavoritesQueries.getFavoritesFromUser).toHaveBeenCalledWith(7, true, true)
-    expect(filesFavoritesQueries.getFavoriteLocationsFromSpaces).toHaveBeenCalledWith(7, [10])
+    expect(filesFavoritesQueries.getFavoriteLocationsFromSpaces).toHaveBeenCalledWith(7, [10], true)
     expect(filesFavoritesQueries.getFavoriteLocationsFromShares).toHaveBeenCalledWith(7, [20])
     expect(result[0]).toMatchObject({
       fileId: 1,
       repository: SPACE_ALIAS.PERSONAL,
       path: 'files/personal/docs',
       name: 'personal.txt',
+      targetPath: 'files/personal/docs/personal.txt',
       isDisabled: false
     })
     expect(result[0]).not.toHaveProperty('priority')
@@ -145,13 +149,16 @@ describe(FilesFavoritesManager.name, () => {
       path: 'files/project/docs',
       name: 'space.txt',
       displayRootName: 'Project',
+      targetPath: 'files/project/docs/space.txt',
       isDisabled: false
     })
     expect(result[1]).not.toHaveProperty('priority')
   })
 
   it('should skip inaccessible repositories', async () => {
-    filesFavoritesQueries.getFavoritesFromUser.mockResolvedValueOnce([{ fileId: 1, id: 1, name: 'stored.txt', path: 'stored', isDisabled: true }])
+    filesFavoritesQueries.getFavoritesFromUser.mockResolvedValueOnce([
+      { fileId: 1, id: 1, name: 'stored.txt', path: 'stored', targetPath: null, isDisabled: true }
+    ])
 
     const result = await service.getFavorites(userWithPermissions())
 
@@ -160,13 +167,24 @@ describe(FilesFavoritesManager.name, () => {
     expect(filesFavoritesQueries.getFavoritesFromUser).toHaveBeenCalledWith(7, false, true)
     expect(filesFavoritesQueries.getFavoriteLocationsFromSpaces).not.toHaveBeenCalled()
     expect(filesFavoritesQueries.getFavoriteLocationsFromShares).not.toHaveBeenCalled()
-    expect(result).toEqual([{ fileId: 1, id: 1, name: 'stored.txt', path: 'stored', isDisabled: true }])
+    expect(result).toEqual([{ fileId: 1, id: 1, name: 'stored.txt', path: 'stored', targetPath: null, isDisabled: true }])
   })
 
   it('should skip sync details for guests', async () => {
     await service.getFavorites(userWithPermissions([], false, false))
 
     expect(filesFavoritesQueries.getFavoritesFromUser).toHaveBeenCalledWith(7, false, false)
+  })
+
+  it('should resolve guest space locations without trash', async () => {
+    filesFavoritesQueries.getFavoritesFromUser.mockResolvedValueOnce([
+      { fileId: 1, id: 1, name: 'stored.txt', path: 'stored', targetPath: null, isDisabled: true }
+    ])
+    spacesQueries.spaceIdentities.mockResolvedValueOnce([{ id: 10 }])
+
+    await service.getFavorites(userWithPermissions([USER_PERMISSION.SPACES], false, false))
+
+    expect(filesFavoritesQueries.getFavoriteLocationsFromSpaces).toHaveBeenCalledWith(7, [10], false)
   })
 
   it('should add an already indexed favorite', async () => {

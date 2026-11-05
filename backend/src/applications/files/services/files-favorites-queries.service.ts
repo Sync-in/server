@@ -62,7 +62,17 @@ export class FilesFavoritesQueries {
         }),
         hasComments: sql`${fileHasCommentsSubquerySQL(files.id)}`.mapWith(Boolean),
         repository: sql<FileFavoriteRepository>`IF (${isPersonal}, ${SPACE_ALIAS.PERSONAL}, NULL)`.as('repository'),
-        displayRootName: sql<string>`NULL`.as('displayRootName')
+        displayRootName: sql<string>`NULL`.as('displayRootName'),
+        targetPath: sql<string | null>`
+          IF (${isPersonal},
+            CONCAT_WS('/',
+              IF (${files.inTrash} = 0, ${SPACE_REPOSITORY.FILES}, ${SPACE_REPOSITORY.TRASH}),
+              ${SPACE_ALIAS.PERSONAL},
+              ${filePathSQL(files)}
+            ),
+            NULL
+          )
+        `.as('targetPath')
       } satisfies { [K in keyof FileFavorite]: any })
       .from(filesFavorites)
       .innerJoin(files, eq(files.id, filesFavorites.fileId))
@@ -79,7 +89,7 @@ export class FilesFavoritesQueries {
       .orderBy(desc(filesFavorites.createdAt), desc(filesFavorites.fileId)) as Promise<FileFavorite[]>
   }
 
-  getFavoriteLocationsFromSpaces(userId: number, spaceIds: number[]): Promise<FileFavoriteLocation[]> {
+  getFavoriteLocationsFromSpaces(userId: number, spaceIds: number[], withTrash: boolean): Promise<FileFavoriteLocation[]> {
     if (!spaceIds.length) return Promise.resolve([])
     const directSpaceRoot: any = alias(spacesRoots, 'favoriteDirectSpaceRoot')
     const anchoredSpaceRoot: any = alias(spacesRoots, 'favoriteAnchoredSpaceRoot')
@@ -112,6 +122,14 @@ export class FilesFavoritesQueries {
         `.as('path'),
         name: sql<string>`${files.name}`.as('name'),
         displayRootName: sql<string>`${spaces.name}`.as('displayRootName'),
+        targetPath: sql<string>`
+          CONCAT_WS('/',
+            IF (${files.inTrash} = 0, ${SPACE_REPOSITORY.FILES}, ${SPACE_REPOSITORY.TRASH}),
+            ${spaces.alias},
+            IF (${files.spaceExternalRootId} IS NULL, NULL, ${directSpaceRoot.alias}),
+            ${filePathSQL(files)}
+          )
+        `.as('targetPath'),
         contextId: sql<number>`${spaces.id}`.as('contextId'),
         rootId: sql<number>`0`.as('rootId')
       } satisfies Record<keyof FileFavoriteLocation, any>)
@@ -119,14 +137,14 @@ export class FilesFavoritesQueries {
       .innerJoin(files, eq(files.id, filesFavorites.fileId))
       .innerJoin(spaces, and(eq(spaces.id, files.spaceId), inArray(spaces.id, spaceIds), eq(spaces.enabled, true)))
       .leftJoin(directSpaceRoot, eq(directSpaceRoot.id, files.spaceExternalRootId))
-      .where(eq(filesFavorites.userId, userId))
+      .where(and(eq(filesFavorites.userId, userId), withTrash ? undefined : eq(files.inTrash, false)))
     const anchoredFiles = this.db
       .select({
         fileId: sql<number>`${files.id}`.as('fileId'),
         repository: sql<FileFavoriteRepository>`${FILE_REPOSITORY.SPACE}`.as('repository'),
         path: sql<string>`
           CONCAT_WS('/',
-            IF (${files.inTrash} = 0, ${SPACE_REPOSITORY.FILES}, ${SPACE_REPOSITORY.TRASH}),
+            ${SPACE_REPOSITORY.FILES},
             ${spaces.alias},
             IF (
               ${files.id} = ${spaceRootFile.id},
@@ -137,6 +155,13 @@ export class FilesFavoritesQueries {
         `.as('path'),
         name: sql<string>`IF (${files.id} = ${spaceRootFile.id}, ${anchoredSpaceRoot.name}, ${files.name})`.as('name'),
         displayRootName: sql<string>`${spaces.name}`.as('displayRootName'),
+        targetPath: sql<string>`
+          CONCAT_WS('/',
+            ${SPACE_REPOSITORY.FILES},
+            ${spaces.alias},
+            ${replacePathPrefix(filePathSQL(files), spaceRootFilePath, anchoredSpaceRoot.alias)}
+          )
+        `.as('targetPath'),
         contextId: sql<number>`${spaces.id}`.as('contextId'),
         rootId: sql<number>`${anchoredSpaceRoot.id}`.as('rootId')
       } satisfies Record<keyof FileFavoriteLocation, any>)
@@ -189,6 +214,12 @@ export class FilesFavoritesQueries {
         `.as('path'),
         name: sql<string>`IF (${files.id} = ${rootFile.id}, ${shares.name}, ${files.name})`.as('name'),
         displayRootName: sql<string>`${shares.name}`.as('displayRootName'),
+        targetPath: sql<string>`
+          CONCAT_WS('/',
+            ${SPACE_REPOSITORY.SHARES},
+            ${replacePathPrefix(filePathSQL(files), rootFilePath, shares.alias)}
+          )
+        `.as('targetPath'),
         contextId: sql<number>`${shares.id}`.as('contextId'),
         rootId: sql<number>`COALESCE(${spaceRoot.id}, 0)`.as('rootId')
       } satisfies Record<keyof FileFavoriteLocation, any>
@@ -206,6 +237,13 @@ export class FilesFavoritesQueries {
         `.as('path'),
         name: sql<string>`${files.name}`.as('name'),
         displayRootName: sql<string>`${shares.name}`.as('displayRootName'),
+        targetPath: sql<string>`
+          CONCAT_WS('/',
+            ${SPACE_REPOSITORY.SHARES},
+            ${shares.alias},
+            ${filePathSQL(files)}
+          )
+        `.as('targetPath'),
         contextId: sql<number>`${shares.id}`.as('contextId'),
         rootId: sql<number>`COALESCE(${spaceRoot.id}, 0)`.as('rootId')
       }) satisfies Record<keyof FileFavoriteLocation, any>

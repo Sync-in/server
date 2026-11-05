@@ -45,13 +45,16 @@ describe('Files favorites queries (e2e)', () => {
   let spaceId: number
   let shareId: number
   let rootFileId: number
+  let trashedRootFileId: number
   let activeFileId: number
   let movedFileId: number
   let trashedFileId: number
+  let directTrashedFileId: number
   let syncPathId: number
 
   const suffix = randomUUID().replaceAll('-', '').slice(0, 12)
   const rootName = `favorite-root-[${suffix}`
+  const trashedRootAlias = 'trashed-anchor'
   const nestedName = 'nested.+'
   const movedParentPath = `${rootName}-moved`
   const spaceAlias = `e2e-favorite-space-${suffix}`
@@ -89,6 +92,9 @@ describe('Files favorites queries (e2e)', () => {
     )
 
     rootFileId = dbGetInsertedId(await db.insert(files).values({ ownerId, path: '.', name: rootName, isDir: true }))
+    trashedRootFileId = dbGetInsertedId(
+      await db.insert(files).values({ ownerId, path: '.', name: `${rootName}-trashed`, isDir: true, inTrash: true })
+    )
     activeFileId = dbGetInsertedId(
       await db
         .insert(files)
@@ -99,7 +105,11 @@ describe('Files favorites queries (e2e)', () => {
     )
     trashedFileId = dbGetInsertedId(await db.insert(files).values({ ownerId, path: rootName, name: 'trashed.txt', isDir: false, inTrash: true }))
     spaceId = dbGetInsertedId(await db.insert(spaces).values({ alias: spaceAlias, name: 'Favorite space' }))
-    await db.insert(spacesRoots).values({ spaceId, fileId: rootFileId, alias: 'anchor', name: 'Anchor' })
+    directTrashedFileId = dbGetInsertedId(await db.insert(files).values({ spaceId, path: '.', name: 'space-trash.txt', isDir: false, inTrash: true }))
+    await db.insert(spacesRoots).values([
+      { spaceId, fileId: rootFileId, alias: 'anchor', name: 'Anchor' },
+      { spaceId, fileId: trashedRootFileId, alias: trashedRootAlias, name: 'Trashed anchor' }
+    ])
     await db.insert(spacesMembers).values({ spaceId, userId: memberId, permissions: 'a:d:m:so' })
 
     shareId = dbGetInsertedId(await db.insert(shares).values({ ownerId, fileId: rootFileId, alias: shareAlias, name: 'Favorite share' }))
@@ -143,7 +153,10 @@ describe('Files favorites queries (e2e)', () => {
     await db.insert(filesFavorites).values([
       { userId: ownerId, fileId: rootFileId },
       { userId: ownerId, fileId: trashedFileId },
+      { userId: memberId, fileId: rootFileId },
+      { userId: memberId, fileId: trashedRootFileId },
       { userId: memberId, fileId: trashedFileId },
+      { userId: memberId, fileId: directTrashedFileId },
       { userId: memberId, fileId: activeFileId },
       { userId: memberId, fileId: movedFileId }
     ])
@@ -170,7 +183,7 @@ describe('Files favorites queries (e2e)', () => {
       sharesQueries.shareIdentities(memberId, 0).then((identities) => identities.map(({ id }) => id))
     ])
     const [spaceLocations, shareLocations] = await Promise.all([
-      favoritesQueries.getFavoriteLocationsFromSpaces(memberId, spaceIds),
+      favoritesQueries.getFavoriteLocationsFromSpaces(memberId, spaceIds, true),
       favoritesQueries.getFavoriteLocationsFromShares(memberId, shareIds)
     ])
 
@@ -180,6 +193,7 @@ describe('Files favorites queries (e2e)', () => {
           fileId: activeFileId,
           repository: FILE_REPOSITORY.SPACE,
           path: `files/${spaceAlias}/anchor/${nestedName}`,
+          targetPath: `files/${spaceAlias}/anchor/${nestedName}/active.txt`,
           displayRootName: 'Favorite space'
         })
       ])
@@ -190,12 +204,55 @@ describe('Files favorites queries (e2e)', () => {
           fileId: activeFileId,
           repository: FILE_REPOSITORY.SHARE,
           path: `shares/${shareAlias}/${nestedName}`,
+          targetPath: `shares/${shareAlias}/${nestedName}/active.txt`,
           displayRootName: 'Favorite share'
+        })
+      ])
+    )
+    expect(spaceLocations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fileId: rootFileId,
+          targetPath: `files/${spaceAlias}/anchor`
+        })
+      ])
+    )
+    expect(shareLocations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fileId: rootFileId,
+          targetPath: `shares/${shareAlias}`
         })
       ])
     )
     expect(spaceLocations.some(({ fileId }) => fileId === movedFileId)).toBe(false)
     expect(shareLocations.some(({ fileId }) => fileId === movedFileId)).toBe(false)
+  })
+
+  it('keeps anchored trash roots in files and excludes direct trash for guests', async () => {
+    const spaceIds = (await spacesQueries.spaceIdentities(memberId)).map(({ id }) => id)
+    const [withTrash, withoutTrash] = await Promise.all([
+      favoritesQueries.getFavoriteLocationsFromSpaces(memberId, spaceIds, true),
+      favoritesQueries.getFavoriteLocationsFromSpaces(memberId, spaceIds, false)
+    ])
+    const anchoredRoot = {
+      fileId: trashedRootFileId,
+      path: `files/${spaceAlias}`,
+      targetPath: `files/${spaceAlias}/${trashedRootAlias}`
+    }
+
+    expect(withTrash).toEqual(expect.arrayContaining([expect.objectContaining(anchoredRoot)]))
+    expect(withoutTrash).toEqual(expect.arrayContaining([expect.objectContaining(anchoredRoot)]))
+    expect(withTrash).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fileId: directTrashedFileId,
+          path: `trash/${spaceAlias}`,
+          targetPath: `trash/${spaceAlias}/space-trash.txt`
+        })
+      ])
+    )
+    expect(withoutTrash.some(({ fileId }) => fileId === directTrashedFileId)).toBe(false)
   })
 
   it('returns browser details', async () => {
@@ -208,10 +265,11 @@ describe('Files favorites queries (e2e)', () => {
         spaces: [{ id: spaceId, alias: spaceAlias, name: 'Favorite space' }],
         shares: [{ id: shareId, alias: shareAlias, name: 'Favorite share', type: 0 }],
         syncs: [{ id: syncPathId, clientId: syncClientId, clientName: 'Favorite client' }],
+        targetPath: `files/personal/${rootName}`,
         hasComments: false
       })
     )
-    expect(commentedFavorite).toEqual(expect.objectContaining({ hasComments: true }))
+    expect(commentedFavorite).toEqual(expect.objectContaining({ targetPath: `trash/personal/${rootName}/trashed.txt`, hasComments: true }))
 
     const favoritesWithoutSyncs = await favoritesQueries.getFavoritesFromUser(ownerId, true, false)
     const rootFavoriteWithoutSyncs = favoritesWithoutSyncs.find(({ fileId }) => fileId === rootFileId)
@@ -226,7 +284,7 @@ describe('Files favorites queries (e2e)', () => {
 
   it('does not resolve a trashed child through its former space anchor', async () => {
     const spaceIds = (await spacesQueries.spaceIdentities(memberId)).map(({ id }) => id)
-    const locations = await favoritesQueries.getFavoriteLocationsFromSpaces(memberId, spaceIds)
+    const locations = await favoritesQueries.getFavoriteLocationsFromSpaces(memberId, spaceIds, true)
     const recentComments = await commentsQueries.getRecentsFromSpaces(memberId, spaceIds, 10)
 
     expect(spaceIds).toContain(spaceId)

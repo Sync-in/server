@@ -5,6 +5,7 @@ import { FileLocationModel } from './file-location.model'
 
 export class FileFavoriteModel extends FileLocationModel implements FileFavorite {
   fileId: number
+  targetPath: string | null
   isDir: boolean
   size: number
   ctime: number

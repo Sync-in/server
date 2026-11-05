@@ -46,7 +46,8 @@ export class FilesFavoritesManager {
       spaces.length
         ? this.filesFavoritesQueries.getFavoriteLocationsFromSpaces(
             user.id,
-            spaces.map(({ id }) => id)
+            spaces.map(({ id }) => id),
+            user.isUser
           )
         : Promise.resolve([]),
       shares.length
@@ -80,6 +81,7 @@ export class FilesFavoritesManager {
         path: location.path,
         name: location.name,
         displayRootName: location.displayRootName,
+        targetPath: location.targetPath,
         isDisabled: false
       }
     })

@@ -11,6 +11,8 @@ export interface FileFavorite extends FileProps {
   // `path` contains the logical parent location when the file remains accessible.
   repository?: FileFavoriteRepository
   displayRootName?: string
+  // Canonical browser path used to resolve and open an accessible favorite; null when no location is available.
+  targetPath: string | null
 }
 
 export interface FileFavoriteLocation {
@@ -19,6 +21,7 @@ export interface FileFavoriteLocation {
   path: string
   name: string
   displayRootName?: string
+  targetPath: string
   contextId: number
   rootId: number
 }

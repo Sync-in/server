@@ -7,6 +7,8 @@ import {
   LucideArrowUp,
   LucideCirclePlus,
   LucideDynamicIcon,
+  LucideEye,
+  LucideFolderOpen,
   LucideMapPin,
   LucideMessageSquareMore,
   LucideRotateCw,
@@ -78,6 +80,8 @@ export class FavoritesComponent implements OnInit {
     LucideArrowDown,
     LucideArrowUp,
     LucideCirclePlus,
+    LucideEye,
+    LucideFolderOpen,
     LucideMapPin,
     LucideMessageSquareMore,
     LucideTriangleAlert,
@@ -193,7 +197,20 @@ export class FavoritesComponent implements OnInit {
 
   onFavoriteActivate(favorite: FileFavoriteModel) {
     this.onSelect(favorite)
-    this.goTo(favorite)
+    this.open(favorite)
+  }
+
+  open(favorite: FileFavoriteModel = this.selected) {
+    if (!favorite) return
+    if (favorite.isDisabled || !favorite.targetPath) {
+      this.goTo(favorite)
+      return
+    }
+    if (favorite.isDir) {
+      this.router.navigate([SPACES_PATH.SPACES, ...favorite.targetPath.split('/')]).catch(console.error)
+      return
+    }
+    this.filesService.open(favorite.targetPath).catch(console.error)
   }
 
   onContextMenu(ev: Event) {
