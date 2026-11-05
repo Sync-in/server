@@ -189,7 +189,9 @@ describe('Auth (e2e)', () => {
         headers: { 'user-agent': 'vitest' },
         url: '/socket.io/?EIO=4&transport=websocket'
       },
-      id: 'auth-e2e-socket'
+      id: 'auth-e2e-socket',
+      disconnect: vi.fn(),
+      once: vi.fn()
     } as unknown as Socket
     const next = vi.fn<(error?: Error) => void>()
 
