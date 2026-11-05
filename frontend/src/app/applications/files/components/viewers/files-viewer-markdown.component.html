@@ -326,7 +326,7 @@
                 </span>
               </a>
             </li>
-            @if (!file().root) {
+            @if (!file().isRoot) {
               <li role="menuitem">
                 <a (click)="insertImageFromRelativePath()" class="dropdown-item">
                   <span class="files-markdown-image-item">

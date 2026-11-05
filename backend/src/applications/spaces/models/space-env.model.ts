@@ -1,6 +1,6 @@
 import { uniquePermissions } from '../../../common/functions.js'
 import { FileDBProps } from '../../files/interfaces/file-db-props.interface.js'
-import type { FileProps } from '../../files/interfaces/file-props.interface.js'
+import type { FileProps, FileRootContext } from '../../files/interfaces/file-props.interface.js'
 import { FileTaskProps } from '../../files/models/file-task.js'
 import { FILE_OPERATION } from '../../files/constants/operations.js'
 import { getProps } from '../../files/utils/files.js'
@@ -145,6 +145,12 @@ export class SpaceEnv implements Pick<Space, 'id' | 'alias' | 'name' | 'enabled'
 
   getFileProps(): Promise<FileProps> {
     return getProps(this.realPath, this.dbFile.path)
+  }
+
+  getFileRootContext(): FileRootContext | undefined {
+    if (this.paths?.length !== 0) return
+    if (this.inSharesRepository) return { alias: this.alias, name: this.name }
+    if (this.root?.id) return { alias: this.root.alias, name: this.root.name }
   }
 
   willExceedQuota(contentLength: number): boolean {

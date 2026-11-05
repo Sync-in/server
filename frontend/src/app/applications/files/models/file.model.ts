@@ -86,7 +86,9 @@ export class FileModel implements File {
   isBeingDeleted = false
   isSelected = false
   isDisabled = false
+  isRoot = false
   markdownFragment?: string
+  rootAlias?: string
   canBeReShared = false
   haveThumbnail = false
 
@@ -94,6 +96,8 @@ export class FileModel implements File {
     this.setShares(popFromObject('shares', props))
     Object.assign(this, props)
     this.basePath = basePath
+    this.isRoot = Boolean(this.root)
+    this.rootAlias = this.root?.alias
     this.path = `${basePath}/${this.path !== '.' ? `${this.path}/` : ''}${this.root?.alias || this.name}`
     this.mime = this.getMime(this.mime, inShare, editorConfig)
     this.updateHTimeAgo(this.mtime)

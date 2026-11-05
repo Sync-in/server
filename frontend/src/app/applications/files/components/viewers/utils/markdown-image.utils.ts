@@ -84,7 +84,7 @@ export function isAllowedAbsoluteImageSource(source: string): boolean {
 }
 
 export function resolveMarkdownRelativeImageUrl(file: FileModel, reference: string): string | null {
-  if (file.root) return null
+  if (file.isRoot) return null
   const imageUrl = resolveMarkdownRelativeUrl(file.thumbnailUrl, `${API_FILES_OPERATION_THUMBNAIL}/${encodeUrl(file.basePath)}/`, reference)
   return imageUrl ? `${imageUrl.pathname}?size=${MARKDOWN_IMAGE_THUMBNAIL_SIZE}` : null
 }

@@ -125,4 +125,45 @@ describe(SpaceEnv.name, () => {
       expect(getPropsSpy).toHaveBeenCalledWith(space.realPath, space.dbFile.path)
     })
   })
+
+  describe('getFileRootContext', () => {
+    it('should expose an anchored root', () => {
+      const space = createSpace({
+        paths: [],
+        root: { id: 2, alias: 'documents', name: 'Documents', permissions: 'd:m' }
+      })
+
+      expect(space.getFileRootContext()).toEqual({ alias: 'documents', name: 'Documents' })
+    })
+
+    it('should expose a share root', () => {
+      const space = createSpace(
+        {
+          alias: 'shared-notes',
+          name: 'Shared notes.md',
+          inSharesRepository: true,
+          paths: []
+        },
+        null,
+        false
+      )
+
+      expect(space.getFileRootContext()).toEqual({ alias: 'shared-notes', name: 'Shared notes.md' })
+    })
+
+    it('should ignore descendants of an anchored root', () => {
+      const space = createSpace({
+        paths: ['report.md'],
+        root: { id: 2, alias: 'documents', name: 'Documents', permissions: 'd:m' }
+      })
+
+      expect(space.getFileRootContext()).toBeUndefined()
+    })
+
+    it('should ignore an unanchored root', () => {
+      const space = createSpace({ paths: [] })
+
+      expect(space.getFileRootContext()).toBeUndefined()
+    })
+  })
 })

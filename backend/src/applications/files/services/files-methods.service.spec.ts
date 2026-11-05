@@ -40,6 +40,7 @@ describe(FilesMethods.name, () => {
       realBasePath: SpaceModel.getFilesPath('project'),
       realPath: path.join(SpaceModel.getFilesPath('project'), 'foo'),
       url: `${SPACE_REPOSITORY.FILES}/project/foo`,
+      paths: ['foo'],
       getFileProps
     },
     null,
@@ -116,6 +117,37 @@ describe(FilesMethods.name, () => {
     expect(filesManager.sendFileFromSpace).toHaveBeenCalledWith(spaceEnv)
     expect(sendFileChecks).toHaveBeenCalledOnce()
     expect(getFileProps).toHaveBeenCalledOnce()
+  })
+
+  it('should expose the visible root metadata returned by the space environment', async () => {
+    const props = {
+      id: -1,
+      path: 'storage',
+      name: 'internal.md',
+      isDir: false,
+      size: 4,
+      ctime: 1,
+      mtime: 2,
+      mime: 'text-markdown'
+    }
+    const root = { alias: 'notes', name: 'Notes.md' }
+    const getFileRootContext = vi.fn<SpaceEnv['getFileRootContext']>().mockReturnValue(root)
+    const rootSpace = new SpaceEnv(
+      {
+        ...spaceEnv,
+        getFileRootContext,
+        getFileProps: vi.fn().mockResolvedValue(props)
+      },
+      null,
+      false
+    )
+
+    await expect(filesMethods.getProps(rootSpace)).resolves.toEqual({
+      file: { ...props, name: 'Notes.md' },
+      permissions: 'a:d:m:so',
+      root
+    })
+    expect(getFileRootContext).toHaveBeenCalledOnce()
   })
 
   it('should preserve the download validation errors when loading properties', async () => {

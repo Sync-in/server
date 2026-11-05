@@ -11,6 +11,7 @@ import {
 import {
   API_FILES_FAVORITES,
   API_FILES_OPERATION,
+  API_FILES_OPERATION_GET_PROPS,
   API_FILES_OPERATION_MAKE,
   API_FILES_RECENTS,
   API_FILES_SEARCH,
@@ -29,7 +30,7 @@ import type {
   SearchFilesDto
 } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import type { CopyMoveFileResponse } from '@sync-in-server/backend/src/applications/files/interfaces/copy-move-file.interface'
-import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
+import type { FileLockProps, FilePropsWithPermissions } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import {
@@ -47,7 +48,7 @@ import type { FileFavorite, FileFavoriteIdentity } from '@sync-in-server/backend
 import type { FileRecent } from '@sync-in-server/backend/src/applications/files/schemas/file-recent.interface'
 import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
 import { SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
-import { forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'
+import { encodeUrl, forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import {
   BehaviorSubject,
@@ -76,6 +77,7 @@ import type { FilesViewerDialogComponent as FilesViewerDialogComponentState } fr
 import { FilesViewerSelectDialog } from '../components/dialogs/files-viewer-select-dialog.component'
 import { fileLockPropsToString } from '../components/utils/file-lock.utils'
 import { MAX_CLIENT_EDITOR_FILE_SIZE, SHORT_MIME } from '../files.constants'
+import type { FileOpenOptions, ResolvedFile } from '../interfaces/file-open.interface'
 import { FileContentModel } from '../models/file-content.model'
 import { FileFavoriteModel } from '../models/file-favorite.model'
 import { FileRecentModel } from '../models/file-recent.model'
@@ -331,6 +333,27 @@ export class FilesService {
     return this.http.request<void>(FILE_OPERATION.UNLOCK, `${API_FILES_OPERATION}/${FILE_OPERATION.UNLOCK_REQUEST}/${file.path}`)
   }
 
+  private getFileProps(filePath: string): Observable<FilePropsWithPermissions> {
+    return this.http.get<FilePropsWithPermissions>(`${API_FILES_OPERATION_GET_PROPS}/${encodeUrl(filePath)}`)
+  }
+
+  async open(filePath: string, options: FileOpenOptions = {}): Promise<void> {
+    let resolved: ResolvedFile | undefined
+    try {
+      resolved = await this.resolveFile(filePath)
+      const file = resolved.file
+      if (options.expectedShortMime && file.shortMime !== options.expectedShortMime) throw new Error('Document not found')
+      if (options.fragment !== undefined) file.markdownFragment = options.fragment
+      if (file.isViewable || file.isEditable) {
+        await this.openViewerAfterAvailabilityCheck(file, [file], resolved.permissions)
+      } else {
+        this.offerDownload(file)
+      }
+    } catch (error) {
+      this.sendOpenDocumentError(resolved?.file ?? (filePath.split('/').pop() || filePath), error)
+    }
+  }
+
   getSize(file: FileModel): Observable<number> {
     return this.http.get<{ size: number }>(`${API_FILES_OPERATION}/${FILE_OPERATION.GET_SIZE}/${file.path}`).pipe(map((r) => r.size))
   }
@@ -484,6 +507,19 @@ export class FilesService {
       e.message = e.status in SEND_FILE_ERROR_MSG ? SEND_FILE_ERROR_MSG[e.status] : e.statusText
     }
     this.layout.sendNotification('error', 'Unable to open document', typeof file === 'string' ? file : file.name, e)
+  }
+
+  private async resolveFile(filePath: string): Promise<ResolvedFile> {
+    const pathSegments = filePath.split('/')
+    const inSharesRepository = pathSegments[0] === SPACE_REPOSITORY.SHARES
+    const basePath = inSharesRepository && pathSegments.length === 2 ? SPACE_REPOSITORY.SHARES : pathSegments.slice(0, 2).join('/')
+    const { file: fileProps, permissions, root } = await firstValueFrom(this.getFileProps(filePath))
+    const file = new FileModel(fileProps, basePath, inSharesRepository, this.store.server().files.editors)
+    // Anchored roots and shares can expose a DB path different from the visible requested path.
+    file.path = filePath
+    file.isRoot = Boolean(root)
+    file.rootAlias = root?.alias
+    return { file, permissions: pathSegments[0] === SPACE_REPOSITORY.TRASH ? '' : permissions }
   }
 
   private syncFileMetadata(file: FileModel, response: HttpResponse<unknown>): void {

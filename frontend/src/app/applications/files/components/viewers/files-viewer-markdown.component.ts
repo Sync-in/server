@@ -1,5 +1,5 @@
 import { CodeEditor } from '@acrodata/code-editor'
-import { Component, effect, ElementRef, HostListener, inject, OnDestroy, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
+import { Component, effect, ElementRef, HostListener, OnDestroy, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
 import { LanguageDescription } from '@codemirror/language'
@@ -34,10 +34,6 @@ import {
   LucideUnderline,
   LucideUndo
 } from '@lucide/angular'
-import { API_SPACES_BROWSE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
-import { SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
-import type { SpaceFiles } from '@sync-in-server/backend/src/applications/spaces/interfaces/space-files.interface'
-import { encodeUrl, intersectPermissions } from '@sync-in-server/backend/src/common/shared'
 import { Editor, Extension, isNodeSelection, type Range } from '@tiptap/core'
 import type { SetImageOptions } from '@tiptap/extension-image'
 import { TaskItem } from '@tiptap/extension-list'
@@ -50,17 +46,13 @@ import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { TiptapEditorDirective } from 'ngx-tiptap'
-import { firstValueFrom } from 'rxjs'
-import { StoreService } from '../../../../store/store.service'
 import type { FileViewerSearchAdapter } from '../../interfaces/file-viewer-search.interface'
 import { SHORT_MIME } from '../../files.constants'
-import { FileModel } from '../../models/file.model'
 import { FilesViewerEditableBase } from './files-viewer-editable-base'
 import { CodeMirrorFileViewerSearchAdapter } from './components/files-viewer-codemirror-search-adapter'
 import { FilesViewerSearchComponent } from './components/files-viewer-search.component'
 import { TipTapFileViewerSearchAdapter } from './components/files-viewer-tiptap-search-adapter'
 import { FilesViewerUnsavedChangesComponent } from './components/files-viewer-unsaved-changes.component'
-import type { MarkdownLinkTarget } from './interfaces/markdown.interface'
 import { isAllowedAbsoluteImageSource, MarkdownImage, resolveMarkdownRelativeImageUrl } from './utils/markdown-image.utils'
 import { markdownHeadingSlug, MarkdownLink, resolveMarkdownLink } from './utils/markdown-link.utils'
 
@@ -101,7 +93,6 @@ const ExitInlineCodeOnEnter = Extension.create({
   templateUrl: 'files-viewer-markdown.component.html'
 })
 export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implements OnInit, OnDestroy {
-  private readonly store = inject(StoreService)
   private openingLink = false
   private headingRafId: number | null = null
   protected isSourceMode = signal(false)
@@ -532,39 +523,11 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
       this.scrollToHeading(target.fragment)
     } else if (!this.openingLink) {
       this.openingLink = true
-      this.openMarkdownDocument(target).finally(() => (this.openingLink = false))
+      this.filesService
+        .open(target.path, { expectedShortMime: SHORT_MIME.MARKDOWN, fragment: target.fragment })
+        .finally(() => (this.openingLink = false))
     }
     return true
-  }
-
-  private async openMarkdownDocument(target: MarkdownLinkTarget): Promise<void> {
-    try {
-      const pathSegments = target.path.split('/')
-      const directory = pathSegments.slice(0, -1).join('/')
-      const inSharesRepository = pathSegments[0] === SPACE_REPOSITORY.SHARES
-      const base = inSharesRepository && pathSegments.length === 2 ? SPACE_REPOSITORY.SHARES : pathSegments.slice(0, 2).join('/')
-      // A visible root alias can point to a hidden filesystem entry.
-      const listing = await firstValueFrom(
-        this.http.get<SpaceFiles>(`${API_SPACES_BROWSE}/${encodeUrl(directory)}`, {
-          params: { includeHidden: true }
-        })
-      )
-      const files = listing.files.map((props) => new FileModel(props, base, inSharesRepository, this.store.server().files.editors))
-      const file = files.find((candidate) => candidate.path === target.path && !candidate.isDir && candidate.shortMime === SHORT_MIME.MARKDOWN)
-      if (!file) throw new Error('Document not found')
-      let permissions = listing.permissions
-      if (pathSegments[0] === SPACE_REPOSITORY.TRASH) {
-        permissions = ''
-      } else if (inSharesRepository && pathSegments.length === 2) {
-        permissions = file.root?.permissions || ''
-      } else if (file.root) {
-        permissions = intersectPermissions(permissions, file.root.permissions)
-      }
-      file.markdownFragment = target.fragment
-      await this.filesService.openViewerDialog(file, files, permissions)
-    } catch (error) {
-      this.filesService.sendOpenDocumentError(target.path.split('/').pop() || target.path, error)
-    }
   }
 
   private scrollToHeading(fragment: string) {

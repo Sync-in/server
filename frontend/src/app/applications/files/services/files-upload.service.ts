@@ -81,7 +81,7 @@ export class FilesUploadService {
 
   uploadFileContent(file: FileModel, content: string, updateContent = false, overwrite = false) {
     const url = `${API_FILES_OPERATION_UPLOAD}/${file.path}`
-    const fileName = (file?.root?.alias || file.name).normalize()
+    const fileName = (file.rootAlias || file.name).normalize()
     const fileContent = new File([new Blob([content])], fileName, { type: file.mime.replace('-', '/') })
     const formData = new FormData()
     formData.append('file', fileContent)

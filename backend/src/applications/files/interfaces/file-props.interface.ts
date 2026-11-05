@@ -51,4 +51,10 @@ export interface FileProps extends Omit<File, 'id' | 'ownerId' | 'spaceId' | 'sp
 export interface FilePropsWithPermissions {
   file: FileProps
   permissions: string
+  root?: FileRootContext
+}
+
+export interface FileRootContext {
+  alias: string
+  name: string
 }

@@ -169,9 +169,13 @@ export class FilesMethods {
   async getProps(space: SpaceEnv): Promise<FilePropsWithPermissions> {
     try {
       await this.filesManager.sendFileFromSpace(space).checks()
+      const file = await space.getFileProps()
+      const root = space.getFileRootContext()
+      if (root) file.name = root.name
       return {
-        file: await space.getFileProps(),
-        permissions: space.browsePermissions()
+        file,
+        permissions: space.browsePermissions(),
+        ...(root ? { root } : {})
       }
     } catch (e) {
       this.handleError(space, FILE_OPERATION.GET_PROPS, e)
