@@ -264,6 +264,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   // Others
   private subscriptions: Subscription[] = []
   private focusOnSelect: string
+  private openOnSelect: string
   private openAfterReload: string
   private selectionAnchor: FileModel | null = null
   private selectionFocus: FileModel | null = null
@@ -298,7 +299,10 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.canAdminShares = this.userService.userHavePermission(USER_PERMISSION.SHARES_ADMIN)
     this.galleryMode = this.btnNavigationView.currentView()
     this.supportUploadFolder = this.filesUpload.supportUploadDirectory
-    this.activatedRoute.queryParams.subscribe((params) => this.focusOn(params.select))
+    this.activatedRoute.queryParamMap.subscribe((params) => {
+      this.setQueryParams(params.get('select'), params.get('open'))
+      this.focusOn(this.focusOnSelect)
+    })
     this.activatedRoute.data.subscribe((route: Data) => this.setSpace(route as { repository: SPACE_REPOSITORY; routes: UrlSegment[] }))
     this.subscriptions.push(this.store.filesOnEvent.subscribe((update: FileEvent) => this.onFileEvent(update)))
     this.subscriptions.push(
@@ -345,7 +349,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         )
         this.updateFilesStats(this.files)
         this.loading = false
-        if (this.focusOnSelect) {
+        if (this.openOnSelect) {
+          this.focusOn(this.openOnSelect)
+        } else if (this.focusOnSelect) {
           this.focusOn(this.focusOnSelect)
         } else {
           this.scrollView.scrollInto(-1)
@@ -682,6 +688,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
 
   private setSpace(route: { repository: SPACE_REPOSITORY; routes: UrlSegment[] }) {
     this.currentRoute = this.filesService.currentRoute = `${route.repository}${pathFromRoutes(route.routes)}`
+    this.setQueryParams(this.activatedRoute.snapshot.queryParamMap.get('select'), this.activatedRoute.snapshot.queryParamMap.get('open'))
     this.baseRepoUrl = `${route.repository}${route.routes.length ? `/${route.routes[0].path}` : ''}`
     this.isFilesRepo = route.repository === SPACES_PATH.FILES
     this.isSharesRepo = route.repository === SPACES_PATH.SHARES
@@ -690,6 +697,11 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.spacesBrowser.setEnvironment(route.repository, route.routes)
     this.isPersonalSpace = this.spacesBrowser.inPersonalSpace
     this.loadFiles(true)
+  }
+
+  private setQueryParams(selectName: string, openName: string) {
+    this.focusOnSelect = openName || selectName
+    this.openOnSelect = openName
   }
 
   private onFileEvent(ev: FileEvent) {
@@ -784,11 +796,13 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       this.focusOnSelect = null
       return
     }
-    if (!this.files.length) {
+    const route = this.activatedRoute.snapshot.data
+    if (this.loading || !Array.isArray(route.routes) || this.currentRoute !== `${route.repository}${pathFromRoutes(route.routes)}`) {
       // wait for the `loadFiles`
       this.focusOnSelect = selectName
       return
     }
+    const open = this.openOnSelect === selectName
     let f = this.files.find((file) => file.name.toLowerCase() === selectName.toLowerCase())
     if (!f && this.hasRoots) {
       f = this.files.find((file) => file.root?.alias.toLowerCase() === selectName.toLowerCase())
@@ -796,9 +810,17 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     if (f) {
       setTimeout(() => this.scrollView.scrollInto(f), 100)
       this.setSelection([f], f, f)
+      if (open) {
+        this.openOnSelect = null
+        this.focusOnSelect = selectName
+        if (!f.isDir) this.browse(f)
+      }
     } else {
       // wait for the `loadFiles`
       this.focusOnSelect = selectName
+      if (open) {
+        this.openOnSelect = null
+      }
     }
   }
 
@@ -1123,7 +1145,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
             this.renderer.removeClass(ev.target.parentElement, dragClass)
             // start move action
             if (this.selection.length) {
-              this.zone.run(() => this.filesService.copyMove(this.selection, f.path, FILE_OPERATION.MOVE))
+              void this.zone.run(() => this.filesService.copyMove(this.selection, f.path, FILE_OPERATION.MOVE))
             }
           }
         } else if (ev.dataTransfer.files.length) {
