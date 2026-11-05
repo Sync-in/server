@@ -9,7 +9,7 @@ import { UserModel } from '../../users/models/user.model.js'
 import { FILE_OPERATION } from '../constants/operations.js'
 import type { CompressFileDto, DownloadFileDto, MakeFileDto, ValidatedCopyMoveFileDto } from '../dto/file-operations.dto.js'
 import type { CopyMoveFileResponse } from '../interfaces/copy-move-file.interface.js'
-import { FileLockProps } from '../interfaces/file-props.interface.js'
+import type { FileLockProps, FilePropsWithPermissions } from '../interfaces/file-props.interface.js'
 import type { FileThumbnail } from '../interfaces/file-thumbnail.interface.js'
 import { FileError } from '../models/file-error.js'
 import { LockConflict } from '../models/file-lock-error.js'
@@ -163,6 +163,18 @@ export class FilesMethods {
       return { size: await this.filesManager.getSize(space) }
     } catch (e) {
       this.handleError(space, FILE_OPERATION.GET_SIZE, e)
+    }
+  }
+
+  async getProps(space: SpaceEnv): Promise<FilePropsWithPermissions> {
+    try {
+      await this.filesManager.sendFileFromSpace(space).checks()
+      return {
+        file: await space.getFileProps(),
+        permissions: space.browsePermissions()
+      }
+    } catch (e) {
+      this.handleError(space, FILE_OPERATION.GET_PROPS, e)
     }
   }
 

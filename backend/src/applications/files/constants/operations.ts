@@ -9,6 +9,7 @@ export enum FILE_OPERATION {
   UPLOAD = 'upload',
   TOUCH = 'touch',
   THUMBNAIL = 'thumbnail',
+  GET_PROPS = 'getProps',
   GET_SIZE = 'getSize',
   LOCK = 'lock',
   UNLOCK = 'unlock',

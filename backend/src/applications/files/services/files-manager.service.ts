@@ -30,7 +30,7 @@ import type { CompressFileDto, DownloadFileDto } from '../dto/file-operations.dt
 import type { DeleteFileOptions } from '../interfaces/delete-file.interface.js'
 import { FileDBProps } from '../interfaces/file-db-props.interface.js'
 import { FileLock } from '../interfaces/file-lock.interface.js'
-import { FileLockProps } from '../interfaces/file-props.interface.js'
+import type { FileLockProps } from '../interfaces/file-props.interface.js'
 import type { FileThumbnail } from '../interfaces/file-thumbnail.interface.js'
 import { SaveStreamOptions } from '../interfaces/save-stream.interface.js'
 import { FileError, SourceCleanupError } from '../models/file-error.js'

@@ -23,6 +23,7 @@ describe(FilesOperationsController.name, () => {
     copy: vi.fn(),
     move: vi.fn(),
     delete: vi.fn(),
+    getProps: vi.fn(),
     genThumbnail: vi.fn(),
     downloadFromUrl: vi.fn(),
     compress: vi.fn(),
@@ -76,6 +77,26 @@ describe(FilesOperationsController.name, () => {
 
       expect(filesMethodsMock.headOrGet).toHaveBeenCalledWith(fakeReq, fakeRes)
       expect(result).toBe(stream)
+    })
+
+    it('getProps() should delegate to filesMethods.getProps(space) and return its result', async () => {
+      const props = {
+        id: -1,
+        path: '.',
+        name: 'file.txt',
+        isDir: false,
+        size: 4,
+        ctime: 1,
+        mtime: 2,
+        mime: 'text-plain'
+      }
+      const response = { file: props, permissions: 'a:d:m' }
+      filesMethodsMock.getProps.mockResolvedValue(response)
+
+      const result = await filesOperationsController.getProps(fakeSpace)
+
+      expect(filesMethodsMock.getProps).toHaveBeenCalledWith(fakeSpace)
+      expect(result).toBe(response)
     })
 
     it('make() should call filesMethods.make(user, space, dto)', async () => {

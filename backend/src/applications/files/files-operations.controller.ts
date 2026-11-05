@@ -40,7 +40,7 @@ import {
 } from './dto/file-operations.dto.js'
 import { forceAsFileOwnerQuerySchema, thumbnailSizeQuerySchema } from './files.schema.js'
 import type { CopyMoveFileResponse } from './interfaces/copy-move-file.interface.js'
-import { FileLockProps } from './interfaces/file-props.interface.js'
+import type { FileLockProps, FilePropsWithPermissions } from './interfaces/file-props.interface.js'
 import { FileTask } from './models/file-task.js'
 import { FilesMethods } from './services/files-methods.service.js'
 import { FilesTasksManager } from './services/tasks/files-tasks-manager.service.js'
@@ -139,6 +139,11 @@ export class FilesOperationsController {
   @Get(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.GET_SIZE}/*`)
   async getSize(@GetSpace() space: SpaceEnv): Promise<{ size: number }> {
     return this.filesMethods.getSize(space)
+  }
+
+  @Get(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.GET_PROPS}/*`)
+  async getProps(@GetSpace() space: SpaceEnv): Promise<FilePropsWithPermissions> {
+    return this.filesMethods.getProps(space)
   }
 
   // TASKS OPERATIONS

@@ -16,6 +16,7 @@ import { UsersQueries } from '../../users/services/users-queries.service.js'
 import { generateUserTest } from '../../users/utils/test.js'
 import { TAR_EXTENSION } from '../constants/compress.js'
 import { type CompressFileDto, compressFileSchema, type CopyMoveFileDto, copyMoveFileSchema } from '../dto/file-operations.dto.js'
+import { FileError } from '../models/file-error.js'
 import { FilesManager } from './files-manager.service.js'
 import { FilesMethods } from './files-methods.service.js'
 import { FilesQuotaManager } from './files-quota-manager.service.js'
@@ -24,24 +25,33 @@ describe(FilesMethods.name, () => {
   let filesMethods: FilesMethods
   let spacesManager: SpacesManager
   let filesQuotaManager: FilesQuotaManager
-  let filesManager: { compress: Mock; delete: Mock }
+  let filesManager: { compress: Mock; delete: Mock; sendFileFromSpace: Mock }
+  let sendFileChecks: Mock
   let userTest: UserModel
-  const spaceEnv = {
-    id: 1,
-    alias: 'project',
-    name: 'project',
-    enabled: true,
-    permissions: 'a:d:m:so',
-    role: 0,
-    realBasePath: SpaceModel.getFilesPath('project'),
-    realPath: path.join(SpaceModel.getFilesPath('project'), 'foo'),
-    url: `${SPACE_REPOSITORY.FILES}/project/foo`
-  } as SpaceEnv
+  const getFileProps = vi.fn<SpaceEnv['getFileProps']>()
+  const spaceEnv = new SpaceEnv(
+    {
+      id: 1,
+      alias: 'project',
+      name: 'project',
+      enabled: true,
+      permissions: 'a:d:m:so',
+      role: 0,
+      realBasePath: SpaceModel.getFilesPath('project'),
+      realPath: path.join(SpaceModel.getFilesPath('project'), 'foo'),
+      url: `${SPACE_REPOSITORY.FILES}/project/foo`,
+      getFileProps
+    },
+    null,
+    false
+  )
 
   beforeAll(async () => {
+    sendFileChecks = vi.fn()
     filesManager = {
       compress: vi.fn(),
-      delete: vi.fn()
+      delete: vi.fn(),
+      sendFileFromSpace: vi.fn().mockReturnValue({ checks: sendFileChecks })
     }
     const module: TestingModule = await Test.createTestingModule({
       imports: [],
@@ -86,6 +96,35 @@ describe(FilesMethods.name, () => {
     expect(filesMethods).toBeDefined()
     expect(spacesManager).toBeDefined()
     expect(userTest).toBeDefined()
+  })
+
+  it('should validate the target before returning its properties and permissions', async () => {
+    const props = {
+      id: -1,
+      path: '.',
+      name: 'file.txt',
+      isDir: false,
+      size: 4,
+      ctime: 1,
+      mtime: 2,
+      mime: 'text-plain'
+    }
+    getFileProps.mockResolvedValueOnce(props)
+
+    await expect(filesMethods.getProps(spaceEnv)).resolves.toEqual({ file: props, permissions: 'a:d:m:so' })
+
+    expect(filesManager.sendFileFromSpace).toHaveBeenCalledWith(spaceEnv)
+    expect(sendFileChecks).toHaveBeenCalledOnce()
+    expect(getFileProps).toHaveBeenCalledOnce()
+  })
+
+  it('should preserve the download validation errors when loading properties', async () => {
+    const getPropsCallCount = getFileProps.mock.calls.length
+    sendFileChecks.mockRejectedValueOnce(new FileError(HttpStatus.NOT_FOUND, 'Location not found'))
+
+    await expect(filesMethods.getProps(spaceEnv)).rejects.toEqual(new HttpException('Location not found', HttpStatus.NOT_FOUND))
+
+    expect(getFileProps).toHaveBeenCalledTimes(getPropsCallCount)
   })
 
   it('should avoid path traversal on CopyMove action', async () => {

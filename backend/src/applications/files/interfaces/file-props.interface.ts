@@ -47,3 +47,8 @@ export interface FileProps extends Omit<File, 'id' | 'ownerId' | 'spaceId' | 'sp
   hasComments?: boolean
   isFavorite?: boolean
 }
+
+export interface FilePropsWithPermissions {
+  file: FileProps
+  permissions: string
+}
