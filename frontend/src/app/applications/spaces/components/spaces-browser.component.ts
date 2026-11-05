@@ -4,7 +4,7 @@ import { AfterViewInit, Component, ElementRef, inject, NgZone, OnDestroy, OnInit
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import {
   LucideAnchor,
-  LucideArchiveRestore,
+  LucideArchiveArrowUp,
   LucideArrowDown,
   LucideArrowUp,
   LucideCheck,
@@ -154,7 +154,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     LucideHardDriveDownload,
     LucideLink,
     LucideAnchor,
-    LucideArchiveRestore,
+    LucideArchiveArrowUp,
     LucideEllipsis,
     LucidePencil,
     LucideEye,

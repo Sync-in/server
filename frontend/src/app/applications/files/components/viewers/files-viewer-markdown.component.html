@@ -77,7 +77,7 @@
             class="btn btn-custom dropdown-toggle files-markdown-heading-toggle"
             dropdownToggle
             type="button">
-            <svg [lucideIcon]="icons.LucideHeading"></svg>
+            <svg [lucideIcon]="icons.LucideLetterH"></svg>
           </button>
           <ul *dropdownMenu class="dropdown-menu files-markdown-heading-menu" role="menu">
             @for (level of headingLevels; track level) {
@@ -98,7 +98,7 @@
           triggers="hover"
           class="btn btn-custom"
           type="button">
-          <svg [lucideIcon]="icons.LucideBold"></svg>
+          <svg [lucideIcon]="icons.LucideLetterB"></svg>
         </button>
         <button
           (click)="toggleItalic()"

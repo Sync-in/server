@@ -18,7 +18,7 @@ import {
   LucideRotateCw,
   LucideShuffle,
   LucideSquare,
-  LucideTriangleAlert
+  LucideTriangleExclamationPoint
 } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { SYNC_PATH_CONFLICT_MODE, SYNC_PATH_MODE } from '@sync-in-server/backend/src/applications/sync/constants/sync'
@@ -105,7 +105,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
     CLIENT: SYNC_ICON.CLIENT,
     SERVER: SYNC_ICON.SERVER,
     LucideInfo,
-    LucideTriangleAlert,
+    LucideTriangleExclamationPoint,
     LucideFlaskConical
   }
   // Sort

@@ -5,14 +5,14 @@ import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
 import { LanguageDescription } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
 import {
-  LucideBold,
   LucideCode,
   LucideDynamicIcon,
   LucideEye,
-  LucideHeading,
   LucideImage,
   LucideItalic,
   LucideKeyboard,
+  LucideLetterB,
+  LucideLetterH,
   LucideLink,
   LucideList,
   LucideListOrdered,
@@ -143,11 +143,11 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
   })
   protected readonly icons = {
     LucideTextWrap,
-    LucideBold,
+    LucideLetterB,
     LucideCode,
     LucideEye,
     LucideSave,
-    LucideHeading,
+    LucideLetterH,
     LucideImage,
     LucideItalic,
     LucideKeyboard,

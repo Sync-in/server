@@ -199,12 +199,12 @@
                         }
                         @if (s.mainError) {
                           <span [tooltip]="s.mainError | translate:locale.language" class="badge bg-danger cursor-pointer ms-1" placement="right">
-                            <svg [lucideIcon]="icons.LucideTriangleAlert" class="m-0"></svg>
+                            <svg [lucideIcon]="icons.LucideTriangleExclamationPoint" class="m-0"></svg>
                           </span>
                         }
                         @if (s.lastErrors.length) {
                           <span (click)="showErrors(s)" class="badge bg-danger cursor-pointer ms-1" data-app-tap-ignore>
-                            <svg [lucideIcon]="icons.LucideTriangleAlert" class="me-1"></svg>
+                            <svg [lucideIcon]="icons.LucideTriangleExclamationPoint" class="me-1"></svg>
                             {{ s.lastErrors.length }}
                           </span>
                         }

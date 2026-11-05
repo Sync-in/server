@@ -120,7 +120,7 @@
             [disabled]="!hasSelection || hasDisabledItemsInSelection"
             class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
             type="button">
-      <svg [lucideIcon]="icons.LucideArchiveRestore"></svg>
+      <svg [lucideIcon]="icons.LucideArchiveArrowUp"></svg>
       <span class="app-top-menu-tool-bar__label" l10nTranslate>Restore to...</span>
     </button>
     <button (click)="openTrashDialog(true)"
@@ -662,7 +662,7 @@
   @if (!hasDisabledItemsInSelection) {
     <ng-template (execute)="copyMoveFiles()" contextMenuItem>
       @if (isTrashRepo) {
-        <span l10nTranslate><svg [lucideIcon]="icons.LucideArchiveRestore"></svg>Restore to...</span>
+        <span l10nTranslate><svg [lucideIcon]="icons.LucideArchiveArrowUp"></svg>Restore to...</span>
       } @else {
         <span l10nTranslate><svg [lucideIcon]="icons.LucideMove"></svg>Copy • Move</span>
       }

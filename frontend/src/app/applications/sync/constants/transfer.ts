@@ -1,7 +1,7 @@
 import {
   LucideArrowDown,
   LucideArrowUp,
-  LucideCircleAlert,
+  LucideCircleExclamationPoint,
   LucideCopy,
   LucideFunnel,
   LucideMove,
@@ -45,5 +45,5 @@ export const SYNC_TRANSFER_ACTION_ICON = {
   Moved: LucideMove,
   Copied: LucideCopy,
   Filtered: LucideFunnel,
-  Error: LucideCircleAlert
+  Error: LucideCircleExclamationPoint
 }

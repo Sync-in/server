@@ -4,7 +4,7 @@ import type { LucideIcon } from '@lucide/angular'
 import {
   LucideBan,
   LucideCheck,
-  LucideCircleAlert,
+  LucideCircleExclamationPoint,
   LucideClock,
   LucideCopy,
   LucideDynamicIcon,
@@ -47,7 +47,7 @@ export class FilesTasksComponent implements OnDestroy {
   protected readonly iconsStatus: Record<FileTaskStatus, LucideIcon> = {
     [FileTaskStatus.PENDING]: LucideLoader,
     [FileTaskStatus.SUCCESS]: LucideCheck,
-    [FileTaskStatus.ERROR]: LucideCircleAlert,
+    [FileTaskStatus.ERROR]: LucideCircleExclamationPoint,
     [FileTaskStatus.CANCELLED]: LucideBan,
     [FileTaskStatus.QUEUED]: LucideClock
   }

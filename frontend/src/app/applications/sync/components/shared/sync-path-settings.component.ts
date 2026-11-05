@@ -2,7 +2,7 @@ import { Component, inject, Input } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import {
   LucideBug,
-  LucideCircleAlert,
+  LucideCircleExclamationPoint,
   LucideClock,
   LucideDynamicIcon,
   LucideGauge,
@@ -37,7 +37,7 @@ export class SyncPathSettingsComponent {
   protected icons = {
     CLIENT: SYNC_ICON.CLIENT,
     SERVER: SYNC_ICON.SERVER,
-    LucideCircleAlert,
+    LucideCircleExclamationPoint,
     LucideGauge,
     LucideClock,
     LucideRefreshCw,

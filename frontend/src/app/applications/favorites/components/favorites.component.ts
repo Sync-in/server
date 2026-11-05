@@ -13,7 +13,7 @@ import {
   LucideMessageSquareMore,
   LucideRotateCw,
   LucideStarOff,
-  LucideTriangleAlert
+  LucideTriangleExclamationPoint
 } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -84,7 +84,7 @@ export class FavoritesComponent implements OnInit {
     LucideFolderOpen,
     LucideMapPin,
     LucideMessageSquareMore,
-    LucideTriangleAlert,
+    LucideTriangleExclamationPoint,
     REMOVE_FAVORITE: LucideStarOff
   }
   protected readonly originalOrderKeyValue = originalOrderKeyValue
