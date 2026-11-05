@@ -1,32 +1,43 @@
 <div appAutoResize
      [resizeOffset]="45"
-     class="search-results-list"
+     class="app-search-results-list"
      role="list">
   @if (errorMessage) {
     <div class="p-3 text-danger fw-500" l10nTranslate>{{ errorMessage }}</div>
   }
   @for (file of store.filesSearch() | searchFilter:navbarSearch.viewFilter(); track $index) {
     <article
-      (click)="selectedId = $index"
-      (appTap)="onFileActivate(file, $index)"
-      [enableDoubleTap]="false"
-      (keydown.enter)="goTo(file)"
-      (keydown.space)="$event.preventDefault(); selectedId = $index"
       [class.selected]="$index === selectedId"
-      class="search-result-item"
-      role="listitem"
-      tabindex="0">
-      <div class="search-result-header d-flex align-items-start">
-        <img [src]="file.mimeUrl" (error)="file.fallBackMimeUrl()" alt="" draggable="false" class="search-result-mime">
-        <div class="search-result-meta d-flex flex-column">
-          <span class="search-result-name text-truncate">{{ file.name }}</span>
-          <app-file-location class="search-result-path" [location]="file"></app-file-location>
+      class="app-search-result-item"
+      role="listitem">
+      <div
+        (click)="onFileClick($event, file, $index)"
+        (appTap)="onFileActivate(file, $index)"
+        [enableDoubleTap]="false"
+        (keydown.enter)="$event.preventDefault(); onFileActivate(file, $index)"
+        (keydown.space)="$event.preventDefault(); onFileActivate(file, $index)"
+        [attr.aria-label]="('Open' | translate:locale.language) + ' ' + file.name"
+        class="app-search-result-primary app-search-result-header d-flex align-items-start"
+        role="button"
+        tabindex="0">
+        <img [src]="file.mimeUrl" (error)="file.fallBackMimeUrl()" alt="" draggable="false" class="app-search-result-mime">
+        <div class="app-search-result-meta d-flex flex-column">
+          <span class="app-search-result-name text-truncate">{{ file.name }}</span>
+          <app-file-location class="app-search-result-path" [location]="file"></app-file-location>
         </div>
       </div>
+      <button
+        (click)="goTo(file)"
+        [attr.aria-label]="('Go to' | translate:locale.language) + ' ' + file.name"
+        [tooltip]="'Go to' | translate:locale.language"
+        class="btn btn-default app-search-result-go-to"
+        type="button">
+        <svg [lucideIcon]="icons.LucideMapPin" aria-hidden="true"></svg>
+      </button>
       @if (file.matches?.length) {
-        <div class="search-result-matches" data-app-tap-ignore>
+        <div (pointerdown)="selectedId = $index" class="app-search-result-matches" data-app-tap-ignore>
           @for (match of file.matches; track $index) {
-            <p class="search-result-match" [innerHTML]="match"></p>
+            <p class="app-search-result-match" [innerHTML]="match"></p>
           }
         </div>
       }

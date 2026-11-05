@@ -441,6 +441,15 @@
       }
     }
   }
+  app-files-search .app-search-results-list {
+    --search-result-border: #{$dark-border-subtle};
+    --search-result-selected-bg: #{$sidebar-dark-apps-menu-title-bg};
+    --search-result-focus-ring: #{rgba($primary, .4)};
+    --search-result-title-color: #{$gray-lightest};
+    --search-result-match-color: #{$dark-item-hover-color};
+    --search-result-mark-bg: #{$success};
+    --search-result-mark-color: #{$white};
+  }
   .app-sync-clients {
     --sync-client-card-shadow: 0 4px 4px #{$dark-dialog-tab-card-shadow-color};
     --sync-client-card-selected-border: #{$dark-dialog-check-card-active-border-color};

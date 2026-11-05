@@ -2,9 +2,11 @@ import { HttpErrorResponse } from '@angular/common/http'
 import { Component, effect, inject } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, type ParamMap, Router } from '@angular/router'
+import { LucideDynamicIcon, LucideMapPin } from '@lucide/angular'
 import { MIN_CHARS_TO_SEARCH } from '@sync-in-server/backend/src/applications/files/constants/indexing'
 import type { SearchFilesDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
-import { L10nTranslateDirective } from 'angular-l10n'
+import { L10N_LOCALE, type L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
+import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { merge, of } from 'rxjs'
 import { catchError, finalize, map, switchMap, tap } from 'rxjs/operators'
 import { AutoResizeDirective } from '../../../common/directives/auto-resize.directive'
@@ -15,6 +17,7 @@ import { NAVBAR_SEARCH_MODE, type NavbarGlobalSearch } from '../../../layout/nav
 import { NavbarSearchService } from '../../../layout/navbar/services/navbar-search.service'
 import { StoreService } from '../../../store/store.service'
 import { FileLocationComponent } from '../../files/components/utils/file-location.component'
+import { mimeDirectory } from '../../files/files.constants'
 import type { FileContentModel } from '../../files/models/file-content.model'
 import { FilesService } from '../../files/services/files.service'
 import { SPACES_PATH } from '../../spaces/spaces.constants'
@@ -22,13 +25,23 @@ import { SEARCH_ICON, SEARCH_PATH, SEARCH_QUERY_PARAM, SEARCH_TITLE } from '../s
 
 @Component({
   selector: 'app-files-search',
-  imports: [AutoResizeDirective, SearchFilterPipe, L10nTranslateDirective, TapDirective, FileLocationComponent],
-  templateUrl: './search.component.html',
-  styleUrl: './search.component.scss'
+  imports: [
+    AutoResizeDirective,
+    SearchFilterPipe,
+    L10nTranslateDirective,
+    L10nTranslatePipe,
+    TapDirective,
+    FileLocationComponent,
+    LucideDynamicIcon,
+    TooltipDirective
+  ],
+  templateUrl: './search.component.html'
 })
 export class SearchComponent {
   protected readonly store = inject(StoreService)
   protected readonly navbarSearch = inject(NavbarSearchService)
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly icons = { LucideMapPin }
   protected errorMessage: string = null
   protected selectedId: number = null
   private readonly router = inject(Router)
@@ -96,9 +109,22 @@ export class SearchComponent {
     this.router.navigate([SPACES_PATH.SPACES, ...file.path.split('/')], { queryParams: { select: file.name } }).catch(console.error)
   }
 
+  protected open(file: FileContentModel) {
+    if (file.mime === mimeDirectory) {
+      this.router.navigate([SPACES_PATH.SPACES, ...file.path.split('/'), file.name]).catch(console.error)
+      return
+    }
+    this.filesService.open(`${file.path}/${file.name}`).catch(console.error)
+  }
+
+  protected onFileClick(event: MouseEvent, file: FileContentModel, index: number) {
+    if (event.detail !== 0) return
+    this.onFileActivate(file, index)
+  }
+
   protected onFileActivate(file: FileContentModel, index: number) {
     this.selectedId = index
-    this.goTo(file)
+    this.open(file)
   }
 
   private searchFromParams(params: ParamMap): NavbarGlobalSearch | null {
