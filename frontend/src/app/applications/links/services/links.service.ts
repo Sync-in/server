@@ -28,7 +28,6 @@ import { take } from 'rxjs/operators'
 import { AuthService } from '../../../auth/auth.service'
 import { downloadWithAnchor } from '../../../common/utils/functions'
 import { LayoutService } from '../../../layout/layout.service'
-import { FileModel } from '../../files/models/file.model'
 import { FilesService } from '../../files/services/files.service'
 import type { ShareModel } from '../../shares/models/share.model'
 import type { SpaceModel } from '../../spaces/models/space.model'
@@ -93,7 +92,7 @@ export class LinksService {
     )
   }
 
-  linkAccessOrView(uuid: string, link: SpaceLink, fileToView?: FileModel) {
+  linkAccessOrView(uuid: string, link: SpaceLink, viewFile = false) {
     this.http
       .get<LoginResponseDto>(`${API_PUBLIC_LINK_ACCESS}/${uuid}`)
       .pipe(
@@ -114,8 +113,8 @@ export class LinksService {
           // First authentication with token
           this.authService.initUserFromResponse(r)
         }
-        if (fileToView) {
-          this.filesService.openViewerDialog(fileToView, [], link.share.permissions).catch(console.error)
+        if (viewFile) {
+          this.filesService.open(`${SPACES_PATH.SHARES}/${link.share.alias}`).catch(console.error)
         } else if (link.space) {
           this.router.navigate([SPACES_PATH.SPACES_FILES, link.space.alias]).catch(console.error)
         } else {

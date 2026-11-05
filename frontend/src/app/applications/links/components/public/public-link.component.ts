@@ -30,7 +30,7 @@ export class PublicLinkComponent {
   }
 
   openLink() {
-    this.linksService.linkAccessOrView(this.linkUUID, this.link, this.file)
+    this.linksService.linkAccessOrView(this.linkUUID, this.link, true)
   }
 
   downloadLink() {
