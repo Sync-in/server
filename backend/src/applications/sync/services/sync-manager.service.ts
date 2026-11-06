@@ -266,12 +266,15 @@ export class SyncManager {
   }
 
   private handleError(space: SpaceEnv, action: string, e: unknown, dstSpace?: SpaceEnv): never {
-    this.logger.error({
-      tag: this.handleError.name,
-      msg: `unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${toErrorMessage(e)}`
-    })
+    const errorMessage = toErrorMessage(e)
+    if (!(e instanceof FileError && e.httpCode === HttpStatus.NOT_FOUND)) {
+      this.logger.error({
+        tag: this.handleError.name,
+        msg: `unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${errorMessage}`
+      })
+    }
     // Remove the last part to avoid exposing the path
-    const errorMsg = toErrorMessage(e).split(',')[0]
+    const errorMsg = errorMessage.split(',')[0]
     if (e instanceof LockConflict) {
       throw new HttpException('The file is locked', HttpStatus.LOCKED)
     } else if (e instanceof FileError) {

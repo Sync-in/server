@@ -517,7 +517,9 @@ export class WebDAVMethods {
 
   private handleError(req: FastifyDAVRequest, res: FastifyReply, e: unknown, toUrl?: string) {
     const errorMessage = toErrorMessage(e)
-    this.logger.error({ tag: this.handleError.name, msg: `Unable to ${req.method} ${req.dav.url}${toUrl ? ` -> ${toUrl}` : ''} : ${errorMessage}` })
+    if (!(e instanceof FileError && e.httpCode === HttpStatus.NOT_FOUND)) {
+      this.logger.error({ tag: this.handleError.name, msg: `Unable to ${req.method} ${req.dav.url}${toUrl ? ` -> ${toUrl}` : ''} : ${errorMessage}` })
+    }
     // Remove the last part to avoid exposing the path
     const errorMsg = errorMessage.split(',')[0]
     if (e instanceof LockConflict) {
