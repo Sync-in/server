@@ -206,7 +206,7 @@ export class SyncManager {
       }
     } catch (e) {
       this.logger.error({ tag: this.parseFiles.name, msg: `unable to parse directory : ${dir} : ${toErrorMessage(e)}` })
-      throw new Error('Unable to parse path')
+      throw new Error('Unable to parse path', { cause: e })
     }
   }
 

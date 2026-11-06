@@ -133,7 +133,7 @@ export class CollaboraOnlineManager {
         if (e instanceof FileError) {
           throw new HttpException(e.message, e.httpCode)
         }
-        throw new Error(`unable to save document : ${toErrorMessage(e)}`)
+        throw new Error(`unable to save document : ${toErrorMessage(e)}`, { cause: e })
       }
       // try to verify the downloaded size
       if (contentLength !== undefined && contentLength !== 0) {

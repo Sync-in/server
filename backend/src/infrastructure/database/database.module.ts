@@ -89,7 +89,7 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
         if (!isRetryableConnectionError(error)) {
           if (!isRecovery) {
             await this.closePool()
-            throw new Error(message)
+            throw new Error(message, { cause: error })
           }
           this.logger.error(message)
           this.logger.error('MySQL connection cannot be retried without changing the configuration')

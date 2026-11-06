@@ -71,8 +71,6 @@ async function extractTextFromImages(images: ExtractedImages, options: DocTextif
       continue
     }
 
-    let imageBuffer: Buffer | undefined
-
     try {
       let imageProcessor = sharp(image.data, {
         raw: {
@@ -90,7 +88,7 @@ async function extractTextFromImages(images: ExtractedImages, options: DocTextif
         imageProcessor = imageProcessor.rotate(pageRotation)
       }
 
-      imageBuffer = await imageProcessor
+      const imageBuffer = await imageProcessor
         .resize({
           width: 1800,
           height: 1800,
@@ -110,8 +108,6 @@ async function extractTextFromImages(images: ExtractedImages, options: DocTextif
       }
     } catch {
       // ignore OCR errors for a single image
-    } finally {
-      imageBuffer = undefined
     }
   }
 

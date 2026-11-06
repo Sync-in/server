@@ -24,13 +24,8 @@ export class UserPermissionsGuard implements CanActivate {
     if (req.user.isAdmin) {
       return true
     }
-    let authorized = false
-    if (Array.isArray(permissions)) {
-      // if any of the apps are allowed, proceed
-      authorized = permissions.some((p: string) => req.user.havePermission(p))
-    } else {
-      authorized = req.user.havePermission(permissions)
-    }
+    // if any of the apps are allowed, proceed
+    const authorized = Array.isArray(permissions) ? permissions.some((p: string) => req.user.havePermission(p)) : req.user.havePermission(permissions)
     if (!authorized) {
       this.logger.warn(`does not have permissions : ${permissions}`)
       throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)

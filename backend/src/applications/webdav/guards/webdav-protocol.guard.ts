@@ -74,7 +74,6 @@ export class WebDAVProtocolGuard implements CanActivate {
   }
 
   private parseBody(req: FastifyDAVRequest) {
-    let body = null
     let valid: true | { err: { code?: string; msg: string; line: number; col: number } }
     try {
       valid = xmlIsValid(req.body.toString())
@@ -90,13 +89,12 @@ export class WebDAVProtocolGuard implements CanActivate {
       }
     }
     if (valid === true) {
-      body = xmlParse(req.body)
+      req.dav.body = xmlParse(req.body)
     } else if (valid.err.code === undefined && ALLOW_EMPTY_BODY_METHODS.indexOf(req.method) > -1) {
-      body = null
+      req.dav.body = null
     } else {
       throw new HttpException(`${valid.err.code} : ${valid.err.msg}`, HttpStatus.BAD_REQUEST)
     }
-    req.dav.body = body
     return true
   }
 

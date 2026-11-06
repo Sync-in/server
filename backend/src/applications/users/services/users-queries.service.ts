@@ -571,7 +571,7 @@ export class UsersQueries {
         this.logger.log({ tag: this.updateGroup.name, msg: `group (${groupId}) was updated : ${JSON.stringify(set)}` })
       } catch (e) {
         this.logger.error({ tag: this.updateGroup.name, msg: `group (${groupId}) was not updated : ${JSON.stringify(set)} : ${toErrorMessage(e)}` })
-        throw new Error('Group was not updated')
+        throw new Error('Group was not updated', { cause: e })
       }
     }
   }
@@ -597,7 +597,7 @@ export class UsersQueries {
           tag: this.updateGroupMembers.name,
           msg: `users ${JSON.stringify(members.add.map((m) => m.id))} was not added to group (${groupId}) : ${toErrorMessage(e)}`
         })
-        throw new Error('Group members was not added')
+        throw new Error('Group members was not added', { cause: e })
       }
     }
     if (members?.remove?.length) {
@@ -614,7 +614,7 @@ export class UsersQueries {
           tag: this.updateGroupMembers.name,
           msg: `users ${JSON.stringify(members.remove)} was not removed from group (${groupId}) : ${toErrorMessage(e)}`
         })
-        throw new Error('Group members was not removed')
+        throw new Error('Group members was not removed', { cause: e })
       }
     }
   }

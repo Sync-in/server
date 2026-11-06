@@ -49,7 +49,7 @@ export class FilesLockManager {
         return [false, e.lock]
       }
       if (e instanceof Error) throw e
-      throw new Error(toErrorMessage(e))
+      throw new Error(toErrorMessage(e), { cause: e })
     }
     ttl ??= CACHE_LOCK_DEFAULT_TTL
     const key = `${CACHE_LOCK_PREFIX}|${this.genSuffixKey(dbFile, { depth: depth, token: options?.lockToken })}`

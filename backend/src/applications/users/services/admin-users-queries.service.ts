@@ -211,7 +211,7 @@ export class AdminUsersQueries {
           tag: this.updateUserGroups.name,
           msg: `user (${userId}) groups ${JSON.stringify(groups.add)} was not added: ${toErrorMessage(e)}`
         })
-        throw new Error('User groups was not added')
+        throw new Error('User groups was not added', { cause: e })
       }
     }
     if (groups.delete.length) {
@@ -228,7 +228,7 @@ export class AdminUsersQueries {
           tag: this.updateUserGroups.name,
           msg: `user (${userId}) groups ${JSON.stringify(groups.delete)} was not deleted: ${toErrorMessage(e)}`
         })
-        throw new Error('User groups was not deleted')
+        throw new Error('User groups was not deleted', { cause: e })
       }
     }
   }
@@ -285,7 +285,7 @@ export class AdminUsersQueries {
       await this.usersQueries.clearWebDAVAuthCache(userIds)
     } catch (e) {
       this.logger.error({ tag: this.addUsersToGroup.name, msg: `unable to add users (${userIds}) to group (${groupId}) : ${toErrorMessage(e)}` })
-      throw new Error('Unable to add users to group')
+      throw new Error('Unable to add users to group', { cause: e })
     }
   }
 
@@ -305,7 +305,7 @@ export class AdminUsersQueries {
         tag: this.updateUserFromGroup.name,
         msg: `user (${userId}) was not updated on group (${groupId}) as ${USER_GROUP_ROLE[role]} : ${toErrorMessage(e)}`
       })
-      throw new Error('Unable to update user from group')
+      throw new Error('Unable to update user from group', { cause: e })
     }
   }
 
@@ -323,7 +323,7 @@ export class AdminUsersQueries {
       await this.usersQueries.clearWebDAVAuthCache(userId)
     } catch (e) {
       this.logger.error({ tag: this.removeUserFromGroup.name, msg: `user (${userId}) or group (${groupId}) does not exist : ${toErrorMessage(e)}` })
-      throw new Error('Unable to remove user from group')
+      throw new Error('Unable to remove user from group', { cause: e })
     }
   }
 
@@ -345,7 +345,7 @@ export class AdminUsersQueries {
           tag: this.updateGuestManagers.name,
           msg: `guest (${guestId}) managers ${JSON.stringify(managers.add)} was not added: ${toErrorMessage(e)}`
         })
-        throw new Error('Guest managers was not added')
+        throw new Error('Guest managers was not added', { cause: e })
       }
     }
     if (managers.delete.length) {
@@ -360,7 +360,7 @@ export class AdminUsersQueries {
           tag: this.updateGuestManagers.name,
           msg: `guest (${guestId}) managers ${JSON.stringify(managers.delete)} was not deleted: ${toErrorMessage(e)}`
         })
-        throw new Error('Guest managers was not deleted')
+        throw new Error('Guest managers was not deleted', { cause: e })
       }
     }
   }

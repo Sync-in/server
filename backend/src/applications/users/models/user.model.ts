@@ -273,16 +273,11 @@ export class UserModel implements Omit<User, 'password' | 'permissions'> {
   }
 
   getInitials(): string {
-    let initials: { f: string; l: string }
-    if (this.firstName) {
-      if (this.lastName) {
-        initials = { f: this.firstName.charAt(0), l: this.lastName.charAt(0) }
-      }
-      initials = { f: this.firstName.charAt(0), l: this.firstName.charAt(1) }
-    } else {
-      initials = { f: this.login.charAt(0), l: this.login.charAt(1) }
+    if (this.firstName && this.lastName) {
+      return `${this.firstName.charAt(0).toUpperCase()}${this.lastName.charAt(0).toLowerCase()}`
     }
-    return `${initials.f.toUpperCase()}${initials.l.toLowerCase()}`
+    const value = this.firstName || this.login
+    return `${value.charAt(0).toUpperCase()}${value.charAt(1).toLowerCase()}`
   }
 
   havePermission(permission: string): boolean {

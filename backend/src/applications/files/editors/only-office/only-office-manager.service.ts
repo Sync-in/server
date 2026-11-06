@@ -383,7 +383,7 @@ export class OnlyOfficeManager {
           tag: this.saveDocument.name,
           msg: `failed to download document from ${finalParsedDownloadUrl.origin}${finalParsedDownloadUrl.pathname} : ${space.url} - ${toErrorMessage(e)}`
         })
-        throw new Error(`unable to download document : ${toErrorMessage(e)}`)
+        throw new Error(`unable to download document : ${toErrorMessage(e)}`, { cause: e })
       }
 
       // try to verify the downloaded size
@@ -401,7 +401,7 @@ export class OnlyOfficeManager {
         // emit file event
         FileEvent.emit('event', { user: user, space: space, action: ACTION.UPDATE, rPath: space.realPath, source: 'editor' })
       } catch (e) {
-        throw new Error(`unable to save document : ${toErrorMessage(e)}`)
+        throw new Error(`unable to save document : ${toErrorMessage(e)}`, { cause: e })
       }
     } finally {
       try {
@@ -466,7 +466,7 @@ export class OnlyOfficeManager {
       result = res.data
     } catch (e) {
       const reason = isAxiosError(e) && e.response ? `status : ${e.response.status}` : `reason : ${toErrorMessage(e)}`
-      throw new Error(`convert failed with ${reason}`)
+      throw new Error(`convert failed with ${reason}`, { cause: e })
     }
     if (result.error) {
       throw new Error(`convert failed with reason : ${ONLY_OFFICE_CONVERT_ERROR.get(result.error)}`)
