@@ -1,12 +1,12 @@
 import { type DrizzleMySqlConfig, DrizzleMySqlModule } from '@knaadh/nestjs-drizzle-mysql2'
 import { BeforeApplicationShutdown, Global, Inject, Logger, Module, OnModuleInit } from '@nestjs/common'
-import type { Connection, Pool } from 'mysql2'
+import type { Connection, Pool, PoolConnection } from 'mysql2'
 import { setTimeout } from 'node:timers/promises'
 import { configuration } from '../../configuration/config.environment.js'
 import { INFRASTRUCTURE_CONNECTION_RETRY_DELAY, INFRASTRUCTURE_DEPENDENCY } from '../availability/availability.constants.js'
 import { Availability } from '../availability/availability.service.js'
 import { connectionErrorMessage, isRetryableConnectionError } from '../utils.js'
-import { DB_SESSION_INIT_QUERIES, DB_TOKEN_PROVIDER } from './constants.js'
+import { DB_CONNECTION_PROBE_TIMEOUT, DB_SESSION_INIT_QUERIES, DB_TOKEN_PROVIDER } from './constants.js'
 import { DatabaseLogger } from './database.logger.js'
 import type { DBSchema } from './interfaces/database.interface.js'
 import * as schema from './schema.js'
@@ -21,9 +21,7 @@ import * as schema from './schema.js'
           connection: 'pool',
           config: {
             uri: configuration.mysql.url,
-            connectionLimit: 10,
-            maxIdle: 5,
-            idleTimeout: 60 * 60_000
+            connectionLimit: 10
           }
         },
         config: {
@@ -52,6 +50,8 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
 
   async onModuleInit(): Promise<void> {
     this.pool.on('connection', (conn: Connection) => {
+      // this.logger.debug(`MySQL pool connection created (thread ID: ${conn.threadId})`)
+      // conn.once('end', () => this.logger.debug(`MySQL pool connection removed (thread ID: ${conn.threadId})`))
       conn.once('error', (error: unknown) => this.handleConnectionError(error))
       for (const query of DB_SESSION_INIT_QUERIES) {
         conn.query(query)
@@ -71,10 +71,17 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
   private async waitUntilAvailable(isRecovery = false): Promise<void> {
     while (!this.shutdownController.signal.aborted) {
       try {
-        await this.pool.promise().query('SELECT 1')
+        await this.runAvailabilityProbe()
         if (this.shutdownController.signal.aborted) return
+        const wasAvailable = this.availability.isAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE)
         this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE, true)
-        this.logger.log(isRecovery ? 'Connection to MySQL server restored' : 'Connected to MySQL server')
+        if (!isRecovery) {
+          this.logger.log('Connected to MySQL server')
+        } else if (wasAvailable) {
+          this.logger.debug('Connection to MySQL server verified')
+        } else {
+          this.logger.log('Connection to MySQL server restored')
+        }
         return
       } catch (error) {
         this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE, false)
@@ -96,11 +103,10 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
   }
 
   private handleConnectionError(error: unknown): void {
-    const wasAvailable = this.availability.isAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE)
-    this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE, false)
-    if (!wasAvailable || this.shutdownController.signal.aborted || this.recoveryPromise) return
-
-    this.logger.error(`Connection to MySQL server lost: ${connectionErrorMessage(error)}`)
+    if (!this.availability.isAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE) || this.shutdownController.signal.aborted || this.recoveryPromise) {
+      return
+    }
+    this.logger.warn(`MySQL pool connection lost: ${connectionErrorMessage(error)}`)
     this.recoveryPromise = this.recoverAvailability()
   }
 
@@ -110,6 +116,45 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
     } finally {
       this.recoveryPromise = undefined
     }
+  }
+
+  private runAvailabilityProbe(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      let connection: PoolConnection | undefined
+      let settled = false
+      const finish = (error?: unknown): void => {
+        if (settled) return
+        settled = true
+        globalThis.clearTimeout(timeout)
+        if (error) {
+          reject(error)
+        } else {
+          resolve()
+        }
+      }
+
+      const timeout = globalThis.setTimeout(() => {
+        finish(Object.assign(new Error(`MySQL availability probe timed out after ${DB_CONNECTION_PROBE_TIMEOUT / 1000}s`), { code: 'ETIMEDOUT' }))
+        connection?.destroy()
+      }, DB_CONNECTION_PROBE_TIMEOUT)
+
+      this.pool.getConnection((error, acquiredConnection) => {
+        if (settled) {
+          acquiredConnection?.release()
+          return
+        }
+        if (error) {
+          finish(error)
+          return
+        }
+
+        connection = acquiredConnection
+        acquiredConnection.query('SELECT 1', (queryError) => {
+          acquiredConnection.release()
+          finish(queryError ?? undefined)
+        })
+      })
+    })
   }
 
   private async waitRetryDelay(): Promise<boolean> {

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 const moduleDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const DB_CHARSET = 'utf8mb4'
+export const DB_CONNECTION_PROBE_TIMEOUT = 6000
 // Changing this collation after deployment also requires a new database migration.
 export const DB_PATH_COLLATION = 'utf8mb4_uca1400_nopad_as_ci'
 export const DB_TOKEN_PROVIDER = 'DB'
