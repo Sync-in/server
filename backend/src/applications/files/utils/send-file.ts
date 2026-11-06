@@ -48,9 +48,17 @@ export class SendFile {
     const encodedFilePath = encodeURIComponent(this.filePath)
     this.fileName = encodeURIComponent(this.downloadName ? this.downloadName : fileName(this.filePath))
     const sendResult: SendResult = await send(req.raw, encodedFilePath, this.sendOptions)
-    // Check if the path was correctly validated
-    if ((sendResult as typeof sendResult & { metadata: Record<string, unknown> }).metadata['path'] === undefined) {
-      throw new FileError(HttpStatus.BAD_REQUEST, 'Location not found')
+    if (sendResult.type === 'error') {
+      // The underlying error may expose the real filesystem path, so retain it only as the cause.
+      let errorMessage = 'Unable to access location'
+      if (sendResult.statusCode === HttpStatus.NOT_FOUND) {
+        errorMessage = SEND_FILE_ERROR_MSG[HttpStatus.NOT_FOUND]
+      } else if (sendResult.statusCode === HttpStatus.FORBIDDEN) {
+        errorMessage = 'Location is not allowed'
+      } else if (sendResult.statusCode >= HttpStatus.INTERNAL_SERVER_ERROR) {
+        errorMessage = 'Unable to send file'
+      }
+      throw new FileError(sendResult.statusCode, errorMessage, { cause: sendResult.metadata.error })
     }
     // Force file to be downloaded as an attachment
     sendResult.headers['content-disposition'] = makeContentDispositionAttachment(this.fileName)
