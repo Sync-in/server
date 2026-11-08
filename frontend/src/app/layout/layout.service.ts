@@ -8,12 +8,13 @@ import type { UserTheme } from '@sync-in-server/backend/src/applications/users/i
 import { L10nTranslationService } from 'angular-l10n'
 import { BsModalRef, BsModalService, ModalContainerComponent, ModalOptions } from 'ngx-bootstrap/modal'
 import { setTheme } from 'ngx-bootstrap/utils'
-import { ActiveToast, ToastrService } from 'ngx-toastr'
 import { BehaviorSubject, fromEvent, mergeWith, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { getBrowserL10nLocale, i18nLanguageText } from '../../i18n/l10n'
 import { APP_NAME } from '../app.constants'
 import { USER_LANGUAGE_AUTO } from '../applications/users/user.constants'
+import type { ToastOptions, ToastRef, ToastType } from '../common/components/toast/interfaces/toast.interface'
+import { ToastService } from '../common/components/toast/toast.service'
 import { getTheme } from '../common/utils/functions'
 import { EVENT } from '../electron/constants/events'
 import { Electron } from '../electron/electron.service'
@@ -61,13 +62,12 @@ export class LayoutService {
   private readonly title = inject(Title)
   private readonly translation = inject(L10nTranslationService)
   private readonly bsModal = inject(BsModalService)
-  private readonly toastr = inject(ToastrService)
+  private readonly toast = inject(ToastService)
   private readonly contextMenu = inject<ContextMenuService<any>>(ContextMenuService)
   private readonly electron = inject(Electron)
   private readonly store = inject(StoreService)
   // States
   private readonly screenMediumSize = 767 // px
-  private readonly screenSmallSize = 576 // px
   private collapseRSideBarTimeoutId: ReturnType<typeof setTimeout> | null = null
   private escapeCloseInProgress = false
   // Network events
@@ -226,13 +226,13 @@ export class LayoutService {
   }
 
   sendNotification(
-    type: 'success' | 'error' | 'info' | 'warning',
+    type: ToastType,
     title: string,
     message: string,
     e?: HttpErrorResponse,
-    override: any = {},
+    options: ToastOptions = {},
     forceLocal = false
-  ): ActiveToast<any> | void {
+  ): ToastRef | void {
     const useSystemNotifications = !forceLocal && this.electron.enabled && (this.store.user()?.preferences?.useSystemNotifications ?? true)
     if (type === 'error' && e) {
       const errorMessage = e.error
@@ -242,21 +242,22 @@ export class LayoutService {
         : this.translateString(e.message || 'Unknown error !')
       if (useSystemNotifications) {
         this.electron.sendMessage(this.translateString(title), `${this.translateString(message)} - ${errorMessage}`)
-      } else {
-        return this.toastr[type](
-          `<div class="fw-bold">${this.translateString(message)}</div><div class="mt-2">${errorMessage}</div>`,
-          this.translateString(title),
-          {
-            ...override,
-            enableHtml: true
-          }
-        )
+        return
       }
+      return this.toast.show(
+        type,
+        this.translateString(title),
+        `<div class="fw-bold">${this.translateString(message)}</div><div class="mt-2">${errorMessage}</div>`,
+        {
+          ...options,
+          enableHtml: true
+        }
+      )
     }
     if (useSystemNotifications) {
       this.electron.sendMessage(this.translateString(title), this.translateString(message))
     } else {
-      return this.toastr[type](this.translateString(message), this.translateString(title), override)
+      return this.toast.show(type, this.translateString(title), this.translateString(message), options)
     }
   }
 

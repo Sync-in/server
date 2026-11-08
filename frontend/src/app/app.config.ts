@@ -8,7 +8,6 @@ import { provideL10nIntl, provideL10nTranslation } from 'angular-l10n'
 import { BsModalService } from 'ngx-bootstrap/modal'
 import { TooltipConfig } from 'ngx-bootstrap/tooltip'
 import { SocketIoModule } from 'ngx-socket-io'
-import { provideToastr } from 'ngx-toastr'
 import { l10nConfig, TranslationLoader, TranslationMissing, TranslationStorage } from '../i18n/l10n'
 import { routes } from './app.routes'
 import { AuthInterceptor } from './auth/auth.interceptor'
@@ -28,13 +27,6 @@ export const appConfig: ApplicationConfig = {
       ...(isDevMode() ? { missingTranslationHandler: TranslationMissing } : {})
     }),
     provideL10nIntl(),
-    provideToastr({
-      positionClass: 'toast-bottom-right',
-      preventDuplicates: false,
-      maxOpened: 6,
-      autoDismiss: true,
-      timeOut: 6000
-    }),
     { provide: TooltipConfig, useFactory: getToolTipConfig },
     BsModalService,
     importProvidersFrom(SocketIoModule.forRoot(webSocketOptions))

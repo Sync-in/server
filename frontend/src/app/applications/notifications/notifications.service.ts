@@ -2,9 +2,9 @@ import { HttpClient } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { API_NOTIFICATIONS, NOTIFICATIONS_ROUTE } from '@sync-in-server/backend/src/applications/notifications/constants/routes'
 import type { NotificationFromUser } from '@sync-in-server/backend/src/applications/notifications/interfaces/notification-properties.interface'
-import { ActiveToast } from 'ngx-toastr'
 import { map, Observable } from 'rxjs'
 import { take } from 'rxjs/operators'
+import type { ToastRef } from '../../common/components/toast/interfaces/toast.interface'
 import { TAB_MENU } from '../../layout/layout.interfaces'
 import { LayoutService } from '../../layout/layout.service'
 import { StoreService } from '../../store/store.service'
@@ -34,7 +34,7 @@ export class NotificationsService {
 
   checkUnreadNotifications(checkLast = false): void {
     this.getNotifications().subscribe((notifications: NotificationModel[]) => {
-      let layoutNotification: ActiveToast<any> | void
+      let layoutNotification: ToastRef | void
       if (checkLast && notifications.length) {
         const n = notifications[0]
         layoutNotification = this.layout.sendNotification(

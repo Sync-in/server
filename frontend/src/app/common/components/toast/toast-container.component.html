@@ -1,0 +1,45 @@
+<div [class]="toastService.positionClass()" class="app-toast-stack">
+  @for (toast of toastService.toasts(); track toast.id) {
+    <article
+      (click)="toastService.tap(toast.id)"
+      (focusin)="toastService.pause(toast.id, 'focus')"
+      (focusout)="onFocusOut($event, toast.id)"
+      (keydown)="onKeydown($event, toast.id)"
+      (mouseenter)="toastService.pause(toast.id, 'pointer')"
+      (mouseleave)="toastService.resume(toast.id, 'pointer')"
+      [attr.role]="toast.type === 'error' ? 'alert' : 'status'"
+      [class.app-toast--error]="toast.type === 'error'"
+      [class.app-toast--info]="toast.type === 'info'"
+      [class.app-toast--success]="toast.type === 'success'"
+      [class.app-toast--warning]="toast.type === 'warning'"
+      animate.enter="app-toast-enter"
+      animate.leave="app-toast-leave"
+      aria-atomic="true"
+      class="app-toast"
+      tabindex="0">
+      <div class="app-toast__header">
+        <svg [lucideIcon]="icons[toast.type]" aria-hidden="true" class="app-toast__icon"></svg>
+        <div class="app-toast__title">{{ toast.title }}</div>
+        @if (toast.closeButton) {
+          <button
+            (click)="close($event, toast.id)"
+            [attr.aria-label]="'Close' | translate: locale.language"
+            [title]="'Close' | translate: locale.language"
+            class="app-toast__close"
+            type="button">
+            <svg [lucideIcon]="closeIcon" aria-hidden="true"></svg>
+          </button>
+        }
+      </div>
+      @if (toast.message) {
+        <div class="app-toast__body">
+          @if (toast.enableHtml) {
+            <div [innerHTML]="toast.message" class="app-toast__message app-toast__message--html"></div>
+          } @else {
+            <div class="app-toast__message">{{ toast.message }}</div>
+          }
+        </div>
+      }
+    </article>
+  }
+</div>

@@ -1,109 +1,278 @@
-.toast-container .ngx-toastr {
+.app-toast-stack {
+  --toast-stack-top: calc(12px + env(safe-area-inset-top, 0px));
+  --toast-stack-right: calc(#{$sidebar-apps-icons-width} + 10px + env(safe-area-inset-right, 0px));
+  --toast-stack-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  --toast-stack-left: calc(12px + env(safe-area-inset-left, 0px));
+
+  position: fixed;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 300px;
+  max-width: calc(100vw - var(--toast-stack-left) - var(--toast-stack-right));
+  pointer-events: none;
+
+  &.toast-top-center,
+  &.toast-top-left,
+  &.toast-top-right {
+    top: var(--toast-stack-top);
+  }
+
+  &.toast-bottom-center,
+  &.toast-bottom-left,
+  &.toast-bottom-right {
+    bottom: var(--toast-stack-bottom);
+  }
+
+  &.toast-top-left,
+  &.toast-bottom-left {
+    left: var(--toast-stack-left);
+  }
+
+  &.toast-top-right,
+  &.toast-bottom-right {
+    right: var(--toast-stack-right);
+  }
+
+  &.toast-top-center,
+  &.toast-bottom-center {
+    right: var(--toast-stack-right);
+    left: var(--toast-stack-left);
+    margin-inline: auto;
+  }
+}
+
+.app-toast {
   --toast-accent: #{$gray};
-  --toast-bg: #{rgba($white, 0.94)};
-  --toast-bg-hover: #{rgba($white, 0.98)};
-  --toast-border: #{rgba(mix($gray-dark, $gray-mid, 42%), 0.5)};
-  --toast-title: #{$custom-color};
-  --toast-message: #{mix($gray-dark, $black, 64%)};
+  --toast-bg: #{$white};
+  --toast-message-bg: #f7f8fa;
+  --toast-border: #e3e7ed;
+  --toast-title: #111827;
+  --toast-message: #475467;
+  --toast-control: #98a2b3;
+  --toast-control-hover: #f1f3f6;
 
   position: relative;
-  padding: 0.66rem 1.1rem 0.64rem 1.7rem !important;
-  border: 0.5px solid var(--toast-border, #{$gray-light}) !important;
-  background-color: var(--toast-bg, #{$white}) !important;
-  background-image: none !important;
-  color: var(--toast-title, #{$custom-color}) !important;
-  backdrop-filter: saturate(120%) blur(2px);
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--toast-border);
+  border-radius: $border-radius-lg;
+  background: var(--toast-bg);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+  color: var(--toast-title);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: box-shadow 160ms ease;
 
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0.58rem;
-    top: 0.52rem;
-    bottom: 0.52rem;
-    width: 0.34rem;
-    border-radius: 999px;
-    background: var(--toast-accent, #{$gray});
+  &:hover {
+    box-shadow: 0 15px 32px rgba(15, 23, 42, 0.17);
   }
 
-  .toast-title {
-    font-size: $font-size-md;
-    margin-top: 0 !important;
-    margin-bottom: 0.5rem !important;
-    line-height: 1.15;
-    color: var(--toast-title) !important;
+  &:focus-visible {
+    outline: 2px solid var(--toast-accent);
+    outline-offset: 2px;
   }
 
-  .toast-message {
-    font-size: $font-size-base;
-    line-height: 1.2;
-    color: var(--toast-message) !important;
+  &--success {
+    --toast-accent: #20bf6b;
+  }
+
+  &--info {
+    --toast-accent: #{$primary};
+  }
+
+  &--warning {
+    --toast-accent: #f59e0b;
+  }
+
+  &--error {
+    --toast-accent: #{$danger};
+  }
+}
+
+.app-toast__header {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 10px 7px 9px 12px;
+}
+
+.app-toast__icon {
+  width: 20px;
+  height: 20px;
+  color: var(--toast-accent);
+  stroke-width: 2.4;
+}
+
+.app-toast__title {
+  min-width: 0;
+  font-size: $font-size-lg;
+  font-weight: 500;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.app-toast__close {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--toast-control);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+
+  svg {
+    width: 19px;
+    height: 19px;
   }
 
   &:hover {
-    background-color: var(--toast-bg-hover, var(--toast-bg, #{$white})) !important;
+    background: var(--toast-control-hover);
+    color: var(--toast-title);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--toast-accent);
+    outline-offset: 1px;
   }
 }
 
-.toast-container.toast-top-center .ngx-toastr,
-.toast-container.toast-bottom-center .ngx-toastr {
-  width: fit-content !important;
-  max-width: min(60ch, calc(100vw - 2rem)) !important;
-  min-width: 240px;
+.app-toast__body {
+  padding: 6px 17px 8px 18px;
+  background: var(--toast-message-bg);
 }
 
-.toast-top-right {
-  top: 5px !important;
-  right: calc($sidebar-apps-icons-width + 5px) !important;
+.app-toast__message {
+  color: var(--toast-message);
+  font-size: $font-size-base;
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+
+  &--html {
+    white-space: normal;
+
+    > :last-child {
+      margin-bottom: 0;
+    }
+  }
 }
 
-.toast-bottom-right {
-  bottom: 5px !important;
-  right: calc($sidebar-apps-icons-width + 5px) !important;
+.app-toast-enter {
+  animation:
+    app-toast-enter-transform 450ms cubic-bezier(0.16, 1, 0.3, 1) both,
+    app-toast-enter-opacity 300ms ease-out both;
 }
 
-.toast-container .ngx-toastr.toast-success {
-  --toast-accent: #{$success};
-  --toast-title: #{$success};
+.app-toast-leave {
+  animation:
+    app-toast-leave-transform 450ms cubic-bezier(0.16, 1, 0.3, 1) both,
+    app-toast-leave-opacity 300ms ease-out both;
 }
 
-.toast-container .ngx-toastr.toast-info {
-  --toast-accent: #{$purple};
-  --toast-title: #{$purple};
+@keyframes app-toast-enter-transform {
+  from {
+    transform: scale(0.95);
+  }
+
+  to {
+    transform: scale(1);
+  }
 }
 
-.toast-container .ngx-toastr.toast-warning {
-  --toast-accent: #{$warning};
-  --toast-title: #{$warning};
+@keyframes app-toast-enter-opacity {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
-.toast-container .ngx-toastr.toast-error {
-  --toast-accent: #{$danger};
-  --toast-title: #{$danger};
+@keyframes app-toast-leave-transform {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(0.95);
+  }
 }
 
-body.theme-dark .toast-container .ngx-toastr {
-  --toast-bg: #{rgba($dark-dialog-tabs-bar-bg, 0.85)};
-  --toast-bg-hover: #{rgba($dark-dialog-tabs-bar-bg, 0.95)};
-  --toast-border: #{rgba(mix($gray-dark, $gray-light, 12%), 0.2)};
-  --toast-message: #{$white};
+@keyframes app-toast-leave-opacity {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
-body.theme-dark .toast-container .ngx-toastr.toast-success {
-  --toast-accent: #{mix($success, $gray-light, 80%)};
-  --toast-title: #{mix($success, $gray-light, 80%)};
+body.theme-dark .app-toast {
+  --toast-bg: #{$dark-dialog-tabs-bar-bg};
+  --toast-message-bg: #192126;
+  --toast-border: #{rgba($white, 0.12)};
+  --toast-title: #f8fafc;
+  --toast-message: #e2e8f0;
+  --toast-control: #94a3b8;
+  --toast-control-hover: #{rgba($white, 0.08)};
+
+  box-shadow: 0 14px 34px rgba($black, 0.38);
 }
 
-body.theme-dark .toast-container .ngx-toastr.toast-info {
-  --toast-accent: #{mix($purple, $gray-light, 80%)};
-  --toast-title: #{mix($purple, $gray-light, 80%)};
+body.theme-dark .app-toast--success {
+  --toast-accent: #42d98a;
 }
 
-body.theme-dark .toast-container .ngx-toastr.toast-warning {
-  --toast-accent: #{mix($warning, $gray-light, 80%)};
-  --toast-title: #{mix($warning, $gray-light, 80%)};
+body.theme-dark .app-toast--info {
+  --toast-accent: #60a5fa;
 }
 
-body.theme-dark .toast-container .ngx-toastr.toast-error {
-  --toast-accent: #{mix($danger, $gray-light, 80%)};
-  --toast-title: #{mix($danger, $gray-light, 80%)};
+body.theme-dark .app-toast--warning {
+  --toast-accent: #fbbf24;
+}
+
+body.theme-dark .app-toast--error {
+  --toast-accent: #f87171;
+}
+
+@media (max-width: 575.98px) {
+  .app-toast-stack {
+    --toast-stack-right: calc(#{$sidebar-apps-icons-width} + 12px + env(safe-area-inset-right, 0px));
+
+    &.toast-bottom-center,
+    &.toast-bottom-left,
+    &.toast-bottom-right,
+    &.toast-top-center,
+    &.toast-top-left,
+    &.toast-top-right {
+      top: auto;
+      right: var(--toast-stack-right);
+      bottom: var(--toast-stack-bottom);
+      left: var(--toast-stack-left);
+      margin-inline: auto;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-toast,
+  .app-toast__close {
+    transition: none;
+  }
+
+  .app-toast-enter,
+  .app-toast-leave {
+    animation-duration: 1ms;
+  }
 }
