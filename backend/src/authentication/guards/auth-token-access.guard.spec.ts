@@ -101,6 +101,54 @@ describe(AuthTokenAccessGuard.name, () => {
     expect(csrfToken).toBeDefined()
   })
 
+  it('should pass for an authenticated WebSocket context', () => {
+    const wsContext = createMock<ExecutionContext>()
+    const disconnect = vi.fn()
+    wsContext.getType.mockReturnValue('ws')
+    wsContext.switchToWs().getClient.mockReturnValue({
+      user: accessTokenIdentity,
+      tokenExpiresAt: Date.now() + 60_000,
+      disconnect
+    })
+
+    expect(authAccessGuard.canActivate(wsContext)).toBe(true)
+    expect(disconnect).not.toHaveBeenCalled()
+    expect(wsContext.switchToHttp).not.toHaveBeenCalled()
+  })
+
+  it('should reject an unauthenticated WebSocket context', () => {
+    const wsContext = createMock<ExecutionContext>()
+    const disconnect = vi.fn()
+    wsContext.getType.mockReturnValue('ws')
+    wsContext.switchToWs().getClient.mockReturnValue({ disconnect })
+
+    expect(authAccessGuard.canActivate(wsContext)).toBe(false)
+    expect(disconnect).toHaveBeenCalledWith(true)
+    expect(wsContext.switchToHttp).not.toHaveBeenCalled()
+  })
+
+  it('should reject a WebSocket context without a token expiration', () => {
+    const wsContext = createMock<ExecutionContext>()
+    const disconnect = vi.fn()
+    wsContext.getType.mockReturnValue('ws')
+    wsContext.switchToWs().getClient.mockReturnValue({ user: accessTokenIdentity, disconnect })
+
+    expect(authAccessGuard.canActivate(wsContext)).toBe(false)
+    expect(disconnect).toHaveBeenCalledWith(true)
+    expect(wsContext.switchToHttp).not.toHaveBeenCalled()
+  })
+
+  it('should reject an expired WebSocket context', () => {
+    const wsContext = createMock<ExecutionContext>()
+    const disconnect = vi.fn()
+    wsContext.getType.mockReturnValue('ws')
+    wsContext.switchToWs().getClient.mockReturnValue({ user: accessTokenIdentity, tokenExpiresAt: Date.now() - 1, disconnect })
+
+    expect(authAccessGuard.canActivate(wsContext)).toBe(false)
+    expect(disconnect).toHaveBeenCalledWith(true)
+    expect(wsContext.switchToHttp).not.toHaveBeenCalled()
+  })
+
   it('should pass with a valid access token in cookies with CSRF', async () => {
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },

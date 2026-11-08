@@ -60,9 +60,13 @@ describe(WebSocketAdapter.name, () => {
   })
 
   it('should authenticate a socket with a WebSocket token', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2030-01-01T00:00:00Z'))
+    const exp = Date.now() / 1000 + 3600
     jwtService.verify.mockReturnValue({
       tokenType: TOKEN_TYPE.WS,
-      identity
+      identity,
+      exp
     })
 
     await adapter['authenticateSocket'](socket, next)
@@ -73,6 +77,7 @@ describe(WebSocketAdapter.name, () => {
     })
     expect(usersManager.fromAuthToken).toHaveBeenCalledOnce()
     expect(socket).toHaveProperty('user')
+    expect(socket).toHaveProperty('tokenExpiresAt', exp * 1000)
     expect(next).toHaveBeenCalledWith()
   })
 
@@ -94,13 +99,27 @@ describe(WebSocketAdapter.name, () => {
   it('should reject a WebSocket token when the current user is unavailable', async () => {
     jwtService.verify.mockReturnValue({
       tokenType: TOKEN_TYPE.WS,
-      identity
+      identity,
+      exp: Date.now() / 1000 + 3600
     })
     usersManager.fromAuthToken.mockResolvedValue(null)
 
     await adapter['authenticateSocket'](socket, next)
 
     expect(socket).not.toHaveProperty('user')
+    expect(socket.once).not.toHaveBeenCalled()
+    expect(next.mock.calls[0][0]).toMatchObject({
+      message: 'Unauthorized'
+    })
+  })
+
+  it('should reject a WebSocket token without an expiration', async () => {
+    jwtService.verify.mockReturnValue({ tokenType: TOKEN_TYPE.WS, identity })
+
+    await adapter['authenticateSocket'](socket, next)
+
+    expect(socket).not.toHaveProperty('user')
+    expect(socket.once).not.toHaveBeenCalled()
     expect(next.mock.calls[0][0]).toMatchObject({
       message: 'Unauthorized'
     })

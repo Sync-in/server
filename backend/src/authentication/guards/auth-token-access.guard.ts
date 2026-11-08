@@ -4,6 +4,7 @@ import { AuthGuard, IAuthGuard } from '@nestjs/passport'
 import { COLLABORA_CONTEXT } from '../../applications/files/editors/collabora-online/collabora-online.constants.js'
 import { ONLY_OFFICE_CONTEXT } from '../../applications/files/editors/only-office/only-office.constants.js'
 import { WEB_DAV_CONTEXT } from '../../applications/webdav/decorators/webdav-context.decorator.js'
+import type { AuthenticatedSocketIO } from '../../infrastructure/websocket/interfaces/auth-socket-io.interface.js'
 import { AUTH_TOKEN_SKIP } from '../decorators/auth-token-skip.decorator.js'
 
 @Injectable()
@@ -15,6 +16,17 @@ export class AuthTokenAccessGuard extends AuthGuard('tokenAccess') implements IA
   }
 
   canActivate(ctx: ExecutionContext) {
+    if (ctx.getType() === 'ws') {
+      // Nest applies APP_GUARD to every incoming WebSocket message, so this global guard must handle WS contexts explicitly.
+      const socket = ctx.switchToWs().getClient<Partial<AuthenticatedSocketIO>>()
+      // WebSocketAdapter validates the WS token before gateway handlers run and assigns this trusted state.
+      const isAuthenticated = Boolean(socket.user) && typeof socket.tokenExpiresAt === 'number' && socket.tokenExpiresAt > Date.now()
+      if (!isAuthenticated) {
+        socket.disconnect?.(true)
+      }
+      return isAuthenticated
+    }
+
     const authTokenSkip: boolean = this.reflector.getAllAndOverride<boolean>(AUTH_TOKEN_SKIP, [ctx.getHandler(), ctx.getClass()])
     const webDAVContext: boolean = this.reflector.getAllAndOverride<boolean>(WEB_DAV_CONTEXT, [ctx.getHandler(), ctx.getClass()])
     const onlyOfficeContext: boolean = this.reflector.getAllAndOverride<boolean>(ONLY_OFFICE_CONTEXT, [ctx.getHandler(), ctx.getClass()])
