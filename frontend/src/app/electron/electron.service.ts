@@ -1,5 +1,4 @@
 import { effect, inject, Injectable } from '@angular/core'
-import { toObservable } from '@angular/core/rxjs-interop'
 import type { SyncClientAuthDto } from '@sync-in-server/backend/src/applications/sync/dtos/sync-client-auth.dto'
 import type {
   SyncClientAuthCookie,
@@ -7,7 +6,7 @@ import type {
   SyncClientAuthRegistration
 } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-client-auth.interface'
 import { OAuthDesktopPortParam } from '@sync-in-server/backend/src/authentication/providers/oidc/auth-oidc-desktop.constants'
-import { combineLatest, from, map, Observable } from 'rxjs'
+import { from, map, Observable } from 'rxjs'
 import { NotificationModel } from '../applications/notifications/models/notification.model'
 import { CLIENT_APP_COUNTER, CLIENT_SCHEDULER_STATE } from '../applications/sync/constants/client'
 import { SyncStatus } from '../applications/sync/interfaces/sync-status.interface'
@@ -133,13 +132,13 @@ export class Electron {
 
   private setSync(sync: SyncStatus) {
     if (sync.reportOnly) {
-      this.store.clientSyncIsReporting.next(sync.state)
+      this.store.clientSyncIsReporting.set(sync.state)
       return
     }
     if (sync.state) {
-      this.store.clientSyncs.next([...this.store.clientSyncs.getValue(), sync])
+      this.store.clientSyncs.update((syncs) => [...syncs, sync])
     } else {
-      this.store.clientSyncs.next(this.store.clientSyncs.getValue().filter((item) => item.syncPathId !== sync.syncPathId))
+      this.store.clientSyncs.update((syncs) => syncs.filter((item) => item.syncPathId !== sync.syncPathId))
       this.setSyncTasksCount({ syncPathId: sync.syncPathId, nbTasks: 0 })
       if (sync.lastErrors.length || sync.mainError) {
         this.store.clientSyncsWithErrors.update((syncs) => [...syncs.filter((item) => item.syncPathId !== sync.syncPathId), sync])
@@ -147,14 +146,14 @@ export class Electron {
         this.store.clientSyncsWithErrors.update((syncs) => syncs.filter((item) => item.syncPathId !== sync.syncPathId))
       }
     }
-    this.send(EVENT.APPLICATIONS.COUNTER, CLIENT_APP_COUNTER.SYNCS, this.store.clientSyncs.getValue().length)
+    this.send(EVENT.APPLICATIONS.COUNTER, CLIENT_APP_COUNTER.SYNCS, this.store.clientSyncs().length)
   }
 
   private setSyncTasksCount(syncTask: SyncTask) {
-    if (!this.store.clientSyncs.getValue().find((sync) => sync.syncPathId === syncTask.syncPathId)) {
+    if (!this.store.clientSyncs().find((sync) => sync.syncPathId === syncTask.syncPathId)) {
       syncTask.nbTasks = 0
     }
-    this.store.clientSyncTask.next(syncTask)
+    this.store.clientSyncTask.set(syncTask)
 
     // set tasks count
     if (syncTask.nbTasks === 0) {
@@ -202,21 +201,22 @@ export class Electron {
   }
 
   private updateSyncMenuIcon() {
-    combineLatest([this.store.clientSyncs, toObservable(this.store.clientSyncsWithErrors), toObservable(this.store.clientScheduler)]).subscribe(
-      ([syncs, errors, scheduler]) => {
-        if (syncs.length) {
-          SYNC_MENU.count.level.set('purple')
-          SYNC_MENU.count.value.set(syncs.length)
-        } else if (errors.find((sync: SyncStatus) => sync.lastErrors.length || !!sync.mainError)) {
-          SYNC_MENU.count.level.set('danger')
-          SYNC_MENU.count.value.set('!')
-        } else if (scheduler === CLIENT_SCHEDULER_STATE.DISABLED) {
-          SYNC_MENU.count.level.set('warning')
-          SYNC_MENU.count.value.set('!')
-        } else {
-          SYNC_MENU.count.value.set(0)
-        }
+    effect(() => {
+      const syncs = this.store.clientSyncs()
+      const errors = this.store.clientSyncsWithErrors()
+      const scheduler = this.store.clientScheduler()
+      if (syncs.length) {
+        SYNC_MENU.count.level.set('purple')
+        SYNC_MENU.count.value.set(syncs.length)
+      } else if (errors.find((sync: SyncStatus) => sync.lastErrors.length || !!sync.mainError)) {
+        SYNC_MENU.count.level.set('danger')
+        SYNC_MENU.count.value.set('!')
+      } else if (scheduler === CLIENT_SCHEDULER_STATE.DISABLED) {
+        SYNC_MENU.count.level.set('warning')
+        SYNC_MENU.count.value.set('!')
+      } else {
+        SYNC_MENU.count.value.set(0)
       }
-    )
+    })
   }
 }

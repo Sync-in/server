@@ -1,18 +1,6 @@
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  inject,
-  OnDestroy,
-  OnInit,
-  Renderer2,
-  signal,
-  viewChild,
-  ViewChild
-} from '@angular/core'
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, inject, OnDestroy, OnInit, Renderer2, signal, viewChild } from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import {
   LucideAnchor,
@@ -66,6 +54,7 @@ import { take } from 'rxjs/operators'
 import { SERVICE_UNAVAILABLE_ERROR } from '../../../app.constants'
 import { BadgePermissionsComponent } from '../../../common/components/badge-permissions.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
+import { NavigationViewService } from '../../../common/components/navigation-view/navigation-view.service'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { InputEditDirective } from '../../../common/directives/input-edit.directive'
 import { TapDirective } from '../../../common/directives/tap.directive'
@@ -134,7 +123,6 @@ const keyboardNavigationKeys: ReadonlySet<string> = new Set<KeyboardNavigationKe
 export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly scrollView = viewChild<VirtualScrollComponent<FileModel>>(VirtualScrollComponent)
   private readonly scrollViewElement = viewChild(VirtualScrollComponent, { read: ElementRef })
-  @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: any
   readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
   readonly mainReadOnlyContextMenu = viewChild.required<ContextMenuComponent<any>>('MainReadOnlyContextMenu')
   readonly fileContextMenu = viewChild.required<ContextMenuComponent<any>>('FileContextMenu')
@@ -143,6 +131,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly navbarSearch = inject(NavbarSearchService)
+  protected readonly navigationView = inject(NavigationViewService)
   // Static
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,
@@ -251,7 +240,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       sortable: true
     }
   }
-  protected readonly galleryMode = signal<ViewMode>({ enabled: false })
   // Data
   protected readonly files = signal<FileModel[]>([])
   protected readonly selection = signal<FileModel[]>([])
@@ -302,10 +290,10 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   private eventDropHandler: () => void | undefined
   private eventKeysHandler: () => void | undefined
   private moveFromDrag = false
+  private galleryModeEnabled = this.navigationView.currentView().enabled
 
   ngOnInit() {
     this.canAdminShares.set(this.userService.userHavePermission(USER_PERMISSION.SHARES_ADMIN))
-    this.galleryMode.set(this.btnNavigationView.currentView())
     this.supportUploadFolder.set(this.filesUpload.supportUploadDirectory)
     this.activatedRoute.queryParamMap.subscribe((params) => {
       this.setQueryParams(params.get('select'), params.get('open'))
@@ -402,9 +390,8 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   switchView(view: ViewMode) {
-    const oldView = this.galleryMode()
-    this.galleryMode.set(view)
-    if (this.galleryMode().enabled !== oldView.enabled) {
+    if (view.enabled !== this.galleryModeEnabled) {
+      this.galleryModeEnabled = view.enabled
       this.destroyEventHandlers()
       setTimeout(() => this.initEventHandlers(), 500)
     }
@@ -965,7 +952,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     extendSelection: boolean
   ): { file: FileModel; key: KeyboardNavigationKey } {
     let direction = key
-    let useGalleryColumns = this.galleryMode().enabled
+    let useGalleryColumns = this.navigationView.currentView().enabled
     if (direction === 'ArrowLeft') {
       useGalleryColumns = false
       direction = 'ArrowUp'
@@ -1089,7 +1076,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     ) {
       return
     }
-    const selector = this.galleryMode().enabled ? '#thumb-files' : '#table-files'
+    const selector = this.navigationView.currentView().enabled ? '#thumb-files' : '#table-files'
     const filesView = this.scrollViewElement()?.nativeElement.querySelector(selector) as HTMLElement | null
     filesView?.focus({ preventScroll: true })
   }
@@ -1140,7 +1127,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       if (ev.target.parentElement.nodeName === 'TD' || ev.target.parentElement.nodeName === 'DIV') {
         const f: FileModel =
           scrollView.viewPortItems()[
-            this.galleryMode().enabled ? ev.target.parentElement.getAttribute('rowIndex') : ev.target.parentElement.parentElement.rowIndex
+            this.navigationView.currentView().enabled
+              ? ev.target.parentElement.getAttribute('rowIndex')
+              : ev.target.parentElement.parentElement.rowIndex
           ]
         if (f) {
           if (this.selection().indexOf(f) === -1) {
@@ -1155,7 +1144,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       if (this.moveFromDrag && (ev.target.parentElement.nodeName === 'TD' || ev.target.parentElement.nodeName === 'DIV')) {
         const f =
           scrollView.viewPortItems()[
-            this.galleryMode().enabled ? ev.target.parentElement.getAttribute('rowIndex') : ev.target.parentElement.parentElement.rowIndex
+            this.navigationView.currentView().enabled
+              ? ev.target.parentElement.getAttribute('rowIndex')
+              : ev.target.parentElement.parentElement.rowIndex
           ]
         if (f && f.isDir && this.selection().indexOf(f) === -1) {
           if (ev.target.parentElement.nodeName === 'TD') {
@@ -1189,7 +1180,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         ev.preventDefault()
         const f: FileModel =
           scrollView.viewPortItems()[
-            this.galleryMode().enabled ? ev.target.parentElement.getAttribute('rowIndex') : ev.target.parentElement.parentElement.rowIndex
+            this.navigationView.currentView().enabled
+              ? ev.target.parentElement.getAttribute('rowIndex')
+              : ev.target.parentElement.parentElement.rowIndex
           ]
         if (f && f.isDir && this.selection().indexOf(f) === -1) {
           this.renderer.removeClass(ev.target.parentElement, dragClass)
@@ -1221,7 +1214,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         return
       }
       const key = ev.key as KeyboardNavigationKey
-      if ((key === 'ArrowLeft' || key === 'ArrowRight') && !this.galleryMode().enabled) {
+      if ((key === 'ArrowLeft' || key === 'ArrowRight') && !this.navigationView.currentView().enabled) {
         return
       }
       ev.preventDefault()

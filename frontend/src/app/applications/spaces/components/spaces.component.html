@@ -56,13 +56,13 @@
   </button>
   <div class="d-flex align-items-center ms-auto">
     <!--Start View Button-->
-    <app-navigation-view (switchView)="galleryMode.set($event)"> </app-navigation-view>
+    <app-navigation-view></app-navigation-view>
     <!--End View Button-->
   </div>
 </div>
 <!--End Top Menu-->
-@let view = galleryMode();
-@if (view?.enabled) {
+@let view = navigationView.currentView();
+@if (view.enabled) {
   <!--Start Gallery Content-->
   <div
     [style.--gallery-card-size]="view.dimensions + 'px'"

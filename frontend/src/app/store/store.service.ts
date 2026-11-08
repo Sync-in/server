@@ -4,7 +4,7 @@ import type { SearchFilesDto } from '@sync-in-server/backend/src/applications/fi
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { AppStoreManifest } from '@sync-in-server/backend/src/applications/sync/interfaces/store-manifest.interface'
 import type { ServerConfig } from '@sync-in-server/backend/src/configuration/config.interfaces'
-import { BehaviorSubject, Subject } from 'rxjs'
+import { Subject } from 'rxjs'
 import { CommentRecentModel } from '../applications/comments/models/comment-recent.model'
 import { FileEvent } from '../applications/files/interfaces/file-event.interface'
 import { FileContentModel } from '../applications/files/models/file-content.model'
@@ -67,10 +67,10 @@ export class StoreService {
   // Client
   public readonly clientScheduler: WritableSignal<CLIENT_SCHEDULER_STATE> = signal<CLIENT_SCHEDULER_STATE>(CLIENT_SCHEDULER_STATE.ASYNC)
   public readonly clientSyncPaths: WritableSignal<SyncPathModel[]> = signal([])
-  public readonly clientSyncs = new BehaviorSubject<SyncStatus[]>([])
+  public readonly clientSyncs: WritableSignal<SyncStatus[]> = signal<SyncStatus[]>([])
   public readonly clientSyncsWithErrors: WritableSignal<SyncStatus[]> = signal<SyncStatus[]>([], { equal: () => false })
-  public readonly clientSyncIsReporting = new BehaviorSubject<boolean>(false)
-  public readonly clientSyncTask = new BehaviorSubject<SyncTask>({ syncPathId: 0, nbTasks: 0 })
+  public readonly clientSyncIsReporting: WritableSignal<boolean> = signal<boolean>(false, { equal: () => false })
+  public readonly clientSyncTask: WritableSignal<SyncTask> = signal<SyncTask>({ syncPathId: 0, nbTasks: 0 }, { equal: () => false })
   public readonly clientSyncTasksCount: WritableSignal<number> = signal<number>(0, { equal: () => false })
   // App store
   public readonly appStoreManifest: WritableSignal<AppStoreManifest> = signal(null)
@@ -100,10 +100,10 @@ export class StoreService {
     // Client
     this.clientScheduler.set(CLIENT_SCHEDULER_STATE.ASYNC)
     this.clientSyncPaths.set([])
-    this.clientSyncs.next([])
+    this.clientSyncs.set([])
     this.clientSyncsWithErrors.set([])
-    this.clientSyncIsReporting.next(false)
-    this.clientSyncTask.next({ syncPathId: 0, nbTasks: 0 })
+    this.clientSyncIsReporting.set(false)
+    this.clientSyncTask.set({ syncPathId: 0, nbTasks: 0 })
     this.clientSyncTasksCount.set(0)
   }
 }

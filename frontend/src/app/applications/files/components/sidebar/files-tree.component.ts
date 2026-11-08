@@ -1,7 +1,8 @@
-import { IActionMapping, ITreeOptions, TREE_ACTIONS, TreeModel, TreeModule, TreeNode } from '@ali-hm/angular-tree-component'
+import { IActionMapping, ITreeOptions, TREE_ACTIONS, TreeComponent, TreeModel, TreeModule, TreeNode } from '@ali-hm/angular-tree-component'
 import { AsyncPipe } from '@angular/common'
 import {
   afterNextRender,
+  AfterViewInit,
   Component,
   computed,
   effect,
@@ -13,8 +14,7 @@ import {
   OnInit,
   output,
   signal,
-  viewChild,
-  ViewChild
+  viewChild
 } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
@@ -54,8 +54,8 @@ import { FilesSummaryComponent } from '../utils/files-summary.component'
   imports: [AsyncPipe, AutoResizeDirective, TreeModule, L10nTranslateDirective, LucideDynamicIcon, TapDirective, ToBytesPipe, FilesSummaryComponent],
   templateUrl: 'files-tree.component.html'
 })
-export class FilesTreeComponent implements OnInit, OnDestroy {
-  @ViewChild('tree', { static: true }) tree: any
+export class FilesTreeComponent implements OnInit, AfterViewInit, OnDestroy {
+  private readonly tree = viewChild.required<TreeComponent>('tree')
   private readonly copyMovePanel = viewChild<ElementRef<HTMLElement>>('copyMovePanel')
   readonly selected = output<FileTree | null>()
   readonly showFiles = input(false)
@@ -140,7 +140,6 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.initRoot()
     if (this.enableCopyMove()) {
       this.subscriptions.push(
         toObservable(this.store.filesSelection, { injector: this.injector }).subscribe(() => {
@@ -152,10 +151,19 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
         })
       )
     }
-    this.focusTimer = setTimeout(() => {
-      this.focusTimer = undefined
-      this.focusLastNode()
-    }, 100)
+  }
+
+  ngAfterViewInit() {
+    afterNextRender(
+      () => {
+        this.initRoot()
+        this.focusTimer = setTimeout(() => {
+          this.focusTimer = undefined
+          this.focusLastNode()
+        }, 100)
+      },
+      { injector: this.injector }
+    )
   }
 
   ngOnDestroy() {
@@ -165,15 +173,16 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
   }
 
   onRefresh() {
-    const activeNodes: TreeNode[] = this.tree.treeModel.activeNodes
-    const nodesToRefresh: TreeNode[] = activeNodes.length ? activeNodes : this.tree.treeModel.roots
+    const tree = this.tree().treeModel
+    const activeNodes: TreeNode[] = tree.activeNodes
+    const nodesToRefresh: TreeNode[] = activeNodes.length ? activeNodes : tree.roots
     const selectedPath = this.selectedNode()?.data.path
     Promise.allSettled(nodesToRefresh.map((node) => node.loadNodeChildren()))
       .then((results) => {
         for (const result of results) {
           if (result.status === 'rejected') console.error(result.reason)
         }
-        this.tree.treeModel.update()
+        tree.update()
         this.focusLastNode(selectedPath)
       })
       .catch(console.error)
@@ -268,16 +277,17 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
         this.addNode(node, unshift)
         afterNextRender(
           () => {
-            this.tree.treeModel.update()
-            const treeNode = this.tree.treeModel.getNodeById(node.id)
-            if (treeNode) this.toggleExpand(this.tree, treeNode, null)
+            const tree = this.tree().treeModel
+            tree.update()
+            const treeNode = tree.getNodeById(node.id)
+            if (treeNode) this.toggleExpand(tree, treeNode, null)
           },
           { injector: this.injector }
         )
       })
     } else {
       this.addNode(node, unshift)
-      this.tree.treeModel.update()
+      this.tree().treeModel.update()
     }
   }
 
@@ -287,10 +297,11 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
 
   private focusLastNode(path = this.selectedNode()?.data.path) {
     if (!path) return
-    const selection = this.tree.treeModel.getNodeBy((node: TreeNode) => node.data.path === path) || null
+    const tree = this.tree().treeModel
+    const selection = tree.getNodeBy((node: TreeNode) => node.data.path === path) || null
     this.setSelection(selection)
     if (selection) {
-      TREE_ACTIONS.ACTIVATE(this.tree, selection, null)
+      TREE_ACTIONS.ACTIVATE(tree, selection, null)
     }
   }
 

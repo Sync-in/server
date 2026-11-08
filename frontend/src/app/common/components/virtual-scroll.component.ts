@@ -1,16 +1,18 @@
 import {
+  afterNextRender,
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
   inject,
+  Injector,
   input,
   OnChanges,
   OnDestroy,
-  OnInit,
   Renderer2,
   signal,
   SimpleChanges,
-  ViewChild
+  viewChild
 } from '@angular/core'
 import { Subscription } from 'rxjs'
 import { LayoutService } from '../../layout/layout.service'
@@ -52,9 +54,9 @@ import { LayoutService } from '../../layout/layout.service'
     `
   ]
 })
-export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
-  @ViewChild('content', { read: ElementRef, static: true }) contentElementRef: ElementRef
-  @ViewChild('shim', { read: ElementRef, static: true }) shimElementRef: ElementRef
+export class VirtualScrollComponent<T> implements AfterViewInit, OnChanges, OnDestroy {
+  private readonly contentElementRef = viewChild.required<ElementRef<HTMLElement>>('content')
+  private readonly shimElementRef = viewChild.required<ElementRef<HTMLElement>>('shim')
   readonly resizeOffset = input(139)
   readonly galleryMode = input(false)
   readonly items = input<T[]>([])
@@ -69,6 +71,7 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
   private readonly element = inject(ElementRef)
   private readonly renderer = inject(Renderer2)
   private readonly layout = inject(LayoutService)
+  private readonly injector = inject(Injector)
   private subscriptions: Subscription[] = []
   private scrollbarWidth = 0
   private lastHeaderWidth = -1
@@ -81,15 +84,23 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
   private resizeObserver: ResizeObserver | null = null
   private resizeTableHeaderRafId: number | null = null
   private calculateItemsRafId: number | null = null
+  private viewInitialized = false
   /** Cache of the last scroll height to prevent setting CSS when not needed. */
   private lastScrollHeight = -1
 
-  ngOnInit() {
-    this.resizeOffsetHeight(true)
-    this.addParentEventHandlers()
-    if (!this.galleryMode()) {
-      this.observeTableHeaderWidth()
-    }
+  ngAfterViewInit() {
+    afterNextRender(
+      () => {
+        this.viewInitialized = true
+        this.resizeOffsetHeight(true)
+        this.addParentEventHandlers()
+        if (!this.galleryMode()) {
+          this.observeTableHeaderWidth()
+        }
+        this.refresh(true)
+      },
+      { injector: this.injector }
+    )
   }
 
   ngOnDestroy() {
@@ -127,7 +138,7 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
         this.startupLoop = true
       }
     }
-    this.refresh(true)
+    if (this.viewInitialized) this.refresh(true)
   }
 
   refresh(updateDimensions = false) {
@@ -171,11 +182,11 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
 
   private tableScrollHovering = () => {
     clearTimeout(this.scrollTimer)
-    if (!this.contentElementRef.nativeElement.classList.contains('table-disable-hover')) {
-      this.renderer.addClass(this.contentElementRef.nativeElement, 'table-disable-hover')
+    if (!this.contentElementRef().nativeElement.classList.contains('table-disable-hover')) {
+      this.renderer.addClass(this.contentElementRef().nativeElement, 'table-disable-hover')
     }
     this.scrollTimer = setTimeout(() => {
-      this.renderer.removeClass(this.contentElementRef.nativeElement, 'table-disable-hover')
+      this.renderer.removeClass(this.contentElementRef().nativeElement, 'table-disable-hover')
     }, 200)
     this.refresh()
   }
@@ -240,9 +251,9 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
       // in rows mode we need to find real children
       let offsetTop: number = undefined
       let itemsPerRow: number
-      let children = this.contentElementRef.nativeElement.children
+      let children = this.contentElementRef().nativeElement.children as HTMLCollectionOf<HTMLElement>
       if (children[0]) {
-        children = children[0].children
+        children = children[0].children as HTMLCollectionOf<HTMLElement>
       }
       for (itemsPerRow = 0; itemsPerRow < children.length; itemsPerRow++) {
         if (offsetTop !== undefined && offsetTop !== children[itemsPerRow].offsetTop) {
@@ -273,7 +284,7 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
 
     let contentDimensions: any
     if (this.childWidth() === undefined || this.childHeight() === undefined) {
-      const content = this.contentElementRef.nativeElement
+      const content = this.contentElementRef().nativeElement
       contentDimensions = content.children[0] ? content.children[0].getBoundingClientRect() : { width: viewWidth, height: viewHeight }
     }
     const childWidth = this.childWidth() || contentDimensions.width
@@ -295,7 +306,7 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
       itemsPerRow = itemsPerRowByCalc
     }
     if (scrollHeight !== this.lastScrollHeight) {
-      this.renderer.setStyle(this.shimElementRef.nativeElement, 'height', `${scrollHeight}px`)
+      this.renderer.setStyle(this.shimElementRef().nativeElement, 'height', `${scrollHeight}px`)
       this.lastScrollHeight = scrollHeight
     }
 

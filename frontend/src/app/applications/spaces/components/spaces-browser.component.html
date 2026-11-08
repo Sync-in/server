@@ -271,17 +271,18 @@
   </div>
 </div>
 <!--End Top Menu-->
-@if (galleryMode()?.enabled) {
+@let view = navigationView.currentView();
+@if (view.enabled) {
   <!--Start Gallery Content-->
-  <div [style.--gallery-card-size]="galleryMode().dimensions + 'px'"
-       [style.--gallery-badge-size]="galleryMode().badgeSize + 'px'"
-       [style.--gallery-image-size]="galleryMode().image + 'px'"
-       [style.--gallery-selection-size]="galleryMode().dimensions / 2.25 + 'px'"
-       [style.--gallery-text-size]="galleryMode().textSize + 'px'"
+  <div [style.--gallery-card-size]="view.dimensions + 'px'"
+       [style.--gallery-badge-size]="view.badgeSize + 'px'"
+       [style.--gallery-image-size]="view.image + 'px'"
+       [style.--gallery-selection-size]="view.dimensions / 2.25 + 'px'"
+       [style.--gallery-text-size]="view.textSize + 'px'"
        class="app-gallery">
     <app-virtual-scroll (contextmenu)="onContextMenu($event)"
-                        [childHeight]="galleryMode().dimensions"
-                        [childWidth]="galleryMode().dimensions"
+                        [childHeight]="view.dimensions"
+                        [childWidth]="view.dimensions"
                         [items]="files() | searchFilter:navbarSearch.viewFilter():'name'"
                         [galleryMode]="true"
                         [resizeOffset]="115">
@@ -308,7 +309,7 @@
                 </span>
               </button>
               @if (f.isImage) {
-                <img src="{{f.thumbnailUrl}}?size={{galleryMode().imageRes}}"
+                <img src="{{f.thumbnailUrl}}?size={{view.imageRes}}"
                      alt=""
                      class="img-fluid gallery-thumbnail"
                      draggable="true"
@@ -321,7 +322,7 @@
                      (error)="f.fallBackMimeUrl()">
               }
               <span class="label-bottom-right" data-app-tap-ignore>
-                @let maxBadges = galleryMode().maxBadges || 0;
+                @let maxBadges = view.maxBadges || 0;
                 @let hiddenBadges = f.nbBadges - maxBadges;
                 @for (badge of f.galleryBadges; track badge; let i = $index) {
                   @if (i < maxBadges) {
@@ -397,9 +398,9 @@
                 <span class="label-bottom-left">
                     <app-user-avatar
                       [user]="f.root.owner"
-                      [height]="galleryMode().dimensions / 3.5"
-                      [width]="galleryMode().dimensions / 3.5"
-                      [fontSize]="galleryMode().iconSize / 2.5">
+                      [height]="view.dimensions / 3.5"
+                      [width]="view.dimensions / 3.5"
+                      [fontSize]="view.iconSize / 2.5">
                     </app-user-avatar>
                 </span>
               }

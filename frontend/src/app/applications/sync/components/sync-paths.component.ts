@@ -1,5 +1,5 @@
 import { KeyValuePipe } from '@angular/common'
-import { Component, effect, inject, OnDestroy, OnInit, signal, untracked, viewChild } from '@angular/core'
+import { Component, effect, inject, OnInit, signal, untracked, viewChild } from '@angular/core'
 import { Router } from '@angular/router'
 import {
   LucideArrowDown,
@@ -25,7 +25,6 @@ import { SYNC_PATH_CONFLICT_MODE, SYNC_PATH_MODE } from '@sync-in-server/backend
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
-import { Subscription } from 'rxjs'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
@@ -70,7 +69,7 @@ import { LiveTimeAgoPipe } from '../../../common/pipes/time-ago-live.pipe'
   ],
   templateUrl: 'sync-paths.component.html'
 })
-export class SyncPathsComponent implements OnInit, OnDestroy {
+export class SyncPathsComponent implements OnInit {
   protected readonly scrollView = viewChild<VirtualScrollComponent<SyncPathModel>>(VirtualScrollComponent)
   readonly syncPathContextMenu = viewChild.required<ContextMenuComponent<any>>('SyncPathContextMenu')
   readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
@@ -179,7 +178,6 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
     lastSync: [{ prop: 'lastSync', type: 'date' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
-  private readonly subscriptions: Subscription[] = []
   private focusOnPathId: number = null
   private focusOnPathSettings = false
 
@@ -199,8 +197,14 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
       const syncs = this.store.clientSyncsWithErrors()
       untracked(() => this.onSyncErrors(syncs))
     })
-    this.subscriptions.push(this.store.clientSyncs.subscribe((syncs) => this.onSync(syncs)))
-    this.subscriptions.push(this.store.clientSyncTask.subscribe((syncTask) => this.onSyncTask(syncTask)))
+    effect(() => {
+      const syncs = this.store.clientSyncs()
+      untracked(() => this.onSync(syncs))
+    })
+    effect(() => {
+      const syncTask = this.store.clientSyncTask()
+      untracked(() => this.onSyncTask(syncTask))
+    })
     this.checkRouteState()
   }
 
@@ -214,12 +218,6 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
           setTimeout(() => this.openSettingsDialog(), 500)
         }
       }
-    }
-  }
-
-  ngOnDestroy() {
-    for (const subscription of this.subscriptions) {
-      subscription.unsubscribe()
     }
   }
 

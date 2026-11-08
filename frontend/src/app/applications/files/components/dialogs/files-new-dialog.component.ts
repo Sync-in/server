@@ -1,5 +1,5 @@
 import { KeyValuePipe } from '@angular/common'
-import { AfterViewInit, Component, computed, ElementRef, EventEmitter, inject, Input, OnInit, Output, signal, viewChild } from '@angular/core'
+import { AfterViewInit, Component, computed, ElementRef, inject, Input, OnInit, signal, viewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideFileText, LucideGlobe } from '@lucide/angular'
 import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
@@ -35,7 +35,6 @@ const DOCUMENT_MIME_TYPES: Record<string, string> = {
 export class FilesNewDialogComponent implements OnInit, AfterViewInit {
   @Input() files: FileModel[]
   @Input() inputType: 'file' | 'directory' | 'download' = 'directory'
-  @Output() refreshFiles = new EventEmitter()
   private readonly inputText = viewChild.required<ElementRef<HTMLInputElement>>('InputText')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected layout = inject(LayoutService)

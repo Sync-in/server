@@ -1,6 +1,6 @@
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, inject, OnInit, signal, ViewChild, viewChild } from '@angular/core'
+import { Component, inject, OnInit, signal, viewChild } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
 import {
   LucideArrowDown,
@@ -19,7 +19,8 @@ import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-cont
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
-import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
+import { NavigationViewComponent } from '../../../common/components/navigation-view/navigation-view.component'
+import { NavigationViewService } from '../../../common/components/navigation-view/navigation-view.service'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
@@ -60,12 +61,12 @@ import { FAVORITES_ICON, FAVORITES_PATH, FAVORITES_TITLE } from '../favorites.co
 })
 export class FavoritesComponent implements OnInit {
   protected readonly scrollView = viewChild<VirtualScrollComponent<FileFavoriteModel>>(VirtualScrollComponent)
-  @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
   readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
   readonly targetContextMenu = viewChild.required<ContextMenuComponent<any>>('TargetContextMenu')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly navbarSearch = inject(NavbarSearchService)
+  protected readonly navigationView = inject(NavigationViewService)
   protected readonly icons = {
     FAVORITES: FAVORITES_ICON,
     SHARED: SPACES_ICON.SHARED_WITH_OTHERS,
@@ -86,7 +87,6 @@ export class FavoritesComponent implements OnInit {
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly TAB_MENU = TAB_MENU
   protected readonly loading = signal(false)
-  protected readonly galleryMode = signal<ViewMode | null>(null)
   protected readonly favorites = signal<FileFavoriteModel[]>([])
   protected readonly selected = signal<FileFavoriteModel | null>(null)
   protected tableHeaders: Record<'name' | 'location' | 'info' | 'size' | 'modified' | 'created', TableHeaderConfig> = {
@@ -154,7 +154,6 @@ export class FavoritesComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.galleryMode.set(this.btnNavigationView.currentView())
     this.loadFavorites()
   }
 

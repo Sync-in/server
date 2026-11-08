@@ -22,3 +22,10 @@ interface GalleryViewMode {
 }
 
 export type ViewMode = ListViewMode | GalleryViewMode
+export type GalleryViewModeKey = 'th' | 'thM' | 'thL' | 'thXl' | 'thXxl'
+export type ViewModeKey = 'tl' | GalleryViewModeKey
+
+export interface GalleryViewOption {
+  readonly key: GalleryViewModeKey
+  readonly label: string
+}

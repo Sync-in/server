@@ -34,12 +34,12 @@
     <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading() ? 'icon-spin' : ''"></svg>
   </button>
   <div class="d-flex align-items-center ms-auto">
-    <app-navigation-view (switchView)="galleryMode.set($event)"></app-navigation-view>
+    <app-navigation-view></app-navigation-view>
   </div>
 </div>
 <!--End Top Menu-->
-@let gallery = galleryMode();
-@if (gallery?.enabled) {
+@let gallery = navigationView.currentView();
+@if (gallery.enabled) {
   <!--Start Gallery Content-->
   <div [style.--gallery-card-size]="gallery.dimensions + 'px'"
        [style.--gallery-badge-size]="gallery.badgeSize + 'px'"

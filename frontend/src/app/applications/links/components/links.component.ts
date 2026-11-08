@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, inject, OnInit, signal, ViewChild, viewChild } from '@angular/core'
+import { Component, inject, signal, viewChild } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 import {
   LucideArrowDown,
@@ -22,7 +22,8 @@ import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { BadgePermissionsComponent } from '../../../common/components/badge-permissions.component'
-import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
+import { NavigationViewComponent } from '../../../common/components/navigation-view/navigation-view.component'
+import { NavigationViewService } from '../../../common/components/navigation-view/navigation-view.service'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
@@ -59,14 +60,14 @@ import { LinkDialogComponent } from './dialogs/link-dialog.component'
   ],
   templateUrl: 'links.component.html'
 })
-export class LinksComponent implements OnInit {
+export class LinksComponent {
   protected readonly scrollView = viewChild<VirtualScrollComponent<ShareLinkModel>>(VirtualScrollComponent)
-  @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
   readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
   readonly targetContextMenu = viewChild.required<ContextMenuComponent<any>>('TargetContextMenu')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly navbarSearch = inject(NavbarSearchService)
+  protected readonly navigationView = inject(NavigationViewService)
   protected readonly icons = {
     LucideLink,
     LucideRotateCw,
@@ -83,7 +84,6 @@ export class LinksComponent implements OnInit {
   }
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly TAB_MENU = TAB_MENU
-  protected readonly galleryMode = signal<ViewMode>(undefined)
   // Sort
   protected tableHeaders: Record<'name' | 'link' | 'from' | 'info' | 'permissions' | 'accessed', TableHeaderConfig> = {
     name: {
@@ -152,10 +152,6 @@ export class LinksComponent implements OnInit {
     this.activatedRoute.queryParams.subscribe((params) => (this.focusOnSelect = params.select))
     this.layout.setBreadcrumbIcon(this.icons.LucideLink)
     this.layout.setBreadcrumbNav({ url: `/${SPACES_PATH.LINKS}/${SPACES_TITLE.SHARED_BY_LINKS}`, translating: true, sameLink: true })
-  }
-
-  ngOnInit() {
-    this.galleryMode.set(this.btnNavigationView.currentView())
   }
 
   loadShareLinks() {

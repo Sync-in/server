@@ -1,5 +1,5 @@
 import { KeyValuePipe } from '@angular/common'
-import { Component, inject, Input, OnDestroy, OnInit, signal, ViewChild, WritableSignal } from '@angular/core'
+import { Component, effect, inject, Input, OnDestroy, OnInit, signal, untracked, viewChild, WritableSignal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import {
   LucideArrowDown,
@@ -17,7 +17,6 @@ import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
 import { PaginationComponent } from 'ngx-bootstrap/pagination'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
-import { Subscription } from 'rxjs'
 import { FilterComponent } from '../../../../common/components/filter.component'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { TableHeaderConfig } from '../../../../common/interfaces/table.interface'
@@ -60,8 +59,8 @@ import { SYNC_ICON } from '../../sync.constants'
 })
 export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  @ViewChild(AutoResizeDirective, { static: true }) autoResizeDirective: AutoResizeDirective
-  @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
+  protected readonly autoResizeDirective = viewChild(AutoResizeDirective)
+  protected readonly inputFilter = viewChild.required(FilterComponent)
   @Input() syncPath: SyncPathModel
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly SYNC_TRANSFER_ACTION = SYNC_TRANSFER_ACTION
@@ -114,17 +113,19 @@ export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
     file: [{ prop: 'file', type: 'string' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
-  private readonly subscriptions: Subscription[] = []
+
+  constructor() {
+    effect(() => {
+      const state = this.store.clientSyncIsReporting()
+      untracked(() => this.manageState(state))
+    })
+  }
 
   ngOnInit() {
     this.electron.ipcRenderer.on(EVENT.SYNC.REPORT_TRANSFER, (_ev, tr: SyncTransfer) => this.addTransfer(tr))
-    this.subscriptions.push(this.store.clientSyncIsReporting.subscribe((state) => this.manageState(state)))
   }
 
   ngOnDestroy() {
-    for (const subscription of this.subscriptions) {
-      subscription.unsubscribe()
-    }
     this.electron.ipcRenderer.removeAllListeners(EVENT.SYNC.REPORT_TRANSFER)
   }
 
@@ -151,7 +152,7 @@ export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
 
   pageChanged() {
     this.onSelect()
-    this.autoResizeDirective.scrollTop()
+    this.autoResizeDirective()?.scrollTop()
   }
 
   onClose() {

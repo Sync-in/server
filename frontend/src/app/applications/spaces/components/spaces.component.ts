@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, computed, inject, OnInit, signal, viewChild, ViewChild } from '@angular/core'
+import { Component, computed, inject, signal, viewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
 import {
@@ -23,7 +23,8 @@ import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { BadgeMembersComponent } from '../../../common/components/badge-members.component'
 import { BadgePermissionsComponent } from '../../../common/components/badge-permissions.component'
-import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
+import { NavigationViewComponent } from '../../../common/components/navigation-view/navigation-view.component'
+import { NavigationViewService } from '../../../common/components/navigation-view/navigation-view.service'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
@@ -62,17 +63,16 @@ import { SpaceUserAnchorsDialogComponent } from './dialogs/space-user-anchors-di
   ],
   templateUrl: 'spaces.component.html'
 })
-export class SpacesComponent implements OnInit {
+export class SpacesComponent {
   protected readonly scrollView = viewChild<VirtualScrollComponent<SpaceModel>>(VirtualScrollComponent)
-  @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
   readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
   readonly targetContextMenu = viewChild.required<ContextMenuComponent<any>>('TargetContextMenu')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly navbarSearch = inject(NavbarSearchService)
+  protected readonly navigationView = inject(NavigationViewService)
   protected readonly SPACE_ROLE = SPACE_ROLE
   protected readonly originalOrderKeyValue = originalOrderKeyValue
-  protected readonly galleryMode = signal<ViewMode>(undefined)
   protected readonly TAB_MENU = TAB_MENU
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,
@@ -167,10 +167,6 @@ export class SpacesComponent implements OnInit {
     this.spacesService.spaceModelChanged.pipe(takeUntilDestroyed()).subscribe((space) => {
       if (this.spaces().includes(space)) this.notifySpaceMutation(space)
     })
-  }
-
-  ngOnInit() {
-    this.galleryMode.set(this.btnNavigationView.currentView())
   }
 
   loadSpaces() {

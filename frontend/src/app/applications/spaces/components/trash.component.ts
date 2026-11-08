@@ -1,5 +1,5 @@
 import { KeyValuePipe } from '@angular/common'
-import { Component, DestroyRef, inject, OnInit, signal, viewChild, ViewChild } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { LucideArrowDown, LucideArrowUp, LucideDynamicIcon, LucideFolderOpen, LucideRotateCw } from '@lucide/angular'
@@ -10,7 +10,8 @@ import type { SpaceTrash } from '@sync-in-server/backend/src/applications/spaces
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { debounceTime, filter } from 'rxjs'
-import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
+import { NavigationViewComponent } from '../../../common/components/navigation-view/navigation-view.component'
+import { NavigationViewService } from '../../../common/components/navigation-view/navigation-view.service'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
@@ -44,12 +45,12 @@ import { SPACES_ICON, SPACES_PATH, SPACES_TITLE } from '../spaces.constants'
 })
 export class TrashComponent implements OnInit {
   protected readonly scrollView = viewChild<VirtualScrollComponent<TrashModel>>(VirtualScrollComponent)
-  @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
   readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
   readonly targetContextMenu = viewChild.required<ContextMenuComponent<any>>('TargetContextMenu')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly navbarSearch = inject(NavbarSearchService)
+  protected readonly navigationView = inject(NavigationViewService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,
@@ -60,7 +61,6 @@ export class TrashComponent implements OnInit {
     LucideRotateCw,
     TRASH: SPACES_ICON.TRASH
   }
-  protected readonly galleryMode = signal<ViewMode>(undefined)
   // Sort
   protected tableHeaders: Record<'name' | 'nb' | 'modified', TableHeaderConfig> = {
     name: {
@@ -114,7 +114,6 @@ export class TrashComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.galleryMode.set(this.btnNavigationView.currentView())
     this.store.filesOnEvent
       .pipe(
         filter(

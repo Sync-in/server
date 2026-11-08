@@ -1,4 +1,4 @@
-import { AsyncPipe, Location, NgTemplateOutlet } from '@angular/common'
+import { Location, NgTemplateOutlet } from '@angular/common'
 import { Component, effect, inject, signal, untracked } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ResolveEnd, Router, RouterLink } from '@angular/router'
@@ -27,7 +27,7 @@ import { NavbarSearchService } from '../navbar/services/navbar-search.service'
 @Component({
   selector: 'app-sidebar-left',
   templateUrl: 'sidebar.left.component.html',
-  imports: [RouterLink, LucideDynamicIcon, L10nTranslateDirective, AsyncPipe, NgTemplateOutlet]
+  imports: [RouterLink, LucideDynamicIcon, L10nTranslateDirective, NgTemplateOutlet]
 })
 export class SideBarLeftComponent {
   protected readonly store = inject(StoreService)

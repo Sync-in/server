@@ -104,7 +104,7 @@
         <div [resizeOffset]="275" [useMaxHeight]="false" appAutoResize class="sync-report-table-scroll bg-white">
           <table class="app-table">
             <tbody tabindex="-1">
-              @for (s of transfers() | searchFilter: inputFilter.search() | paginate: currentPage() : itemsPerPage; track s) {
+              @for (s of transfers() | searchFilter: inputFilter().search() | paginate: currentPage() : itemsPerPage; track s) {
                 @if (!s.isFiltered || (showFiltered() && s.isFiltered)) {
                   <tr (click)="onSelect(s)" [class.selected]="transferSelected() === s">
                     @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
