@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideUserMinus } from '@lucide/angular'
 import type { DeleteUserDto } from '@sync-in-server/backend/src/applications/users/dto/delete-user.dto'
@@ -12,6 +12,7 @@ import { AdminUserModel } from '../../models/admin-user.model'
 
 @Component({
   selector: 'app-admin-user-delete-dialog',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective, ReactiveFormsModule, CapitalizePipe, FormsModule],
   templateUrl: 'admin-user-delete-dialog.component.html'
 })

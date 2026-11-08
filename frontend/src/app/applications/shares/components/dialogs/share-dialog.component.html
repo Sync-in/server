@@ -68,7 +68,10 @@
                 @if (currentShare.storageUsage || currentShare.storageQuota) {
                   <div class="d-flex flex-column mb-3">
                     <label class="form-label" for="storage" l10nTranslate>Storage Usage</label>
-                    <app-storage-usage id="storage" [item]="currentShare"></app-storage-usage>
+                    <app-storage-usage
+                      id="storage"
+                      [storageUsage]="currentShare.storageUsage"
+                      [storageQuota]="currentShare.storageQuota"></app-storage-usage>
                   </div>
                 }
               </div>

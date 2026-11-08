@@ -1,5 +1,5 @@
 import { KeyValuePipe } from '@angular/common'
-import { Component, ElementRef, inject, input, model, OnInit, signal, viewChild } from '@angular/core'
+import { ChangeDetectionStrategy, Component, ElementRef, inject, input, model, OnInit, signal, viewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucidePencil, LucideX } from '@lucide/angular'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
@@ -20,6 +20,7 @@ import { USER_ICON } from '../../user.constants'
 
 @Component({
   selector: 'app-user-search',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     L10nTranslatePipe,
     TimeAgoPipe,

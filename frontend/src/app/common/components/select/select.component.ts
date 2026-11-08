@@ -1,5 +1,18 @@
 import { NgTemplateOutlet } from '@angular/common'
-import { Component, effect, ElementRef, forwardRef, inject, input, linkedSignal, OnInit, output, signal, TemplateRef } from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  ElementRef,
+  forwardRef,
+  inject,
+  input,
+  linkedSignal,
+  OnInit,
+  output,
+  signal,
+  TemplateRef
+} from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms'
 import type { LucideIcon } from '@lucide/angular'
@@ -12,6 +25,7 @@ import { SelectItem } from './select.model'
 
 @Component({
   selector: 'app-select',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'select.component.html',
   styleUrls: ['select.component.scss'],
   imports: [OffClickDirective, HighlightPipe, LucideDynamicIcon, NgTemplateOutlet],

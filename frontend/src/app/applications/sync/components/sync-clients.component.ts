@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, inject, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core'
 import { Router } from '@angular/router'
 import {
   LucideAtSign,
@@ -37,6 +37,7 @@ import { SyncPathSettingsDialogComponent } from './dialogs/sync-path-settings.di
 
 @Component({
   selector: 'app-sync-clients',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     TooltipDirective,
     L10nTranslatePipe,

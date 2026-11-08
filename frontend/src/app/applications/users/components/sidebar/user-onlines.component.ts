@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core'
 import { USER_ONLINE_STATUS } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
@@ -8,6 +8,7 @@ import { USER_ONLINE_STATUS_LIST } from '../../user.constants'
 
 @Component({
   selector: 'app-onlines',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AutoResizeDirective, L10nTranslateDirective],
   templateUrl: 'user-onlines.component.html'
 })

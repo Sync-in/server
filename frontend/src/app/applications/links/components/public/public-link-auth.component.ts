@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnDestroy, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Params } from '@angular/router'
 import { LucideDynamicIcon, LucideKeyRound, LucideLogIn } from '@lucide/angular'
@@ -12,6 +12,7 @@ import { PublicLinkHeaderComponent } from './public-link-header.component'
 
 @Component({
   selector: 'app-public-link-auth',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, LucideDynamicIcon, L10nTranslatePipe, L10nTranslateDirective, PublicLinkHeaderComponent],
   templateUrl: 'public-link-auth.component.html'
 })

@@ -1,5 +1,5 @@
 import { KeyValuePipe } from '@angular/common'
-import { Component, effect, inject, OnInit, signal, untracked, viewChild } from '@angular/core'
+import { ChangeDetectionStrategy, Component, effect, inject, OnInit, signal, untracked, viewChild } from '@angular/core'
 import { Router } from '@angular/router'
 import {
   LucideArrowDown,
@@ -49,6 +49,7 @@ import { LiveTimeAgoPipe } from '../../../common/pipes/time-ago-live.pipe'
 
 @Component({
   selector: 'app-sync-paths',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     TooltipDirective,
     L10nTranslatePipe,

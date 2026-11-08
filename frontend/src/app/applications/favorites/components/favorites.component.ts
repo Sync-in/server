@@ -1,6 +1,6 @@
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, inject, OnInit, signal, viewChild } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal, viewChild } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
 import {
   LucideArrowDown,
@@ -41,6 +41,7 @@ import { FAVORITES_ICON, FAVORITES_PATH, FAVORITES_TITLE } from '../favorites.co
 
 @Component({
   selector: 'app-favorites',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LucideDynamicIcon,
     KeyValuePipe,

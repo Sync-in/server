@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { LucideDynamicIcon, LucidePlay, LucideSquare, LucideTrash } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -12,6 +12,7 @@ import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
 
 @Component({
   selector: 'app-admin-tools',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AutoResizeDirective, L10nTranslateDirective, LucideDynamicIcon, TimeDateFormatPipe],
   templateUrl: 'admin-tools.component.html'
 })

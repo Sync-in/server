@@ -41,7 +41,7 @@
 
       <div class="sync-settings-row">
         <label class="sync-settings-label form-label mb-0" for="sync-path-mode">
-          <app-sync-path-direction-icon [syncPath]="syncPath()" [small]="true"></app-sync-path-direction-icon>
+          <app-sync-path-direction-icon [mode]="syncPath().settings.mode" [small]="true"></app-sync-path-direction-icon>
           <span class="ms-2" l10nTranslate>Direction</span>
           @if (!syncPath().isWriteable) {
             <span class="ms-2 fs-lg cursor-pointer">

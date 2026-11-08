@@ -1,5 +1,5 @@
 import { KeyValuePipe } from '@angular/common'
-import { Component, inject, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideCircleQuestionMark, LucideCopy, LucideDynamicIcon, LucideHardDriveDownload, LucideMove, LucideX } from '@lucide/angular'
 import { TAR_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
@@ -21,6 +21,7 @@ import { FilesSummaryComponent } from '../utils/files-summary.component'
 
 @Component({
   selector: 'app-files-clipboard',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AutoResizeDirective,
     LucideDynamicIcon,

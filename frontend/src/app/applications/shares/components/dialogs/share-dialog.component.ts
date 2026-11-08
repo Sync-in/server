@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Injector, Input, OnInit, Output, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, EventEmitter, inject, Injector, Input, OnInit, Output, signal } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideLoader, LucidePlus, LucideSettings, LucideUserRoundKey, LucideUsersRound } from '@lucide/angular'
 import type { FileSpace } from '@sync-in-server/backend/src/applications/files/interfaces/file-space.interface'
@@ -38,6 +38,7 @@ import { AdminService } from '../../../admin/admin.service'
 
 @Component({
   selector: 'app-share-dialog',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LucideDynamicIcon,
     L10nTranslateDirective,

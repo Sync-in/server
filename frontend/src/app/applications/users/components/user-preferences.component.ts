@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, computed, inject, OnInit, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import {
   COLLABORA_APP_LOCK,
@@ -32,6 +32,7 @@ import { UserService } from '../user.service'
 
 @Component({
   selector: 'app-user-preferences',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AutoResizeDirective, FormsModule, KeyValuePipe, L10nTranslateDirective],
   templateUrl: 'user-preferences.component.html'
 })

@@ -1,5 +1,16 @@
 import { CodeEditor } from '@acrodata/code-editor'
-import { Component, effect, ElementRef, HostListener, OnDestroy, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  signal,
+  viewChild,
+  ViewEncapsulation
+} from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
 import { LanguageDescription } from '@codemirror/language'
@@ -72,6 +83,7 @@ const ExitInlineCodeOnEnter = Extension.create({
 
 @Component({
   selector: 'app-files-viewer-markdown',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [
     CodeEditor,
@@ -99,6 +111,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
   protected readonly languages: LanguageDescription[] = languages
   protected readonly sourceSearchAdapter = new CodeMirrorFileViewerSearchAdapter(() => this.sourceView)
   protected readonly visualSearchAdapter = new TipTapFileViewerSearchAdapter(() => this.editor)
+  private readonly editorRevision = signal(0)
   protected readonly editor = new Editor({
     extensions: [
       StarterKit.configure({
@@ -136,7 +149,8 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
       this.markModifiedIfNeeded()
       this.visualSearchAdapter.sync()
     },
-    onSelectionUpdate: () => this.visualSearchAdapter.sync()
+    onSelectionUpdate: () => this.visualSearchAdapter.sync(),
+    onTransaction: () => this.editorRevision.update((revision) => revision + 1)
   })
   protected readonly icons = {
     LucideTextWrap,
@@ -251,6 +265,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
   }
 
   protected canUndo(): boolean {
+    this.editorRevision()
     if (this.isSourceMode()) {
       return this.canRunSourceHistory(undoDepth)
     }
@@ -258,6 +273,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
   }
 
   protected canRedo(): boolean {
+    this.editorRevision()
     if (this.isSourceMode()) {
       return this.canRunSourceHistory(redoDepth)
     }
@@ -465,10 +481,11 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
   }
 
   protected canEditTable(): boolean {
-    return this.canEditVisual() && this.editor.isActive('table')
+    return this.canEditVisual() && this.isSelectionActive('table')
   }
 
   protected isSelectionActive(name: string, attributes?: object): boolean {
+    this.editorRevision()
     return this.editor.isActive(name, attributes)
   }
 

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core'
 import { ActivatedRoute, Data, Params } from '@angular/router'
 import { LucideDynamicIcon, LucideEye, LucideHardDriveDownload, LucidePencil } from '@lucide/angular'
 import type { SpaceLink } from '@sync-in-server/backend/src/applications/links/interfaces/link-space.interface'
@@ -11,6 +11,7 @@ import { PublicLinkHeaderComponent } from './public-link-header.component'
 
 @Component({
   selector: 'app-public-link',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslatePipe, L10nTranslateDirective, PublicLinkHeaderComponent],
   templateUrl: 'public-link.component.html'
 })

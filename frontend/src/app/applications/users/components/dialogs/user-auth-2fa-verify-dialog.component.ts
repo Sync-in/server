@@ -1,5 +1,5 @@
 import { HttpHeaders } from '@angular/common/http'
-import { Component, inject, Input, OnInit, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, Input, OnInit, signal } from '@angular/core'
 import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
 import { LucideDynamicIcon, LucideKeyRound, LucideLock } from '@lucide/angular'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -11,6 +11,7 @@ import { LayoutService } from '../../../../layout/layout.service'
 
 @Component({
   selector: 'app-user-auth-2fa-verify-dialog',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective, AutofocusDirective, ReactiveFormsModule, InputPasswordComponent],
   templateUrl: 'user-auth-2fa-verify-dialog.component.html'
 })

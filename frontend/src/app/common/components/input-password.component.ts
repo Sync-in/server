@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, input, linkedSignal, OnInit, output, viewChild } from '@angular/core'
+import { ChangeDetectionStrategy, Component, ElementRef, inject, input, linkedSignal, OnInit, output, viewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideDices, LucideDynamicIcon, LucideEye, LucideEyeOff } from '@lucide/angular'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -10,6 +10,7 @@ let nextInputPasswordId = 0
 
 @Component({
   selector: 'app-input-password',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, L10nTranslatePipe, LucideDynamicIcon, L10nTranslateDirective],
   template: `@if (showLabel()) {
       <label [for]="inputId()" class="form-label" l10nTranslate>Password</label>

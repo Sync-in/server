@@ -1,14 +1,16 @@
 <div class="sidebar-component-title">
   <div class="input-group input-group-sm mb-0">
     <input #CommentCreate
+           (input)="commentContent.set(CommentCreate.value)"
            (keyup.enter)="postComment()"
+           [value]="commentContent()"
            [disabled]="!file()"
            [placeholder]="'Write a comment ...' | translate:locale.language"
            class="form-control form-control-sm"
            type="text"
            appAutofocus>
     <button (click)="postComment()"
-            [disabled]="!CommentCreate.value"
+            [disabled]="!commentContent()"
             class="btn btn-xs btn-primary"
             role="button"
             type="button" l10nTranslate>
@@ -36,13 +38,14 @@
         <div class="pb-2 px-2">
           @if (comment.isEdited) {
             <textarea #CommentUpdate
-                      [ngModel]="comment.content"
+                      (input)="commentEditContent.set(CommentUpdate.value)"
+                      [value]="commentEditContent()"
                       [disabled]="!comment.author.isAuthor && comment.isFileOwner"
                       class="form-control mt-1 mb-2" required>
             </textarea>
             <div class="d-flex gap-2 w-100">
-              <button (click)="updateComment(comment, CommentUpdate.value)"
-                      [disabled]="!CommentUpdate.value || comment.content === CommentUpdate.value"
+              <button (click)="updateComment(comment, commentEditContent())"
+                      [disabled]="!commentEditContent() || comment.content === commentEditContent()"
                       class="btn btn-xs btn-primary flex-fill"
                       role="button"
                       type="button"

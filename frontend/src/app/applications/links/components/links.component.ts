@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, inject, signal, viewChild } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 import {
   LucideArrowDown,
@@ -44,6 +44,7 @@ import { LinkDialogComponent } from './dialogs/link-dialog.component'
 
 @Component({
   selector: 'app-shared-links',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ContextMenuModule,
     LucideDynamicIcon,
@@ -197,8 +198,7 @@ export class LinksComponent {
       modalRef.content.shareChange.pipe(take(1)).subscribe((r: ['update' | 'delete', ShareLinkModel] | ['add', ShareModel]) => {
         const [action, s] = r
         if (action === 'update') {
-          Object.assign(this.selected(), s)
-          this.notifyLinkMutation(this.selected()!)
+          this.notifyLinkMutation(s)
         } else if (action === 'delete') {
           this.onSelect()
           this.sortBy(
@@ -249,9 +249,9 @@ export class LinksComponent {
   }
 
   private notifyLinkMutation(link: ShareLinkModel) {
-    this.shares.update((shares) => [...shares])
-    if (this.selected() === link) {
-      this.store.linkSelection.set(link)
+    this.shares.update((shares) => shares.map((item) => (item.id === link.id ? link : item)))
+    if (this.selected()?.id === link.id) {
+      this.onSelect(link)
     }
   }
 }

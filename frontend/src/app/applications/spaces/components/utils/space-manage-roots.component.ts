@@ -1,5 +1,5 @@
 import { KeyValuePipe } from '@angular/common'
-import { Component, effect, ElementRef, inject, input, linkedSignal, output, viewChild } from '@angular/core'
+import { ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, linkedSignal, output, viewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucidePencil, LucideX } from '@lucide/angular'
 import { createSlug, InvalidSlugError, regExpNumberSuffix } from '@sync-in-server/backend/src/common/shared'
@@ -23,6 +23,7 @@ import { ExternalFilePathEvent } from '../dialogs/space-root-path-dialog.compone
 
 @Component({
   selector: 'app-space-manage-roots',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonsModule,
     LucideDynamicIcon,

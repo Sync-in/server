@@ -1,32 +1,33 @@
-import { afterNextRender, Component, DestroyRef, ElementRef, inject, input, signal } from '@angular/core'
-import type { StorageQuota } from '@sync-in-server/backend/src/common/interfaces'
+import { afterNextRender, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, input, signal } from '@angular/core'
 import { ProgressbarComponent } from 'ngx-bootstrap/progressbar'
 import { ToBytesPipe } from '../pipes/to-bytes.pipe'
 
 @Component({
   selector: 'app-storage-usage',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ProgressbarComponent, ToBytesPipe],
-  template: `@if (item().storageQuota && item().storageQuota > 0) {
+  template: `@if (storageQuota() && storageQuota() > 0) {
       <progressbar
-        [max]="item().storageQuota"
-        [value]="item().storageUsage"
+        [max]="storageQuota()"
+        [value]="storageUsage() ?? 0"
         class="bg-black"
-        [type]="this.item().storageUsage >= this.item().storageQuota ? 'danger' : null"
+        [type]="(storageUsage() ?? 0) >= storageQuota()! ? 'danger' : null"
       >
         <span [style.width.px]="labelWidth()" class="ms-1 me-1">
-          {{ item().storageUsage | toBytes: 2 : true }} / {{ item().storageQuota | toBytes }}
+          {{ storageUsage() ?? 0 | toBytes: 2 : true }} / {{ storageQuota() | toBytes }}
         </span>
       </progressbar>
     } @else {
       <progressbar [max]="1" [value]="1" class="bg-black" [type]="null">
         <span class="ms-1 me-1">
-          {{ item().storageUsage | toBytes: 2 : true }}
+          {{ storageUsage() ?? 0 | toBytes: 2 : true }}
         </span>
       </progressbar>
     }`
 })
 export class StorageUsageComponent {
-  item = input<StorageQuota>({ storageUsage: 0, storageQuota: null })
+  readonly storageUsage = input<number | null>(0)
+  readonly storageQuota = input<number | null>(null)
   readonly labelWidth = signal<number | null>(null)
   protected readonly elRef = inject(ElementRef)
   private readonly destroyRef = inject(DestroyRef)

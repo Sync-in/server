@@ -1,10 +1,11 @@
 import { HttpClient } from '@angular/common/http'
-import { Component, inject, input, OnInit, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core'
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser'
 import { LayoutService } from '../../../../layout/layout.service'
 
 @Component({
   selector: 'app-files-viewer-html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `@if (content(); as resourceUrl) {
     <iframe [src]="resourceUrl" [style.height.px]="currentHeight()" class="app-viewer-iframe" sandbox></iframe>
   }`

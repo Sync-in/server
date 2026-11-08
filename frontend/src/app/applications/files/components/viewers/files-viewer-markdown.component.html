@@ -82,7 +82,7 @@
           <ul *dropdownMenu class="dropdown-menu files-markdown-heading-menu" role="menu">
             @for (level of headingLevels; track level) {
               <li role="menuitem">
-                <a (click)="toggleHeading(level)" [class.active]="editor.isActive('heading', { level })" class="dropdown-item">
+                <a (click)="toggleHeading(level)" [class.active]="isSelectionActive('heading', { level })" class="dropdown-item">
                   H{{ level }}
                 </a>
               </li>
@@ -140,7 +140,7 @@
           <button
             [attr.aria-label]="'List' | translate:locale.language"
             [disabled]="!canEditVisual()"
-            [class.active]="editor.isActive('bulletList') || editor.isActive('orderedList') || editor.isActive('taskList')"
+            [class.active]="isSelectionActive('bulletList') || isSelectionActive('orderedList') || isSelectionActive('taskList')"
             [tooltip]="'List' | translate:locale.language"
             triggers="hover"
             class="btn btn-custom dropdown-toggle"
@@ -150,7 +150,7 @@
           </button>
           <ul *dropdownMenu class="dropdown-menu files-markdown-list-menu" role="menu">
             <li role="menuitem">
-              <a (click)="toggleBulletList()" [class.active]="editor.isActive('bulletList')" class="dropdown-item">
+              <a (click)="toggleBulletList()" [class.active]="isSelectionActive('bulletList')" class="dropdown-item">
                 <span class="files-markdown-list-item">
                   <svg [lucideIcon]="icons.LucideList"></svg>
                   <span l10nTranslate>Bullet List</span>
@@ -158,7 +158,7 @@
               </a>
             </li>
             <li role="menuitem">
-              <a (click)="toggleOrderedList()" [class.active]="editor.isActive('orderedList')" class="dropdown-item">
+              <a (click)="toggleOrderedList()" [class.active]="isSelectionActive('orderedList')" class="dropdown-item">
                 <span class="files-markdown-list-item">
                   <svg [lucideIcon]="icons.LucideListOrdered"></svg>
                   <span l10nTranslate>Ordered List</span>
@@ -166,7 +166,7 @@
               </a>
             </li>
             <li role="menuitem">
-              <a (click)="toggleTaskList()" [class.active]="editor.isActive('taskList')" class="dropdown-item">
+              <a (click)="toggleTaskList()" [class.active]="isSelectionActive('taskList')" class="dropdown-item">
                 <span class="files-markdown-list-item">
                   <svg [lucideIcon]="icons.LucideSquareCheck"></svg>
                   <span l10nTranslate>Task List</span>
@@ -180,7 +180,7 @@
           <button
             [attr.aria-label]="'Code' | translate:locale.language"
             [disabled]="!canEditVisual()"
-            [class.active]="editor.isActive('code') || editor.isActive('codeBlock')"
+            [class.active]="isSelectionActive('code') || isSelectionActive('codeBlock')"
             [tooltip]="'Code' | translate:locale.language"
             triggers="hover"
             class="btn btn-custom dropdown-toggle"
@@ -190,7 +190,7 @@
           </button>
           <ul *dropdownMenu class="dropdown-menu files-markdown-code-menu" role="menu">
             <li role="menuitem">
-              <a (click)="toggleCode()" [class.active]="editor.isActive('code')" class="dropdown-item">
+              <a (click)="toggleCode()" [class.active]="isSelectionActive('code')" class="dropdown-item">
                 <span class="files-markdown-code-item">
                   <svg [lucideIcon]="icons.LucideCode"></svg>
                   <span l10nTranslate>Inline Code</span>
@@ -198,7 +198,7 @@
               </a>
             </li>
             <li role="menuitem">
-              <a (click)="toggleCodeBlock()" [class.active]="editor.isActive('codeBlock')" class="dropdown-item">
+              <a (click)="toggleCodeBlock()" [class.active]="isSelectionActive('codeBlock')" class="dropdown-item">
                 <span class="files-markdown-code-item">
                   <svg [lucideIcon]="icons.LucideCode"></svg>
                   <span l10nTranslate>Code Block</span>
@@ -228,7 +228,7 @@
           <button
             [attr.aria-label]="'Table' | translate:locale.language"
             [disabled]="!canEditVisual()"
-            [class.active]="editor.isActive('table')"
+            [class.active]="isSelectionActive('table')"
             [tooltip]="'Table' | translate:locale.language"
             triggers="hover"
             class="btn btn-custom dropdown-toggle"

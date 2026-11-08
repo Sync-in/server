@@ -1,9 +1,10 @@
-import { Component, input, OnChanges, OnDestroy, OnInit, output, SimpleChanges } from '@angular/core'
+import { ChangeDetectionStrategy, Component, input, OnChanges, OnDestroy, OnInit, output, SimpleChanges } from '@angular/core'
 import type { OnlyOfficeConfig } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.interface'
 import loadScript from './only-office.utils'
 
 @Component({
   selector: 'app-files-onlyoffice-document',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: '<div [id]="id()"></div>'
 })
 export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {

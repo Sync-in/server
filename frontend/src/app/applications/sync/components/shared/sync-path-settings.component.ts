@@ -1,4 +1,4 @@
-import { Component, inject, input } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import {
   LucideBug,
@@ -24,6 +24,7 @@ import { SyncPathDirectionIconComponent } from '../utils/sync-path-direction-ico
 
 @Component({
   selector: 'app-sync-path-settings',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [L10nTranslateDirective, LucideDynamicIcon, FormsModule, TooltipDirective, L10nTranslatePipe, SyncPathDirectionIconComponent],
   templateUrl: './sync-path-settings.component.html',
   styleUrl: './sync-path-settings.component.scss'

@@ -1,4 +1,4 @@
-import { Component, inject, Input, output, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, Input, output, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideFileLock } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -9,6 +9,7 @@ export type { FilesOverwriteAction } from '../../interfaces/files-dialog.interfa
 
 @Component({
   selector: 'app-files-overwrite-dialog',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective, L10nTranslatePipe],
   templateUrl: 'files-overwrite-dialog.component.html'
 })

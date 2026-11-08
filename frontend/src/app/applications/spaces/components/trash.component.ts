@@ -1,5 +1,5 @@
 import { KeyValuePipe } from '@angular/common'
-import { Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core'
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { LucideArrowDown, LucideArrowUp, LucideDynamicIcon, LucideFolderOpen, LucideRotateCw } from '@lucide/angular'
@@ -29,6 +29,7 @@ import { SPACES_ICON, SPACES_PATH, SPACES_TITLE } from '../spaces.constants'
 
 @Component({
   selector: 'app-spaces-trash',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LucideDynamicIcon,
     NavigationViewComponent,

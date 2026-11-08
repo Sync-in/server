@@ -1,5 +1,5 @@
 import { KeyValuePipe } from '@angular/common'
-import { Component, effect, inject, signal, untracked, viewChild } from '@angular/core'
+import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked, viewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { LucideArrowDown, LucideArrowUp, LucideDynamicIcon, LucideRotateCw, LucideTrash } from '@lucide/angular'
@@ -23,6 +23,7 @@ import { SyncTransfersDeleteDialogComponent } from './dialogs/sync-transfers-del
 
 @Component({
   selector: 'app-sync-transfers',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, L10nTranslateDirective, L10nTranslatePipe, TooltipDirective, VirtualScrollComponent, LucideDynamicIcon, KeyValuePipe],
   templateUrl: 'sync-transfers.component.html'
 })

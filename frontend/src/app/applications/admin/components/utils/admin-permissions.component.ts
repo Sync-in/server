@@ -1,10 +1,11 @@
-import { Component, inject, input, output } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
 
 @Component({
   selector: 'app-admin-permissions',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CapitalizePipe, L10nTranslateDirective, L10nTranslatePipe],
   template: ` <div class="d-flex flex-column col-12 pb-3">
     <label for="permissions" class="form-label" l10nTranslate>Permissions</label>
@@ -34,12 +35,7 @@ export class AdminPermissionsComponent {
 
   updatePermissions(app: USER_PERMISSION, event: Event) {
     const target = event.target as HTMLInputElement
-    const permissions = this.permissions()
-    if (target.checked) {
-      permissions.push(app)
-    } else {
-      permissions.splice(permissions.indexOf(app), 1)
-    }
+    const permissions = target.checked ? [...this.permissions(), app] : this.permissions().filter((permission) => permission !== app)
     this.permissionsChange.emit(permissions)
   }
 }

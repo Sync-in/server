@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, model, OnInit, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, input, model, OnInit, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
@@ -7,6 +7,7 @@ import { quotaRegexp } from '../utils/regexp'
 
 @Component({
   selector: 'app-storage-quota',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [L10nTranslatePipe, TooltipModule, FormsModule, L10nTranslateDirective],
   template: `
     <label for="storageQuota" class="form-label" l10nTranslate>Storage Quota</label>

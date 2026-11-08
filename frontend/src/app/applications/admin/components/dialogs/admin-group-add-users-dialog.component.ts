@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideUserRoundPlus } from '@lucide/angular'
 import { GROUP_TYPE } from '@sync-in-server/backend/src/applications/users/constants/group'
 import { USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -14,6 +14,7 @@ import { AdminService } from '../../admin.service'
 
 @Component({
   selector: 'app-admin-group-add-users-dialog',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective, UserSearchComponent],
   templateUrl: 'admin-group-add-users-dialog.component.html'
 })

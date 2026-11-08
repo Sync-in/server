@@ -1,4 +1,4 @@
-import { afterNextRender, Component, effect, ElementRef, inject, OnDestroy, signal, viewChild } from '@angular/core'
+import { afterNextRender, ChangeDetectionStrategy, Component, effect, ElementRef, inject, OnDestroy, signal, viewChild } from '@angular/core'
 import { RouterLink } from '@angular/router'
 import { LucideChevronDown, LucideChevronRight, LucideCornerDownRight, LucideDynamicIcon, LucideFolder } from '@lucide/angular'
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
@@ -7,6 +7,7 @@ import type { BreadcrumbLevel, BreadCrumbUrl } from './breadcrumb.interfaces'
 
 @Component({
   selector: 'app-breadcrumb',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'breadcrumb.component.html',
   imports: [RouterLink, LucideDynamicIcon, BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective]
 })

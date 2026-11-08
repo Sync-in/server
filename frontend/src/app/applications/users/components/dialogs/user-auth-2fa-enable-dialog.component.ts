@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
 import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
 import { LucideCopy, LucideDynamicIcon, LucideKeyRound, LucideLock } from '@lucide/angular'
 import { TWO_FA_CODE_LENGTH } from '@sync-in-server/backend/src/authentication/constants/auth'
@@ -12,6 +12,7 @@ import { UserService } from '../../user.service'
 
 @Component({
   selector: 'app-user-auth-2fa-enable-dialog',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective, ReactiveFormsModule, InputPasswordComponent],
   templateUrl: 'user-auth-2fa-enable-dialog.component.html'
 })

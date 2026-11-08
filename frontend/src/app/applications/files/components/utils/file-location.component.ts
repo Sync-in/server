@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core'
 import { LucideDynamicIcon, LucideTrash } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import type { FileLocationDisplay } from '../../interfaces/file-location.interface'
@@ -7,6 +7,7 @@ export type { FileLocationDisplay } from '../../interfaces/file-location.interfa
 
 @Component({
   selector: 'app-file-location',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslatePipe],
   template: `
     @if (location(); as fileLocation) {

@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, inject, signal, viewChild, WritableSignal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, signal, viewChild, WritableSignal } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { LucideCircleArrowLeft, LucideCircleArrowRight, LucideDynamicIcon, LucideFolderPlus } from '@lucide/angular'
@@ -20,6 +20,7 @@ import { isSameOrDescendantPath, isSynchronizable } from '../../sync.utils'
 
 @Component({
   selector: 'app-sync-wizard-server',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective, AutoResizeDirective, FormsModule, L10nTranslatePipe, ReactiveFormsModule, TooltipModule],
   templateUrl: 'sync-wizard-server.component.html'
 })

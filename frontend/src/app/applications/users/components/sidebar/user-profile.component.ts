@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { RouterLink } from '@angular/router'
 import { LucideDynamicIcon, LucideLogOut, LucidePin, LucidePinOff, LucideSettings, LucideUserRound, LucideVenetianMask } from '@lucide/angular'
@@ -17,6 +17,7 @@ import { UserService } from '../../user.service'
 
 @Component({
   selector: 'app-user-profile',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'user-profile.component.html',
   imports: [
     FormsModule,

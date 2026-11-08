@@ -3,6 +3,7 @@ import { AsyncPipe } from '@angular/common'
 import {
   afterNextRender,
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -51,6 +52,7 @@ import { FilesSummaryComponent } from '../utils/files-summary.component'
 
 @Component({
   selector: 'app-files-tree',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AsyncPipe, AutoResizeDirective, TreeModule, L10nTranslateDirective, LucideDynamicIcon, TapDirective, ToBytesPipe, FilesSummaryComponent],
   templateUrl: 'files-tree.component.html'
 })

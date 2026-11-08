@@ -1,5 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -28,6 +29,7 @@ import { fileLockPropsToString } from '../utils/file-lock.utils'
 
 @Component({
   selector: 'app-files-viewer-collabora-online',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (documentServerUrl(); as serverUrl) {
       <div class="app-collabora-online-border" [style.height.px]="currentHeight()">

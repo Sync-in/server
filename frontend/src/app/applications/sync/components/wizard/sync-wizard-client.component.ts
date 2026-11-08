@@ -1,4 +1,4 @@
-import { Component, inject, Renderer2, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, Renderer2, signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { LucideCircleArrowRight, LucideCircleX, LucideDynamicIcon, LucideHardDriveDownload } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -14,6 +14,7 @@ import { isSameOrDescendantPath } from '../../sync.utils'
 
 @Component({
   selector: 'app-sync-wizard-client',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective],
   templateUrl: 'sync-wizard-client.component.html'
 })

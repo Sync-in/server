@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { LucideCircleArrowLeft, LucideCircleCheck, LucideDynamicIcon } from '@lucide/angular'
 import { SYNC_PATH_CONFLICT_MODE, SYNC_PATH_MODE } from '@sync-in-server/backend/src/applications/sync/constants/sync'
@@ -13,6 +13,7 @@ import { SyncPathDirectionIconComponent } from '../utils/sync-path-direction-ico
 
 @Component({
   selector: 'app-sync-wizard-settings',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [L10nTranslateDirective, LucideDynamicIcon, TooltipDirective, SyncPathDirectionIconComponent, SyncPathSettingsComponent],
   templateUrl: './sync-wizard-settings.component.html',
   styleUrl: './sync-wizard-settings.component.scss'

@@ -1,4 +1,4 @@
-import { Component, computed, inject, Input, OnInit, output, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, Input, OnInit, output, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { AutofocusDirective } from '../../../../../common/directives/auto-focus.directive'
@@ -6,6 +6,7 @@ import { LayoutService } from '../../../../../layout/layout.service'
 
 @Component({
   selector: 'app-files-viewer-save-as',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AutofocusDirective, FormsModule, L10nTranslateDirective],
   template: `
     <div class="modal-header">

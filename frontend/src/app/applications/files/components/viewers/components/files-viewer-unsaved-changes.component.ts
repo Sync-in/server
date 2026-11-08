@@ -1,8 +1,9 @@
-import { Component, input, output } from '@angular/core'
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core'
 import { L10nTranslateDirective } from 'angular-l10n'
 
 @Component({
   selector: 'app-files-viewer-unsaved-changes',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [L10nTranslateDirective],
   styles: [
     `

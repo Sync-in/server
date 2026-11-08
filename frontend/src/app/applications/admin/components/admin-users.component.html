@@ -128,7 +128,7 @@
                   }
                   @case ('storage') {
                     @if (u.storageUsage || u.storageQuota) {
-                      <app-storage-usage [item]="u"></app-storage-usage>
+                      <app-storage-usage [storageUsage]="u.storageUsage" [storageQuota]="u.storageQuota"></app-storage-usage>
                     }
                   }
                   @case ('currentIp') {

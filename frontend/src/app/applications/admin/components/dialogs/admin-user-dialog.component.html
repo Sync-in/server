@@ -151,7 +151,10 @@
               @if (user && (user.storageUsage || user.storageQuota)) {
                 <div>
                   <label class="form-label" for="storage" l10nTranslate>Storage Usage</label>
-                  <app-storage-usage id="storage" [item]="user"></app-storage-usage>
+                  <app-storage-usage
+                    id="storage"
+                    [storageUsage]="user.storageUsage"
+                    [storageQuota]="user.storageQuota"></app-storage-usage>
                 </div>
               }
             </div>

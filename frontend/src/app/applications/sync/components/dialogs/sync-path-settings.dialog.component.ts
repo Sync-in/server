@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideFunnel, LucideRefreshCw, LucideSettings, LucideX } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -17,6 +17,7 @@ import { SyncPathSettingsComponent } from '../shared/sync-path-settings.componen
 
 @Component({
   selector: 'app-sync-path-settings-dialog',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     TabsetComponent,
     L10nTranslatePipe,

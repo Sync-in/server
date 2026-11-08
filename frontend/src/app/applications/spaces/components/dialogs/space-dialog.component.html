@@ -66,7 +66,10 @@
               @if (space.storageUsage || space.storageQuota) {
                 <div class="d-flex flex-column mb-3">
                   <label class="form-label" for="storage" l10nTranslate>Storage Usage</label>
-                  <app-storage-usage id="storage" [item]="space"></app-storage-usage>
+                  <app-storage-usage
+                    id="storage"
+                    [storageUsage]="space.storageUsage"
+                    [storageQuota]="space.storageQuota"></app-storage-usage>
                 </div>
               }
             </div>

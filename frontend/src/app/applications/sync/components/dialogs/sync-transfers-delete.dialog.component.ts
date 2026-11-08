@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
+import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output } from '@angular/core'
 import { LucideDynamicIcon, LucideTrash } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -7,6 +7,7 @@ import { SyncService } from '../../services/sync.service'
 
 @Component({
   selector: 'app-sync-transfers-delete-dialog',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [L10nTranslateDirective, LucideDynamicIcon],
   templateUrl: './sync-transfers-delete.dialog.component.html'
 })

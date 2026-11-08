@@ -1,5 +1,5 @@
 import { NgComponentOutlet } from '@angular/common'
-import { Component, computed, effect, inject, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { LucideBell, LucideDynamicIcon, LucideFlag, LucidePanelsTopLeft, LucideUserRound, LucideWifi } from '@lucide/angular'
 import { USER_ONLINE_STATUS } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -15,6 +15,7 @@ import { WindowsComponent } from './components/windows.component'
 
 @Component({
   selector: 'app-sidebar-right',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective, NgComponentOutlet],
   templateUrl: 'sidebar.right.component.html'
 })

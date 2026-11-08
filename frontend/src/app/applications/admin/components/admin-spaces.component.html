@@ -92,7 +92,7 @@
                   }
                   @case ('storage') {
                     @if (s.storageUsage || s.storageQuota) {
-                      <app-storage-usage [item]="s"></app-storage-usage>
+                      <app-storage-usage [storageUsage]="s.storageUsage" [storageQuota]="s.storageQuota"></app-storage-usage>
                     }
                   }
                   @case ('members') {

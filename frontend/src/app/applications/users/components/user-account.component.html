@@ -88,7 +88,11 @@
                     <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
                       <div class="col-5 col-sm-4" l10nTranslate>Storage Space</div>
                       <div class="col-7 col-sm-8 d-flex justify-content-end">
-                        <app-storage-usage class="w-100" style="max-width: 18rem;" [item]="user"></app-storage-usage>
+                        <app-storage-usage
+                          class="w-100"
+                          style="max-width: 18rem;"
+                          [storageUsage]="user.storageUsage"
+                          [storageQuota]="user.storageQuota"></app-storage-usage>
                       </div>
                     </div>
                   }

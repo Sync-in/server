@@ -1,7 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core'
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop'
-import { FormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideSquarePen } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
@@ -18,6 +17,7 @@ import { CommentsService } from '../../services/comments.service'
 
 @Component({
   selector: 'app-comments-selection',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AutofocusDirective,
     L10nTranslateDirective,
@@ -26,14 +26,14 @@ import { CommentsService } from '../../services/comments.service'
     LucideDynamicIcon,
     TimeDateFormatPipe,
     TimeAgoPipe,
-    FormsModule,
     UserAvatarComponent
   ],
   templateUrl: 'comments-selection.component.html'
 })
 export class CommentsSelectionComponent {
-  readonly commentInput = viewChild.required<ElementRef<HTMLInputElement>>('CommentCreate')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly commentContent = signal('')
+  protected readonly commentEditContent = signal('')
   protected readonly comments = signal<CommentModel[]>([])
   protected readonly icons = { LucideSquarePen }
   private readonly store = inject(StoreService)
@@ -52,6 +52,7 @@ export class CommentsSelectionComponent {
       this.comments().forEach((c) => (c.isEdited = false))
     }
     comment.isEdited = !comment.isEdited
+    this.commentEditContent.set(comment.isEdited ? comment.content : '')
     this.comments.set([...this.comments()])
   }
 
@@ -67,11 +68,11 @@ export class CommentsSelectionComponent {
   }
 
   postComment() {
-    const content: string = this.commentInput().nativeElement.value
+    const content = this.commentContent()
     this.commentsService.createComment(this.file()!, { content: content, fileId: this.file()!.id }).subscribe({
       next: (c: CommentModel) => {
         this.comments.update((comments) => [c, ...comments])
-        this.commentInput().nativeElement.value = ''
+        this.commentContent.set('')
         const file = this.file()!
         const hasComments = !!this.comments().length
         const fileChanged = file.id !== c.fileId || file.hasComments !== hasComments
@@ -103,6 +104,7 @@ export class CommentsSelectionComponent {
     this.commentsService.updateComment(this.file()!, { commentId: comment.id, fileId: this.file()!.id, content: content }).subscribe({
       next: (c: CommentModel) => {
         comment.isEdited = false
+        this.commentEditContent.set('')
         Object.assign(comment, c)
         this.comments.set([...this.comments()])
       },

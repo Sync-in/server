@@ -212,7 +212,7 @@
                     </div>
                   }
                   @case ('mode') {
-                    <app-sync-path-direction-icon [syncPath]="s"></app-sync-path-direction-icon>
+                    <app-sync-path-direction-icon [mode]="s.settings.mode"></app-sync-path-direction-icon>
                   }
                   @case ('conflictMode') {
                     <span l10nTranslate>{{ s.settings.mode === SYNC_PATH_MODE.BOTH ? s.settings.conflictMode : s.settings.mode ? SYNC_PATH_CONFLICT_MODE.REMOTE : SYNC_PATH_CONFLICT_MODE.LOCAL }}</span>

@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, inject, signal, viewChild } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core'
 import { LucideArrowDown, LucideArrowUp, LucideDynamicIcon, LucideKeyRound, LucidePencil, LucidePlus, LucideRotateCw } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -26,6 +26,7 @@ import { UserAvatarStackComponent } from './utils/user-avatar-stack.component'
 
 @Component({
   selector: 'app-user-guests',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LucideDynamicIcon,
     L10nTranslatePipe,

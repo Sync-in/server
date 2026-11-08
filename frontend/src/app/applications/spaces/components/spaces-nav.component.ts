@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnDestroy, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, signal } from '@angular/core'
 import { RouterOutlet } from '@angular/router'
 import { LucideFolderTree, LucideList, LucideMessageSquareMore } from '@lucide/angular'
 import { TAB_GROUP, TAB_MENU, TabMenu } from '../../../layout/layout.interfaces'
@@ -12,6 +12,7 @@ import { SPACES_ICON } from '../spaces.constants'
 
 @Component({
   selector: 'app-spaces-nav',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet],
   template: ` <router-outlet></router-outlet> `
 })

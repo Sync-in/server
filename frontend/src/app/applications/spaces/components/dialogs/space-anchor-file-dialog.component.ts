@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, OnInit, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnInit, signal } from '@angular/core'
 import { LucideAnchor, LucideDynamicIcon, LucideLoader, LucidePlus } from '@lucide/angular'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SpaceProps } from '@sync-in-server/backend/src/applications/spaces/models/space-props.model'
@@ -20,6 +20,7 @@ import { SpaceManageRootsComponent } from '../utils/space-manage-roots.component
 
 @Component({
   selector: 'app-space-anchor-file-dialog',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective, SpaceManageRootsComponent, L10nTranslatePipe, SelectComponent],
   templateUrl: 'space-anchor-file-dialog.component.html'
 })
