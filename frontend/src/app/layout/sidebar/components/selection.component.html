@@ -17,15 +17,15 @@
     <app-files-selection [files]="store.filesSelection()"></app-files-selection>
   }
   @case (SPACES_PATH.SPACES) {
-    <app-space-selection [space]="store.spaceSelection()"></app-space-selection>
+    <app-space-selection [space]="store.spaceSelection"></app-space-selection>
   }
   @case (SPACES_PATH.SHARED) {
-    <app-share-selection [share]="store.shareSelection()"></app-share-selection>
+    <app-share-selection [share]="store.shareSelection"></app-share-selection>
   }
   @case (SPACES_PATH.TRASHES) {
     <app-trash-selection [trash]="store.trashSelection()"></app-trash-selection>
   }
   @case (SPACES_PATH.LINKS) {
-    <app-link-selection [link]="store.linkSelection()"></app-link-selection>
+    <app-link-selection [link]="store.linkSelection"></app-link-selection>
   }
 }

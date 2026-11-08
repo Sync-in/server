@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core'
+import { ChangeDetectionStrategy, Component, input } from '@angular/core'
 import { AvailableBSPositions } from 'ngx-bootstrap/positioning'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { OwnerType } from '../../interfaces/owner.interface'
@@ -36,19 +36,19 @@ import { UserAvatarTooltipComponent } from './user-avatar-tooltip.component'
     <span
       class="avatar-stack"
       [tooltip]="usersTooltip"
-      [isDisabled]="!users?.length"
-      [placement]="tooltipPlacement"
-      [container]="container"
+      [isDisabled]="!users().length"
+      [placement]="tooltipPlacement()"
+      [container]="container()"
       containerClass="user-avatar-tooltip-container"
     >
-      @for (user of users || []; track trackUser($index, user)) {
+      @for (user of users(); track trackUser($index, user)) {
         <app-user-avatar
           [user]="user"
-          [isMember]="isMember"
-          [unknownUserAsInfo]="unknownUserAsInfo"
-          [height]="height"
-          [width]="width"
-          [fontSize]="fontSize"
+          [isMember]="isMember()"
+          [unknownUserAsInfo]="unknownUserAsInfo()"
+          [height]="height()"
+          [width]="width()"
+          [fontSize]="fontSize()"
           [disableTooltip]="true"
         >
         </app-user-avatar>
@@ -56,19 +56,19 @@ import { UserAvatarTooltipComponent } from './user-avatar-tooltip.component'
     </span>
 
     <ng-template #usersTooltip>
-      <app-user-avatar-tooltip [users]="users" [isMember]="isMember" [unknownUserAsInfo]="unknownUserAsInfo"></app-user-avatar-tooltip>
+      <app-user-avatar-tooltip [users]="users()" [isMember]="isMember()" [unknownUserAsInfo]="unknownUserAsInfo()"></app-user-avatar-tooltip>
     </ng-template>
   `
 })
 export class UserAvatarStackComponent {
-  @Input() users: (OwnerType | MemberModel | any)[] = []
-  @Input() isMember = false
-  @Input() unknownUserAsInfo = false
-  @Input() height = 32
-  @Input() width = 32
-  @Input() fontSize = 16
-  @Input() tooltipPlacement: AvailableBSPositions = 'auto'
-  @Input() container: string = null
+  readonly users = input<(OwnerType | MemberModel | any)[]>([])
+  readonly isMember = input(false)
+  readonly unknownUserAsInfo = input(false)
+  readonly height = input(32)
+  readonly width = input(32)
+  readonly fontSize = input(16)
+  readonly tooltipPlacement = input<AvailableBSPositions>('auto')
+  readonly container = input<string | null>(null)
 
   protected trackUser(index: number, user: OwnerType | MemberModel | any): string | number {
     return user?.mid ?? user?.id ?? user?.login ?? user?.name ?? index

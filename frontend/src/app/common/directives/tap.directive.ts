@@ -1,5 +1,5 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common'
-import { DestroyRef, Directive, ElementRef, EventEmitter, inject, Injectable, Input, NgZone, OnDestroy, Output, PLATFORM_ID } from '@angular/core'
+import { computed, DestroyRef, Directive, ElementRef, inject, Injectable, input, OnDestroy, output, PLATFORM_ID } from '@angular/core'
 import { UserService } from '../../applications/users/user.service'
 
 interface TapPoint {
@@ -22,7 +22,6 @@ const NEEDS_SYNTHETIC_LONG_PRESS =
 class TapGhostClickGuard {
   private readonly document = inject(DOCUMENT)
   private readonly destroyRef = inject(DestroyRef)
-  private readonly zone = inject(NgZone)
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID))
   private readonly duration = 400
   private readonly slop = 24
@@ -32,9 +31,7 @@ class TapGhostClickGuard {
 
   constructor() {
     if (!this.isBrowser) return
-    this.zone.runOutsideAngular(() => {
-      this.document.addEventListener('click', this.onClick, { capture: true, passive: false })
-    })
+    this.document.addEventListener('click', this.onClick, { capture: true, passive: false })
     this.destroyRef.onDestroy(() => this.document.removeEventListener('click', this.onClick, true))
   }
 
@@ -63,21 +60,21 @@ class TapGhostClickGuard {
   standalone: true,
   host: {
     style: 'touch-action: manipulation; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none;',
-    '[style.cursor]': 'singleClickEnabled ? "pointer" : null'
+    '[style.cursor]': 'singleClickEnabled() ? "pointer" : null'
   }
 })
 export class TapDirective implements OnDestroy {
   /** Overrides the double-tap behavior derived from the user's navigation preference. */
-  @Input() enableDoubleTap: boolean | null = null
-  @Output() appTap = new EventEmitter<PointerEvent>()
+  readonly enableDoubleTap = input<boolean | null>(null)
+  readonly appTap = output<PointerEvent>()
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef as any).nativeElement
-  private readonly zone = inject(NgZone)
   private readonly userService = inject(UserService)
   private readonly ghostClickGuard = inject(TapGhostClickGuard)
   private readonly removeFns: (() => void)[] = []
   private pointerId: number | null = null
   private startX = 0
   private startY = 0
+  protected readonly singleClickEnabled = computed(() => !this.isDoubleTapEnabled('mouse'))
   private startTime = 0
   private moved = false
   private lastEmitTs = Number.NEGATIVE_INFINITY
@@ -90,22 +87,20 @@ export class TapDirective implements OnDestroy {
   private pendingTap: TapPoint | null = null
 
   constructor() {
-    this.zone.runOutsideAngular(() => {
-      // Android and desktop emit contextmenu natively; iOS/iPadOS need a synthesized long-press fallback.
-      if (NEEDS_SYNTHETIC_LONG_PRESS) {
-        const onLongPressEnd = this.onLongPressEnd.bind(this)
-        this.add('pointerdown', this.onLongPressDown.bind(this), { passive: true, capture: true })
-        this.add('pointermove', this.onLongPressMove.bind(this), { passive: true, capture: true })
-        this.add('pointerup', onLongPressEnd, { passive: true, capture: true })
-        this.add('pointercancel', onLongPressEnd, { passive: true, capture: true })
-      }
-      this.add('pointerdown', this.onDown, { passive: true })
-      this.add('pointermove', this.onMove, { passive: true })
-      this.add('pointerup', this.onUp, { passive: true })
-      this.add('pointercancel', this.onCancel, { passive: true })
-      this.add('pointerleave', this.onCancel, { passive: true })
-      this.add('click', this.onNativeClick, { passive: false, capture: true })
-    })
+    // Android and desktop emit contextmenu natively; iOS/iPadOS need a synthesized long-press fallback.
+    if (NEEDS_SYNTHETIC_LONG_PRESS) {
+      const onLongPressEnd = this.onLongPressEnd.bind(this)
+      this.add('pointerdown', this.onLongPressDown.bind(this), { passive: true, capture: true })
+      this.add('pointermove', this.onLongPressMove.bind(this), { passive: true, capture: true })
+      this.add('pointerup', onLongPressEnd, { passive: true, capture: true })
+      this.add('pointercancel', onLongPressEnd, { passive: true, capture: true })
+    }
+    this.add('pointerdown', this.onDown, { passive: true })
+    this.add('pointermove', this.onMove, { passive: true })
+    this.add('pointerup', this.onUp, { passive: true })
+    this.add('pointercancel', this.onCancel, { passive: true })
+    this.add('pointerleave', this.onCancel, { passive: true })
+    this.add('click', this.onNativeClick, { passive: false, capture: true })
   }
 
   ngOnDestroy() {
@@ -132,17 +127,15 @@ export class TapDirective implements OnDestroy {
       if (!this.el.isConnected) return
 
       this.longPressTriggered = true
-      this.zone.run(() =>
-        this.el.dispatchEvent(
-          new MouseEvent('contextmenu', {
-            bubbles: true,
-            cancelable: true,
-            view: window,
-            button: 2,
-            clientX,
-            clientY
-          })
-        )
+      this.el.dispatchEvent(
+        new MouseEvent('contextmenu', {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+          button: 2,
+          clientX,
+          clientY
+        })
       )
     }, LONG_PRESS_DURATION)
   }
@@ -252,12 +245,8 @@ export class TapDirective implements OnDestroy {
     )
   }
 
-  protected get singleClickEnabled(): boolean {
-    return !this.isDoubleTapEnabled('mouse')
-  }
-
   private isDoubleTapEnabled(pointerType: string): boolean {
-    return this.enableDoubleTap ?? (pointerType !== 'touch' && !(this.userService.user?.preferences?.singleClickNavigation ?? false))
+    return this.enableDoubleTap() ?? (pointerType !== 'touch' && !(this.userService.user?.preferences?.singleClickNavigation ?? false))
   }
 
   private armGhostClickGuard(event: PointerEvent) {
@@ -267,7 +256,7 @@ export class TapDirective implements OnDestroy {
   private emit(event: PointerEvent) {
     this.armGhostClickGuard(event)
     this.lastEmitTs = performance.now()
-    this.zone.run(() => this.appTap.emit(event))
+    this.appTap.emit(event)
   }
 
   private add<K extends keyof HTMLElementEventMap>(type: K, handler: (ev: any) => void, opts?: AddEventListenerOptions & { capture?: boolean }) {

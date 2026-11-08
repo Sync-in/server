@@ -1,6 +1,6 @@
 <div class="profile-page" appAutoResize [resizeOffset]="45">
   <div class="container-fluid p-2">
-    @if (user) {
+    @if (user(); as user) {
       <div class="row g-3">
         <div class="col-12 col-lg-6 d-flex flex-column gap-3">
           <div class="card dialog-tab-card">
@@ -11,7 +11,7 @@
                 <div class="row g-2 align-items-center mb-2">
                   <label class="col-12 col-sm-6" for="userLanguage" l10nTranslate>Language</label>
                   <div class="col-12 col-sm-6">
-                    <select id="userLanguage" [(ngModel)]="language" class="form-select">
+                    <select id="userLanguage" [ngModel]="language()" (ngModelChange)="changeLanguage($event)" class="form-select">
                       @for (l of languages; track $index) {
                         <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
                       }
@@ -106,7 +106,7 @@
             <div class="card-body">
               <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Files</div>
 
-              @if (showEditorPreference) {
+              @if (showEditorPreference()) {
                 <div class="px-2">
                   <div class="row g-2 align-items-center mb-2">
                     <label class="col-12 col-sm-6" for="documentEditor" l10nTranslate>Document editor</label>
@@ -114,7 +114,7 @@
                       <select
                         id="documentEditor"
                         class="form-select"
-                        [ngModel]="userEditorPreference"
+                        [ngModel]="userEditorPreference()"
                         (ngModelChange)="updateEditorPreference($event)">
                         <option [ngValue]="null" l10nTranslate>Ask Me</option>
                         @for (e of editors | keyvalue: originalOrderKeyValue; track e.key) {
@@ -132,12 +132,12 @@
               <div class="row g-0 mb-2">
                 <div class="col-12">
                   <div class="card dialog-check-card"
-                       [class.dialog-check-card--interactive]="!updatingShowHiddenFiles"
+                       [class.dialog-check-card--interactive]="!updatingShowHiddenFiles()"
                        [class.dialog-check-card--active]="user.preferences.showHiddenFiles"
-                       [class.opacity-50]="updatingShowHiddenFiles"
-                       [class.pe-none]="updatingShowHiddenFiles"
-                       [attr.aria-busy]="updatingShowHiddenFiles"
-                       [attr.aria-disabled]="updatingShowHiddenFiles"
+                       [class.opacity-50]="updatingShowHiddenFiles()"
+                       [class.pe-none]="updatingShowHiddenFiles()"
+                       [attr.aria-busy]="updatingShowHiddenFiles()"
+                       [attr.aria-disabled]="updatingShowHiddenFiles()"
                        (click)="updateShowHiddenFiles(!user.preferences.showHiddenFiles)">
                     <div class="card-body p-2">
                       <div class="d-flex align-items-center cursor-pointer">
@@ -150,7 +150,7 @@
                           <label class="form-check-label" for="showHiddenFiles" (click)="$event.stopPropagation()"></label>
                           <input
                             [ngModel]="user.preferences.showHiddenFiles"
-                            [disabled]="updatingShowHiddenFiles"
+                            [disabled]="updatingShowHiddenFiles()"
                             (ngModelChange)="updateShowHiddenFiles($event)"
                             (click)="$event.stopPropagation()"
                             class="form-check-input ms-2"

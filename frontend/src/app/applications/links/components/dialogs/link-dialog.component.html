@@ -36,12 +36,12 @@
                        class="form-control"
                        type="text"
                        readonly
-                       [value]="publicLinkUrl">
+                       [value]="publicLinkUrl()">
                 <button (click)="copyToClipboard()"
                         class="btn btn-primary d-inline-flex align-items-center"
                         [attr.aria-label]="'Copy link' | translate:locale.language"
                         type="button">
-                  <svg [lucideIcon]="linkWasCopied ? icons.LucideClipboardCheck : icons.LucideClipboard" size="1.333em"></svg>
+                  <svg [lucideIcon]="linkWasCopied() ? icons.LucideClipboardCheck : icons.LucideClipboard" size="1.333em"></svg>
                   <span l10nTranslate>Copy link</span>
                 </button>
               </div>
@@ -170,7 +170,7 @@
                   placement="left"
                   type="text"
                   class="form-control"
-                  [class.text-danger]="linkIsExpired"
+                  [class.text-danger]="linkIsExpired()"
                   [placeholder]="'Never expires' | translate:locale.language"
                   [bsConfig]="{
                     dateInputFormat: 'YYYY-MM-DD',
@@ -193,9 +193,9 @@
                          l10nTranslate>
                     Password
                   </label>
-                  @if (linkForm.value.requireAuth && password.length) {
+                  @if (linkForm.value.requireAuth && password().length) {
                     <div class="d-flex align-items-center d-none d-sm-flex ms-auto me-4">
-                      <app-password-strength-bar [passwordToCheck]="password"></app-password-strength-bar>
+                      <app-password-strength-bar [passwordToCheck]="password()"></app-password-strength-bar>
                     </div>
                   }
                   <div class="d-flex align-items-center form-check form-switch cursor-pointer">
@@ -208,12 +208,13 @@
                   </div>
                 </div>
                 <div class="mt-2" (click)="$event.stopPropagation()">
-                  <app-input-password [isRequired]="linkForm.value.requireAuth && (!passwordProtectionWasConfigured || !!password.length)"
+                  <app-input-password [isRequired]="linkForm.value.requireAuth && (!passwordProtectionWasConfigured() || !!password().length)"
                                       [disabled]="!linkForm.value.requireAuth"
                                       [passwordMinLength]="passwordMinLength"
-                                      [(password)]="password"
+                                      [password]="password()"
+                                      (passwordChange)="password.set($event)"
                                       [showGenerator]="true"
-                                      [placeholder]="passwordProtectionWasConfigured ? 'Change password' : 'Set a password'"
+                                      [placeholder]="passwordProtectionWasConfigured() ? 'Change password' : 'Set a password'"
                                       class="d-block w-100">
                   </app-input-password>
                 </div>
@@ -269,18 +270,18 @@
 </div>
 <div class="modal-footer">
   @if (share?.id) {
-    <button (click)="confirmDeletion = true"
-            [disabled]="confirmDeletion"
+    <button (click)="confirmDeletion.set(true)"
+            [disabled]="confirmDeletion()"
             class="btn btn-danger" type="button" l10nTranslate>
       Remove
     </button>
   }
   <button (click)="onCancel()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="submitted || !confirmDeletion && (linkForm.invalid || linkForm.controls.requireAuth.value && (!passwordProtectionWasConfigured || !!password.length) && password.length < passwordMinLength)"
-          class="btn {{confirmDeletion ? 'btn-danger' : 'btn-primary'}}"
+          [disabled]="submitted() || !confirmDeletion() && (linkForm.invalid || linkForm.controls.requireAuth.value && (!passwordProtectionWasConfigured() || !!password().length) && password().length < passwordMinLength)"
+          class="btn {{confirmDeletion() ? 'btn-danger' : 'btn-primary'}}"
           type="button"
           l10nTranslate>
-    {{ confirmDeletion ? 'Confirm deletion' : (share?.id || link?.id ? 'Confirm' : 'Create link') }}
+    {{ confirmDeletion() ? 'Confirm deletion' : (share?.id || link?.id ? 'Confirm' : 'Create link') }}
   </button>
 </div>

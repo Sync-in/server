@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, OnInit } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, signal } from '@angular/core'
 import { LucideAnchor, LucideDynamicIcon, LucideLoader, LucidePlus } from '@lucide/angular'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SpaceProps } from '@sync-in-server/backend/src/applications/spaces/models/space-props.model'
@@ -25,40 +25,46 @@ import { SpaceManageRootsComponent } from '../utils/space-manage-roots.component
 })
 export class SpaceAnchorFileDialogComponent implements OnInit {
   @Input({ required: true }) files: FileModel[]
-  public addAnchoredFiles = new EventEmitter<{ space: SpaceModel; rootFiles: { id: number; name: string }[] }>()
+  public readonly addAnchoredFiles = new EventEmitter<{ space: SpaceModel; rootFiles: { id: number; name: string }[] }>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly icons = { LucideAnchor, LucidePlus, LucideLoader, SPACES: SPACES_ICON.SPACES }
-  protected selectedSpace: SpaceModel
+  protected readonly selectedSpace = signal<SpaceModel>(undefined)
   // data
-  protected space: Partial<SpaceModel> = { roots: [] }
+  protected readonly space = signal<Partial<SpaceModel>>({ roots: [] })
   // states
-  protected submitted = false
-  protected loading = false
+  protected readonly submitted = signal(false)
+  protected readonly loading = signal(false)
   private readonly userService = inject(UserService)
   protected readonly user: UserType = this.userService.user
-  private spacesService = inject(SpacesService)
+  private readonly spacesService = inject(SpacesService)
 
   ngOnInit() {
-    for (const f of this.files) {
-      const file = { ...f, path: resolveFileLocation(f.path)?.relativePath ?? f.path }
-      this.space.roots.push({
-        id: f.id,
-        name: f.name,
-        alias: f.name,
-        permissions: '',
-        createdAt: new Date(),
-        isRenamed: false,
-        hPerms: setBooleanPermissions('', [SPACE_OPERATION.SHARE_INSIDE]),
-        isDir: f.mime === mimeDirectory,
-        owner: { id: this.user.id, login: this.user.login },
-        file
+    this.space.set({
+      roots: this.files.map((f) => {
+        const file = { ...f, path: resolveFileLocation(f.path)?.relativePath ?? f.path }
+        return {
+          id: f.id,
+          name: f.name,
+          alias: f.name,
+          permissions: '',
+          createdAt: new Date(),
+          isRenamed: false,
+          hPerms: setBooleanPermissions('', [SPACE_OPERATION.SHARE_INSIDE]),
+          isDir: f.mime === mimeDirectory,
+          owner: { id: this.user.id, login: this.user.login },
+          file
+        } as SpaceRootModel
       })
-    }
+    })
   }
 
   onSetSpace(space: SpaceModel) {
-    this.selectedSpace = space
+    this.selectedSpace.set(space)
+  }
+
+  onRootsChange(roots: SpaceRootModel[]) {
+    this.space.update((space) => ({ ...space, roots }))
   }
 
   onSearchSpaces(search: string): Observable<SpaceProps[]> {
@@ -66,16 +72,16 @@ export class SpaceAnchorFileDialogComponent implements OnInit {
   }
 
   onSubmit() {
-    if (!this.selectedSpace || !this.space.roots.length) {
+    if (!this.selectedSpace() || !this.space().roots.length) {
       return
     }
-    this.loading = true
-    this.submitted = true
-    this.spacesService.createUserSpaceRoots(this.selectedSpace.id, this.space.roots).subscribe({
+    this.loading.set(true)
+    this.submitted.set(true)
+    this.spacesService.createUserSpaceRoots(this.selectedSpace().id, this.space().roots).subscribe({
       next: (roots: SpaceRootModel[]) => {
         if (roots.length) {
           this.addAnchoredFiles.emit({
-            space: this.selectedSpace,
+            space: this.selectedSpace(),
             rootFiles: roots.map((r: SpaceRootModel) => ({ id: r.file.id, name: r.file.path.split('/').at(-1) }))
           })
         }
@@ -83,8 +89,8 @@ export class SpaceAnchorFileDialogComponent implements OnInit {
       },
       error: (e: HttpErrorResponse) => {
         this.layout.sendNotification('error', 'Anchor files to a space', e.error.message)
-        this.loading = false
-        this.submitted = false
+        this.loading.set(false)
+        this.submitted.set(false)
       }
     })
   }

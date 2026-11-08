@@ -2,13 +2,13 @@
      [attr.aria-label]="'Actions' | translate:locale.language"
      role="toolbar">
   <div class="d-flex gap-2">
-    <select (ngModelChange)="onSelectPath($event)" [ngModel]="syncPathSelected" class="form-select" style="min-width: 210px">
+    <select (ngModelChange)="onSelectPath($event)" [ngModel]="syncPathSelected()" class="form-select" style="min-width: 210px">
       <option [ngValue]="null" l10nTranslate>All syncs</option>
       @for (p of store.clientSyncPaths(); track p.id) {
         <option [ngValue]="p">{{ p.settings.name }}</option>
       }
     </select>
-    <select (ngModelChange)="onSelectAction($event)" [ngModel]="action" class="form-select" style="min-width: 170px">
+    <select (ngModelChange)="onSelectAction($event)" [ngModel]="action()" class="form-select" style="min-width: 170px">
       <option [ngValue]="null" l10nTranslate>All events</option>
       <option l10nTranslate value="NEW|MKFILE|MKDIR">Added</option>
       <option l10nTranslate value="DIFF">Modified</option>
@@ -58,10 +58,10 @@
   </tr>
   </thead>
 </table>
-<app-virtual-scroll [bufferAmount]="5" [items]="transfers" [resizeOffset]="115">
+<app-virtual-scroll [bufferAmount]="5" [items]="transfers()" [resizeOffset]="115">
   <table class="app-table mb-3">
     <tbody tabindex="-1">
-      @for (t of scrollView?.viewPortItems; track t.id) {
+      @for (t of scrollView()?.viewPortItems(); track t.id) {
         <tr (click)="onSelect(t)" [class.selected]="t.selected">
           @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
             @if (th.value.show) {

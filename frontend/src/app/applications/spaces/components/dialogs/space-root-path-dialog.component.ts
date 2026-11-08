@@ -1,4 +1,4 @@
-import { Component, EventEmitter, HostListener, inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, HostListener, inject, Input, OnInit, Output, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideFolderClosed } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -24,23 +24,23 @@ export class SpaceRootPathDialogComponent implements OnInit {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly icons = { LucideFolderClosed }
-  protected newSpaceRoot: { name: string; externalPath: string } = { name: '', externalPath: '' }
+  protected readonly newSpaceRoot = signal<ExternalFilePathEvent>({ name: '', externalPath: '' })
   // states
-  protected error: string
-  protected rootNameIsValid = false
-  protected rootPathIsValid = false
-  protected rootIsValid = false
+  protected readonly error = signal<string>(undefined)
+  protected readonly rootNameIsValid = signal(false)
+  protected readonly rootPathIsValid = signal(false)
+  protected readonly rootIsValid = signal(false)
   private readonly spacesService = inject(SpacesService)
 
   ngOnInit() {
     if (!this.withRootName) {
-      this.rootNameIsValid = true
+      this.rootNameIsValid.set(true)
     }
   }
 
   @HostListener('keyup.enter')
   keyEnter() {
-    if (this.rootIsValid) {
+    if (this.rootIsValid()) {
       this.onSubmit()
     } else {
       this.onValidRoot()
@@ -48,51 +48,51 @@ export class SpaceRootPathDialogComponent implements OnInit {
   }
 
   onValidRoot() {
-    if ((this.withRootName && !this.newSpaceRoot.name) || !this.newSpaceRoot.externalPath) {
-      this.error = 'Name and location are required'
+    if ((this.withRootName && !this.newSpaceRoot().name) || !this.newSpaceRoot().externalPath) {
+      this.error.set('Name and location are required')
       return
     }
-    if (this.newSpaceRoot.externalPath[0] !== '/') {
-      this.newSpaceRoot.externalPath = '/' + this.newSpaceRoot.externalPath
+    if (this.newSpaceRoot().externalPath[0] !== '/') {
+      this.newSpaceRoot.update((root) => ({ ...root, externalPath: `/${root.externalPath}` }))
     }
     for (const root of this.currentRoots) {
       const normalizedRoot = root.externalPath[root.externalPath.length - 1] === '/' ? root.externalPath : `${root.externalPath}/`
-      if (this.newSpaceRoot.externalPath.startsWith(normalizedRoot)) {
-        this.rootPathIsValid = false
-        this.error = 'Parent location already exists in files'
+      if (this.newSpaceRoot().externalPath.startsWith(normalizedRoot)) {
+        this.rootPathIsValid.set(false)
+        this.error.set('Parent location already exists in files')
         return
       }
     }
 
-    this.spacesService.checkSpaceRootPath(this.newSpaceRoot.externalPath).subscribe({
+    this.spacesService.checkSpaceRootPath(this.newSpaceRoot().externalPath).subscribe({
       next: () => {
-        this.rootPathIsValid = true
-        this.rootNameIsValid = true
-        this.rootIsValid = true
-        this.error = null
+        this.rootPathIsValid.set(true)
+        this.rootNameIsValid.set(true)
+        this.rootIsValid.set(true)
+        this.error.set(null)
       },
       error: (e) => {
-        this.rootPathIsValid = false
-        this.error = e.error.message
+        this.rootPathIsValid.set(false)
+        this.error.set(e.error.message)
       }
     })
   }
 
   onSubmit() {
-    this.submitEvent.emit(this.newSpaceRoot)
+    this.submitEvent.emit(this.newSpaceRoot())
     this.layout.closeDialog()
   }
 
   checkInput(value: string, isNameField = false) {
     if (isNameField) {
-      this.newSpaceRoot.name = value
-      this.rootNameIsValid = !!value
+      this.newSpaceRoot.update((root) => ({ ...root, name: value }))
+      this.rootNameIsValid.set(!!value)
     } else {
-      this.newSpaceRoot.externalPath = value
-      this.rootPathIsValid = !!value
+      this.newSpaceRoot.update((root) => ({ ...root, externalPath: value }))
+      this.rootPathIsValid.set(!!value)
     }
-    if (this.rootIsValid) {
-      this.rootIsValid = false
+    if (this.rootIsValid()) {
+      this.rootIsValid.set(false)
     }
   }
 }

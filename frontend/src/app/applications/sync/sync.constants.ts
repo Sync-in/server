@@ -1,7 +1,7 @@
+import { signal } from '@angular/core'
 import { LucideArrowRightLeft, LucideLaptopMinimal, LucideRefreshCw, LucideServer, LucideWandSparkles } from '@lucide/angular'
 import { SYNC_BASE_ROUTE, SYNC_ROUTE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
-import { BehaviorSubject } from 'rxjs'
 import { AppMenu } from '../../layout/layout.interfaces'
 
 export const SYNC_TITLE = {
@@ -32,13 +32,13 @@ export const SYNC_PATH = {
   WIZARD_SETTINGS: 'settings'
 }
 
-export const SYNC_MENU: AppMenu = {
+export const SYNC_MENU = {
   id: USER_PERMISSION.DESKTOP_APP_SYNC,
   title: SYNC_TITLE.SYNC,
   link: SYNC_PATH.BASE,
   icon: SYNC_ICON.SYNC,
   checks: [{ prop: 'user', value: 'clientId' }],
-  count: { value: new BehaviorSubject<number>(0), level: 'warning' },
+  count: { value: signal<number | string>(0), level: signal('warning') },
   matchLink: new RegExp(`^${SYNC_PATH.BASE}`),
   submenus: [
     {
@@ -60,4 +60,4 @@ export const SYNC_MENU: AppMenu = {
       matchLink: new RegExp(`^${SYNC_PATH.BASE}/${SYNC_PATH.WIZARD}`)
     }
   ]
-}
+} satisfies AppMenu

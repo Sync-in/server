@@ -10,7 +10,8 @@
 </div>
 <div class="modal-body">
   <app-user-search
-    [(members)]="newMembers"
+    [members]="newMembers()"
+    (membersChange)="newMembers.set($event)"
     [withPermissions]="false"
     [customPlaceholder]="'Type to search for users to add'"
     [searchFunction]="searchMembers.bind(this)">
@@ -19,7 +20,7 @@
 <div class="modal-footer">
   <button (click)="layout.closeDialog()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="submitted || !newMembers.length" class="btn btn-primary"
+          [disabled]="submitted() || !newMembers().length" class="btn btn-primary"
           type="button"
           l10nTranslate>
     Confirm

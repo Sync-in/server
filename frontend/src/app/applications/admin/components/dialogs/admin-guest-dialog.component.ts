@@ -28,10 +28,6 @@ import { AdminService } from '../../admin.service'
     InputPasswordComponent,
     PasswordStrengthBarComponent,
     AutofocusDirective,
-    AutofocusDirective,
-    PasswordStrengthBarComponent,
-    InputPasswordComponent,
-    TimeDateFormatPipe,
     L10nTranslatePipe,
     TitleCasePipe,
     UserSearchComponent,
@@ -43,9 +39,6 @@ import { AdminService } from '../../admin.service'
 })
 export class AdminGuestDialogComponent extends UserGuestDialogComponent {
   private readonly adminService = inject(AdminService)
-  constructor() {
-    super()
-  }
 
   override searchManagers(query: string): Observable<MemberModel[]> {
     const search: SearchMembersDto = {
@@ -68,8 +61,8 @@ export class AdminGuestDialogComponent extends UserGuestDialogComponent {
   }
 
   override async onSubmit() {
-    this.submitted = true
-    if (this.confirmDeletion) {
+    this.submitted.set(true)
+    if (this.confirmDeletion()) {
       // delete
       const auth2FaHeaders = await this.userService.auth2FaVerifyDialog(true)
       if (auth2FaHeaders === false) {
@@ -101,8 +94,8 @@ export class AdminGuestDialogComponent extends UserGuestDialogComponent {
       // update
       const updateDto = this.makeDto()
       if (!Object.keys(updateDto).length) {
-        this.loading = false
-        this.submitted = false
+        this.loading.set(false)
+        this.submitted.set(false)
         return
       }
       const auth2FaHeaders = await this.userService.auth2FaVerifyDialog()

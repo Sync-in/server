@@ -2,7 +2,7 @@
 <div class="d-flex flex-column">
   <div class="sidebar-component-title app-top-menu-tool-bar">
     <div class="d-flex flex-fill justify-content-between">
-      @if (!user?.isLink) {
+      @if (!user()?.isLink) {
         <button class="btn btn-default"
                 (click)="collapseRSideBar()"
                 type="button"
@@ -13,7 +13,7 @@
         </button>
       }
       <app-theme-switch (themeChange)="toggleTheme($event)"></app-theme-switch>
-      @if (user?.isAdmin) {
+      @if (user()?.isAdmin) {
         <button class="btn btn-default"
                 (click)="collapseRSideBar()"
                 type="button"
@@ -38,18 +38,18 @@
     <div class="user-header py-3 px-3">
       <div class="d-flex flex-column justify-content-center me-2">
         <div class="avatar-lg">
-          <img class="avatar-img" [src]="userAvatar" alt="">
-          <span class="avatar-{{allOnlineStatus[user?.onlineStatus]}}"></span>
+          <img class="avatar-img" [src]="userAvatar()" alt="">
+          <span class="avatar-{{allOnlineStatus[user()?.onlineStatus]}}"></span>
         </div>
       </div>
       <div class="user-details">
-        @if (user?.isLink) {
+        @if (user()?.isLink) {
           <div l10nTranslate>Guest Link</div>
         } @else {
-          <div>{{ user?.fullName }}</div>
-          <div class="fs-xs mt-1">{{ user?.email }}</div>
+          <div>{{ user()?.fullName }}</div>
+          <div class="fs-xs mt-1">{{ user()?.email }}</div>
         }
-        <select [ngModel]="user?.onlineStatus"
+        <select [ngModel]="user()?.onlineStatus"
                 (ngModelChange)="setOnlineStatus($event)"
                 class="form-select form-select-sm mt-2">
           @for (s of allOnlineStatus; track $index) {

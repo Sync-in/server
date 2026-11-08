@@ -14,7 +14,8 @@
       <div class="d-flex">
         <label class="form-check-label">
           <input
-            [(ngModel)]="isManager"
+            [ngModel]="isManager()"
+            (ngModelChange)="isManager.set($event)"
             class="form-check-input"
             type="checkbox"
           />
@@ -29,7 +30,7 @@
 <div class="modal-footer">
   <button (click)="layout.closeDialog()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="submitted" class="btn btn-primary"
+          [disabled]="submitted()" class="btn btn-primary"
           type="button"
           l10nTranslate>
     Confirm

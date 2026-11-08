@@ -1,8 +1,8 @@
 <header class="main-header">
   <nav class="navbar navbar-content" [class.navbar-content--search]="navbarSearch.searchRouteActive()">
     <a (click)="toggleLeftSideBar()"
-       [class.navbar-logo-button--delayed]="!leftSideBarIsOpen"
-       [class.navbar-logo-button--placeholder]="leftSideBarIsOpen"
+       [class.navbar-logo-button--delayed]="!leftSideBarIsOpen()"
+       [class.navbar-logo-button--placeholder]="leftSideBarIsOpen()"
        class="navbar-button navbar-logo-button"
        role="button">
       <span class="logo-container">
@@ -18,10 +18,10 @@
     <div class="navbar-right-side">
       <div (click)="openSidebarUser()" class="menu">
         <div class="d-flex align-items-center avatar">
-          @if (userAvatar) {
-            <img class="avatar-img bg-gray-light-important" [src]="userAvatar" alt="">
+          @if (userAvatar(); as avatarUrl) {
+            <img class="avatar-img bg-gray-light-important" [src]="avatarUrl" alt="">
           }
-          <span class="avatar-{{allOnlineStatus[user?.onlineStatus]}}"></span>
+          <span class="avatar-{{allOnlineStatus[user()?.onlineStatus]}}"></span>
         </div>
       </div>
     </div>

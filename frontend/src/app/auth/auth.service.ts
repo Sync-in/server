@@ -178,7 +178,7 @@ export class AuthService {
       this.returnUrl = returnUrl.length > 1 ? returnUrl : null
       this.logout()
       return of(false)
-    } else if (!this.store.user.getValue()) {
+    } else if (!this.store.user()) {
       return this.userService.loadUser().pipe(
         tap((r: Omit<LoginResponseDto, 'token'>) => this.initUser(r)),
         map(() => true),

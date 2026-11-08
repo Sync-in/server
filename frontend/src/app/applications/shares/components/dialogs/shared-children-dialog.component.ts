@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
 import { LucideDynamicIcon } from '@lucide/angular'
 import type { ShareChild } from '@sync-in-server/backend/src/applications/shares/models/share-child.model'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -36,10 +36,9 @@ export class SharedChildrenDialogComponent implements OnInit {
   @Output() sharesCountEvent = new EventEmitter<number>()
   protected readonly layout = inject(LayoutService)
   protected readonly icons = { SHARES: SPACES_ICON.SHARES, LINKS: SPACES_ICON.LINKS }
-  protected loading = false
-  protected childSharesLength = 0
-  protected childShares: ShareChildModel[]
-  protected selected: ShareChildModel
+  protected readonly childShares = signal<ShareChildModel[]>([])
+  protected readonly childSharesLength = signal(0)
+  protected readonly selected = signal<ShareChildModel>(undefined)
   private readonly sharesService = inject(SharesService)
   private readonly linksService = inject(LinksService)
   private readonly spacesService = inject(SpacesService)
@@ -48,13 +47,7 @@ export class SharedChildrenDialogComponent implements OnInit {
     this.loadChildShares()
   }
 
-  toShares(shares: ShareChildModel[]): ShareChildModel[] {
-    // for typing only
-    return shares
-  }
-
   loadChildShares() {
-    this.loading = true
     let req: Observable<ShareChild[]>
     if (this.share) {
       req = this.sharesService.listChildShares(this.share.id)
@@ -66,22 +59,20 @@ export class SharedChildrenDialogComponent implements OnInit {
     }
     req.subscribe({
       next: (shares: ShareChild[]) => {
-        this.childSharesLength = shares.length
+        this.childSharesLength.set(shares.length)
         this.sharesCountEvent.emit(shares.length)
         this.setShares(shares.map((s) => new ShareChildModel(s)))
-        this.loading = false
       },
       error: (e: HttpErrorResponse) => {
-        this.childShares = []
-        this.childSharesLength = 0
-        this.loading = false
+        this.childShares.set([])
+        this.childSharesLength.set(0)
         this.layout.sendNotification('error', 'Child shares', e.error.message)
       }
     })
   }
 
   onSelect(share: ShareChildModel) {
-    this.selected = share
+    this.selected.set(share)
   }
 
   onShareActivate(share: ShareChildModel) {
@@ -90,12 +81,12 @@ export class SharedChildrenDialogComponent implements OnInit {
   }
 
   openChildShare() {
-    if (this.selected.isShareLink) {
+    if (this.selected()!.isShareLink) {
       let req: Observable<ShareLinkModel>
       if (this.share) {
-        req = this.linksService.shareLinkChild(this.share.id, this.selected.id)
+        req = this.linksService.shareLinkChild(this.share.id, this.selected()!.id)
       } else if (this.space) {
-        req = this.spacesService.getSpaceShareLink(this.space.id, this.selected.id)
+        req = this.spacesService.getSpaceShareLink(this.space.id, this.selected()!.id)
       } else {
         console.error('share or space not defined')
         return
@@ -108,20 +99,21 @@ export class SharedChildrenDialogComponent implements OnInit {
           modalRef.content.shareChange.pipe(take(1)).subscribe((r: ['update' | 'delete', ShareLinkModel] | ['add', ShareModel]) => {
             const [action, s] = r
             if (action === 'update') {
-              this.selected.name = s.name
+              this.selected()!.name = s.name
+              this.childShares.update((shares) => [...shares])
             } else {
               this.loadChildShares()
             }
           })
         },
-        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Edit children shares', this.selected.name, e)
+        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Edit children shares', this.selected()!.name, e)
       })
     } else {
       let req: Observable<ShareModel>
       if (this.share) {
-        req = this.sharesService.getShareChild(this.share.id, this.selected.id)
+        req = this.sharesService.getShareChild(this.share.id, this.selected()!.id)
       } else if (this.space) {
-        req = this.spacesService.getSpaceShare(this.space.id, this.selected.id)
+        req = this.spacesService.getSpaceShare(this.space.id, this.selected()!.id)
       } else {
         console.error('share or space not defined')
         return
@@ -139,14 +131,15 @@ export class SharedChildrenDialogComponent implements OnInit {
           modalRef.content.shareChange.pipe(take(1)).subscribe((r: ['update' | 'delete' | string, ShareModel]) => {
             const [action, s] = r
             if (action === 'update') {
-              this.selected.name = s.name
-              this.selected.alias = s.alias
+              this.selected()!.name = s.name
+              this.selected()!.alias = s.alias
+              this.childShares.update((shares) => [...shares])
             } else {
               this.loadChildShares()
             }
           })
         },
-        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Edit children shares', this.selected.name, e)
+        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Edit children shares', this.selected()!.name, e)
       })
     }
   }
@@ -154,7 +147,7 @@ export class SharedChildrenDialogComponent implements OnInit {
   private setShares(shares: ShareChildModel[]) {
     const root = { id: this.share?.id || 0, children: [] }
     this.recurseChildrenShares(shares, root as ShareChildModel)
-    this.childShares = root.children
+    this.childShares.set(root.children)
   }
 
   private recurseChildrenShares(shares: ShareChildModel[], parent: ShareChildModel) {

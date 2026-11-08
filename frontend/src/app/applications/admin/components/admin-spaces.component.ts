@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, inject, ViewChild } from '@angular/core'
+import { Component, computed, inject, signal, viewChild } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 import { LucideArrowDown, LucideArrowUp, LucideDynamicIcon, LucideHardDriveUpload, LucidePencil, LucidePlus, LucideRotateCw } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
@@ -48,9 +48,9 @@ import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
   templateUrl: 'admin-spaces.component.html'
 })
 export class AdminSpacesComponent {
-  @ViewChild(VirtualScrollComponent) scrollView: { element: ElementRef; viewPortItems: SpaceModel[]; scrollInto: (arg: SpaceModel | number) => void }
-  @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
-  @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  readonly scrollView = viewChild.required<VirtualScrollComponent<SpaceModel>>(VirtualScrollComponent)
+  readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
+  readonly targetContextMenu = viewChild.required<ContextMenuComponent<any>>('TargetContextMenu')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly navbarSearch = inject(NavbarSearchService)
@@ -109,11 +109,11 @@ export class AdminSpacesComponent {
       sortable: true
     }
   }
-  protected loading = false
-  protected spaces: SpaceModel[] = []
-  protected selected: SpaceModel = null
-  protected storageUsage = 0
   private readonly activatedRoute = inject(ActivatedRoute)
+  protected readonly loading = signal(false)
+  protected readonly spaces = signal<SpaceModel[]>([])
+  protected readonly selected = signal<SpaceModel>(null)
+  protected readonly storageUsage = computed(() => this.spaces().reduce((sum, space) => sum + (space.storageUsage ?? 0), 0))
   private readonly spacesService = inject(SpacesService)
   private readonly adminService = inject(AdminService)
   private readonly sortSettings: SortSettings = {
@@ -140,29 +140,28 @@ export class AdminSpacesComponent {
   }
 
   loadSpaces() {
-    this.loading = true
+    this.loading.set(true)
     this.onSelect()
     this.adminService.listSpaces().subscribe({
       next: (spaces: SpaceModel[]) => {
-        void this.calcUsageStorage(spaces)
         this.sortBy(this.sortTable.sortParam.column, false, spaces)
-        this.loading = false
+        this.loading.set(false)
         if (this.focusOnSelect) {
           this.focusOn(this.focusOnSelect)
         } else {
-          this.scrollView.scrollInto(-1)
+          this.scrollView().scrollInto(-1)
         }
       },
       error: (e: HttpErrorResponse) => {
-        this.spaces = []
-        this.loading = false
+        this.spaces.set([])
+        this.loading.set(false)
         this.layout.sendNotification('error', 'Spaces', e.error.message)
       }
     })
   }
 
   onSelect(space: SpaceModel = null) {
-    this.selected = space ?? null
+    this.selected.set(space ?? null)
   }
 
   onSpaceActivate(space: SpaceModel) {
@@ -171,13 +170,13 @@ export class AdminSpacesComponent {
   }
 
   sortBy(column: string, toUpdate = true, collection?: SpaceModel[]) {
-    this.spaces = this.sortTable.sortBy(column, toUpdate, collection || this.spaces)
+    this.spaces.set(this.sortTable.sortBy(column, toUpdate, collection || this.spaces()))
   }
 
   onContextMenu(ev: any) {
     ev.preventDefault()
     ev.stopPropagation()
-    this.layout.openContextMenu(ev, this.mainContextMenu)
+    this.layout.openContextMenu(ev, this.mainContextMenu())
   }
 
   onTargetContextMenu(ev: any, space: SpaceModel) {
@@ -186,7 +185,7 @@ export class AdminSpacesComponent {
       ev.stopPropagation()
     }
     this.onSelect(space)
-    this.layout.openContextMenu(ev, this.targetContextMenu)
+    this.layout.openContextMenu(ev, this.targetContextMenu())
   }
 
   openSpaceDialog(add = false) {
@@ -197,12 +196,12 @@ export class AdminSpacesComponent {
       modalRef.content.spaceChange.pipe(take(1)).subscribe((r: ['add' | string, SpaceModel]) => {
         const [action, s] = r
         if (action === 'add') {
-          this.sortBy(this.sortTable.sortParam.column, false, this.spaces.concat(s))
+          this.sortBy(this.sortTable.sortParam.column, false, this.spaces().concat(s))
           this.onSelect(s)
         }
       })
-    } else if (this.selected) {
-      this.spacesService.getSpace(this.selected.id).subscribe({
+    } else if (this.selected()) {
+      this.spacesService.getSpace(this.selected().id).subscribe({
         next: (space: SpaceModel) => {
           const modalRef: BsModalRef<SpaceDialogComponent> = this.layout.openDialog(SpaceDialogComponent, 'xl', {
             initialState: { space: space, fromAdmin: true } as SpaceDialogComponent
@@ -210,27 +209,27 @@ export class AdminSpacesComponent {
           modalRef.content.spaceChange.pipe(take(1)).subscribe((r: ['update' | 'delete' | string, SpaceModel]) => {
             const [action, s] = r
             if (action === 'update') {
-              this.selected.name = s.name
-              this.selected.alias = s.alias
-              this.selected.description = s.description
-              this.selected.storageUsage = s.storageUsage
-              this.selected.storageQuota = s.storageQuota
-              // hook to keep the shares count
-              this.selected.counts = { ...s.counts, shares: this.selected.counts.shares }
-              this.selected.modifiedAt = s.modifiedAt
-              this.selected.enabled = s.enabled
-              this.selected.managers = [...s.managers]
+              this.selected().name = s.name
+              this.selected().alias = s.alias
+              this.selected().description = s.description
+              this.selected().storageUsage = s.storageUsage
+              this.selected().storageQuota = s.storageQuota
+              this.selected().counts = { ...s.counts, shares: this.selected().counts.shares }
+              this.selected().modifiedAt = s.modifiedAt
+              this.selected().enabled = s.enabled
+              this.selected().managers = [...s.managers]
+              this.spaces.update((spaces) => [...spaces])
             } else if (action === 'delete') {
               this.onSelect()
               this.sortBy(
                 this.sortTable.sortParam.column,
                 false,
-                this.spaces.filter((sp: SpaceModel) => sp.id !== s.id)
+                this.spaces().filter((sp: SpaceModel) => sp.id !== s.id)
               )
             }
           })
         },
-        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Edit space', this.selected.name, e)
+        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Edit space', this.selected().name, e)
       })
     }
   }
@@ -238,20 +237,19 @@ export class AdminSpacesComponent {
   openChildShareDialog(space?: SpaceModel) {
     if (space) this.onSelect(space)
     const modalRef: BsModalRef<SharedChildrenDialogComponent> = this.layout.openDialog(SharedChildrenDialogComponent, null, {
-      initialState: { space: this.selected, fromAdmin: true } as SharedChildrenDialogComponent
+      initialState: { space: this.selected(), fromAdmin: true } as SharedChildrenDialogComponent
     })
-    modalRef.content.sharesCountEvent.subscribe((sharesCount: number) => (this.selected.counts.shares = sharesCount))
+    modalRef.content.sharesCountEvent.subscribe((sharesCount: number) => {
+      this.selected().counts.shares = sharesCount
+      this.spaces.update((spaces) => [...spaces])
+    })
   }
 
   private focusOn(select: string) {
-    const s = this.spaces.find((space) => space.name === select)
-    if (s) {
-      setTimeout(() => this.scrollView.scrollInto(s), 100)
-      this.onSelect(s)
+    const space = this.spaces().find((item) => item.name === select)
+    if (space) {
+      setTimeout(() => this.scrollView().scrollInto(space), 100)
+      this.onSelect(space)
     }
-  }
-
-  private async calcUsageStorage(spaces: SpaceModel[]) {
-    this.storageUsage = spaces.reduce((sum, space) => sum + (space.storageUsage ?? 0), 0)
   }
 }

@@ -1,11 +1,11 @@
-import { Directive, HostListener, Input, OnDestroy, OnInit } from '@angular/core'
+import { Directive, HostListener, input, OnDestroy, OnInit } from '@angular/core'
 
 @Directive({
   // eslint-disable-next-line @angular-eslint/directive-selector
   selector: '[offClick]'
 })
 export class OffClickDirective implements OnInit, OnDestroy {
-  @Input('offClick') offClickHandler: any
+  readonly offClickHandler = input.required<(event: MouseEvent) => void>({ alias: 'offClick' })
 
   @HostListener('click', ['$event'])
   onClick(event: MouseEvent) {
@@ -15,14 +15,14 @@ export class OffClickDirective implements OnInit, OnDestroy {
   ngOnInit() {
     setTimeout(() => {
       if (typeof document !== 'undefined') {
-        document.addEventListener('click', this.offClickHandler)
+        document.addEventListener('click', this.offClickHandler())
       }
     }, 0)
   }
 
   ngOnDestroy() {
     if (typeof document !== 'undefined') {
-      document.removeEventListener('click', this.offClickHandler)
+      document.removeEventListener('click', this.offClickHandler())
     }
   }
 }

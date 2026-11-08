@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, HostListener, inject, Input } from '@angular/core'
+import { Component, HostListener, inject, Input, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideLoader, LucideTrash } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
@@ -16,7 +16,7 @@ export class FilesTrashEmptyDialogComponent {
   @Input() trashName = ''
   protected layout = inject(LayoutService)
   protected readonly icons = { LucideTrash, LucideLoader }
-  protected submitted = false
+  protected readonly submitted = signal(false)
   private filesService = inject(FilesService)
 
   @HostListener('document:keyup.enter')
@@ -25,12 +25,12 @@ export class FilesTrashEmptyDialogComponent {
   }
 
   onSubmit() {
-    if (this.submitted || !this.trashAlias) return
-    this.submitted = true
+    if (this.submitted() || !this.trashAlias) return
+    this.submitted.set(true)
     this.filesService.emptyTrash(this.trashAlias, this.trashName).subscribe({
       next: () => this.layout.closeDialog(),
       error: (error: HttpErrorResponse) => {
-        this.submitted = false
+        this.submitted.set(false)
         this.layout.sendNotification('error', 'Deletion failed', this.trashName, error)
       }
     })

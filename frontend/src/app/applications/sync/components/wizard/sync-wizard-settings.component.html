@@ -6,13 +6,13 @@
         <span l10nTranslate>Client</span>
       </div>
       <div class="card-body wizard-settings-card-body">
-        <div class="wizard-settings-card-main cursor-pointer" placement="left" [tooltip]="syncService.wizard.localPath.path">
+        <div class="wizard-settings-card-main cursor-pointer" placement="left" [tooltip]="syncService.wizard().localPath.path">
           <div class="wizard-settings-card-icon">
-            <img [src]="syncService.wizard.localPath.mimeUrl" alt="">
+            <img [src]="syncService.wizard().localPath.mimeUrl" alt="" />
           </div>
-          <div class="wizard-settings-card-name text-truncate">{{ syncService.wizard.localPath.name }}</div>
+          <div class="wizard-settings-card-name text-truncate">{{ syncService.wizard().localPath.name }}</div>
         </div>
-        <div class="wizard-settings-card-path text-truncate">{{ syncService.wizard.localPath.path }}</div>
+        <div class="wizard-settings-card-path text-truncate">{{ syncService.wizard().localPath.path }}</div>
       </div>
     </div>
     <div class="wizard-settings-direction d-none d-md-flex">
@@ -26,15 +26,15 @@
       <div class="card-body wizard-settings-card-body">
         <div class="wizard-settings-card-main cursor-pointer" placement="right" [tooltip]="translatedRemotePath">
           <div class="wizard-settings-card-icon">
-            @if (syncService.wizard.remotePath.icon) {
-              <span class="circle-{{syncService.wizard.remotePath.iconClass}}-icon wizard-settings-card-remote-icon">
-                <svg [lucideIcon]="syncService.wizard.remotePath.icon"></svg>
+            @if (syncService.wizard().remotePath.icon) {
+              <span class="circle-{{ syncService.wizard().remotePath.iconClass }}-icon wizard-settings-card-remote-icon">
+                <svg [lucideIcon]="syncService.wizard().remotePath.icon"></svg>
               </span>
             } @else {
-              <img [src]="syncService.wizard.remotePath.mimeUrl" alt="">
+              <img [src]="syncService.wizard().remotePath.mimeUrl" alt="" />
             }
           </div>
-          <div class="wizard-settings-card-name text-truncate">{{ syncService.wizard.remotePath.name }}</div>
+          <div class="wizard-settings-card-name text-truncate">{{ syncService.wizard().remotePath.name }}</div>
         </div>
         <div class="wizard-settings-card-path text-truncate">{{ translatedRemotePath }}</div>
       </div>
@@ -42,7 +42,7 @@
   </div>
   <app-sync-path-settings class="my-auto" [syncPath]="syncPath"></app-sync-path-settings>
   <div class="fs-md d-none d-md-block">
-    @if (error) {
+    @if (error(); as error) {
       <div class="text-center text-warning" l10nTranslate>{{ error }}</div>
     } @else {
       <div class="text-center">
@@ -69,14 +69,20 @@
               <span class="fw-bold" l10nTranslate>the most recent files will be kept</span>
             } @else {
               <span l10nTranslate>the files in</span>
-              <span class="fw-bold mx-1">{{ syncPath.settings.conflictMode === SYNC_PATH_CONFLICT_MODE.LOCAL ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
+              <span class="fw-bold mx-1">{{
+                syncPath.settings.conflictMode === SYNC_PATH_CONFLICT_MODE.LOCAL
+                  ? syncService.wizard().localPath.name
+                  : syncService.wizard().remotePath.name
+              }}</span>
               <span l10nTranslate>will be preferred</span>
             }
           </div>
         } @else {
           <div>
             <span l10nTranslate>All files created or modified in</span>
-            <span class="fw-bold mx-1">{{ syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
+            <span class="fw-bold mx-1">{{
+              syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? syncService.wizard().localPath.name : syncService.wizard().remotePath.name
+            }}</span>
             <span l10nTranslate>will be ignored and deleted</span>
           </div>
         }

@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, inject, ViewChild } from '@angular/core'
+import { Component, computed, inject, signal, viewChild } from '@angular/core'
 import { ActivatedRoute, Data, Router } from '@angular/router'
 import {
   LucideArrowDown,
@@ -59,13 +59,9 @@ import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
   templateUrl: 'admin-users.component.html'
 })
 export class AdminUsersComponent {
-  @ViewChild(VirtualScrollComponent) scrollView: {
-    element: ElementRef
-    viewPortItems: AdminUserModel[]
-    scrollInto: (arg: AdminUserModel | number) => void
-  }
-  @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
-  @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  readonly scrollView = viewChild.required<VirtualScrollComponent<AdminUserModel>>(VirtualScrollComponent)
+  readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
+  readonly targetContextMenu = viewChild.required<ContextMenuComponent<any>>('TargetContextMenu')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly navbarSearch = inject(NavbarSearchService)
   private readonly userService = inject(UserService)
@@ -139,13 +135,13 @@ export class AdminUsersComponent {
     }
   }
   // States
-  protected guestsView = false
-  protected loading = false
-  protected selected: AdminUserModel = null
-  protected users: AdminUserModel[] = []
-  protected storageUsage = 0
   private readonly router = inject(Router)
   private readonly activatedRoute = inject(ActivatedRoute)
+  protected readonly guestsView = signal(false)
+  protected readonly loading = signal(false)
+  protected readonly selected = signal<AdminUserModel>(null)
+  protected readonly users = signal<AdminUserModel[]>([])
+  protected readonly storageUsage = computed(() => this.users().reduce((sum, user) => sum + (user.storageUsage ?? 0), 0))
   private readonly layout = inject(LayoutService)
   private readonly adminService = inject(AdminService)
   private readonly sortSettings: SortSettings = {
@@ -162,31 +158,30 @@ export class AdminUsersComponent {
   constructor() {
     this.layout.setBreadcrumbIcon(ADMIN_ICON.USERS)
     this.activatedRoute.data.subscribe((route: Data) => {
-      this.guestsView = route.type === USER_ROLE.GUEST
+      this.guestsView.set(route.type === USER_ROLE.GUEST)
       this.setEnv()
     })
   }
 
   loadUsersOrGuests() {
-    this.loading = true
+    this.loading.set(true)
     this.onSelect()
-    this.adminService.listUsers(this.guestsView).subscribe({
+    this.adminService.listUsers(this.guestsView()).subscribe({
       next: (users: AdminUserModel[]) => {
-        void this.calcUsageStorage(users)
         this.sortBy(this.sortTable.sortParam.column, false, users)
-        this.scrollView.scrollInto(-1)
-        this.loading = false
+        this.scrollView().scrollInto(-1)
+        this.loading.set(false)
       },
       error: (e: HttpErrorResponse) => {
-        this.users = []
-        this.layout.sendNotification('error', this.guestsView ? 'Guests' : 'Users', 'Unable to load', e)
-        this.loading = false
+        this.users.set([])
+        this.layout.sendNotification('error', this.guestsView() ? 'Guests' : 'Users', 'Unable to load', e)
+        this.loading.set(false)
       }
     })
   }
 
   onSelect(user: AdminUserModel = null) {
-    this.selected = user
+    this.selected.set(user)
   }
 
   onUserActivate(user: AdminUserModel) {
@@ -195,14 +190,14 @@ export class AdminUsersComponent {
   }
 
   onGuestsView(state: boolean) {
-    this.guestsView = state
+    this.guestsView.set(state)
     this.router.navigate([ADMIN_PATH.BASE, state ? ADMIN_PATH.GUESTS : ADMIN_PATH.USERS]).catch(console.error)
   }
 
   onContextMenu(ev: any) {
     ev.preventDefault()
     ev.stopPropagation()
-    this.layout.openContextMenu(ev, this.mainContextMenu)
+    this.layout.openContextMenu(ev, this.mainContextMenu())
   }
 
   onTargetContextMenu(ev: any, user: AdminUserModel) {
@@ -211,15 +206,15 @@ export class AdminUsersComponent {
       ev.stopPropagation()
     }
     this.onSelect(user)
-    this.layout.openContextMenu(ev, this.targetContextMenu)
+    this.layout.openContextMenu(ev, this.targetContextMenu())
   }
 
   sortBy(column: string, toUpdate = true, collection?: AdminUserModel[]) {
-    this.users = this.sortTable.sortBy(column, toUpdate, collection || this.users)
+    this.users.set(this.sortTable.sortBy(column, toUpdate, collection || this.users()))
   }
 
   openDialog(add = false) {
-    if (this.guestsView) {
+    if (this.guestsView()) {
       this.openGuestDialog(add)
     } else {
       this.openUserDialog(add)
@@ -232,12 +227,12 @@ export class AdminUsersComponent {
       modalRef.content.userChange.pipe(take(1)).subscribe((r: ['add' | string, AdminUserModel]) => {
         const [action, u] = r
         if (action === 'add') {
-          this.sortBy(this.sortTable.sortParam.column, false, [...this.users, u])
+          this.sortBy(this.sortTable.sortParam.column, false, [...this.users(), u])
           this.onSelect(u)
         }
       })
     } else {
-      this.adminService.getUser(this.selected.id).subscribe({
+      this.adminService.getUser(this.selected().id).subscribe({
         next: (user: AdminUserModel) => {
           const modalRef: BsModalRef<AdminUserDialogComponent> = this.layout.openDialog(AdminUserDialogComponent, 'lg', {
             initialState: { user: user } as AdminUserDialogComponent
@@ -245,18 +240,19 @@ export class AdminUsersComponent {
           modalRef.content.userChange.pipe(take(1)).subscribe((r: ['add' | 'update' | 'delete', AdminUserModel]) => {
             const [action, u] = r
             if (action === 'update') {
-              this.selected = Object.assign(this.selected, u)
+              Object.assign(this.selected(), u)
+              this.users.update((users) => [...users])
             } else if (action === 'delete') {
               this.onSelect()
               this.sortBy(
                 this.sortTable.sortParam.column,
                 false,
-                this.users.filter((user) => user.id !== u.id)
+                this.users().filter((user) => user.id !== u.id)
               )
             }
           })
         },
-        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Edit group', this.selected.login, e)
+        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Edit group', this.selected().login, e)
       })
     }
   }
@@ -266,14 +262,14 @@ export class AdminUsersComponent {
       const modalRef: BsModalRef<AdminGuestDialogComponent> = this.layout.openDialog(AdminGuestDialogComponent, 'md')
       modalRef.content.guestChange.pipe(take(1)).subscribe((r: ['add' | string, GuestUserModel]) => {
         const [action, g] = r
-        const u = new AdminUserModel(g)
         if (action === 'add') {
-          this.sortBy(this.sortTable.sortParam.column, false, [...this.users, u])
+          const u = new AdminUserModel(g)
+          this.sortBy(this.sortTable.sortParam.column, false, [...this.users(), u])
           this.onSelect(u)
         }
       })
     } else {
-      this.adminService.getUser(this.selected.id, true).subscribe({
+      this.adminService.getUser(this.selected().id, true).subscribe({
         next: (guest: GuestUserModel) => {
           const modalRef: BsModalRef<AdminGuestDialogComponent> = this.layout.openDialog(AdminGuestDialogComponent, 'md', {
             initialState: {
@@ -283,18 +279,19 @@ export class AdminUsersComponent {
           modalRef.content.guestChange.pipe(take(1)).subscribe((r: ['add' | 'update' | 'delete', GuestUserModel]) => {
             const [action, g] = r
             if (action === 'update') {
-              this.selected = Object.assign(this.selected, g)
+              Object.assign(this.selected(), g)
+              this.users.update((users) => [...users])
             } else if (action === 'delete') {
               this.onSelect()
               this.sortBy(
                 this.sortTable.sortParam.column,
                 false,
-                this.users.filter((user) => user.id !== g.id)
+                this.users().filter((user) => user.id !== g.id)
               )
             }
           })
         },
-        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Guest error', this.selected.fullName, e)
+        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Guest error', this.selected().fullName, e)
       })
     }
   }
@@ -302,24 +299,18 @@ export class AdminUsersComponent {
   async impersonateIdentity() {
     const auth2FaHeaders = await this.userService.auth2FaVerifyDialog(true)
     if (auth2FaHeaders === false) return
-    this.adminService.impersonateUser(this.selected.id, auth2FaHeaders).subscribe({
-      next: (r: LoginResponseDto) => {
-        setTimeout(() => this.adminService.initImpersonateUser(r), 500)
-      },
-      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Impersonate identity', this.selected.login, e)
+    this.adminService.impersonateUser(this.selected().id, auth2FaHeaders).subscribe({
+      next: (r: LoginResponseDto) => setTimeout(() => this.adminService.initImpersonateUser(r), 500),
+      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Impersonate identity', this.selected().login, e)
     })
   }
 
-  private async calcUsageStorage(users: AdminUserModel[]) {
-    this.storageUsage = users.reduce((sum, user) => sum + (user.storageUsage ?? 0), 0)
-  }
-
   private setEnv() {
-    this.tableHeaders.managers.show = this.guestsView
-    this.tableHeaders.storage.show = !this.guestsView
+    this.tableHeaders.managers.show = this.guestsView()
+    this.tableHeaders.storage.show = !this.guestsView()
     this.loadUsersOrGuests()
     this.layout.setBreadcrumbNav({
-      url: this.guestsView
+      url: this.guestsView()
         ? `/${ADMIN_PATH.BASE}/${ADMIN_PATH.GUESTS}/${ADMIN_TITLE.GUESTS}`
         : `/${ADMIN_PATH.BASE}/${ADMIN_PATH.USERS}/${ADMIN_TITLE.USERS}`,
       splicing: 2,

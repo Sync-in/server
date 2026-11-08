@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject, Input, OnInit, Output } from '@angular/core'
+import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject, Input, OnInit, Output, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideFileArchive } from '@lucide/angular'
 import { TAR_EXTENSION, TAR_GZ_EXTENSION, ZIP_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
@@ -28,7 +28,7 @@ export class FilesCompressionDialogComponent implements OnInit {
   protected readonly layout = inject(LayoutService)
   protected readonly archiveExtensions: CompressFileDto['extension'][] = [TAR_EXTENSION, ZIP_EXTENSION]
   protected readonly icons = { LucideFileArchive }
-  protected submitted = false
+  protected readonly submitted = signal(false)
   private readonly filesService = inject(FilesService)
 
   ngOnInit() {
@@ -43,8 +43,8 @@ export class FilesCompressionDialogComponent implements OnInit {
   }
 
   onSubmit() {
-    if (this.archiveProps.name && !this.submitted) {
-      this.submitted = true
+    if (this.archiveProps.name && !this.submitted()) {
+      this.submitted.set(true)
       this.filesService.compress(this.archiveProps)
       this.submitEvent.emit()
       this.layout.closeDialog()

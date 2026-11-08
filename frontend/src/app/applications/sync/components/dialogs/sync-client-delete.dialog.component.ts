@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject, Input, Output } from '@angular/core'
+import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject, Input, Output, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideLoader, LucideTrash } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { PlatformIconComponent } from '../../../../common/components/platform-icon.component'
@@ -18,7 +18,7 @@ export class SyncClientDeleteDialogComponent {
   @Output() wasDeleted = new EventEmitter()
   protected readonly layout = inject(LayoutService)
   protected readonly icons = { LucideLoader, LucideTrash }
-  protected submitted = false
+  protected readonly submitted = signal(false)
   private readonly syncService = inject(SyncService)
 
   @HostListener('document:keyup.enter')
@@ -27,8 +27,8 @@ export class SyncClientDeleteDialogComponent {
   }
 
   onSubmit() {
-    if (!this.submitted) {
-      this.submitted = true
+    if (!this.submitted()) {
+      this.submitted.set(true)
       this.syncService.deleteClient(this.client.id).subscribe({
         next: () => {
           this.layout.sendNotification('info', 'Client deleted', this.client.info.node)
@@ -37,7 +37,7 @@ export class SyncClientDeleteDialogComponent {
         },
         error: (e: HttpErrorResponse) => {
           this.layout.sendNotification('error', 'Unable to delete client', e.error.message)
-          this.submitted = false
+          this.submitted.set(false)
         }
       })
     }

@@ -1,4 +1,5 @@
-import { Component, inject, OnDestroy } from '@angular/core'
+import { Component, inject, OnDestroy, signal } from '@angular/core'
+import { toSignal } from '@angular/core/rxjs-interop'
 import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { LucideDynamicIcon, LucideKeyRound, LucideLock, LucideQrCode, LucideUserRound } from '@lucide/angular'
@@ -9,7 +10,7 @@ import { OAuthDesktopPortParam } from '@sync-in-server/backend/src/authenticatio
 import type { AuthOIDCSettings } from '@sync-in-server/backend/src/authentication/providers/oidc/auth-oidc.interfaces'
 import type { TwoFaResponseDto, TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.dtos'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { finalize } from 'rxjs/operators'
+import { finalize, map } from 'rxjs/operators'
 import { APP_PATH } from '../app.constants'
 import { AutofocusDirective } from '../common/directives/auto-focus.directive'
 import type { AuthResult } from './auth.interface'
@@ -25,10 +26,10 @@ export class AuthComponent implements OnDestroy {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { LucideLock, LucideUserRound, LucideKeyRound, LucideQrCode }
   protected twoFaCodelength = TWO_FA_CODE_LENGTH
-  protected hasError: any = null
-  protected retryAfter = 0
-  protected submitted = false
-  protected twoFaVerify = false
+  protected readonly hasError = signal<any>(null)
+  protected readonly retryAfter = signal(0)
+  protected readonly submitted = signal(false)
+  protected readonly twoFaVerify = signal(false)
   private route = inject(ActivatedRoute)
   protected oidcSettings: AuthOIDCSettings | false = this.route.snapshot.data.authSettings
   private readonly router = inject(Router)
@@ -44,9 +45,9 @@ export class AuthComponent implements OnDestroy {
     recoveryCode: this.fb.control('', [Validators.required, Validators.minLength(USER_PASSWORD_MIN_LENGTH)]),
     isRecoveryCode: this.fb.control(false)
   })
-  protected get isRecoveryCode(): boolean {
-    return Boolean(this.twoFaForm.get('isRecoveryCode')?.value)
-  }
+  protected readonly isRecoveryCode = toSignal(this.twoFaForm.controls.isRecoveryCode.valueChanges.pipe(map(Boolean)), {
+    initialValue: Boolean(this.twoFaForm.controls.isRecoveryCode.value)
+  })
 
   constructor() {
     if (this.oidcSettings && this.oidcSettings.autoRedirect) {
@@ -59,11 +60,11 @@ export class AuthComponent implements OnDestroy {
   }
 
   onSubmit() {
-    if (this.retryAfter > 0) return
-    this.submitted = true
+    if (this.retryAfter() > 0) return
+    this.submitted.set(true)
     this.auth
       .login(this.loginForm.value.username, this.loginForm.value.password)
-      .pipe(finalize(() => setTimeout(() => (this.submitted = false), 1500)))
+      .pipe(finalize(() => setTimeout(() => this.submitted.set(false), 1500)))
       .subscribe({
         next: (res: AuthResult) => this.isLogged(res),
         error: (e) => this.isLogged({ success: false, message: e.error ? e.error.message : e, retryAfter: getAuthRetryAfter(e) })
@@ -71,9 +72,9 @@ export class AuthComponent implements OnDestroy {
   }
 
   async onSubmit2Fa() {
-    if (this.retryAfter > 0) return
-    this.submitted = true
-    const code = this.isRecoveryCode ? this.twoFaForm.value.recoveryCode : this.twoFaForm.value.totpCode
+    if (this.retryAfter() > 0) return
+    this.submitted.set(true)
+    const code = this.isRecoveryCode() ? this.twoFaForm.value.recoveryCode : this.twoFaForm.value.totpCode
 
     if (this.auth.electron.enabled) {
       this.auth.electron.register(this.loginForm.value.username, this.loginForm.value.password, code).subscribe({
@@ -86,7 +87,7 @@ export class AuthComponent implements OnDestroy {
           } as TwoFaResponseDto & AuthResult)
       })
     } else {
-      this.auth.loginWith2Fa({ code: code, isRecoveryCode: this.isRecoveryCode } satisfies TwoFaVerifyDto).subscribe({
+      this.auth.loginWith2Fa({ code: code, isRecoveryCode: this.isRecoveryCode() } satisfies TwoFaVerifyDto).subscribe({
         next: (res: TwoFaResponseDto) => this.is2FaVerified(res),
         error: (e) =>
           this.is2FaVerified({
@@ -101,9 +102,9 @@ export class AuthComponent implements OnDestroy {
   onCancel2Fa() {
     this.auth.logout()
     this.twoFaForm.patchValue({ totpCode: '', recoveryCode: '' })
-    this.twoFaVerify = false
-    this.submitted = false
-    this.hasError = null
+    this.twoFaVerify.set(false)
+    this.submitted.set(false)
+    this.hasError.set(null)
     this.clearRetryCountdown()
   }
 
@@ -145,10 +146,6 @@ export class AuthComponent implements OnDestroy {
     }
   }
 
-  protected retryDelayLabel(): string {
-    return new Intl.RelativeTimeFormat(this.locale.language, { numeric: 'always' }).format(this.retryAfter, 'second')
-  }
-
   private is2FaVerified(res: TwoFaResponseDto & Partial<AuthResult>) {
     if (res.success) {
       this.clearRetryCountdown()
@@ -159,17 +156,21 @@ export class AuthComponent implements OnDestroy {
       this.isLogged({ success: true, message: res.message })
     } else {
       this.setAuthError(res.message || 'Unable to verify code', res.retryAfter)
-      this.submitted = false
+      this.submitted.set(false)
     }
     this.twoFaForm.patchValue({ totpCode: '', recoveryCode: '' })
+  }
+
+  protected retryDelayLabel(): string {
+    return new Intl.RelativeTimeFormat(this.locale.language, { numeric: 'always' }).format(this.retryAfter(), 'second')
   }
 
   private isLogged(res: AuthResult) {
     if (res.success) {
       this.clearRetryCountdown()
-      this.hasError = null
+      this.hasError.set(null)
       if (res.twoFaEnabled) {
-        this.twoFaVerify = true
+        this.twoFaVerify.set(true)
         if (this.auth.electron.enabled) {
           // Do not clear the password; it will be used to register the client.
           return
@@ -184,31 +185,31 @@ export class AuthComponent implements OnDestroy {
       }
     } else {
       this.setAuthError(res.message || 'Server connection error', res.retryAfter)
-      this.submitted = false
+      this.submitted.set(false)
     }
     this.loginForm.patchValue({ password: '' })
   }
 
   private setAuthError(message: any, retryAfter?: number) {
     this.clearRetryCountdown()
-    this.hasError = retryAfter ? 'Too many login attempts' : message
+    this.hasError.set(retryAfter ? 'Too many login attempts' : message)
     if (!retryAfter) return
 
     const retryAt = Date.now() + retryAfter * 1000
     const updateRetryAfter = () => {
-      this.retryAfter = Math.max(0, Math.ceil((retryAt - Date.now()) / 1000))
-      if (this.retryAfter === 0) {
+      this.retryAfter.set(Math.max(0, Math.ceil((retryAt - Date.now()) / 1000)))
+      if (this.retryAfter() === 0) {
         this.clearRetryCountdown()
-        this.hasError = null
+        this.hasError.set(null)
       }
     }
     updateRetryAfter()
-    if (this.retryAfter > 0) this.retryTimer = setInterval(updateRetryAfter, 1000)
+    if (this.retryAfter() > 0) this.retryTimer = setInterval(updateRetryAfter, 1000)
   }
 
   private clearRetryCountdown() {
     if (this.retryTimer !== null) clearInterval(this.retryTimer)
     this.retryTimer = null
-    this.retryAfter = 0
+    this.retryAfter.set(0)
   }
 }

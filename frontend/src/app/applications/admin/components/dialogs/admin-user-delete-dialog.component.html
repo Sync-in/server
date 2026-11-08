@@ -21,7 +21,7 @@
   <div class="form-check form-check-inline mt-3">
     <div class="d-flex">
       <label class="form-check-label" for="deleteSpace">
-        <input class="form-check-input" [(ngModel)]="deleteSpace" id="deleteSpace" type="checkbox">
+        <input class="form-check-input" [ngModel]="deleteSpace()" (ngModelChange)="deleteSpace.set($event)" id="deleteSpace" type="checkbox">
         <span l10nTranslate>Delete all user files</span>
       </label>
     </div>
@@ -36,7 +36,7 @@
     Cancel
   </button>
   <button (click)="onSubmit()"
-          [disabled]="submitted" class="btn btn-danger"
+          [disabled]="submitted()" class="btn btn-danger"
           type="button"
           l10nTranslate>
     Confirm

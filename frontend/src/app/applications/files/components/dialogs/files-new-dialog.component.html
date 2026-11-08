@@ -1,6 +1,6 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    @switch (inputType) {
+    @switch (selectedInputType()) {
       @case ('download') {
         <svg [lucideIcon]="icons.LucideGlobe"></svg>
       }
@@ -11,21 +11,21 @@
         <img [src]="selectedDocumentMimeUrl()" class="me-2" alt="" draggable="false" height="26" width="26" />
       }
     }
-    <span l10nTranslate>{{ fileProp.title }}</span>
+    <span l10nTranslate>{{ fileProp().title }}</span>
   </h4>
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white" type="button"></button>
 </div>
 <div class="modal-body">
-  @if (inputType !== 'download') {
+  @if (selectedInputType() !== 'download') {
     <label class="form-label d-sm-none" for="new-file-type" l10nTranslate>Type</label>
     <select
       id="new-file-type"
       class="form-select d-sm-none mb-3"
-      [ngModel]="inputType === 'directory' ? 'directory' : currentDocType()"
+      [ngModel]="selectedInputType() === 'directory' ? 'directory' : currentDocType()"
       (ngModelChange)="onSelectMobileType($event)">
       <option value="directory">{{ 'New folder' | translate: locale.language }}</option>
       <optgroup [label]="'Document' | translate: locale.language">
-        @for (item of docTypes | keyvalue: originalOrderKeyValue; track item.key) {
+        @for (item of docTypes() | keyvalue: originalOrderKeyValue; track item.key) {
           <option [value]="item.key">{{ item.key | translate: locale.language }}{{ item.value ? ' (.' + item.value + ')' : '' }}</option>
         }
       </optgroup>
@@ -35,8 +35,8 @@
         <div class="col-12 col-sm-6">
           <button
             (click)="onSelectDirectory()"
-            [attr.aria-pressed]="inputType === 'directory'"
-            [class.active]="inputType === 'directory'"
+            [attr.aria-pressed]="selectedInputType() === 'directory'"
+            [class.active]="selectedInputType() === 'directory'"
             class="btn btn-default w-100 me-0 justify-content-start"
             type="button">
             <img [src]="directoryMimeUrl" alt="" draggable="false" height="24" width="24" />
@@ -47,7 +47,7 @@
 
       <div class="text-muted text-uppercase text-bold fs-xs mt-3 mb-2" l10nTranslate>Document</div>
       <div class="row g-2">
-        @for (item of docTypes | keyvalue: originalOrderKeyValue; track item.key) {
+        @for (item of docTypes() | keyvalue: originalOrderKeyValue; track item.key) {
           <div class="col-12 col-sm-6">
             <button
               (click)="onSelectDocType(item.key)"
@@ -66,17 +66,18 @@
       </div>
     </div>
   }
-  @if (inputType === 'download') {
+  @if (selectedInputType() === 'download') {
     <div class="input-group my-2">
       <span class="input-group-text">
         <svg [lucideIcon]="icons.LucideGlobe"></svg>
       </span>
       <input
-        [(ngModel)]="downloadProp.url"
+        [ngModel]="downloadUrl()"
+        (ngModelChange)="downloadUrl.set($event)"
         (keydown.control.v)="pasteUrl()"
         (keydown.meta.v)="pasteUrl()"
         (keyup.enter)="onEnter()"
-        [placeholder]="downloadProp.placeholder | translate: locale.language"
+        [placeholder]="downloadPlaceholder | translate: locale.language"
         class="form-control"
         type="text"
         appAutofocus
@@ -85,9 +86,9 @@
   }
   <div class="input-group my-2">
     <span class="input-group-text">
-      @if (inputType === 'directory') {
+      @if (selectedInputType() === 'directory') {
         <img [src]="directoryMimeUrl" alt="" draggable="false" height="24" width="24" />
-      } @else if (inputType === 'file') {
+      } @else if (selectedInputType() === 'file') {
         <img [src]="selectedDocumentMimeUrl()" alt="" draggable="false" height="24" width="24" />
       } @else {
         <svg [lucideIcon]="icons.LucideFileText"></svg>
@@ -95,9 +96,10 @@
     </span>
     <input
       #InputText
-      [(ngModel)]="fileProp.name"
+      [ngModel]="fileName()"
+      (ngModelChange)="fileName.set($event)"
       (keyup.enter)="onEnter()"
-      [placeholder]="fileProp.placeholder | translate: locale.language"
+      [placeholder]="fileProp().placeholder | translate: locale.language"
       class="form-control"
       type="text" />
   </div>
@@ -107,19 +109,19 @@
     @if (canOpenAfterCreation()) {
       <div class="form-check mb-0 ps-0">
         <label class="form-check-label ps-1">
-          <input [(ngModel)]="openAfterCreate" type="checkbox" />
+          <input [ngModel]="openAfterCreate()" (ngModelChange)="openAfterCreate.set($event)" type="checkbox" />
           <span l10nTranslate>Open after creation</span>
         </label>
       </div>
     }
-    @if (error) {
-      <span class="fs-sm text-danger" l10nTranslate>{{ error }}</span>
+    @if (error()) {
+      <span class="fs-sm text-danger" l10nTranslate>{{ error() }}</span>
     }
   </div>
   <button (click)="layout.closeDialog()" class="btn btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button
     (click)="onSubmit()"
-    [disabled]="!fileProp.name || (inputType === 'download' && !downloadProp.url) || submitted"
+    [disabled]="!fileName() || (selectedInputType() === 'download' && !downloadUrl()) || submitted()"
     class="btn btn-primary"
     type="button"
     l10nTranslate>

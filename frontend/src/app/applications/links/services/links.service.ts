@@ -162,13 +162,13 @@ export class LinksService {
     return this.http.get<{ uuid: string }>(API_SHARES_LINKS_UUID).pipe(map((r) => r.uuid))
   }
 
-  createLinkDialog(obj: ShareModel | SpaceModel) {
+  createLinkDialog(obj: ShareModel | SpaceModel, onLinkChange?: () => void) {
     /* create link when space/share is submitted */
     this.genUUID().subscribe((uuid: string) => {
       const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'lg', {
         initialState: { link: { name: obj.name, uuid: uuid, isActive: true, nbAccess: 0 } } as LinkDialogComponent
       })
-      this.subscribeToSubmitLinkModal(modalRef, obj)
+      this.subscribeToSubmitLinkModal(modalRef, obj, undefined, onLinkChange)
     })
   }
 
@@ -181,14 +181,14 @@ export class LinksService {
     return this.http.put<LinkGuest>(`${API_SHARES_LINKS}/${linkId}/${type}/${shareOrSpaceId}`, createOrUpdateLinkDto)
   }
 
-  editLinkDialog(member: MemberModel, obj: ShareModel | SpaceModel, type: LINK_TYPE) {
+  editLinkDialog(member: MemberModel, obj: ShareModel | SpaceModel, type: LINK_TYPE, onLinkChange?: () => void) {
     /* update link when space/share is submitted */
     if (obj.id === 0 || member?.linkSettings?.uuid) {
       // update link on a new share
       const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'lg', {
         initialState: { link: member.linkSettings } as LinkDialogComponent
       })
-      this.subscribeToSubmitLinkModal(modalRef, obj, member)
+      this.subscribeToSubmitLinkModal(modalRef, obj, member, onLinkChange)
     } else {
       // update link on an existing share
       this.linkFromSpaceOrShare(member.linkId, obj.id, type).subscribe({
@@ -196,7 +196,7 @@ export class LinksService {
           const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'lg', {
             initialState: { link: { ...l, permissions: member.permissions } } as LinkDialogComponent
           })
-          this.subscribeToSubmitLinkModal(modalRef, obj, member)
+          this.subscribeToSubmitLinkModal(modalRef, obj, member, onLinkChange)
         },
         error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Link error', member.name || obj.name, e)
       })
@@ -220,7 +220,12 @@ export class LinksService {
     )
   }
 
-  private subscribeToSubmitLinkModal(modalRef: BsModalRef<LinkDialogComponent>, obj: ShareModel | SpaceModel, member?: MemberModel) {
+  private subscribeToSubmitLinkModal(
+    modalRef: BsModalRef<LinkDialogComponent>,
+    obj: ShareModel | SpaceModel,
+    member?: MemberModel,
+    onLinkChange?: () => void
+  ) {
     modalRef.content.submitEvent.pipe(take(1)).subscribe((diffLink: CreateOrUpdateLinkDto) => {
       if (Object.keys(diffLink).length) {
         const linkGuest: LinkGuest = Object.assign(modalRef.content.link, diffLink)
@@ -234,6 +239,7 @@ export class LinksService {
         } else {
           obj.links = [linkMember, ...obj.links]
         }
+        onLinkChange?.()
       }
       modalRef.content.layout.closeDialog()
     })

@@ -16,10 +16,10 @@ export const userHaveDesktopAppSyncPermission: CanActivateFn = (): boolean => {
 
 export const syncWizardSettingsActivate: CanActivateFn = (): boolean => {
   const syncService = inject(SyncService)
-  const canActivate = Boolean(syncService.wizard.localPath && syncService.wizard.remotePath)
+  const canActivate = Boolean(syncService.wizard().localPath && syncService.wizard().remotePath)
   if (!canActivate) {
     inject(Router)
-      .navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, syncService.wizard.localPath ? SYNC_PATH.WIZARD_SERVER : SYNC_PATH.WIZARD_CLIENT])
+      .navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, syncService.wizard().localPath ? SYNC_PATH.WIZARD_SERVER : SYNC_PATH.WIZARD_CLIENT])
       .catch(console.error)
   }
   return canActivate
@@ -27,7 +27,7 @@ export const syncWizardSettingsActivate: CanActivateFn = (): boolean => {
 
 export const syncWizardServerActivate: CanActivateFn = (): boolean => {
   const syncService = inject(SyncService)
-  const canActivate = Boolean(syncService.wizard.localPath)
+  const canActivate = Boolean(syncService.wizard().localPath)
   if (!canActivate) {
     inject(Router).navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_CLIENT]).catch(console.error)
   }

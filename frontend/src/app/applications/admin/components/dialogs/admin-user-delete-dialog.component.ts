@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideUserMinus } from '@lucide/angular'
 import type { DeleteUserDto } from '@sync-in-server/backend/src/applications/users/dto/delete-user.dto'
@@ -19,9 +19,9 @@ export class AdminUserDeleteDialogComponent {
   @Input({ required: true }) user: AdminUserModel
   @Output() wasDeleted = new EventEmitter<boolean>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected submitted = false
+  protected readonly submitted = signal(false)
   protected readonly icons = { LucideUserMinus }
-  protected deleteSpace = false
+  protected readonly deleteSpace = signal(false)
   private readonly layout = inject(LayoutService)
   private readonly adminService = inject(AdminService)
   private readonly userService = inject(UserService)
@@ -32,20 +32,20 @@ export class AdminUserDeleteDialogComponent {
   }
 
   async onSubmit() {
-    this.submitted = true
+    this.submitted.set(true)
     const auth2FaHeaders = await this.userService.auth2FaVerifyDialog(true)
     if (auth2FaHeaders === false) {
       this.onClose()
       return
     }
-    this.adminService.deleteUser(this.user.id, { deleteSpace: this.deleteSpace } satisfies DeleteUserDto, auth2FaHeaders).subscribe({
+    this.adminService.deleteUser(this.user.id, { deleteSpace: this.deleteSpace() } satisfies DeleteUserDto, auth2FaHeaders).subscribe({
       next: () => {
         this.wasDeleted.emit(true)
         this.layout.sendNotification('success', 'Delete user', this.user.login)
         this.onClose()
       },
       error: (e: HttpErrorResponse) => {
-        this.submitted = false
+        this.submitted.set(false)
         this.layout.sendNotification('error', 'Delete user', this.user.login, e)
       }
     })

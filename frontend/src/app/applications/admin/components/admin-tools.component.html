@@ -12,18 +12,18 @@
                     <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
                       <div class="form-label col-7 col-sm-6 mb-0" l10nTranslate>State</div>
                       <div class="col-5 col-sm-6 text-end">
-                        @switch (indexingStatus.state) {
+                        @switch (indexingStatus().state) {
                           @case (IndexingState.RUNNING) {
-                            <span class="badge bg-success" l10nTranslate>{{indexingStatus.state}}</span>
+                            <span class="badge bg-success" l10nTranslate>{{indexingStatus().state}}</span>
                           }
                           @case (IndexingState.STOPPING) {
-                            <span class="badge bg-warning" l10nTranslate>{{indexingStatus.state}}</span>
+                            <span class="badge bg-warning" l10nTranslate>{{indexingStatus().state}}</span>
                           }
                           @case (IndexingState.PENDING) {
-                            <span class="badge bg-black" l10nTranslate>{{indexingStatus.state}}</span>
+                            <span class="badge bg-black" l10nTranslate>{{indexingStatus().state}}</span>
                           }
                           @default {
-                            <span class="badge bg-secondary" l10nTranslate>{{indexingStatus.state}}</span>
+                            <span class="badge bg-secondary" l10nTranslate>{{indexingStatus().state}}</span>
                           }
                         }
                       </div>
@@ -31,14 +31,14 @@
                     <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
                       <div class="form-label col-7 col-sm-6 mb-0" l10nTranslate>Indexes</div>
                       <div class="col-5 col-sm-6 text-end">
-                        <span class="badge bg-primary">{{ indexingStatus.indexesCount }}</span>
+                        <span class="badge bg-primary">{{ indexingStatus().indexesCount }}</span>
                       </div>
                     </div>
                     <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle mb-2">
                       <div class="form-label col-5 col-sm-6 mb-0" l10nTranslate>Last partial run</div>
                       <div class="col-7 col-sm-6 text-end">
-                        @if (indexingStatus.lastPartialRunAt) {
-                          <span class="badge bg-purple text-muted">{{ indexingStatus.lastPartialRunAt | amDateFormat }}</span>
+                        @if (indexingStatus().lastPartialRunAt) {
+                          <span class="badge bg-purple text-muted">{{ indexingStatus().lastPartialRunAt | amDateFormat }}</span>
                         } @else {
                           <span class="badge bg-purple text-muted" l10nTranslate>Never</span>
                         }
@@ -47,8 +47,8 @@
                     <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle mb-2">
                       <div class="form-label col-5 col-sm-6 mb-0" l10nTranslate>Last full run</div>
                       <div class="col-7 col-sm-6 text-end">
-                        @if (indexingStatus.lastFullRunAt) {
-                          <span class="badge bg-purple text-muted">{{ indexingStatus.lastFullRunAt | amDateFormat }}</span>
+                        @if (indexingStatus().lastFullRunAt) {
+                          <span class="badge bg-purple text-muted">{{ indexingStatus().lastFullRunAt | amDateFormat }}</span>
                         } @else {
                           <span class="badge bg-danger text-muted" l10nTranslate>Never</span>
                         }
@@ -59,7 +59,7 @@
                       <div class="text-muted no-select fs-sm my-3 px-1 me-auto" l10nTranslate>
                         Start or stop indexing.
                       </div>
-                      @if (indexingStatus.state === IndexingState.RUNNING || indexingStatus.state === IndexingState.PENDING) {
+                      @if (indexingStatus().state === IndexingState.RUNNING || indexingStatus().state === IndexingState.PENDING) {
                         <button
                           (click)="stopIndexing()"
                           class="btn btn-sm btn-warning btn-sm text-nowrap"
@@ -70,7 +70,7 @@
                       } @else {
                         <button
                           (click)="startIndexing()"
-                          [disabled]="indexingStatus.state === IndexingState.STOPPING || indexingStatus.state === IndexingState.DISABLED"
+                          [disabled]="indexingStatus().state === IndexingState.STOPPING || indexingStatus().state === IndexingState.DISABLED"
                           class="btn btn-sm btn-success btn-sm text-nowrap"
                           type="button">
                           <svg [lucideIcon]="icons.LucidePlay"></svg>
@@ -82,10 +82,10 @@
                       <div class="text-muted no-select fs-sm my-3 px-1 me-auto" l10nTranslate>
                         Delete all indexes.
                       </div>
-                      @if (confirmResetIndexing) {
+                      @if (confirmResetIndexing()) {
                         <button
-                          (click)="confirmResetIndexing = false"
-                          [disabled]="indexingStatus.state === IndexingState.RUNNING || indexingStatus.state === IndexingState.PENDING"
+                          (click)="confirmResetIndexing.set(false)"
+                          [disabled]="indexingStatus().state === IndexingState.RUNNING || indexingStatus().state === IndexingState.PENDING"
                           class="btn btn-sm btn-secondary btn-sm text-nowrap me-2"
                           type="button">
                           <span l10nTranslate>Cancel</span>
@@ -93,10 +93,10 @@
                       }
                       <button
                         (click)="dropIndexes()"
-                        class="btn btn-sm {{confirmResetIndexing ? 'btn-danger' : 'btn-secondary'}} btn-sm text-nowrap"
+                        class="btn btn-sm {{confirmResetIndexing() ? 'btn-danger' : 'btn-secondary'}} btn-sm text-nowrap"
                         type="button"
-                        [disabled]="(indexingStatus.state !== IndexingState.IDLE && indexingStatus.state !== IndexingState.DISABLED) ||
-                        indexingStatus.indexesCount === 0">
+                        [disabled]="(indexingStatus().state !== IndexingState.IDLE && indexingStatus().state !== IndexingState.DISABLED) ||
+                        indexingStatus().indexesCount === 0">
                         <svg [lucideIcon]="icons.LucideTrash"></svg>
                         <span class="ms-1" l10nTranslate>Remove</span>
                       </button>

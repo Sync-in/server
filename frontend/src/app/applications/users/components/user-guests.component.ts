@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, inject, ViewChild } from '@angular/core'
+import { Component, inject, signal, viewChild } from '@angular/core'
 import { LucideArrowDown, LucideArrowUp, LucideDynamicIcon, LucideKeyRound, LucidePencil, LucidePlus, LucideRotateCw } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -43,13 +43,9 @@ import { UserAvatarStackComponent } from './utils/user-avatar-stack.component'
   templateUrl: 'user-guests.component.html'
 })
 export class UserGuestsComponent {
-  @ViewChild(VirtualScrollComponent) scrollView: {
-    element: ElementRef
-    viewPortItems: GuestUserModel[]
-    scrollInto: (arg: GuestUserModel | number) => void
-  }
-  @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
-  @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  readonly scrollView = viewChild.required<VirtualScrollComponent<GuestUserModel>>(VirtualScrollComponent)
+  readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
+  readonly targetContextMenu = viewChild.required<ContextMenuComponent<any>>('TargetContextMenu')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly navbarSearch = inject(NavbarSearchService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
@@ -106,13 +102,13 @@ export class UserGuestsComponent {
       sortable: true
     }
   }
-  protected loading = false
-  protected selected: GuestUserModel = null
-  protected guests: GuestUserModel[] = []
+  protected readonly loading = signal(false)
+  protected readonly selected = signal<GuestUserModel | null>(null)
+  protected readonly guests = signal<GuestUserModel[]>([])
   private readonly layout = inject(LayoutService)
   private readonly userService = inject(UserService)
   // States
-  protected canCreateGuest = this.userService.userHavePermission(USER_PERMISSION.GUESTS_ADMIN)
+  protected readonly canCreateGuest = this.userService.userHavePermission(USER_PERMISSION.GUESTS_ADMIN)
   private readonly sortSettings: SortSettings = {
     default: [{ prop: 'login', type: 'string' }],
     login: [{ prop: 'login', type: 'string' }],
@@ -137,24 +133,24 @@ export class UserGuestsComponent {
   }
 
   loadGuests() {
-    this.loading = true
+    this.loading.set(true)
     this.onSelect()
     this.userService.listGuests().subscribe({
       next: (users: GuestUserModel[]) => {
         this.sortBy(this.sortTable.sortParam.column, false, users)
-        this.scrollView.scrollInto(-1)
-        this.loading = false
+        this.scrollView().scrollInto(-1)
+        this.loading.set(false)
       },
       error: (e: HttpErrorResponse) => {
-        this.guests = []
+        this.guests.set([])
         this.layout.sendNotification('error', 'Guests', e.error.message)
-        this.loading = false
+        this.loading.set(false)
       }
     })
   }
 
   onSelect(user: GuestUserModel = null) {
-    this.selected = user
+    this.selected.set(user)
   }
 
   onGuestActivate(user: GuestUserModel) {
@@ -165,7 +161,7 @@ export class UserGuestsComponent {
   onContextMenu(ev: any) {
     ev.preventDefault()
     ev.stopPropagation()
-    this.layout.openContextMenu(ev, this.mainContextMenu)
+    this.layout.openContextMenu(ev, this.mainContextMenu())
   }
 
   onTargetContextMenu(ev: any, user: GuestUserModel) {
@@ -174,11 +170,11 @@ export class UserGuestsComponent {
       ev.stopPropagation()
     }
     this.onSelect(user)
-    this.layout.openContextMenu(ev, this.targetContextMenu)
+    this.layout.openContextMenu(ev, this.targetContextMenu())
   }
 
   sortBy(column: string, toUpdate = true, collection?: GuestUserModel[]) {
-    this.guests = this.sortTable.sortBy(column, toUpdate, collection || this.guests)
+    this.guests.set(this.sortTable.sortBy(column, toUpdate, collection || this.guests()))
   }
 
   openGuestDialog(add = false) {
@@ -187,12 +183,12 @@ export class UserGuestsComponent {
       modalRef.content.guestChange.pipe(take(1)).subscribe((r: ['add' | string, GuestUserModel]) => {
         const [action, g] = r
         if (action === 'add') {
-          this.sortBy(this.sortTable.sortParam.column, false, [...this.guests, g])
+          this.sortBy(this.sortTable.sortParam.column, false, [...this.guests(), g])
           this.onSelect(g)
         }
       })
     } else {
-      this.userService.getGuest(this.selected.id).subscribe({
+      this.userService.getGuest(this.selected().id).subscribe({
         next: (guest: GuestUserModel) => {
           const modalRef: BsModalRef<UserGuestDialogComponent> = this.layout.openDialog(UserGuestDialogComponent, 'md', {
             initialState: {
@@ -202,18 +198,19 @@ export class UserGuestsComponent {
           modalRef.content.guestChange.pipe(take(1)).subscribe((r: ['add' | 'update' | 'delete', GuestUserModel]) => {
             const [action, g] = r
             if (action === 'update') {
-              this.selected = Object.assign(this.selected, g)
+              Object.assign(this.selected(), g)
+              this.guests.update((guests) => [...guests])
             } else if (action === 'delete') {
               this.onSelect()
               this.sortBy(
                 this.sortTable.sortParam.column,
                 false,
-                this.guests.filter((guest) => guest.id !== g.id)
+                this.guests().filter((guest) => guest.id !== g.id)
               )
             }
           })
         },
-        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Guest error', this.selected.fullName, e)
+        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Guest error', this.selected().fullName, e)
       })
     }
   }

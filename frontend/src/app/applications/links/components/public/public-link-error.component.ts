@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core'
+import { Component, inject, signal } from '@angular/core'
 import { ActivatedRoute, Params } from '@angular/router'
 import { LucideCircleExclamationPoint, LucideDynamicIcon } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -12,10 +12,10 @@ import { PublicLinkHeaderComponent } from './public-link-header.component'
 })
 export class PublicLinkErrorComponent {
   protected readonly icons = { LucideCircleExclamationPoint }
-  protected error: string
+  protected readonly error = signal<string>(undefined)
   private readonly activatedRoute = inject(ActivatedRoute)
 
   constructor() {
-    this.activatedRoute.params.subscribe((params: Params) => (this.error = LINK_ERROR_TRANSLATION[params.error]))
+    this.activatedRoute.params.subscribe((params: Params) => this.error.set(LINK_ERROR_TRANSLATION[params.error]))
   }
 }

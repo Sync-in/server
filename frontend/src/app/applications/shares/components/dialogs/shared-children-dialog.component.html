@@ -5,18 +5,18 @@
   </h4>
   <h4 class="modal-title ms-auto">
     <span l10nTranslate>Child shares</span>
-    <span class="badge badge-small bg-default ms-2">{{ childSharesLength || 0 }}</span>
+    <span class="badge badge-small bg-default ms-2">{{ childSharesLength() || 0 }}</span>
   </h4>
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white ms-2" type="button"></button>
 </div>
 <div appAutoResize class="modal-body" [resizeOffset]="175" style="padding-right: 24px">
   <ul class="tree">
     <ng-template #recursiveList let-shares>
-      @for (s of toShares(shares); track s.id) {
+      @for (s of $any(shares); track s.id) {
         <li>
           <div (click)="onSelect(s)"
                (appTap)="onShareActivate(s)"
-               [class.selected]="selected && selected.id === s.id"
+               [class.selected]="selected() && selected().id === s.id"
                class="app-div-hovered">
             <div class="me-auto text-truncate">
               <img [src]="s.mimeUrl" alt="" draggable="false" height="28" (error)="s.fallBackMimeUrl()">
@@ -38,10 +38,10 @@
         </li>
       }
     </ng-template>
-    <ng-container *ngTemplateOutlet="recursiveList; context:{ $implicit: childShares }"></ng-container>
+    <ng-container *ngTemplateOutlet="recursiveList; context:{ $implicit: childShares() }"></ng-container>
   </ul>
 </div>
 <div class="modal-footer">
-  <button (click)="openChildShare()" [disabled]="!selected" class="btn btn-primary" l10nTranslate type="button">Edit</button>
+  <button (click)="openChildShare()" [disabled]="!selected()" class="btn btn-primary" l10nTranslate type="button">Edit</button>
   <button (click)="layout.closeDialog()" class="btn btn-secondary" data-dismiss="modal" l10nTranslate type="button">Close</button>
 </div>

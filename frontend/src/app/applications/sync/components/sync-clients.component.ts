@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, inject } from '@angular/core'
+import { Component, inject, signal } from '@angular/core'
 import { Router } from '@angular/router'
 import {
   LucideAtSign,
@@ -68,9 +68,9 @@ export class SyncClientsComponent {
     LucidePencil,
     LucideKeyRound
   }
-  protected selected: SyncClientModel
-  protected selectedPath: SyncPathModel
-  protected clients: SyncClientModel[] = []
+  protected readonly selected = signal<SyncClientModel | null>(null)
+  protected readonly selectedPath = signal<SyncPathModel | null>(null)
+  protected readonly clients = signal<SyncClientModel[]>([])
   private readonly router = inject(Router)
   private readonly layout = inject(LayoutService)
   private readonly syncService = inject(SyncService)
@@ -99,12 +99,12 @@ export class SyncClientsComponent {
     this.syncService.getClients().subscribe({
       next: (clients: SyncClientModel[]) => {
         sortCollectionByNumber(clients, 'id', false)
-        this.clients = clients
+        this.clients.set(clients)
         if (this.focusOnSelectId) {
-          this.onSelectClient(this.clients.find((c) => c.id === this.focusOnSelectId))
+          this.onSelectClient(this.clients().find((client) => client.id === this.focusOnSelectId))
         }
-        if (this.focusOnSelectPathId && this.selected) {
-          this.onSelectPath(this.selected.paths.find((p) => p.id === this.focusOnSelectPathId))
+        if (this.focusOnSelectPathId && this.selected()) {
+          this.onSelectPath(this.selected()!.paths.find((path) => path.id === this.focusOnSelectPathId))
           this.focusOnSelectPathId = null
         }
       },
@@ -116,17 +116,17 @@ export class SyncClientsComponent {
   }
 
   onSelectClient(client?: SyncClientModel) {
-    this.selected = client || null
+    this.selected.set(client || null)
   }
 
   onSelectPath(syncPathModel?: SyncPathModel) {
-    this.selectedPath = syncPathModel || null
+    this.selectedPath.set(syncPathModel || null)
   }
 
   onDeleteClient() {
     const modalRef: BsModalRef<SyncClientDeleteDialogComponent> = this.layout.openDialog(SyncClientDeleteDialogComponent, 'md', {
       initialState: {
-        client: this.selected
+        client: this.selected()
       } as SyncClientDeleteDialogComponent
     })
     modalRef.content.wasDeleted.pipe(take(1)).subscribe(() => this.loadClients())
@@ -144,8 +144,8 @@ export class SyncClientsComponent {
   }
 
   onEditPath(path?: SyncPathModel, client?: SyncClientModel) {
-    const selectedClient = client || this.selected
-    const selectedPath = path || this.selectedPath
+    const selectedClient = client || this.selected()
+    const selectedPath = path || this.selectedPath()
     if (!selectedClient || !selectedPath) {
       return
     }

@@ -1,12 +1,12 @@
 import { KeyValuePipe } from '@angular/common'
-import { Component, ElementRef, inject, Input, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Component, effect, ElementRef, inject, input, linkedSignal, output, viewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucidePencil, LucideX } from '@lucide/angular'
 import { createSlug, InvalidSlugError, regExpNumberSuffix } from '@sync-in-server/backend/src/common/shared'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonsModule } from 'ngx-bootstrap/buttons'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
-import { Subject, Subscription } from 'rxjs'
+import { Subject } from 'rxjs'
 import { InputEditDirective } from '../../../../common/directives/input-edit.directive'
 import { PathSlice } from '../../../../common/pipes/path-slice'
 import { TimeAgoPipe } from '../../../../common/pipes/time-ago.pipe'
@@ -65,38 +65,37 @@ import { ExternalFilePathEvent } from '../dialogs/space-root-path-dialog.compone
     }
   `
 })
-export class SpaceManageRootsComponent implements OnInit, OnDestroy {
-  @ViewChild('InputRename') inputRename: ElementRef
-  @Input({ required: true }) space: Partial<SpaceModel>
-  @Input({ required: true }) user: UserType
-  @Input() showInfo = true
-  @Input() showUsers = true
-  @Input() showRemove = true
-  @Input() addRootFile: Subject<FileTreeEvent | ExternalFilePathEvent> = null
-  protected locale = inject<L10nLocale>(L10N_LOCALE)
+export class SpaceManageRootsComponent {
+  readonly space = input.required<Partial<SpaceModel>>()
+  readonly user = input.required<UserType>()
+  readonly showInfo = input(true)
+  readonly showUsers = input(true)
+  readonly showRemove = input(true)
+  readonly roots = input<SpaceRootModel[] | null>(null)
+  readonly addRootFile = input<Subject<FileTreeEvent | ExternalFilePathEvent> | null>(null)
+  readonly rootsChange = output<SpaceRootModel[]>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { LucideX, LucidePencil }
   protected readonly SPACES_PERMISSIONS_TEXT = SPACES_PERMISSIONS_TEXT
   protected readonly originalOrderKeyValue = originalOrderKeyValue
+  protected readonly displayedRoots = linkedSignal(() => this.roots() ?? this.space().roots)
+  private readonly inputRename = viewChild<ElementRef>('InputRename')
   private readonly layout = inject(LayoutService)
-  private subscription: Subscription = null
 
-  ngOnInit() {
-    if (this.addRootFile) {
-      this.subscription = this.addRootFile.subscribe((file: FileTreeEvent | ExternalFilePathEvent) => this.addRoot(file))
-    }
-  }
-
-  ngOnDestroy() {
-    if (this.subscription) {
-      this.subscription.unsubscribe()
-    }
+  constructor() {
+    effect((onCleanup) => {
+      const addRootFile = this.addRootFile()
+      if (!addRootFile) return
+      const subscription = addRootFile.subscribe((file: FileTreeEvent | ExternalFilePathEvent) => this.addRoot(file))
+      onCleanup(() => subscription.unsubscribe())
+    })
   }
 
   addRoot(file: FileTreeEvent | ExternalFilePathEvent | any) {
     const root: Partial<SpaceRootModel> = {
       id: 0,
-      alias: uniqueNameFromCollection(file.name, 'alias', this.space.roots).toLowerCase(),
-      name: uniqueNameFromCollection(file.name, 'name', this.space.roots),
+      alias: uniqueNameFromCollection(file.name, 'alias', this.space().roots).toLowerCase(),
+      name: uniqueNameFromCollection(file.name, 'name', this.space().roots),
       permissions: '',
       createdAt: new Date()
     }
@@ -108,14 +107,16 @@ export class SpaceManageRootsComponent implements OnInit, OnDestroy {
     } else {
       // FileTreeEvent
       root.externalPath = null
-      root.owner = { id: this.user.id, login: this.user.login, email: this.user.email, fullName: this.user.fullName } as OwnerType
+      root.owner = { id: this.user().id, login: this.user().login, email: this.user().email, fullName: this.user().fullName } as OwnerType
       root.file = { id: file.id, path: file.path, mime: file.mime } as FileTreeEvent
     }
-    this.space.addRoot(root, true)
+    this.space().addRoot(root, true)
+    this.publishRoots()
   }
 
   removeRoot(root: SpaceRootModel) {
-    this.space.roots = this.space.roots.filter((r: SpaceRootModel) => root.alias !== r.alias)
+    this.space().roots = this.space().roots.filter((r: SpaceRootModel) => root.alias !== r.alias)
+    this.publishRoots()
   }
 
   onRenameRoot(ev: { object: SpaceRootModel; name: string }): void {
@@ -133,24 +134,32 @@ export class SpaceManageRootsComponent implements OnInit, OnDestroy {
     spaceRoot.alias = uniqueNameFromCollection(
       alias,
       'alias',
-      this.space.roots.filter((r: SpaceRootModel) => r.id !== spaceRoot.id)
+      this.space().roots.filter((r: SpaceRootModel) => r.id !== spaceRoot.id)
     ).toLowerCase()
     spaceRoot.name = uniqueNameFromCollection(
       ev.name.replace(regExpNumberSuffix, ''),
       'name',
-      this.space.roots.filter((r: SpaceRootModel) => r.id !== spaceRoot.id)
+      this.space().roots.filter((r: SpaceRootModel) => r.id !== spaceRoot.id)
     )
+    this.publishRoots()
   }
 
   onPermissionChange(root: SpaceRootModel) {
     root.permissions = setStringPermission(root.hPerms)
+    this.publishRoots()
   }
 
   setRenamed(root: SpaceRootModel) {
     if (root.isRenamed) {
-      this.inputRename.nativeElement.blur()
+      this.inputRename()?.nativeElement.blur()
     } else {
       root.isRenamed = true
+      this.displayedRoots.set([...this.space().roots])
     }
+  }
+
+  private publishRoots() {
+    this.displayedRoots.set([...this.space().roots])
+    this.rootsChange.emit([...this.space().roots])
   }
 }

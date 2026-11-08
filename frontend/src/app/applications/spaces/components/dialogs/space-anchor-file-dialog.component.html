@@ -3,7 +3,7 @@
     <svg [lucideIcon]="icons.LucideAnchor"></svg>
     <span l10nTranslate>Anchor files to a space</span>
   </h4>
-  @if (loading) {
+  @if (loading()) {
     <svg [lucideIcon]="icons.LucideLoader" class="ms-2 icon-spin"></svg>
   }
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white ms-auto" type="button"></button>
@@ -14,7 +14,7 @@
     <app-select id="space"
                 [searchFunction]="onSearchSpaces.bind(this)"
                 (data)="onSetSpace($event)"
-                [active]="selectedSpace"
+                [active]="selectedSpace()"
                 [itemIcon]="icons.SPACES"
                 [placeholder]="'Type to search for space to select' | translate:locale.language">
     </app-select>
@@ -22,16 +22,17 @@
   <div class="mb-3">
     <label class="form-label" for="files" l10nTranslate>Files</label>
     <app-space-manage-roots id="files"
-                            [space]="space"
+                            [space]="space()"
                             [user]="user"
                             [showInfo]="false"
                             [showUsers]="false"
-                            [showRemove]="files.length > 1"></app-space-manage-roots>
+                            [showRemove]="files.length > 1"
+                            (rootsChange)="onRootsChange($event)"></app-space-manage-roots>
   </div>
 </div>
 <div class="modal-footer">
   <button (click)="layout.closeDialog()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
-  <button (click)="onSubmit()" [disabled]="submitted || !selectedSpace || !space.roots.length" class="btn btn-primary" type="button" l10nTranslate>
+  <button (click)="onSubmit()" [disabled]="submitted() || !selectedSpace() || !space().roots.length" class="btn btn-primary" type="button" l10nTranslate>
     Confirm
   </button>
 </div>

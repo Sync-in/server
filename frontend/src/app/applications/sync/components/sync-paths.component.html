@@ -9,13 +9,13 @@
   </button>
   <button (click)="openSettingsDialog()"
           [attr.aria-label]="'Edit' | translate:locale.language"
-          [disabled]="!syncPathSelected"
+          [disabled]="!syncPathSelected()"
           [tooltip]="'Edit' | translate:locale.language"
           class="btn btn-default app-top-menu-tool-bar__action--icon" type="button">
     <svg [lucideIcon]="icons.LucidePencil"></svg>
   </button>
   <!--Start Sync Buttons-->
-  @if (syncPathSelected && syncPathSelected.inSync) {
+  @if (syncPathSelected()?.inSync) {
     <button (click)="doSync(false)"
             [attr.aria-label]="'Stop synchronization' | translate:locale.language"
             [tooltip]="'Stop synchronization' | translate:locale.language"
@@ -25,13 +25,13 @@
   } @else {
     <button (click)="doSync(true)"
             [attr.aria-label]="'Synchronize' | translate:locale.language"
-            [disabled]="!syncPathSelected || !syncPathSelected.settings.enabled"
+            [disabled]="!syncPathSelected()?.settings.enabled"
             [tooltip]="'Synchronize' | translate:locale.language"
             class="btn btn-default app-top-menu-tool-bar__action--icon" type="button">
       <svg [lucideIcon]="icons.LucidePlay"></svg>
     </button>
   }
-  @if (allSyncsRunning) {
+  @if (allSyncsRunning()) {
     <button (click)="doAllSyncs(false)"
             [attr.aria-label]="'Stop synchronizations' | translate:locale.language"
             [tooltip]="'Stop synchronizations' | translate:locale.language"
@@ -69,7 +69,7 @@
   }
   <button (click)="openReportDialog()"
           [attr.aria-label]="'Simulate' | translate:locale.language"
-          [disabled]="!syncPathSelected || !syncPathSelected.settings.enabled"
+          [disabled]="!syncPathSelected()?.settings.enabled"
           [tooltip]="'Simulate' | translate:locale.language"
           class="btn btn-default app-top-menu-tool-bar__action--icon" type="button">
     <svg [lucideIcon]="icons.LucideFlaskConical"></svg>
@@ -117,7 +117,7 @@
   </div>
   <!--End Sync Buttons-->
   <div [tooltip]="'Go to' | translate:locale.language">
-    <div [isDisabled]="!syncPathSelected" class="btn-group" dropdown>
+    <div [isDisabled]="!syncPathSelected()" class="btn-group" dropdown>
       <button class="btn btn-default dropdown-toggle app-top-menu-tool-bar__action--icon"
               [attr.aria-label]="'Go to' | translate:locale.language"
               dropdownToggle type="button">
@@ -175,14 +175,14 @@
 </table>
 <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                     [bufferAmount]="5"
-                    [items]="store.clientSyncPaths() | searchFilter:navbarSearch.viewFilter():'name'">
+                    [items]="store.clientSyncPaths() | searchFilter:navbarSearch.viewFilter()">
   <table class="app-table">
     <tbody tabindex="-1">
       @for (s of store.clientSyncPaths() | searchFilter:navbarSearch.viewFilter(); track s.id) {
         <tr (click)="onSelect(s)"
             (contextmenu)="onSyncPathContextMenu($event, s)"
             (appTap)="onSyncPathActivate(s)"
-            [class.selected]="syncPathSelected && syncPathSelected.id === s.id">
+            [class.selected]="syncPathSelected()?.id === s.id">
           @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
             @if (th.value.show) {
               <td [style.width.%]="th.value.width"
@@ -246,7 +246,7 @@
 </app-virtual-scroll>
 <!--Start Context Menu -->
 <context-menu #SyncPathContextMenu>
-  @if (syncPathSelected && syncPathSelected.inSync) {
+  @if (syncPathSelected()?.inSync) {
     <ng-template (execute)="doSync(false)" contextMenuItem><span l10nTranslate><svg [lucideIcon]="icons.LucideSquare"></svg>Synchronize</span>
     </ng-template>
   } @else {
@@ -284,7 +284,7 @@
   </ng-template>
 </context-menu>
 <context-menu #MainContextMenu>
-  @if (allSyncsRunning) {
+  @if (allSyncsRunning()) {
     <ng-template (execute)="doAllSyncs(false)" contextMenuItem><span l10nTranslate><svg [lucideIcon]="icons.LucideSquare"></svg>Stop synchronizations</span>
     </ng-template>
   } @else if (store.clientSyncPaths().length) {

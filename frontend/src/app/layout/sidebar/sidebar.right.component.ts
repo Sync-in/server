@@ -1,36 +1,32 @@
-import { AsyncPipe, NgComponentOutlet } from '@angular/common'
-import { Component, computed, inject, OnDestroy } from '@angular/core'
-import { toObservable } from '@angular/core/rxjs-interop'
+import { NgComponentOutlet } from '@angular/common'
+import { Component, computed, effect, inject, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { LucideBell, LucideDynamicIcon, LucideFlag, LucidePanelsTopLeft, LucideUserRound, LucideWifi } from '@lucide/angular'
-import { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { USER_ONLINE_STATUS } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10nTranslateDirective } from 'angular-l10n'
-import { combineLatest, Subscription } from 'rxjs'
-import { map } from 'rxjs/operators'
 import { FilesTasksComponent } from '../../applications/files/components/sidebar/files-tasks.component'
 import { NotificationsComponent } from '../../applications/notifications/components/sidebar/notifications.component'
 import { UserOnlinesComponent } from '../../applications/users/components/sidebar/user-onlines.component'
 import { UserProfileComponent } from '../../applications/users/components/sidebar/user-profile.component'
 import { StoreService } from '../../store/store.service'
-import { AppWindow, TAB_GROUP, TAB_MENU, TabMenu, themeLight } from '../layout.interfaces'
+import { TAB_GROUP, TAB_MENU, TabMenu } from '../layout.interfaces'
 import { LayoutService } from '../layout.service'
 import { WindowsComponent } from './components/windows.component'
 
 @Component({
   selector: 'app-sidebar-right',
-  imports: [LucideDynamicIcon, L10nTranslateDirective, NgComponentOutlet, AsyncPipe],
+  imports: [LucideDynamicIcon, L10nTranslateDirective, NgComponentOutlet],
   templateUrl: 'sidebar.right.component.html'
 })
-export class SideBarRightComponent implements OnDestroy {
-  protected visible = false
-  protected showComponents = false
-  protected tabs: TabMenu[] = []
-  protected theme = themeLight
-  protected networkIsOnline = true
+export class SideBarRightComponent {
+  protected readonly visible = signal(false)
+  protected readonly showComponents = signal(false)
+  protected readonly tabs = signal<TabMenu[]>([])
   protected readonly icons = { LucideWifi }
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
-  private subscriptions: Subscription[] = []
+  protected readonly theme = this.layout.switchTheme
+  protected readonly networkIsOnline = this.layout.networkIsOnline
   private showDelay: any = null
   // tabs
   private currentMenu: TAB_GROUP = null
@@ -42,8 +38,8 @@ export class SideBarRightComponent implements OnDestroy {
       icon: LucideUserRound,
       title: null,
       count: {
-        value: toObservable(computed(() => this.store.onlineUsers().filter((u) => u.onlineStatus !== USER_ONLINE_STATUS.OFFLINE).length)),
-        level: 'success'
+        value: computed(() => this.store.onlineUsers().filter((u) => u.onlineStatus !== USER_ONLINE_STATUS.OFFLINE).length),
+        level: signal('success')
       },
       showOnCount: true,
       active: false
@@ -54,8 +50,8 @@ export class SideBarRightComponent implements OnDestroy {
       icon: LucideBell,
       title: null,
       count: {
-        value: toObservable(computed(() => this.store.unreadNotifications().length)),
-        level: 'warning'
+        value: computed(() => this.store.unreadNotifications().length),
+        level: signal('warning')
       },
       active: false
     },
@@ -65,10 +61,8 @@ export class SideBarRightComponent implements OnDestroy {
       icon: LucideFlag,
       title: null,
       count: {
-        value: combineLatest([this.store.filesActiveTasks.pipe(map((tasks: FileTask[]) => tasks.length)), this.store.clientSyncTasksCount]).pipe(
-          map(([fCount, sCount]) => fCount + sCount)
-        ),
-        level: 'maroon'
+        value: computed(() => this.store.filesActiveTasks().length + this.store.clientSyncTasksCount()),
+        level: signal('maroon')
       },
       active: false
     }
@@ -79,7 +73,7 @@ export class SideBarRightComponent implements OnDestroy {
       components: [WindowsComponent],
       icon: LucidePanelsTopLeft,
       title: null,
-      count: { value: this.layout.windows.pipe(map((modals: AppWindow[]) => modals.length)), level: 'maroon' },
+      count: { value: computed(() => this.layout.windows().length), level: signal('maroon') },
       showOnCount: true,
       firstOfLasts: true,
       active: false
@@ -87,24 +81,18 @@ export class SideBarRightComponent implements OnDestroy {
   ]
 
   constructor() {
-    this.tabs = [...this.firstsTabs, ...this.lastsTabs]
-    this.subscriptions.push(this.layout.rightSideBarIsOpen.subscribe((state: boolean) => this.setVisible(state)))
-    this.subscriptions.push(this.layout.rightSideBarSetTabs.subscribe((menuTabs: { name: TAB_GROUP; tabs: TabMenu[] }) => this.setTabs(menuTabs)))
-    this.subscriptions.push(this.layout.rightSideBarOpenAndShowTab.subscribe((tabName: string) => this.setTabVisible(tabName)))
-    this.subscriptions.push(this.layout.rightSideBarSelectTab.subscribe((tabName: string) => this.selectTab(tabName)))
-    this.subscriptions.push(this.layout.switchTheme.subscribe((theme: string) => (this.theme = theme)))
-    this.subscriptions.push(this.layout.networkIsOnline.subscribe((state: boolean) => (this.networkIsOnline = state)))
-  }
-
-  ngOnDestroy() {
-    this.subscriptions.forEach((s) => s.unsubscribe())
+    this.tabs.set([...this.firstsTabs, ...this.lastsTabs])
+    effect(() => this.setVisible(this.layout.rightSideBarIsOpen()))
+    this.layout.rightSideBarSetTabs.pipe(takeUntilDestroyed()).subscribe((menuTabs: { name: TAB_GROUP; tabs: TabMenu[] }) => this.setTabs(menuTabs))
+    this.layout.rightSideBarOpenAndShowTab.pipe(takeUntilDestroyed()).subscribe((tabName: string) => this.setTabVisible(tabName))
+    this.layout.rightSideBarSelectTab.pipe(takeUntilDestroyed()).subscribe((tabName: string) => this.selectTab(tabName))
   }
 
   setTabVisible(tabName: string) {
-    if (!this.visible) {
+    if (!this.visible()) {
       this.selectTab(tabName)
       this.layout.toggleRSideBar(true)
-    } else if (tabName && tabName !== this.layout.currentRightSideBarTab) {
+    } else if (tabName && tabName !== this.layout.currentRightSideBarTab()) {
       this.selectTab(tabName)
     } else {
       this.layout.toggleRSideBar(false)
@@ -114,19 +102,19 @@ export class SideBarRightComponent implements OnDestroy {
   private setVisible(state: boolean) {
     if (state) {
       clearTimeout(this.showDelay)
-      this.showComponents = state
+      this.showComponents.set(state)
     } else {
       // delay the components hiding
-      this.showDelay = setTimeout(() => (this.showComponents = state), 500)
+      this.showDelay = setTimeout(() => this.showComponents.set(state), 500)
     }
-    this.visible = state
+    this.visible.set(state)
   }
 
   private setTabs(menuTabs: { name: TAB_GROUP; tabs: TabMenu[] }) {
     if (menuTabs.name !== this.currentMenu) {
-      this.tabs = [...this.firstsTabs, ...(menuTabs.tabs ? menuTabs.tabs : []), ...this.lastsTabs]
+      this.tabs.set([...this.firstsTabs, ...(menuTabs.tabs ? menuTabs.tabs : []), ...this.lastsTabs])
       this.currentMenu = menuTabs.name
-      if (menuTabs.name === null && !this.tabs.find((tab: TabMenu) => tab.active)) {
+      if (menuTabs.name === null && !this.tabs().find((tab: TabMenu) => tab.active)) {
         this.layout.toggleRSideBar(false)
       }
     }
@@ -135,16 +123,16 @@ export class SideBarRightComponent implements OnDestroy {
   private selectTab(tabName: string) {
     if (tabName) {
       let atLeastOneActive = false
-      for (const tab of this.tabs) {
+      const tabs = this.tabs()
+      for (const tab of tabs) {
         tab.active = tab.label == tabName
         if (tab.active) {
           atLeastOneActive = true
-          this.layout.currentRightSideBarTab = tabName
+          this.layout.currentRightSideBarTab.set(tabName)
         }
       }
-      if (!atLeastOneActive) {
-        this.tabs[0].active = true
-      }
+      if (!atLeastOneActive) tabs[0].active = true
+      this.tabs.set([...tabs])
     }
   }
 }

@@ -6,13 +6,13 @@
     } @else {
       <span l10nTranslate>New personal group</span>
     }
-    @if (loading) {
+    @if (loading()) {
       <svg [lucideIcon]="icons.LucideLoader" class="ms-2 icon-spin"></svg>
     }
   </h4>
   @if (group.id) {
     <h4 class="modal-title ms-auto">
-      @if (isPersonalGroup) {
+      @if (isPersonalGroup()) {
         <span l10nTranslate>Edit personal group</span>
       } @else {
         <span l10nTranslate>Edit group</span>
@@ -30,7 +30,7 @@
             <label class="form-label" for="name" l10nTranslate>Name</label>
             <input id="name"
                    appAutofocus
-                   [disabled]="!isPersonalGroup"
+                   [disabled]="!isPersonalGroup()"
                    [autoSelect]="false"
                    [(ngModel)]="group.name"
                    [class.is-invalid]="!group.name"
@@ -42,7 +42,7 @@
             <label class="form-label" for="description" l10nTranslate>Description</label>
             <input id="description"
                    [(ngModel)]="group.description"
-                   [disabled]="!isPersonalGroup"
+                   [disabled]="!isPersonalGroup()"
                    class="form-control"
                    autocomplete="off"
                    type="text">
@@ -75,7 +75,7 @@
 <div class="modal-footer">
   <button (click)="onCancel()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="!this.group.name || submitted"
+          [disabled]="!this.group.name || submitted()"
           class="btn btn-primary"
           type="button"
           l10nTranslate>

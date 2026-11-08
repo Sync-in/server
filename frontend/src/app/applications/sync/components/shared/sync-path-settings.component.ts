@@ -1,4 +1,4 @@
-import { Component, inject, Input } from '@angular/core'
+import { Component, inject, input } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import {
   LucideBug,
@@ -29,12 +29,12 @@ import { SyncPathDirectionIconComponent } from '../utils/sync-path-direction-ico
   styleUrl: './sync-path-settings.component.scss'
 })
 export class SyncPathSettingsComponent {
-  @Input() syncPath: SyncPathModel
-  @Input() direction = 'center'
-  @Input() showPaths = false
-  @Input() size: 'small' | 'large' = 'small'
+  readonly syncPath = input.required<SyncPathModel>()
+  readonly direction = input('center')
+  readonly showPaths = input(false)
+  readonly size = input<'small' | 'large'>('small')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected icons = {
+  protected readonly icons = {
     CLIENT: SYNC_ICON.CLIENT,
     SERVER: SYNC_ICON.SERVER,
     LucideCircleExclamationPoint,

@@ -7,7 +7,7 @@
       <svg [lucideIcon]="icons.LucideUserRoundPlus"></svg>
       <span l10nTranslate>New user</span>
     }
-    @if (loading) {
+    @if (loading()) {
       <svg [lucideIcon]="icons.LucideLoader" class="ms-2 icon-spin"></svg>
     }
   </h4>
@@ -20,7 +20,7 @@
 </div>
 <div class="modal-body" [formGroup]="userForm">
   <tabset [justified]="true" type="pills">
-    <tab (selectTab)="tabView=null" customClass="tab-dialog form-validation">
+    <tab customClass="tab-dialog form-validation">
       <ng-template tabHeading>
         <span class="app-tab-heading">
           <svg [lucideIcon]="icons.LucideUserRoundCog"></svg>
@@ -100,10 +100,10 @@
                   <label class="form-label" for="twoFa" l10nTranslate>Two-Factor Authentication</label>
                   <div id="twoFa" class="pt-1 d-flex align-items-center flex-wrap gap-2">
                     <span class="d-inline-flex align-items-center gap-2">
-                      <svg class="two-fa-status-icon" [lucideIcon]="user.twoFaEnabled ? icons.LucideLock : icons.LucideLockOpen"></svg>
-                      {{ (user.twoFaEnabled ? 'enabled' : 'disabled') | translate:locale.language | titlecase }}
+                      <svg class="two-fa-status-icon" [lucideIcon]="twoFaEnabled() ? icons.LucideLock : icons.LucideLockOpen"></svg>
+                      {{ (twoFaEnabled() ? 'enabled' : 'disabled') | translate:locale.language | titlecase }}
                     </span>
-                    @if (user.twoFaEnabled) {
+                    @if (twoFaEnabled()) {
                       <span (click)="reset2Fa()" class="link-danger" role="button">
                         <svg [lucideIcon]="icons.LucideTrash"></svg>
                         <span class="ms-1" l10nTranslate>Reset</span>
@@ -194,7 +194,7 @@
       </div>
     </tab>
 
-    <tab (selectTab)="tabView='permissions'" customClass="tab-dialog">
+    <tab customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
           <svg [lucideIcon]="icons.LucideShieldCheck"></svg>
@@ -272,7 +272,7 @@
       </div>
     </tab>
 
-    <tab (selectTab)="tabView='groups'" customClass="tab-dialog">
+    <tab customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
           <svg [lucideIcon]="icons.LucideUsersRound"></svg>
@@ -294,17 +294,17 @@
 </div>
 <div class="modal-footer">
   @if (user?.id) {
-    <button (click)="confirmDeletion = true"
-            [disabled]="confirmDeletion"
+    <button (click)="confirmDeletion.set(true)"
+            [disabled]="confirmDeletion()"
             class="btn btn-danger" type="button" l10nTranslate>
       Remove
     </button>
   }
   <button (click)="onCancel()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="userForm.invalid || submitted" class="btn {{confirmDeletion ? 'btn-danger' : 'btn-primary'}}"
+          [disabled]="userForm.invalid || submitted()" class="btn {{confirmDeletion() ? 'btn-danger' : 'btn-primary'}}"
           type="button"
           l10nTranslate>
-    {{ confirmDeletion ? 'Confirm deletion' : 'Confirm' }}
+    {{ confirmDeletion() ? 'Confirm deletion' : 'Confirm' }}
   </button>
 </div>

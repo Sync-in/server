@@ -1,5 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
-import { Component, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Component, DestroyRef, inject, OnInit, signal, viewChild, ViewChild } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { LucideArrowDown, LucideArrowUp, LucideDynamicIcon, LucideFolderOpen, LucideRotateCw } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
@@ -8,7 +9,7 @@ import { SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/space
 import type { SpaceTrash } from '@sync-in-server/backend/src/applications/spaces/interfaces/space-trash.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
-import { debounceTime, filter, Subscription } from 'rxjs'
+import { debounceTime, filter } from 'rxjs'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
@@ -41,11 +42,11 @@ import { SPACES_ICON, SPACES_PATH, SPACES_TITLE } from '../spaces.constants'
   ],
   templateUrl: 'trash.component.html'
 })
-export class TrashComponent implements OnInit, OnDestroy {
-  @ViewChild(VirtualScrollComponent) scrollView: { element: ElementRef; viewPortItems: TrashModel[]; scrollInto: (arg: TrashModel | number) => void }
+export class TrashComponent implements OnInit {
+  protected readonly scrollView = viewChild<VirtualScrollComponent<TrashModel>>(VirtualScrollComponent)
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
-  @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
-  @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
+  readonly targetContextMenu = viewChild.required<ContextMenuComponent<any>>('TargetContextMenu')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly navbarSearch = inject(NavbarSearchService)
@@ -59,10 +60,7 @@ export class TrashComponent implements OnInit, OnDestroy {
     LucideRotateCw,
     TRASH: SPACES_ICON.TRASH
   }
-  protected galleryMode: ViewMode
-  protected loading = false
-  protected selected: TrashModel = null
-  protected trashBins: TrashModel[] = []
+  protected readonly galleryMode = signal<ViewMode>(undefined)
   // Sort
   protected tableHeaders: Record<'name' | 'nb' | 'modified', TableHeaderConfig> = {
     name: {
@@ -92,9 +90,12 @@ export class TrashComponent implements OnInit, OnDestroy {
     }
   }
   private readonly router = inject(Router)
+  protected readonly loading = signal(false)
+  protected readonly selected = signal<TrashModel>(null)
+  protected readonly trashBins = signal<TrashModel[]>([])
+  private readonly destroyRef = inject(DestroyRef)
   private readonly store = inject(StoreService)
   private readonly spacesService = inject(SpacesService)
-  private readonly subscriptions = new Subscription()
   private readonly sortSettings: SortSettings = {
     default: [
       { prop: 'isPersonal', type: 'number' },
@@ -113,30 +114,25 @@ export class TrashComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.galleryMode = this.btnNavigationView.currentView()
-    this.subscriptions.add(
-      this.store.filesOnEvent
-        .pipe(
-          filter(
-            (event: FileEvent) =>
-              event.delete &&
-              ((event.filePath === SPACE_REPOSITORY.TRASH && !!event.fileName) ||
-                (event.status === FileTaskStatus.SUCCESS &&
-                  event.filePath?.startsWith(`${SPACE_REPOSITORY.TRASH}/`) &&
-                  event.filePath.split('/').length === 2))
-          ),
-          debounceTime(300)
-        )
-        .subscribe(() => this.loadTrashBins())
-    )
-  }
-
-  ngOnDestroy() {
-    this.subscriptions.unsubscribe()
+    this.galleryMode.set(this.btnNavigationView.currentView())
+    this.store.filesOnEvent
+      .pipe(
+        filter(
+          (event: FileEvent) =>
+            event.delete &&
+            ((event.filePath === SPACE_REPOSITORY.TRASH && !!event.fileName) ||
+              (event.status === FileTaskStatus.SUCCESS &&
+                event.filePath?.startsWith(`${SPACE_REPOSITORY.TRASH}/`) &&
+                event.filePath.split('/').length === 2))
+        ),
+        debounceTime(300),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => this.loadTrashBins())
   }
 
   loadTrashBins() {
-    this.loading = true
+    this.loading.set(true)
     this.onSelect()
     this.spacesService.listTrashBins().subscribe({
       next: (trashBins: SpaceTrash[]) => {
@@ -145,24 +141,24 @@ export class TrashComponent implements OnInit, OnDestroy {
           false,
           trashBins.map((t: SpaceTrash) => new TrashModel(t))
         )
-        this.loading = false
+        this.loading.set(false)
       }
     })
   }
 
   onSelect(trash: TrashModel = null) {
-    this.selected = trash
-    this.store.trashSelection.set(this.selected)
+    this.selected.set(trash)
+    this.store.trashSelection.set(this.selected())
   }
 
   sortBy(column: string, toUpdate = true, collection?: TrashModel[]) {
-    this.trashBins = this.sortTable.sortBy(column, toUpdate, collection || this.trashBins)
+    this.trashBins.set(this.sortTable.sortBy(column, toUpdate, collection || this.trashBins()))
   }
 
   onContextMenu(ev: MouseEvent) {
     ev.preventDefault()
     ev.stopPropagation()
-    this.layout.openContextMenu(ev, this.mainContextMenu)
+    this.layout.openContextMenu(ev, this.mainContextMenu())
   }
 
   onTargetContextMenu(ev: any, trash: TrashModel) {
@@ -171,7 +167,7 @@ export class TrashComponent implements OnInit, OnDestroy {
       ev.stopPropagation()
     }
     this.onSelect(trash)
-    this.layout.openContextMenu(ev, this.targetContextMenu)
+    this.layout.openContextMenu(ev, this.targetContextMenu())
   }
 
   browse(trash: TrashModel) {

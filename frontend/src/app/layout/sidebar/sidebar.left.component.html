@@ -7,7 +7,7 @@
         </button>
         <div class="sidebar-brand">
           <span class="sidebar-app-name">{{ appName }}</span>
-          <span class="sidebar-title" l10nTranslate>{{ dynamicTitle }}</span>
+          <span class="sidebar-title" l10nTranslate>{{ dynamicTitle() }}</span>
         </div>
         <button (click)="navigateInHistory('back')"
                 aria-label="Back"
@@ -24,7 +24,7 @@
       </div>
     </div>
     <div class="apps-shortcuts">
-      @for (menu of appMenus; track $index) {
+      @for (menu of appMenus(); track $index) {
         @if (showAppShortcut(menu)) {
           <button (click)="navigateToMenu(menu)"
                   (mouseenter)="previewMenuTitle(menu.title)"
@@ -35,15 +35,15 @@
             <svg [class]="menu.iconAnimated ? 'icon-spin' : ''" [lucideIcon]="menu.icon"></svg>
             @if (menu.count) {
               <span class="menu-badge-icon">
-              @if (menu.count.value | async; as count) {
-                <span class="badge bg-{{menu.count.level}}">{{ count }}</span>
+              @if (menu.count.value(); as count) {
+                <span class="badge bg-{{menu.count.level()}}">{{ count }}</span>
               }
               </span>
             }
           </button>
         }
       }
-      @if (showLogoutShortcut) {
+      @if (showLogoutShortcut()) {
         <button (click)="logOut()"
                 (mouseenter)="previewMenuTitle('Logout')"
                 (mouseleave)="restoreMenuTitle()"
@@ -66,18 +66,18 @@
     <div class="menus-content">
       <div class="menus-group">
         <div class="menus-top">
-          @for (menu of navigationSubmenus; track $index; let menuIndex = $index) {
+          @for (menu of navigationSubmenus(); track $index; let menuIndex = $index) {
             @if (!isBottomMenu(menu)) {
               <ng-container [ngTemplateOutlet]="MenuEntry"
-                            [ngTemplateOutletContext]="{menus: navigationSubmenus, menu: menu, menuIndex: menuIndex}"></ng-container>
+                            [ngTemplateOutletContext]="{menus: navigationSubmenus(), menu: menu, menuIndex: menuIndex}"></ng-container>
             }
           }
         </div>
         <div class="menus-bottom">
-          @for (menu of navigationSubmenus; track $index; let menuIndex = $index) {
+          @for (menu of navigationSubmenus(); track $index; let menuIndex = $index) {
             @if (isBottomMenu(menu)) {
               <ng-container [ngTemplateOutlet]="MenuEntry"
-                            [ngTemplateOutletContext]="{menus: navigationSubmenus, menu: menu, menuIndex: menuIndex}"></ng-container>
+                            [ngTemplateOutletContext]="{menus: navigationSubmenus(), menu: menu, menuIndex: menuIndex}"></ng-container>
             }
           }
         </div>
@@ -100,8 +100,8 @@
   <span l10nTranslate>{{ menu.title }}</span>
   @if (menu.count) {
     <span class="menu-badge">
-    @if (menu.count.value | async; as count) {
-      <span class="badge bg-{{menu.count.level}}">{{ count }}</span>
+    @if (menu.count.value(); as count) {
+      <span class="badge bg-{{menu.count.level()}}">{{ count }}</span>
     }
     </span>
   }

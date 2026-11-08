@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Output } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, output, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideGrid2x2, LucideList } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
@@ -53,17 +53,20 @@ export type { ViewMode } from './interfaces/view-mode.interface'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NavigationViewComponent {
-  @Output() switchView = new EventEmitter<ViewMode>()
+  readonly switchView = output<ViewMode>()
   protected readonly icons = { LucideGrid2x2, LucideList }
   protected readonly galleryViewOptions = GALLERY_VIEW_OPTIONS
-  protected viewMode = this.getStoredViewMode()
-
-  currentView(): ViewMode {
-    return VIEW_MODES[this.viewMode]
-  }
+  protected readonly viewMode = signal(this.getStoredViewMode())
+  readonly currentView = computed(() => VIEW_MODES[this.viewMode()])
+  protected readonly galleryModeEnabled = computed(() => this.currentView().enabled)
+  protected readonly gallerySizeIndex = computed(() => {
+    const index = GALLERY_VIEW_OPTIONS.findIndex(({ key }) => key === this.viewMode())
+    return index === -1 ? DEFAULT_GALLERY_VIEW_MODE_INDEX : index
+  })
+  protected readonly gallerySizeLabel = computed(() => GALLERY_VIEW_OPTIONS[this.gallerySizeIndex()].label)
 
   protected setView(view: ViewModeKey) {
-    const currentViewMode = this.viewMode
+    const currentViewMode = this.viewMode()
     const selectedView = VIEW_MODES[view]
     if (view === currentViewMode) return
     if (selectedView.enabled) {
@@ -71,22 +74,9 @@ export class NavigationViewComponent {
     } else if (VIEW_MODES[currentViewMode].enabled) {
       localStorage.setItem(GALLERY_VIEW_MODE_STORAGE_KEY, currentViewMode)
     }
-    this.viewMode = view
+    this.viewMode.set(view)
     localStorage.setItem(VIEW_MODE_STORAGE_KEY, view)
     this.switchView.emit(selectedView)
-  }
-
-  protected get galleryModeEnabled() {
-    return this.currentView().enabled
-  }
-
-  protected get gallerySizeIndex() {
-    const index = GALLERY_VIEW_OPTIONS.findIndex(({ key }) => key === this.viewMode)
-    return index === -1 ? DEFAULT_GALLERY_VIEW_MODE_INDEX : index
-  }
-
-  protected get gallerySizeLabel() {
-    return GALLERY_VIEW_OPTIONS[this.gallerySizeIndex].label
   }
 
   protected setGallerySize(event: Event) {
@@ -95,7 +85,7 @@ export class NavigationViewComponent {
   }
 
   protected selectGalleryMode() {
-    if (this.galleryModeEnabled) return
+    if (this.galleryModeEnabled()) return
     const storedGalleryViewMode = localStorage.getItem(GALLERY_VIEW_MODE_STORAGE_KEY)
     const galleryViewMode =
       isViewModeKey(storedGalleryViewMode) && VIEW_MODES[storedGalleryViewMode].enabled ? storedGalleryViewMode : DEFAULT_GALLERY_VIEW_MODE

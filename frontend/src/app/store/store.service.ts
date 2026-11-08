@@ -27,7 +27,7 @@ import { myAvatarUrl } from '../applications/users/user.functions'
   providedIn: 'root'
 })
 export class StoreService {
-  public server: WritableSignal<ServerConfig> = signal<ServerConfig>({
+  public readonly server: WritableSignal<ServerConfig> = signal<ServerConfig>({
     twoFaEnabled: false,
     mailServerEnabled: false,
     files: {
@@ -35,54 +35,54 @@ export class StoreService {
       sampleDocuments: ALL_DOCUMENT_TYPES
     }
   })
-  public user = new BehaviorSubject<UserType>(null)
-  public userAvatarUrl = new BehaviorSubject<string>(myAvatarUrl())
-  public userImpersonate: WritableSignal<boolean> = signal<boolean>(false)
-  public isElectronApp: WritableSignal<boolean> = signal<boolean>(false)
-  public breadcrumb: BehaviorSubject<string> = new BehaviorSubject<string>('')
-  public repository: WritableSignal<string> = signal<string>(null)
+  public readonly user: WritableSignal<UserType> = signal<UserType>(null, { equal: () => false })
+  public readonly userAvatarUrl: WritableSignal<string> = signal<string>(myAvatarUrl(), { equal: () => false })
+  public readonly userImpersonate: WritableSignal<boolean> = signal<boolean>(false)
+  public readonly isElectronApp: WritableSignal<boolean> = signal<boolean>(false)
+  public readonly breadcrumb: WritableSignal<string> = signal<string>('', { equal: () => false })
+  public readonly repository: WritableSignal<string> = signal<string>(null)
   // Files
-  public filesClipboard = new BehaviorSubject<FileModel[]>([])
-  public filesActiveTasks = new BehaviorSubject<FileTask[]>([])
-  public filesEndedTasks = new BehaviorSubject<FileTask[]>([])
-  public filesRecents: WritableSignal<FileRecentModel[]> = signal<FileRecentModel[]>([])
+  public readonly filesClipboard: WritableSignal<FileModel[]> = signal<FileModel[]>([], { equal: () => false })
+  public readonly filesActiveTasks: WritableSignal<FileTask[]> = signal<FileTask[]>([], { equal: () => false })
+  public readonly filesEndedTasks: WritableSignal<FileTask[]> = signal<FileTask[]>([], { equal: () => false })
+  public readonly filesRecents: WritableSignal<FileRecentModel[]> = signal<FileRecentModel[]>([])
   // Search
-  public currentSearch: WritableSignal<SearchFilesDto> = signal<SearchFilesDto>({ content: '', fullText: false })
-  public filesSearch: WritableSignal<FileContentModel[]> = signal<FileContentModel[]>([])
+  public readonly currentSearch: WritableSignal<SearchFilesDto> = signal<SearchFilesDto>({ content: '', fullText: false })
+  public readonly filesSearch: WritableSignal<FileContentModel[]> = signal<FileContentModel[]>([])
   // Comments
-  public commentsRecents: WritableSignal<CommentRecentModel[]> = signal<CommentRecentModel[]>([])
+  public readonly commentsRecents: WritableSignal<CommentRecentModel[]> = signal<CommentRecentModel[]>([])
   // Websocket
-  public onlineUsers: WritableSignal<UserOnlineModel[]> = signal<UserOnlineModel[]>([])
+  public readonly onlineUsers: WritableSignal<UserOnlineModel[]> = signal<UserOnlineModel[]>([])
   // Notifications
-  public notifications: WritableSignal<NotificationModel[]> = signal<NotificationModel[]>([])
-  public unreadNotifications: Signal<NotificationModel[]> = computed(() => this.notifications().filter((n) => !n.wasRead))
+  public readonly notifications: WritableSignal<NotificationModel[]> = signal<NotificationModel[]>([])
+  public readonly unreadNotifications: Signal<NotificationModel[]> = computed(() => this.notifications().filter((n) => !n.wasRead))
   // Selections
-  public filesSelection: WritableSignal<FileModel[]> = signal<FileModel[]>([])
-  public shareSelection: WritableSignal<ShareFileModel> = signal<ShareFileModel>(null)
-  public linkSelection: WritableSignal<ShareLinkModel> = signal<ShareLinkModel>(null)
-  public spaceSelection: WritableSignal<SpaceModel> = signal<SpaceModel>(null)
-  public trashSelection: WritableSignal<TrashModel> = signal<TrashModel>(null)
+  public readonly filesSelection: WritableSignal<FileModel[]> = signal<FileModel[]>([])
+  public readonly shareSelection: WritableSignal<ShareFileModel> = signal<ShareFileModel>(null, { equal: () => false })
+  public readonly linkSelection: WritableSignal<ShareLinkModel> = signal<ShareLinkModel>(null, { equal: () => false })
+  public readonly spaceSelection: WritableSignal<SpaceModel> = signal<SpaceModel>(null, { equal: () => false })
+  public readonly trashSelection: WritableSignal<TrashModel> = signal<TrashModel>(null)
   // Events
-  public filesOnEvent: Subject<FileEvent> = new Subject<FileEvent>()
+  public readonly filesOnEvent: Subject<FileEvent> = new Subject<FileEvent>()
   // Client
-  public clientScheduler: WritableSignal<CLIENT_SCHEDULER_STATE> = signal<CLIENT_SCHEDULER_STATE>(CLIENT_SCHEDULER_STATE.ASYNC)
-  public clientSyncPaths: WritableSignal<SyncPathModel[]> = signal([])
-  public clientSyncs = new BehaviorSubject<SyncStatus[]>([])
-  public clientSyncsWithErrors = new BehaviorSubject<SyncStatus[]>([])
-  public clientSyncIsReporting = new BehaviorSubject<boolean>(false)
-  public clientSyncTask = new BehaviorSubject<SyncTask>({ syncPathId: 0, nbTasks: 0 })
-  public clientSyncTasksCount = new BehaviorSubject<number>(0)
+  public readonly clientScheduler: WritableSignal<CLIENT_SCHEDULER_STATE> = signal<CLIENT_SCHEDULER_STATE>(CLIENT_SCHEDULER_STATE.ASYNC)
+  public readonly clientSyncPaths: WritableSignal<SyncPathModel[]> = signal([])
+  public readonly clientSyncs = new BehaviorSubject<SyncStatus[]>([])
+  public readonly clientSyncsWithErrors: WritableSignal<SyncStatus[]> = signal<SyncStatus[]>([], { equal: () => false })
+  public readonly clientSyncIsReporting = new BehaviorSubject<boolean>(false)
+  public readonly clientSyncTask = new BehaviorSubject<SyncTask>({ syncPathId: 0, nbTasks: 0 })
+  public readonly clientSyncTasksCount: WritableSignal<number> = signal<number>(0, { equal: () => false })
   // App store
-  public appStoreManifest: WritableSignal<AppStoreManifest> = signal(null)
+  public readonly appStoreManifest: WritableSignal<AppStoreManifest> = signal(null)
 
   clean() {
-    this.user.next(null)
+    this.user.set(null)
     this.userImpersonate.set(false)
-    this.breadcrumb.next('')
+    this.breadcrumb.set('')
     this.repository.set(null)
-    this.filesClipboard.next([])
-    this.filesActiveTasks.next([])
-    this.filesEndedTasks.next([])
+    this.filesClipboard.set([])
+    this.filesActiveTasks.set([])
+    this.filesEndedTasks.set([])
     this.filesRecents.set([])
     this.currentSearch.set({ content: '', fullText: false })
     this.filesSearch.set([])
@@ -101,9 +101,9 @@ export class StoreService {
     this.clientScheduler.set(CLIENT_SCHEDULER_STATE.ASYNC)
     this.clientSyncPaths.set([])
     this.clientSyncs.next([])
-    this.clientSyncsWithErrors.next([])
+    this.clientSyncsWithErrors.set([])
     this.clientSyncIsReporting.next(false)
     this.clientSyncTask.next({ syncPathId: 0, nbTasks: 0 })
-    this.clientSyncTasksCount.next(0)
+    this.clientSyncTasksCount.set(0)
   }
 }

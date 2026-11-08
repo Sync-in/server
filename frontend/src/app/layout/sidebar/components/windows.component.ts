@@ -1,8 +1,7 @@
 import { NgOptimizedImage } from '@angular/common'
-import { Component, inject, OnDestroy } from '@angular/core'
+import { Component, effect, inject } from '@angular/core'
 import { LucideDynamicIcon, LucideX } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
-import { Subscription } from 'rxjs'
 import { AutoResizeDirective } from '../../../common/directives/auto-resize.directive'
 import { AppWindow, TAB_MENU } from '../../layout.interfaces'
 import { LayoutService } from '../../layout.service'
@@ -12,18 +11,13 @@ import { LayoutService } from '../../layout.service'
   imports: [AutoResizeDirective, LucideDynamicIcon, L10nTranslateDirective, NgOptimizedImage],
   templateUrl: 'windows.component.html'
 })
-export class WindowsComponent implements OnDestroy {
+export class WindowsComponent {
   protected readonly icons = { LucideX }
-  protected windows: AppWindow[] = []
   private readonly layout = inject(LayoutService)
-  private readonly subscription: Subscription = null
+  protected readonly windows = this.layout.windows
 
   constructor() {
-    this.subscription = this.layout.windows.subscribe((windows: AppWindow[]) => this.setWindows(windows))
-  }
-
-  ngOnDestroy() {
-    this.subscription.unsubscribe()
+    effect(() => this.hideIfNoWindows(this.windows()))
   }
 
   onMaximize(window: AppWindow) {
@@ -37,22 +31,17 @@ export class WindowsComponent implements OnDestroy {
     if (modal) {
       modal.content.onClose()
     }
-    this.hideIfNoWindows(this.layout.windows.getValue())
+    this.hideIfNoWindows(this.layout.windows())
   }
 
   onCloseAll() {
-    for (const w of this.layout.windows.getValue()) {
+    for (const w of this.layout.windows()) {
       const modal = this.layout.modalRefs.get(w.id)
       if (modal) {
         modal.content.onClose()
       }
     }
-    this.hideIfNoWindows(this.layout.windows.getValue())
-  }
-
-  private setWindows(windows: AppWindow[]) {
-    this.hideIfNoWindows(windows)
-    this.windows = windows
+    this.hideIfNoWindows(this.layout.windows())
   }
 
   private hideIfNoWindows(windows: AppWindow[]) {

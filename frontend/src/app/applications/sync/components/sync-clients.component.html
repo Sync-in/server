@@ -1,3 +1,5 @@
+@let selected = this.selected();
+@let selectedPath = this.selectedPath();
 <div class="app-top-menu app-top-menu-tool-bar"
      [attr.aria-label]="'Actions' | translate:locale.language"
      role="toolbar">
@@ -18,7 +20,7 @@
   </button>
 </div>
 <div class="app-sync-clients" appAutoResize>
-  @for (client of clients; track client.id) {
+  @for (client of clients(); track client.id) {
     <div (click)="onSelectClient(client)"
          [class.sync-client-card--selected]="selected && selected.id === client.id"
          class="card dialog-tab-card sync-client-card">

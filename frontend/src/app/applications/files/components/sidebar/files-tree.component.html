@@ -1,4 +1,4 @@
-@if (sideBarHeader) {
+@if (sideBarHeader()) {
   <div class="sidebar-component-title app-top-menu-tool-bar justify-content-between position-relative">
     <div class="sidebar-component-title-side"></div>
     <div class="sidebar-component-title-label" l10nTranslate>Navigation</div>
@@ -11,9 +11,10 @@
     </div>
   </div>
 }
-@if (copyMoveOn) {
+@if (copyMoveOn()) {
   @let files = store.filesSelection();
-  @let destination = destinationLocation;
+  @let destination = destinationLocation();
+  @let currentNode = selectedNode();
   <div #copyMovePanel class="bg-white p-2 fs-sm">
     <div class="d-flex">
       <div class="d-flex flex-column align-items-center me-2 text-muted">
@@ -63,8 +64,8 @@
             <app-files-summary [files]="files"></app-files-summary>
           }
         }
-        @if (errorMsg && !srcAllowed) {
-          <div class="text-danger mt-1" l10nTranslate>{{ errorMsg }}</div>
+        @if (errorMsg() && !srcAllowed()) {
+          <div class="text-danger mt-1" l10nTranslate>{{ errorMsg() }}</div>
         }
       </div>
     </div>
@@ -82,27 +83,27 @@
       <div class="flex-grow-1 overflow-hidden">
         <div class="copy-move-location-label text-muted mb-1 overflow-hidden">
           <span class="flex-shrink-0" l10nTranslate>Destination</span>
-          @if (selection && dstAllowed && destination?.relativePath) {
+          @if (currentNode && dstAllowed() && destination?.relativePath) {
             <span class="mx-1 lh-1 text-muted">•</span>
             <span class="text-truncate">{{ destination.relativePath }}</span>
           }
         </div>
         <div class="app-small-card files-summary-card border rounded d-flex align-items-center px-2 py-2">
-          @if (selection && dstAllowed) {
-            <span class="text-bold text-truncate">{{ selection.data.name }}</span>
+          @if (currentNode && dstAllowed()) {
+            <span class="text-bold text-truncate">{{ currentNode.data.name }}</span>
           } @else {
             <span class="text-muted mx-auto">?</span>
           }
         </div>
-        @if (errorMsg && !dstAllowed) {
-          <div class="text-danger mt-2" l10nTranslate>{{ errorMsg }}</div>
+        @if (errorMsg() && !dstAllowed()) {
+          <div class="text-danger mt-2" l10nTranslate>{{ errorMsg() }}</div>
         }
       </div>
     </div>
 
     <div class="d-flex gap-2 w-100 mt-3">
       <button (click)="actionMove()"
-              [disabled]="!selection || !files.length || !srcAllowed || !dstAllowed"
+              [disabled]="!currentNode || !files.length || !srcAllowed() || !dstAllowed()"
               class="btn btn-sm btn-warning flex-fill"
               type="button"
               l10nTranslate>
@@ -110,7 +111,7 @@
         Move
       </button>
       <button (click)="actionCopy()"
-              [disabled]="!selection || !files.length || !dstAllowed"
+              [disabled]="!currentNode || !files.length || !dstAllowed()"
               class="btn btn-sm btn-primary flex-fill"
               type="button"
               l10nTranslate>
@@ -128,8 +129,8 @@
   </div>
   <hr class="mx-0 my-0">
 }
-<div appAutoResize [overFlowX]="'auto'" [resizeOffset]="treeResizeOffset" [useMaxHeight]="false">
-  <tree-root #tree [nodes]="nodes" [options]="options">
+<div appAutoResize [overFlowX]="'auto'" [resizeOffset]="treeResizeOffset()" [useMaxHeight]="false">
+  <tree-root #tree [nodes]="nodes()" [options]="options">
     <ng-template #treeNodeWrapperTemplate let-index="index" let-node>
       <div (click)="node.mouseAction('click', $event)"
            (appTap)="node.mouseAction('dblClick', $event)"

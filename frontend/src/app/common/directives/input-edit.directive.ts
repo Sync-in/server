@@ -1,17 +1,18 @@
-import { booleanAttribute, Directive, ElementRef, EventEmitter, HostListener, inject, Input, OnInit, Output, Renderer2 } from '@angular/core'
+import { booleanAttribute, Directive, ElementRef, EventEmitter, HostListener, inject, input, model, OnInit, Output, Renderer2 } from '@angular/core'
 
 @Directive({
   selector: '[appInputEdit]'
 })
 export class InputEditDirective implements OnInit {
-  @Input() inputObject: { isRenamed: boolean } & any
-  @Input() inputField = 'name'
-  @Input() fullWidth = false
-  @Input() textCenter = false
-  @Input() disableOnBlur = true
-  @Input() disableFocus = false
-  @Input() disableKeyboard = false
-  @Input({ transform: booleanAttribute }) selectFileNameWithoutExtension = false
+  readonly inputObject = input.required<{ isRenamed: boolean } & any>()
+  readonly inputField = input('name')
+  readonly fullWidth = input(false)
+  readonly textCenter = input(false)
+  readonly disableOnBlur = input(true)
+  readonly disableFocus = input(false)
+  readonly disableKeyboard = input(false)
+  readonly selectFileNameWithoutExtension = input(false, { transform: booleanAttribute })
+  readonly renaming = model.required<boolean>()
   @Output() updateObject = new EventEmitter<{ object: any; name: string }>(true)
   @Output() renamingInProgress = new EventEmitter<boolean>(true)
   private readonly elementRef = inject(ElementRef)
@@ -23,10 +24,10 @@ export class InputEditDirective implements OnInit {
   ngOnInit() {
     this.initStyles()
     this.renamingInProgress.emit(true)
-    this.elementRef.nativeElement.value = this.inputObject[this.inputField]
+    this.elementRef.nativeElement.value = this.inputObject()[this.inputField()]
     setTimeout(() => {
       this.setParentDraggable('false')
-      if (!this.disableFocus) {
+      if (!this.disableFocus()) {
         this.elementRef.nativeElement.focus()
         this.selectInputValue()
       }
@@ -36,14 +37,14 @@ export class InputEditDirective implements OnInit {
   @HostListener('blur')
   onBlur() {
     this.validateInput()
-    if (this.disableOnBlur) {
+    if (this.disableOnBlur()) {
       this.disableEdit()
     }
   }
 
   @HostListener('keyup.enter')
   onEnter() {
-    if (this.disableKeyboard) {
+    if (this.disableKeyboard()) {
       return
     }
     this.validateInput()
@@ -51,7 +52,7 @@ export class InputEditDirective implements OnInit {
 
   @HostListener('keyup.esc')
   onEscape() {
-    if (!this.disableKeyboard) {
+    if (!this.disableKeyboard()) {
       this.disableEdit()
     }
   }
@@ -67,13 +68,13 @@ export class InputEditDirective implements OnInit {
     this.renderer.setStyle(this.elementRef.nativeElement, 'height', '100%')
     this.renderer.setStyle(this.elementRef.nativeElement, 'min-height', '20px')
     this.renderer.addClass(this.elementRef.nativeElement, 'form-control')
-    if (this.textCenter) {
+    if (this.textCenter()) {
       this.renderer.addClass(this.elementRef.nativeElement, 'text-center')
       this.renderer.setStyle(this.elementRef.nativeElement, 'padding', '0')
     } else {
       this.renderer.setStyle(this.elementRef.nativeElement, 'padding', '2px')
     }
-    if (this.fullWidth) {
+    if (this.fullWidth()) {
       this.renderer.addClass(this.elementRef.nativeElement, 'w-100')
     } else {
       this.renderer.addClass(this.elementRef.nativeElement, 'w-75')
@@ -95,19 +96,19 @@ export class InputEditDirective implements OnInit {
     if (!this.elementRef.nativeElement.value) {
       this.setIncorrectForm()
     } else {
-      if (this.elementRef.nativeElement.value === this.inputObject[this.inputField]) {
+      if (this.elementRef.nativeElement.value === this.inputObject()[this.inputField()]) {
         this.setCorrectForm()
         this.disableEdit()
       } else {
         this.setCorrectForm()
-        this.updateObject.next({ object: this.inputObject, name: this.elementRef.nativeElement.value })
+        this.updateObject.next({ object: this.inputObject(), name: this.elementRef.nativeElement.value })
         this.disableEdit()
       }
     }
   }
 
   private selectInputValue() {
-    if (!this.selectFileNameWithoutExtension) {
+    if (!this.selectFileNameWithoutExtension()) {
       this.elementRef.nativeElement.select()
       return
     }
@@ -120,7 +121,7 @@ export class InputEditDirective implements OnInit {
     this.editFinished = true
     this.setParentDraggable('true')
     this.renamingInProgress.emit(false)
-    setTimeout(() => (this.inputObject.isRenamed = false), 100)
+    setTimeout(() => this.renaming.set(false), 100)
   }
 
   private setParentDraggable(state: string) {

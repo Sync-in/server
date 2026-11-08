@@ -1,13 +1,13 @@
 <div
   #pathDropdown="bs-dropdown"
   (isOpenChange)="onPathMenuOpenChange($event)"
-  [isDisabled]="!isOverflowing"
+  [isDisabled]="!isOverflowing()"
   class="breadcrumb"
   container="body"
   dropdown
   placement="bottom start">
   <ol #breadcrumbContent class="breadcrumb-content">
-    @if (isOverflowing) {
+    @if (isOverflowing()) {
       <li
         (mouseenter)="onPathMenuHoverEnter(pathDropdown)"
         (mouseleave)="onPathMenuHoverLeave(pathDropdown)"
@@ -21,27 +21,27 @@
           dropdownToggle
           type="button">
           <span class="breadcrumb-compact-root">
-            @if (breadcrumbIcon) {
-              <svg [lucideIcon]="breadcrumbIcon" class="breadcrumb-root-icon"></svg>
+            @if (breadcrumbIcon()) {
+              <svg [lucideIcon]="breadcrumbIcon()" class="breadcrumb-root-icon"></svg>
             }
-            <span>{{ levels[0]?.title }}</span>
+            <span>{{ levels()[0]?.title }}</span>
           </span>
           <svg aria-hidden="true" [lucideIcon]="icons.LucideChevronRight" class="breadcrumb-separator"></svg>
           <span class="breadcrumb-compact-current">
-            {{ levels[levels.length - 1]?.title }}
+            {{ levels()[levels().length - 1]?.title }}
           </span>
           <svg aria-hidden="true" [lucideIcon]="icons.LucideChevronDown" class="breadcrumb-path-chevron"></svg>
         </button>
       </li>
     } @else {
-      @for (item of levels; track $index; let isFirst = $first, isLast = $last) {
+      @for (item of levels(); track $index; let isFirst = $first, isLast = $last) {
         <li [class.active]="isLast">
           @if (!isFirst) {
             <svg aria-hidden="true" [lucideIcon]="icons.LucideChevronRight" class="breadcrumb-separator"></svg>
           }
           <a [attr.aria-current]="isLast ? 'page' : null" [routerLink]="item.link">
-            @if (isFirst && breadcrumbIcon) {
-              <svg [lucideIcon]="breadcrumbIcon" class="breadcrumb-root-icon"></svg>
+            @if (isFirst && breadcrumbIcon()) {
+              <svg [lucideIcon]="breadcrumbIcon()" class="breadcrumb-root-icon"></svg>
             }
             <span>{{ item.title }}</span>
           </a>
@@ -56,7 +56,7 @@
     (mouseleave)="onPathMenuHoverLeave(pathDropdown)"
     class="dropdown-menu dropdown-menu-start breadcrumb-path-menu"
     role="menu">
-    @for (pathItem of levels; track $index; let isCurrent = $last, isRoot = $first, pathIndex = $index) {
+    @for (pathItem of levels(); track $index; let isCurrent = $last, isRoot = $first, pathIndex = $index) {
       <li
         [style.--breadcrumb-path-indent]="((pathIndex > 8 ? 8 : pathIndex) * 0.25) + 'rem'"
         role="none">
@@ -90,7 +90,7 @@
                 [lucideIcon]="icons.LucideCornerDownRight"
                 class="breadcrumb-path-branch"></svg>
             }
-            <svg [lucideIcon]="isRoot && breadcrumbIcon ? breadcrumbIcon : icons.LucideFolder"></svg>
+            <svg [lucideIcon]="isRoot && breadcrumbIcon() ? breadcrumbIcon() : icons.LucideFolder"></svg>
             <span class="breadcrumb-path-label">{{ pathItem.title }}</span>
           </a>
         }
@@ -98,14 +98,14 @@
     }
   </ul>
   <ol #breadcrumbMeasure aria-hidden="true" class="breadcrumb-content breadcrumb-content--measure">
-    @for (item of levels; track $index; let isFirst = $first) {
+    @for (item of levels(); track $index; let isFirst = $first) {
       <li>
         @if (!isFirst) {
           <svg aria-hidden="true" [lucideIcon]="icons.LucideChevronRight" class="breadcrumb-separator"></svg>
         }
         <span class="breadcrumb-measure-link">
-          @if (isFirst && breadcrumbIcon) {
-            <svg [lucideIcon]="breadcrumbIcon" class="breadcrumb-root-icon"></svg>
+          @if (isFirst && breadcrumbIcon()) {
+            <svg [lucideIcon]="breadcrumbIcon()" class="breadcrumb-root-icon"></svg>
           }
           <span>{{ item.title }}</span>
         </span>

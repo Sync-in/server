@@ -1,6 +1,6 @@
 import { TitleCasePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
 import {
   LucideDynamicIcon,
@@ -76,10 +76,10 @@ export class AdminUserDialogComponent implements OnInit {
   @Output() userChange = new EventEmitter<['add' | 'update' | 'delete', AdminUserModel]>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
-  protected submitted = false
-  protected loading = false
-  protected confirmDeletion = false
-  protected tabView: undefined | 'permissions' | 'groups'
+  protected readonly submitted = signal(false)
+  protected readonly loading = signal(false)
+  protected readonly confirmDeletion = signal(false)
+  protected readonly twoFaEnabled = signal(false)
   protected readonly icons = {
     GROUPS: USER_ICON.GROUPS,
     LucideUserRoundPlus,
@@ -114,6 +114,7 @@ export class AdminUserDialogComponent implements OnInit {
   private readonly userService = inject(UserService)
 
   ngOnInit() {
+    this.twoFaEnabled.set(this.user?.twoFaEnabled ?? false)
     this.userForm = new FormGroup({
       login: new FormControl<string>(this.user?.login || '', [Validators.required, Validators.pattern(USER_LOGIN_VALIDATION)]),
       email: new FormControl<string>(this.user?.email || '', [Validators.required, Validators.maxLength(255), Validators.email]),
@@ -171,8 +172,8 @@ export class AdminUserDialogComponent implements OnInit {
   }
 
   onCancel() {
-    if (this.confirmDeletion) {
-      this.confirmDeletion = false
+    if (this.confirmDeletion()) {
+      this.confirmDeletion.set(false)
     } else {
       this.layout.closeDialog()
     }
@@ -184,6 +185,7 @@ export class AdminUserDialogComponent implements OnInit {
     this.userService.adminResetUser2Fa(this.user.id, auth2FaHeaders).subscribe({
       next: (verify: TwoFaVerifyResult) => {
         this.user.twoFaEnabled = !verify.success
+        this.twoFaEnabled.set(this.user.twoFaEnabled)
         if (verify.success) {
           this.layout.sendNotification('success', 'Two-Factor Authentication is disabled', this.user.login)
         } else {
@@ -191,15 +193,15 @@ export class AdminUserDialogComponent implements OnInit {
         }
       },
       error: (e: HttpErrorResponse) => {
-        this.submitted = false
+        this.submitted.set(false)
         this.layout.sendNotification('error', 'Two-Factor Authentication', this.user.login, e)
       }
     })
   }
 
   async onSubmit() {
-    this.submitted = true
-    if (this.confirmDeletion) {
+    this.submitted.set(true)
+    if (this.confirmDeletion()) {
       // delete
       const modalRef: BsModalRef<AdminUserDeleteDialogComponent> = this.layout.openDialog(AdminUserDeleteDialogComponent, 'sm', {
         initialState: { user: this.user } as AdminUserDeleteDialogComponent
@@ -209,8 +211,8 @@ export class AdminUserDialogComponent implements OnInit {
           this.userChange.emit(['delete', this.user])
           this.layout.closeDialog()
         } else {
-          this.confirmDeletion = false
-          this.submitted = false
+          this.confirmDeletion.set(false)
+          this.submitted.set(false)
         }
       })
     } else if (!this.user) {
@@ -280,6 +282,6 @@ export class AdminUserDialogComponent implements OnInit {
 
   private onError(e: HttpErrorResponse) {
     this.layout.sendNotification('error', 'Group error', this.userForm.value.login, e)
-    this.submitted = false
+    this.submitted.set(false)
   }
 }

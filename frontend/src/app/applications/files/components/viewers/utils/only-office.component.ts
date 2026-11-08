@@ -1,21 +1,21 @@
-import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core'
+import { Component, input, OnChanges, OnDestroy, OnInit, output, SimpleChanges } from '@angular/core'
 import type { OnlyOfficeConfig } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.interface'
 import loadScript from './only-office.utils'
 
 @Component({
   selector: 'app-files-onlyoffice-document',
-  template: '<div [id]="id"></div>'
+  template: '<div [id]="id()"></div>'
 })
 export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
-  @Input({ required: true }) id: string
-  @Input({ required: true }) editorName: string
-  @Input({ required: true }) documentServerUrl: string
-  @Input({ required: true }) config: OnlyOfficeConfig
-  @Output() loadError = new EventEmitter<{ title: string; titleArgs: { editor: string }; message: string }>()
+  readonly id = input.required<string>()
+  readonly editorName = input.required<string>()
+  readonly documentServerUrl = input.required<string>()
+  readonly config = input.required<OnlyOfficeConfig>()
+  readonly loadError = output<{ title: string; titleArgs: { editor: string }; message: string }>()
   private isFirstOnChanges = true
 
   ngOnInit(): void {
-    let url = this.documentServerUrl
+    let url = this.documentServerUrl()
     if (!url.endsWith('/')) url += '/'
     const docApiUrl = `${url}web-apps/apps/api/documents/api.js`
     loadScript(docApiUrl, 'onlyoffice-api-script')
@@ -32,9 +32,10 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     if ('config' in changes) {
-      if (window?.DocEditor?.instances[this.id]) {
-        window.DocEditor.instances[this.id].destroyEditor()
-        window.DocEditor.instances[this.id] = undefined
+      const id = this.id()
+      if (window?.DocEditor?.instances[id]) {
+        window.DocEditor.instances[id].destroyEditor()
+        window.DocEditor.instances[id] = undefined
         console.warn('Important props have been changed, reloading ...')
         this.onLoad()
         return
@@ -43,10 +44,11 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnDestroy() {
-    if (window?.DocEditor?.instances[this.id]) {
-      window.DocEditor.instances[this.id].destroyEditor()
-      window.DocEditor.instances[this.id] = undefined
-      delete window.DocEditor.instances[this.id]
+    const id = this.id()
+    if (window?.DocEditor?.instances[id]) {
+      window.DocEditor.instances[id].destroyEditor()
+      window.DocEditor.instances[id] = undefined
+      delete window.DocEditor.instances[id]
     }
   }
 
@@ -57,8 +59,9 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
         return
       }
 
-      if (window?.DocEditor?.instances[this.id]) {
-        console.log('Skip loading, instance already exists', this.id)
+      const id = this.id()
+      if (window?.DocEditor?.instances[id]) {
+        console.log('Skip loading, instance already exists', id)
         return
       }
 
@@ -66,8 +69,8 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
         window.DocEditor = { instances: {} }
       }
 
-      const config: OnlyOfficeConfig = JSON.parse(JSON.stringify(this.config))
-      window.DocEditor.instances[this.id] = window.DocsAPI.DocEditor(this.id, config)
+      const config: OnlyOfficeConfig = JSON.parse(JSON.stringify(this.config()))
+      window.DocEditor.instances[id] = window.DocsAPI.DocEditor(id, config)
     } catch (err) {
       console.error(err)
       this.onError(-1)
@@ -77,7 +80,7 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
   private onError(errorCode: number) {
     const error = {
       title: 'office_editor_unknown_error',
-      titleArgs: { editor: this.editorName },
+      titleArgs: { editor: this.editorName() },
       message: `Code: ${errorCode}`
     }
 

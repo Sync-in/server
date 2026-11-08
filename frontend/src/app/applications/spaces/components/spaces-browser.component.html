@@ -2,13 +2,13 @@
 <div class="app-top-menu app-top-menu-tool-bar"
      [attr.aria-label]="'Actions' | translate:locale.language"
      role="toolbar">
-  @if (!isTrashRepo && !inSharesList) {
+  @if (!isTrashRepo() && !inSharesList()) {
     <span #uploadFilesPicker="appUploadFiles"
           (uploadFiles)="onUploadFiles($event)"
           [options]="{isMultiple: true}"
           appUploadFiles
           class="d-none"></span>
-    @if (supportUploadFolder) {
+    @if (supportUploadFolder()) {
       <span #uploadFoldersPicker="appUploadFiles"
             (uploadFiles)="onUploadFiles($event, true)"
             [options]="{isDirectory: true}"
@@ -41,7 +41,7 @@
             <span l10nTranslate><svg [lucideIcon]="icons.LucideFileUp"></svg>Upload files</span>
           </a>
         </li>
-        @if (supportUploadFolder) {
+        @if (supportUploadFolder()) {
           <li role="menuitem">
             <a (click)="shortcutUploadFolders()" class="dropdown-item">
               <span l10nTranslate><svg [lucideIcon]="icons.LucideFolderUp"></svg>Upload folders</span>
@@ -60,7 +60,7 @@
     <!--Start Download Button-->
     <button (click)="downloadFiles()"
             [attr.aria-label]="'Download' | translate:locale.language"
-            [disabled]="!hasSelection || hasDisabledItemsInSelection"
+            [disabled]="!hasSelection() || hasDisabledItemsInSelection()"
             [tooltip]="'Download' | translate:locale.language"
             class="d-sm-none btn btn-default app-top-menu-tool-bar__action--icon app-top-menu-tool-bar__action--quiet"
             type="button">
@@ -68,20 +68,20 @@
     </button>
     <!--End Download Button-->
   }
-  @if (inSharesList) {
+  @if (inSharesList()) {
     <button (click)="shortcutOpen()"
             [attr.aria-label]="'Open' | translate:locale.language"
-            [disabled]="selection.length !== 1"
+            [disabled]="selection().length !== 1"
             class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
             type="button">
-      <svg [lucideIcon]="selection[0]?.isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>
+      <svg [lucideIcon]="selection()[0]?.isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>
       <span class="app-top-menu-tool-bar__label" l10nTranslate>Open</span>
     </button>
   }
   <!--Start Share Button-->
-  @if (!isTrashRepo && !inSharesList && (canShare.outside || isPersonalSpace)) {
+  @if (!isTrashRepo() && !inSharesList() && (canShare().outside || isPersonalSpace())) {
     <div class="btn-group"
-         [isDisabled]="!hasSelection"
+         [isDisabled]="!hasSelection()"
          dropdown>
       <button dropdownToggle
               class="btn btn-default dropdown-toggle app-top-menu-tool-bar__action--quiet"
@@ -91,7 +91,7 @@
         <span class="app-top-menu-tool-bar__label" l10nTranslate>Share</span>
       </button>
       <ul *dropdownMenu class="dropdown-menu" role="menu">
-        @if (canShare.outside) {
+        @if (canShare().outside) {
           <li role="menuitem">
             <a (click)="openShareDialog()" class="dropdown-item">
               <span l10nTranslate><svg [lucideIcon]="icons.SHARED"></svg>New share</span>
@@ -103,7 +103,7 @@
             </a>
           </li>
         }
-        @if (isPersonalSpace) {
+        @if (isPersonalSpace()) {
           <li role="menuitem">
             <a (click)="openSpaceAnchorFileDialog()" class="dropdown-item">
               <span l10nTranslate><svg [lucideIcon]="icons.LucideAnchor"></svg>Anchor to a space</span>
@@ -114,10 +114,10 @@
     </div>
   }
   <!--End Share Button-->
-  @if (isTrashRepo) {
+  @if (isTrashRepo()) {
     <button (click)="copyMoveFiles()"
             [attr.aria-label]="'Restore to...' | translate:locale.language"
-            [disabled]="!hasSelection || hasDisabledItemsInSelection"
+            [disabled]="!hasSelection() || hasDisabledItemsInSelection()"
             class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
             type="button">
       <svg [lucideIcon]="icons.LucideArchiveArrowUp"></svg>
@@ -125,7 +125,7 @@
     </button>
     <button (click)="openTrashDialog(true)"
             [attr.aria-label]="'Delete permanently' | translate:locale.language"
-            [disabled]="!hasSelection"
+            [disabled]="!hasSelection()"
             class="btn btn-default app-top-menu-tool-bar__action--quiet"
             type="button">
       <svg [lucideIcon]="icons.LucideTrash"></svg>
@@ -133,7 +133,7 @@
     </button>
   }
   <!--Start Actions Button-->
-  <div [isDisabled]="!hasSelection" class="btn-group" dropdown>
+  <div [isDisabled]="!hasSelection()" class="btn-group" dropdown>
     <button class="btn btn-default dropdown-toggle app-top-menu-tool-bar__action--icon app-top-menu-tool-bar__action--quiet"
             [attr.aria-label]="'Actions' | translate:locale.language"
             [tooltip]="'Actions' | translate:locale.language"
@@ -142,19 +142,19 @@
       <svg [lucideIcon]="icons.LucideEllipsis"></svg>
     </button>
     <ul *dropdownMenu class="dropdown-menu" role="menu">
-      @if (selection.length === 1) {
-        @if (selection[0]) {
+      @if (selection().length === 1) {
+        @if (selection()[0]) {
           <li role="menuitem">
             <a (click)="shortcutOpen()" class="dropdown-item">
-              <span l10nTranslate><svg [lucideIcon]="selection[0].isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>Open</span>
+              <span l10nTranslate><svg [lucideIcon]="selection()[0].isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>Open</span>
             </a>
           </li>
         }
       }
       <li role="menuitem">
         <a (click)="downloadFiles()"
-           [attr.aria-disabled]="hasDisabledItemsInSelection"
-           [class.disabled]="hasDisabledItemsInSelection"
+           [attr.aria-disabled]="hasDisabledItemsInSelection()"
+           [class.disabled]="hasDisabledItemsInSelection()"
            class="dropdown-item">
           <span l10nTranslate><svg [lucideIcon]="icons.LucideHardDriveDownload"></svg>Download</span>
         </a>
@@ -164,7 +164,7 @@
           <span l10nTranslate><svg [lucideIcon]="icons.SELECTION"></svg>View selection</span>
         </a>
       </li>
-      @if (canAdminShares && inSharesList && selection.length === 1 && selection[0]?.canBeReShared) {
+      @if (canAdminShares() && inSharesList() && selection().length === 1 && selection()[0]?.canBeReShared) {
         <li class="dropdown-divider"></li>
         <li role="menuitem">
           <a (click)="openShareDialog()" class="dropdown-item">
@@ -177,7 +177,7 @@
           </a>
         </li>
       }
-      @if (!isTrashRepo && !hasDisabledItemsInSelection) {
+      @if (!isTrashRepo() && !hasDisabledItemsInSelection()) {
         <li class="dropdown-divider"></li>
         <li role="menuitem">
           <a (click)="copyMoveFiles()" class="dropdown-item">
@@ -185,45 +185,45 @@
           </a>
         </li>
       }
-      @if (selection.length === 1 && !isTrashRepo && !inSharesList) {
+      @if (selection().length === 1 && !isTrashRepo() && !inSharesList()) {
         <li role="menuitem">
           <a (click)="shortcutRename()" class="dropdown-item">
             <span l10nTranslate><svg [lucideIcon]="icons.LucideSpellCheck"></svg>Rename</span>
           </a>
         </li>
       }
-      @if (!isTrashRepo && canCompress) {
+      @if (!isTrashRepo() && canCompress()) {
         <li role="menuitem">
           <a (click)="openCompressionDialog()" class="dropdown-item">
             <span l10nTranslate><svg [lucideIcon]="icons.LucideFileArchive"></svg>Compress</span>
           </a>
         </li>
       }
-      @if (selection.length === 1 && !isTrashRepo && !inSharesList && !selection[0].isCompressible) {
+      @if (selection().length === 1 && !isTrashRepo() && !inSharesList() && !selection()[0].isCompressible) {
         <li role="menuitem">
           <a (click)="decompressFile()" class="dropdown-item">
             <span l10nTranslate><svg [lucideIcon]="icons.LucideFileArchive"></svg>Decompress</span>
           </a>
         </li>
       }
-      @if (!hasDisabledItemsInSelection || selection.length === 1 && !isTrashRepo && !inSharesList || !isTrashRepo && canCompress) {
+      @if (!hasDisabledItemsInSelection() || selection().length === 1 && !isTrashRepo() && !inSharesList() || !isTrashRepo() && canCompress()) {
         <li class="dropdown-divider"></li>
       }
-      @if (selection.length === 1 && !isTrashRepo && isElectronApp && selection[0].isDir) {
+      @if (selection().length === 1 && !isTrashRepo() && isElectronApp() && selection()[0].isDir) {
         <li role="menuitem">
           <a (click)="addToSync()" class="dropdown-item">
             <span l10nTranslate><svg [lucideIcon]="icons.SYNC"></svg>Synchronize</span>
           </a>
         </li>
       }
-      @if (selection.length === 1 && !isTrashRepo) {
+      @if (selection().length === 1 && !isTrashRepo()) {
         <li role="menuitem">
           <a (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)" class="dropdown-item">
             <span l10nTranslate><svg [lucideIcon]="icons.LucideMessageSquareMore"></svg>Comment</span>
           </a>
         </li>
       }
-      @if (selection.length === 1 && canManageFavorite && selection[0]; as selectedFile) {
+      @if (selection().length === 1 && canManageFavorite() && selection()[0]; as selectedFile) {
         <li role="menuitem">
           <a (click)="toggleFavorite(selectedFile)" class="dropdown-item">
             @if (selectedFile.isFavorite) {
@@ -239,10 +239,10 @@
           <span l10nTranslate><svg [lucideIcon]="icons.LucideClipboardList"></svg>Add to clipboard</span>
         </a>
       </li>
-      @if (!inSharesList) {
+      @if (!inSharesList()) {
         <li class="dropdown-divider"></li>
         <li role="menuitem">
-          @if (isTrashRepo) {
+          @if (isTrashRepo()) {
             <a (click)="openTrashDialog(true)" class="dropdown-item">
               <span l10nTranslate><svg [lucideIcon]="icons.LucideTrash" class="text-danger"></svg>Delete permanently</span>
             </a>
@@ -261,7 +261,7 @@
           [tooltip]="'Refresh' | translate:locale.language"
           class="d-none d-md-block btn btn-default app-top-menu-tool-bar__action--icon app-top-menu-tool-bar__action--quiet"
           type="button">
-    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
+    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading() ? 'icon-spin' : ''"></svg>
   </button>
   <div class="d-flex align-items-center ms-auto app-top-menu-tool-bar__utilities">
     <!--Start View Button-->
@@ -271,23 +271,23 @@
   </div>
 </div>
 <!--End Top Menu-->
-@if (galleryMode?.enabled) {
+@if (galleryMode()?.enabled) {
   <!--Start Gallery Content-->
-  <div [style.--gallery-card-size]="galleryMode.dimensions + 'px'"
-       [style.--gallery-badge-size]="galleryMode.badgeSize + 'px'"
-       [style.--gallery-image-size]="galleryMode.image + 'px'"
-       [style.--gallery-selection-size]="galleryMode.dimensions / 2.25 + 'px'"
-       [style.--gallery-text-size]="galleryMode.textSize + 'px'"
+  <div [style.--gallery-card-size]="galleryMode().dimensions + 'px'"
+       [style.--gallery-badge-size]="galleryMode().badgeSize + 'px'"
+       [style.--gallery-image-size]="galleryMode().image + 'px'"
+       [style.--gallery-selection-size]="galleryMode().dimensions / 2.25 + 'px'"
+       [style.--gallery-text-size]="galleryMode().textSize + 'px'"
        class="app-gallery">
     <app-virtual-scroll (contextmenu)="onContextMenu($event)"
-                        [childHeight]="galleryMode.dimensions"
-                        [childWidth]="galleryMode.dimensions"
-                        [items]="files | searchFilter:navbarSearch.viewFilter():'name'"
+                        [childHeight]="galleryMode().dimensions"
+                        [childWidth]="galleryMode().dimensions"
+                        [items]="files() | searchFilter:navbarSearch.viewFilter():'name'"
                         [galleryMode]="true"
                         [resizeOffset]="115">
       <div *ngTemplateOutlet="CommonMessages"></div>
       <div id="thumb-files" class="row g-0" tabindex="-1">
-        @for (f of scrollView?.viewPortItems; track f.id) {
+        @for (f of scrollView()?.viewPortItems(); track f.id) {
           <div (click)="onSelect($event, f)"
                (contextmenu)="onTargetContextMenu($event, f)"
                (appTap)="onFileActivate(f, $event)"
@@ -300,7 +300,7 @@
                       (click)="toggleFileSelection($event, f)"
                       [attr.aria-label]="f.name"
                       [attr.aria-pressed]="f.isSelected"
-                      [class.is-selected]="f.isSelected && showSelectionChecks"
+                      [class.is-selected]="f.isSelected && showSelectionChecks()"
                       class="file-selection-overlay gallery-file-selection-overlay"
                       type="button">
                 <span class="file-selection-indicator">
@@ -308,7 +308,7 @@
                 </span>
               </button>
               @if (f.isImage) {
-                <img src="{{f.thumbnailUrl}}?size={{galleryMode.imageRes}}"
+                <img src="{{f.thumbnailUrl}}?size={{galleryMode().imageRes}}"
                      alt=""
                      class="img-fluid gallery-thumbnail"
                      draggable="true"
@@ -321,7 +321,7 @@
                      (error)="f.fallBackMimeUrl()">
               }
               <span class="label-bottom-right" data-app-tap-ignore>
-                @let maxBadges = galleryMode.maxBadges || 0;
+                @let maxBadges = galleryMode().maxBadges || 0;
                 @let hiddenBadges = f.nbBadges - maxBadges;
                 @for (badge of f.galleryBadges; track badge; let i = $index) {
                   @if (i < maxBadges) {
@@ -397,9 +397,9 @@
                 <span class="label-bottom-left">
                     <app-user-avatar
                       [user]="f.root.owner"
-                      [height]="galleryMode.dimensions / 3.5"
-                      [width]="galleryMode.dimensions / 3.5"
-                      [fontSize]="galleryMode.iconSize / 2.5">
+                      [height]="galleryMode().dimensions / 3.5"
+                      [width]="galleryMode().dimensions / 3.5"
+                      [fontSize]="galleryMode().iconSize / 2.5">
                     </app-user-avatar>
                 </span>
               }
@@ -413,6 +413,7 @@
               @if (f.isRenamed) {
                 <input appInputEdit
                        [inputObject]="f"
+                       [(renaming)]="f.isRenamed"
                        [selectFileNameWithoutExtension]="!f.isDir"
                        [fullWidth]="true"
                        [textCenter]="true"
@@ -455,11 +456,11 @@
   </table>
   <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                       [bufferAmount]="5"
-                      [items]="files | searchFilter:navbarSearch.viewFilter():'name'">
+                      [items]="files() | searchFilter:navbarSearch.viewFilter():'name'">
     <div *ngTemplateOutlet="CommonMessages"></div>
     <table class="app-table">
       <tbody id="table-files" tabindex="-1">
-        @for (f of scrollView?.viewPortItems; track f.id) {
+        @for (f of scrollView()?.viewPortItems(); track f.id) {
           <tr (click)="onSelect($event, f)"
               (contextmenu)="onTargetContextMenu($event, f)"
               (appTap)="onFileActivate(f, $event)"
@@ -485,7 +486,7 @@
                                   (click)="toggleFileSelection($event, f)"
                                   [attr.aria-label]="f.name"
                                   [attr.aria-pressed]="f.isSelected"
-                                  [class.is-selected]="f.isSelected && showSelectionChecks"
+                                  [class.is-selected]="f.isSelected && showSelectionChecks()"
                                   class="file-selection-overlay"
                                   type="button">
                             <span class="file-selection-indicator">
@@ -498,13 +499,14 @@
                                  (renamingInProgress)="setRenamingInProgress($event)"
                                  (updateObject)="renameFile($event)"
                                  [inputObject]="f"
+                                 [(renaming)]="f.isRenamed"
                                  [selectFileNameWithoutExtension]="!f.isDir"
                                  required
                                  type="text">
                         } @else {
                           <div class="d-flex flex-column text-truncate">
                             <span class="no-pointer-events text-file-name-preserve" draggable="false">{{ f.name }}</span>
-                            @if (inSharesList && f.root?.description) {
+                            @if (inSharesList() && f.root?.description) {
                               <span class="no-pointer-events text-muted fs-xs" draggable="false">{{ f.root.description }}</span>
                             }
                           </div>
@@ -610,34 +612,34 @@
 <!--Start Foot Content-->
 <div class="app-foot-menu">
   <div class="d-flex align-items-center">
-    @if (stats.dirs) {
-      <span>{{ stats.dirs }} {{ (stats.dirs > 1 ? 'directories' : 'directory') | translate:locale.language }}</span>
+    @if (stats().dirs) {
+      <span>{{ stats().dirs }} {{ (stats().dirs > 1 ? 'directories' : 'directory') | translate:locale.language }}</span>
     }
-    @if (stats.dirs && stats.files) {
+    @if (stats().dirs && stats().files) {
       <span class="mx-1 lh-1">•</span>
     }
-    @if (stats.files) {
-      <span>{{ stats.files }} {{ (stats.files > 1 ? 'files' : 'file') | translate:locale.language }}</span>
+    @if (stats().files) {
+      <span>{{ stats().files }} {{ (stats().files > 1 ? 'files' : 'file') | translate:locale.language }}</span>
     }
   </div>
-  <div class="ms-auto">{{ stats.size | toBytes }}</div>
+  <div class="ms-auto">{{ stats().size | toBytes }}</div>
 </div>
 <!--End Foot Content-->
 <!--Start Common Messages-->
 <ng-template #CommonMessages>
-  @if (forbiddenResource) {
+  @if (forbiddenResource()) {
     <div class="fs-sm text-center text-danger text-bold no-select p-4">
       <span l10nTranslate>Forbidden resource</span>
     </div>
-  } @else if (locationNotFound) {
+  } @else if (locationNotFound()) {
     <div class="fs-sm text-center text-danger text-bold no-select p-4">
       <span l10nTranslate>Location not found</span>
     </div>
-  } @else if (serviceError) {
+  } @else if (serviceError()) {
     <div class="fs-sm text-center text-danger text-bold no-select p-4">
       <span l10nTranslate>{{ serviceErrorMsg }}</span>
     </div>
-  } @else if (!isTrashRepo && !loading && !stats.elements) {
+  } @else if (!isTrashRepo() && !loading() && !stats().elements) {
     <div class="fs-base text-center text-gray fw-bold no-select p-4">
       <span l10nTranslate>Drag and drop your files here</span>
     </div>
@@ -646,66 +648,66 @@
 <!--End Common Messages-->
 <!--Start Context Menu -->
 <context-menu #FileContextMenu>
-  @if (selection.length === 1 && selection[0]; as selectedFile) {
+  @if (selection().length === 1 && selection()[0]; as selectedFile) {
     <ng-template (execute)="shortcutOpen()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="selectedFile.isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>Open</span>
     </ng-template>
   }
-  @if (!hasDisabledItemsInSelection) {
+  @if (!hasDisabledItemsInSelection()) {
     <ng-template (execute)="downloadFiles()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.LucideHardDriveDownload"></svg>Download</span>
     </ng-template>
   }
-  @if (selection.length === 1 && selection[0] || !hasDisabledItemsInSelection) {
+  @if (selection().length === 1 && selection()[0] || !hasDisabledItemsInSelection()) {
     <ng-template [divider]="true" contextMenuItem></ng-template>
   }
-  @if (!hasDisabledItemsInSelection) {
+  @if (!hasDisabledItemsInSelection()) {
     <ng-template (execute)="copyMoveFiles()" contextMenuItem>
-      @if (isTrashRepo) {
+      @if (isTrashRepo()) {
         <span l10nTranslate><svg [lucideIcon]="icons.LucideArchiveArrowUp"></svg>Restore to...</span>
       } @else {
         <span l10nTranslate><svg [lucideIcon]="icons.LucideMove"></svg>Copy • Move</span>
       }
     </ng-template>
   }
-  @if (selection.length === 1 && !isTrashRepo && !inSharesList) {
+  @if (selection().length === 1 && !isTrashRepo() && !inSharesList()) {
     <ng-template (execute)="shortcutRename()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.LucideSpellCheck"></svg>Rename</span>
     </ng-template>
   }
-  @if (!isTrashRepo) {
-    @if (canCompress) {
+  @if (!isTrashRepo()) {
+    @if (canCompress()) {
       <ng-template (execute)="openCompressionDialog()" contextMenuItem>
         <span l10nTranslate><svg [lucideIcon]="icons.LucideFileArchive"></svg>Compress</span>
       </ng-template>
     }
-    @if (!inSharesList && selection.length === 1 && !selection[0].isCompressible) {
+    @if (!inSharesList() && selection().length === 1 && !selection()[0].isCompressible) {
       <ng-template (execute)="decompressFile()" contextMenuItem>
         <span l10nTranslate><svg [lucideIcon]="icons.LucideFileArchive"></svg>Decompress</span>
       </ng-template>
     }
   }
-  @if (!isTrashRepo) {
-    @if (canShare.outside || isPersonalSpace || canAdminShares && inSharesList && selection[0]?.canBeReShared) {
+  @if (!isTrashRepo()) {
+    @if (canShare().outside || isPersonalSpace() || canAdminShares() && inSharesList() && selection()[0]?.canBeReShared) {
       <ng-template [subMenu]="ShareContextMenu" contextMenuItem>
         <span l10nTranslate><svg [lucideIcon]="icons.SHARED"></svg>Share</span>
       </ng-template>
     }
   }
-  @if (!hasDisabledItemsInSelection || selection.length === 1 && !isTrashRepo && !inSharesList || !isTrashRepo && canCompress || !isTrashRepo && (canShare.outside || isPersonalSpace || canAdminShares && inSharesList && selection[0]?.canBeReShared)) {
+  @if (!hasDisabledItemsInSelection() || selection().length === 1 && !isTrashRepo() && !inSharesList() || !isTrashRepo() && canCompress() || !isTrashRepo() && (canShare().outside || isPersonalSpace() || canAdminShares() && inSharesList() && selection()[0]?.canBeReShared)) {
     <ng-template [divider]="true" contextMenuItem></ng-template>
   }
-  @if (selection.length === 1 && !isTrashRepo && isElectronApp && selection[0].isDir) {
+  @if (selection().length === 1 && !isTrashRepo() && isElectronApp() && selection()[0].isDir) {
     <ng-template (execute)="addToSync()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.SYNC"></svg>Synchronize</span>
     </ng-template>
   }
-  @if (selection.length === 1 && !isTrashRepo) {
+  @if (selection().length === 1 && !isTrashRepo()) {
     <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.LucideMessageSquareMore"></svg>Comment</span>
     </ng-template>
   }
-  @if (selection.length === 1 && canManageFavorite && selection[0]; as selectedFile) {
+  @if (selection().length === 1 && canManageFavorite() && selection()[0]; as selectedFile) {
     <ng-template (execute)="toggleFavorite(selectedFile)" contextMenuItem>
       @if (selectedFile.isFavorite) {
         <span l10nTranslate><svg [lucideIcon]="icons.FAVORITES"></svg>Remove from favorites</span>
@@ -717,10 +719,10 @@
   <ng-template (execute)="addToClipboard()" contextMenuItem>
     <span l10nTranslate><svg [lucideIcon]="icons.LucideClipboardList"></svg>Add to clipboard</span>
   </ng-template>
-  @if (!inSharesList) {
+  @if (!inSharesList()) {
     <ng-template [divider]="true" contextMenuItem></ng-template>
-    <ng-template (execute)="openTrashDialog(isTrashRepo)" contextMenuItem>
-      @if (isTrashRepo) {
+    <ng-template (execute)="openTrashDialog(isTrashRepo())" contextMenuItem>
+      @if (isTrashRepo()) {
         <span l10nTranslate><svg [lucideIcon]="icons.LucideTrash" class="text-danger"></svg>Delete permanently</span>
       } @else {
         <span l10nTranslate><svg [lucideIcon]="icons.TRASH" class="text-danger"></svg>Remove</span>
@@ -729,7 +731,7 @@
   }
 </context-menu>
 <context-menu #ShareContextMenu>
-  @if (canShare.outside || canAdminShares && inSharesList && selection[0]?.canBeReShared) {
+  @if (canShare().outside || canAdminShares() && inSharesList() && selection()[0]?.canBeReShared) {
     <ng-template (execute)="openShareDialog()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.SHARED"></svg>New share</span>
     </ng-template>
@@ -737,7 +739,7 @@
       <span l10nTranslate><svg [lucideIcon]="icons.LucideLink"></svg>New share link</span>
     </ng-template>
   }
-  @if (isPersonalSpace) {
+  @if (isPersonalSpace()) {
     <ng-template (execute)="openSpaceAnchorFileDialog()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.LucideAnchor"></svg>Anchor to a space</span>
     </ng-template>
@@ -749,7 +751,7 @@
   </ng-template>
 </context-menu>
 <context-menu #MainContextMenu>
-  @if (inSharesList) {
+  @if (inSharesList()) {
     <ng-template (execute)="loadFiles()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.LucideRotateCw"></svg>Refresh</span>
     </ng-template>
@@ -766,7 +768,7 @@
     <ng-template (execute)="shortcutUploadFiles()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.LucideFileUp"></svg>Upload files</span>
     </ng-template>
-    @if (supportUploadFolder) {
+    @if (supportUploadFolder()) {
       <ng-template (execute)="shortcutUploadFolders()" contextMenuItem>
         <span l10nTranslate><svg [lucideIcon]="icons.LucideFolderUp"></svg>Upload folders</span>
       </ng-template>

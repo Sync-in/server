@@ -16,7 +16,7 @@ import type { SearchSpaceDto } from '@sync-in-server/backend/src/applications/sp
 import type { CheckRootExternalPathDto } from '@sync-in-server/backend/src/applications/spaces/dto/space-roots.dto'
 import type { SpaceTrash } from '@sync-in-server/backend/src/applications/spaces/interfaces/space-trash.interface'
 import type { SpaceProps } from '@sync-in-server/backend/src/applications/spaces/models/space-props.model'
-import { map, Observable } from 'rxjs'
+import { map, Observable, Subject } from 'rxjs'
 import { ShareLinkModel } from '../../links/models/share-link.model'
 import { ShareModel } from '../../shares/models/share.model'
 import { SpaceModel, SpaceRootModel } from '../models/space.model'
@@ -24,6 +24,13 @@ import { SpaceModel, SpaceRootModel } from '../models/space.model'
 @Injectable({ providedIn: 'root' })
 export class SpacesService {
   private readonly http = inject(HttpClient)
+  private readonly spaceModelChangedSubject = new Subject<SpaceModel>()
+  readonly spaceModelChanged = this.spaceModelChangedSubject.asObservable()
+
+  notifySpaceModelChanged(space: SpaceModel) {
+    this.spaceModelChangedSubject.next(space)
+  }
+
   listSpaces(): Observable<SpaceModel[]> {
     return this.http.get<SpaceProps[]>(API_SPACES_LIST).pipe(map((sps: SpaceProps[]) => sps.map((s: SpaceProps) => new SpaceModel(s))))
   }

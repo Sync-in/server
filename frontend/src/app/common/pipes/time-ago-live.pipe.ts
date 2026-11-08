@@ -1,17 +1,16 @@
-import { ChangeDetectorRef, inject, NgZone, OnDestroy, Pipe, PipeTransform } from '@angular/core'
+import { OnDestroy, Pipe, PipeTransform, signal } from '@angular/core'
 import { Dayjs } from 'dayjs/esm'
 import { dJs } from '../utils/time'
 
 @Pipe({ name: 'amLiveTimeAgo', pure: false })
 export class LiveTimeAgoPipe implements PipeTransform, OnDestroy {
-  private readonly cdRef = inject(ChangeDetectorRef)
-  private ngZone = inject(NgZone)
   private currentTimer: number | null = null
   private lastTime: number
   private lastValue: any
   private lastOmitSuffix?: boolean
   private lastLocale?: string
-  private lastText: string
+  private lastText = ''
+  private readonly renderTick = signal(0)
   private formatFn: (d: Dayjs) => string
 
   format(d: Dayjs) {
@@ -19,6 +18,7 @@ export class LiveTimeAgoPipe implements PipeTransform, OnDestroy {
   }
 
   transform(value: any, omitSuffix?: boolean, formatFn?: (m: Dayjs) => string): string {
+    this.renderTick()
     if (this.hasChanged(value, omitSuffix)) {
       this.lastTime = this.getTime(value)
       this.lastValue = value
@@ -47,17 +47,13 @@ export class LiveTimeAgoPipe implements PipeTransform, OnDestroy {
     const dayjsInstance = dJs(this.lastValue)
     const timeToUpdate = this.getSecondsUntilUpdate(dayjsInstance) * 1000
 
-    this.currentTimer = this.ngZone.runOutsideAngular(() => {
-      if (typeof window !== 'undefined') {
-        return window.setTimeout(() => {
-          this.lastText = this.formatFn(dJs(this.lastValue))
-          this.currentTimer = null
-          this.ngZone.run(() => this.cdRef.markForCheck())
-        }, timeToUpdate)
-      } else {
-        return null
-      }
-    })
+    if (typeof window === 'undefined') return
+    this.currentTimer = window.setTimeout(() => {
+      this.lastText = this.formatFn(dJs(this.lastValue))
+      this.currentTimer = null
+      this.createTimer()
+      this.renderTick.update((tick) => tick + 1)
+    }, timeToUpdate)
   }
 
   private removeTimer() {

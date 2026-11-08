@@ -45,13 +45,13 @@
           </div>
         }
 
-        @if (hasError) {
-          <div class="alert alert-danger py-2 mb-0 text-center" l10nTranslate>{{ hasError }}</div>
+        @if (hasError()) {
+          <div class="alert alert-danger py-2 mb-0 text-center" l10nTranslate>{{ hasError() }}</div>
         }
 
         <div class="d-flex gap-2 pt-1 w-100">
           <button type="button" (click)="onClose()" class="btn btn-secondary flex-fill" l10nTranslate>Cancel</button>
-          <button type="submit" [disabled]="twoFaForm.invalid || submitted" class="btn btn-primary flex-fill" l10nTranslate>Confirm</button>
+          <button type="submit" [disabled]="twoFaForm.invalid || submitted()" class="btn btn-primary flex-fill" l10nTranslate>Confirm</button>
         </div>
       </form>
     </div>

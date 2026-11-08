@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, HostListener, inject, Input, OnInit } from '@angular/core'
+import { Component, computed, HostListener, inject, Input, OnInit, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideLock, LucideLockOpen } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
 import { firstValueFrom } from 'rxjs'
@@ -21,40 +21,31 @@ export class FilesLockDialogComponent implements OnInit {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected layout = inject(LayoutService)
   protected readonly icons = { LucideLock, LucideLockOpen }
-  protected submitted = false
+  protected readonly submitted = signal(false)
   protected readonly store = inject(StoreService)
-  protected readonly userLogin = this.store.user.getValue().login
-  protected isFileOwner = false
-  protected isLockOwner = false
-  protected hasExclusiveLock = true
-  protected userAvatarUrl: string
   private readonly spacesBrowserService = inject(SpacesBrowserService)
   private readonly filesService = inject<FilesService>(FilesService)
+  protected readonly userLogin = this.store.user().login
+  protected readonly hasExclusiveLock = signal(true)
+  protected readonly isFileOwner = signal(false)
+  protected readonly isLockOwner = signal(false)
+  protected readonly userAvatarUrl = signal('')
+  protected readonly canUnlock = computed(() => this.isLockOwner() || this.isFileOwner())
+  protected readonly canRequestUnlock = computed(() => this.hasExclusiveLock() && !this.isLockOwner())
+  protected readonly hasAction = computed(() => this.canUnlock() || this.canRequestUnlock())
 
   ngOnInit() {
-    this.hasExclusiveLock = this.file.lock.isExclusive
-    this.isFileOwner = this.spacesBrowserService.inPersonalSpace || this.file.root?.owner?.login === this.userLogin
-    this.isLockOwner = this.file.lock.owner.login === this.userLogin
-    this.userAvatarUrl = userAvatarUrl(this.file.lock.owner.login)
-  }
-
-  protected get canUnlock(): boolean {
-    return this.isLockOwner || this.isFileOwner
-  }
-
-  protected get canRequestUnlock(): boolean {
-    return this.hasExclusiveLock && !this.isLockOwner
-  }
-
-  protected get hasAction(): boolean {
-    return this.canUnlock || this.canRequestUnlock
+    this.hasExclusiveLock.set(this.file.lock.isExclusive)
+    this.isFileOwner.set(this.spacesBrowserService.inPersonalSpace || this.file.root?.owner?.login === this.userLogin)
+    this.isLockOwner.set(this.file.lock.owner.login === this.userLogin)
+    this.userAvatarUrl.set(userAvatarUrl(this.file.lock.owner.login))
   }
 
   @HostListener('document:keyup.enter')
   async onEnter() {
-    if (this.canUnlock) {
+    if (this.canUnlock()) {
       await this.onUnlock()
-    } else if (this.canRequestUnlock) {
+    } else if (this.canRequestUnlock()) {
       this.onSendUnLockRequest()
     } else {
       this.layout.closeDialog()
@@ -68,22 +59,24 @@ export class FilesLockDialogComponent implements OnInit {
 
   async onUnlock() {
     try {
-      this.submitted = true
-      await firstValueFrom(this.filesService.unlock(this.file, this.isFileOwner))
+      this.submitted.set(true)
+      await firstValueFrom(this.filesService.unlock(this.file, this.isFileOwner()))
       this.file.removeLock()
+      this.filesService.notifyFileLockChange(this.file)
+      this.store.filesSelection.update((files) => [...files])
       this.layout.closeDialog()
     } catch (e: any) {
-      this.submitted = false
+      this.submitted.set(false)
       this.layout.sendNotification('warning', this.file.name, e.error.message)
     }
   }
 
   onSendUnLockRequest() {
-    this.submitted = true
+    this.submitted.set(true)
     this.filesService.unlockRequest(this.file).subscribe({
       next: () => this.layout.closeDialog(),
       error: (e: HttpErrorResponse) => {
-        this.submitted = false
+        this.submitted.set(false)
         this.layout.sendNotification('warning', this.file.name, e.error.message)
       }
     })

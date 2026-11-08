@@ -1,6 +1,6 @@
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core'
+import { Component, inject, OnInit, signal, ViewChild, viewChild } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
 import {
   LucideArrowDown,
@@ -59,14 +59,10 @@ import { FAVORITES_ICON, FAVORITES_PATH, FAVORITES_TITLE } from '../favorites.co
   templateUrl: './favorites.component.html'
 })
 export class FavoritesComponent implements OnInit {
-  @ViewChild(VirtualScrollComponent) scrollView: {
-    element: ElementRef
-    viewPortItems: FileFavoriteModel[]
-    scrollInto: (arg: FileFavoriteModel | number) => void
-  }
+  protected readonly scrollView = viewChild<VirtualScrollComponent<FileFavoriteModel>>(VirtualScrollComponent)
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
-  @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
-  @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
+  readonly targetContextMenu = viewChild.required<ContextMenuComponent<any>>('TargetContextMenu')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly navbarSearch = inject(NavbarSearchService)
@@ -89,10 +85,10 @@ export class FavoritesComponent implements OnInit {
   }
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly TAB_MENU = TAB_MENU
-  protected loading = false
-  protected galleryMode: ViewMode
-  protected favorites: FileFavoriteModel[] = []
-  protected selected: FileFavoriteModel = null
+  protected readonly loading = signal(false)
+  protected readonly galleryMode = signal<ViewMode | null>(null)
+  protected readonly favorites = signal<FileFavoriteModel[]>([])
+  protected readonly selected = signal<FileFavoriteModel | null>(null)
   protected tableHeaders: Record<'name' | 'location' | 'info' | 'size' | 'modified' | 'created', TableHeaderConfig> = {
     name: {
       label: 'Name',
@@ -158,12 +154,12 @@ export class FavoritesComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.galleryMode = this.btnNavigationView.currentView()
+    this.galleryMode.set(this.btnNavigationView.currentView())
     this.loadFavorites()
   }
 
   loadFavorites() {
-    this.loading = true
+    this.loading.set(true)
     this.onSelect()
     this.navbarSearch.clearViewFilter()
     this.filesService
@@ -172,27 +168,27 @@ export class FavoritesComponent implements OnInit {
       .subscribe({
         next: (favorites: FileFavoriteModel[]) => {
           this.sortBy(this.sortTable.sortParam.column, false, [...favorites])
-          this.loading = false
+          this.loading.set(false)
           if (this.focusOnSelect) {
             this.focusOn(this.focusOnSelect)
           } else {
-            this.scrollView?.scrollInto(-1)
+            this.scrollView()?.scrollInto(-1)
           }
         },
         error: (e: HttpErrorResponse) => {
-          this.favorites = []
-          this.loading = false
+          this.favorites.set([])
+          this.loading.set(false)
           this.layout.sendNotification('error', 'Favorites', 'Unable to load', e)
         }
       })
   }
 
   sortBy(column: string, toUpdate = true, collection?: FileFavoriteModel[]) {
-    this.favorites = this.sortTable.sortBy(column, toUpdate, collection || this.favorites)
+    this.favorites.set(this.sortTable.sortBy(column, toUpdate, collection || this.favorites()))
   }
 
   onSelect(favorite: FileFavoriteModel = null) {
-    this.selected = favorite
+    this.selected.set(favorite)
   }
 
   onFavoriteActivate(favorite: FileFavoriteModel) {
@@ -200,7 +196,7 @@ export class FavoritesComponent implements OnInit {
     this.open(favorite)
   }
 
-  open(favorite: FileFavoriteModel = this.selected) {
+  open(favorite: FileFavoriteModel = this.selected()) {
     if (!favorite) return
     if (favorite.isDisabled || !favorite.targetPath) {
       this.goTo(favorite)
@@ -216,7 +212,7 @@ export class FavoritesComponent implements OnInit {
   onContextMenu(ev: Event) {
     ev.preventDefault()
     ev.stopPropagation()
-    this.layout.openContextMenu(ev, this.mainContextMenu)
+    this.layout.openContextMenu(ev, this.mainContextMenu())
   }
 
   onTargetContextMenu(ev: Event, favorite: FileFavoriteModel) {
@@ -225,10 +221,10 @@ export class FavoritesComponent implements OnInit {
       ev.stopPropagation()
     }
     this.onSelect(favorite)
-    this.layout.openContextMenu(ev, this.targetContextMenu)
+    this.layout.openContextMenu(ev, this.targetContextMenu())
   }
 
-  goTo(favorite: FileFavoriteModel = this.selected, tab?: TAB_MENU) {
+  goTo(favorite: FileFavoriteModel = this.selected(), tab?: TAB_MENU) {
     if (!favorite) return
     if (favorite.isDisabled) {
       this.layout.sendNotification('warning', favorite.name, 'No longer accessible')
@@ -247,7 +243,7 @@ export class FavoritesComponent implements OnInit {
     this.goTo(favorite, tab)
   }
 
-  removeFavorite(favorite: FileFavoriteModel = this.selected, ev?: Event) {
+  removeFavorite(favorite: FileFavoriteModel = this.selected(), ev?: Event) {
     ev?.stopPropagation()
     if (!favorite) return
     this.filesService
@@ -255,11 +251,11 @@ export class FavoritesComponent implements OnInit {
       .pipe(take(1))
       .subscribe({
         next: () => {
-          if (this.selected?.fileId === favorite.fileId) this.onSelect()
+          if (this.selected()?.fileId === favorite.fileId) this.onSelect()
           this.sortBy(
             this.sortTable.sortParam.column,
             false,
-            this.favorites.filter((item) => item.fileId !== favorite.fileId)
+            this.favorites().filter((item) => item.fileId !== favorite.fileId)
           )
         },
         error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Favorites', favorite.name, e)
@@ -267,9 +263,9 @@ export class FavoritesComponent implements OnInit {
   }
 
   private focusOn(select: string) {
-    const favorite = this.favorites.find((item) => item.name.toLowerCase() === select.toLowerCase())
+    const favorite = this.favorites().find((item) => item.name.toLowerCase() === select.toLowerCase())
     if (favorite) {
-      setTimeout(() => this.scrollView?.scrollInto(favorite), 100)
+      setTimeout(() => this.scrollView()?.scrollInto(favorite), 100)
       this.onSelect(favorite)
     }
   }

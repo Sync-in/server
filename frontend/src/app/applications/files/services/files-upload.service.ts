@@ -1,5 +1,5 @@
 import { HttpClient, HttpEventType, HttpUploadProgressEvent } from '@angular/common/http'
-import { inject, Injectable, NgZone } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { API_FILES_OPERATION_UPLOAD } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
@@ -19,7 +19,6 @@ export class FilesUploadService {
   private readonly filesService = inject(FilesService)
   private readonly filesTasksService = inject(FilesTasksService)
   private readonly layout = inject(LayoutService)
-  private readonly ngZone = inject(NgZone)
   private readonly maxConcurrentUploads = 3
   private readonly progressUpdateInterval = 1000
   private readonly progressUpdateTimers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -43,7 +42,7 @@ export class FilesUploadService {
     this.drainUploadQueue()
     await Promise.all(taskReqs.map((taskReq: FileUploadTaskRequest) => taskReq.completed))
     if (files.length > 1) {
-      this.ngZone.run(() => this.notifyUploadBatch(taskReqs))
+      this.notifyUploadBatch(taskReqs)
     }
   }
 
@@ -169,7 +168,7 @@ export class FilesUploadService {
     taskReq.started = true
     task.status = FileTaskStatus.PENDING
     task.startedAt = currentTimeStamp(null, true)
-    this.updateTaskInAngular(task)
+    this.updateTask(task)
     try {
       await this.runUpload(task, req, controller.signal)
       task.props.progress = 100
@@ -193,44 +192,41 @@ export class FilesUploadService {
       taskReq.task.endedAt = currentTimeStamp(null, true)
     }
     this.filesTasksService.unregisterUploadCancellation(taskReq.task.id)
-    this.updateTaskInAngular(taskReq.task, taskReq.notifyCompletion)
+    this.updateTask(taskReq.task, taskReq.notifyCompletion)
     taskReq.resolveCompleted()
   }
 
   private runUpload(task: FileTask, req: Observable<any>, signal: AbortSignal): Promise<void> {
-    return this.ngZone.runOutsideAngular(
-      () =>
-        new Promise<void>((resolve, reject) => {
-          if (signal.aborted) {
-            reject(signal.reason)
-            return
-          }
-          let settled = false
-          const subscription = new Subscription()
-          const onAbort = () => {
-            subscription.unsubscribe()
-            settle(() => reject(signal.reason))
-          }
-          const settle = (done: () => void) => {
-            if (settled) return
-            settled = true
-            signal.removeEventListener('abort', onAbort)
-            done()
-          }
-          signal.addEventListener('abort', onAbort, { once: true })
-          subscription.add(
-            req.subscribe({
-              next: (ev: any) => {
-                if (ev.type === HttpEventType.UploadProgress) {
-                  this.updateProgress(task, ev)
-                }
-              },
-              error: (e) => settle(() => reject(e)),
-              complete: () => settle(resolve)
-            })
-          )
+    return new Promise<void>((resolve, reject) => {
+      if (signal.aborted) {
+        reject(signal.reason)
+        return
+      }
+      let settled = false
+      const subscription = new Subscription()
+      const onAbort = () => {
+        subscription.unsubscribe()
+        settle(() => reject(signal.reason))
+      }
+      const settle = (done: () => void) => {
+        if (settled) return
+        settled = true
+        signal.removeEventListener('abort', onAbort)
+        done()
+      }
+      signal.addEventListener('abort', onAbort, { once: true })
+      subscription.add(
+        req.subscribe({
+          next: (ev: any) => {
+            if (ev.type === HttpEventType.UploadProgress) {
+              this.updateProgress(task, ev)
+            }
+          },
+          error: (e) => settle(() => reject(e)),
+          complete: () => settle(resolve)
         })
-    )
+      )
+    })
   }
 
   private cancelUploadTask(taskReq: FileUploadTaskRequest) {
@@ -280,7 +276,7 @@ export class FilesUploadService {
 
   private emitProgressUpdate(task: FileTask) {
     this.progressUpdatedAt.set(task.id, Date.now())
-    this.updateTaskInAngular(task)
+    this.updateTask(task)
   }
 
   private clearProgressUpdate(taskId: string) {
@@ -292,8 +288,8 @@ export class FilesUploadService {
     this.progressUpdatedAt.delete(taskId)
   }
 
-  private updateTaskInAngular(task: FileTask, notifyCompletion = true) {
-    this.ngZone.run(() => this.filesTasksService.updateTask(task, notifyCompletion))
+  private updateTask(task: FileTask, notifyCompletion = true) {
+    this.filesTasksService.updateTask(task, notifyCompletion)
   }
 
   private sortFiles(files: FileUpload[]): Record<string, { nb: number; size: number; form: FormData }> {

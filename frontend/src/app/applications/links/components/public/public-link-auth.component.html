@@ -5,16 +5,17 @@
   </div>
   <div class="d-flex flex-column align-items-center mt-2 ms-auto me-auto">
     <div class="input-group input-group-lg" style="max-width: 220px">
-      <input [(ngModel)]="password"
+      <input [ngModel]="password()"
+             (ngModelChange)="password.set($event)"
              (keyup.enter)="validPassword()"
-             [class.is-invalid]="retryAfter === 0 && password?.length < passwordMinLength"
-             [disabled]="submitted || retryAfter > 0"
+             [class.is-invalid]="retryAfter() === 0 && password().length < passwordMinLength"
+             [disabled]="submitted() || retryAfter() > 0"
              autocomplete="off"
              class="form-control"
              [placeholder]="'Password' | translate:locale.language"
              type="password"
              required>
-      <button [disabled]="password?.length < passwordMinLength || submitted || retryAfter > 0"
+      <button [disabled]="password().length < passwordMinLength || submitted() || retryAfter() > 0"
               (click)="validPassword()"
               class="btn btn-custom"
               type="button">
@@ -25,7 +26,7 @@
   <div class="link-text">
     <span class="hr"></span>
     <div aria-live="polite">
-      @if (retryAfter > 0) {
+      @if (retryAfter() > 0) {
         <span class="info d-block text-danger">{{ 'Too many login attempts' | translate:locale.language }}</span>
         <span class="d-block mt-1 fw-normal opacity-75">
           {{ 'auth_retry_after' | translate:locale.language:{ delay: retryDelayLabel() } }}

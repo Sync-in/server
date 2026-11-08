@@ -53,12 +53,9 @@ import { CodeMirrorFileViewerSearchAdapter } from './components/files-viewer-cod
 import { FilesViewerSearchComponent } from './components/files-viewer-search.component'
 import { TipTapFileViewerSearchAdapter } from './components/files-viewer-tiptap-search-adapter'
 import { FilesViewerUnsavedChangesComponent } from './components/files-viewer-unsaved-changes.component'
+import type { MarkdownEditorMode, MarkdownHeadingLevel, MarkdownInlineMark } from './interfaces/markdown.interface'
 import { isAllowedAbsoluteImageSource, MarkdownImage, resolveMarkdownRelativeImageUrl } from './utils/markdown-image.utils'
 import { markdownHeadingSlug, MarkdownLink, resolveMarkdownLink } from './utils/markdown-link.utils'
-
-type MarkdownHeadingLevel = 1 | 2 | 3 | 4
-type MarkdownInlineMark = 'bold' | 'code' | 'italic' | 'strike' | 'underline'
-type MarkdownEditorMode = 'source' | 'visual'
 
 const ExitInlineCodeOnEnter = Extension.create({
   name: 'exitInlineCodeOnEnter',
@@ -95,10 +92,10 @@ const ExitInlineCodeOnEnter = Extension.create({
 export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implements OnInit, OnDestroy {
   private openingLink = false
   private headingRafId: number | null = null
-  protected isSourceMode = signal(false)
-  protected lineWrapping = signal(false)
-  protected sourceContent = ''
-  protected currentLanguage: string | undefined = undefined
+  protected readonly isSourceMode = signal(false)
+  protected readonly lineWrapping = signal(false)
+  protected readonly sourceContent = signal('')
+  protected readonly currentLanguage = signal<string | undefined>(undefined)
   protected readonly languages: LanguageDescription[] = languages
   protected readonly sourceSearchAdapter = new CodeMirrorFileViewerSearchAdapter(() => this.sourceView)
   protected readonly visualSearchAdapter = new TipTapFileViewerSearchAdapter(() => this.editor)
@@ -223,7 +220,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
 
   async ngOnInit() {
     const language: LanguageDescription = LanguageDescription.matchFilename(languages, this.file().name)
-    this.currentLanguage = language?.name || 'Markdown'
+    this.currentLanguage.set(language?.name || 'Markdown')
     this.isSupported.set(true)
     this.loadContent().catch(console.error)
   }
@@ -274,10 +271,10 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
   protected setSourceMode(sourceMode: boolean) {
     if (sourceMode === this.isSourceMode()) return
     if (!this.isSourceMode()) {
-      this.sourceContent = this.editor.getMarkdown()
+      this.sourceContent.set(this.editor.getMarkdown())
     }
     if (!sourceMode) {
-      this.setMarkdownContent(this.sourceContent)
+      this.setMarkdownContent(this.sourceContent())
     }
     this.isSourceMode.set(sourceMode)
     this.scheduleEditorFocus(sourceMode ? 'source' : 'visual')
@@ -485,7 +482,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
 
   protected onContentLoaded(content: string) {
     this.savedContent = content
-    this.sourceContent = content
+    this.sourceContent.set(content)
     this.setMarkdownContent(content)
     this.isModified.set(false)
     const fragment = this.file().markdownFragment || ''
@@ -634,14 +631,14 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
 
   private currentMarkdown(): string {
     if (this.isSourceMode()) {
-      return this.sourceContent
+      return this.sourceContent()
     }
-    this.sourceContent = this.editor.getMarkdown()
-    return this.sourceContent
+    this.sourceContent.set(this.editor.getMarkdown())
+    return this.sourceContent()
   }
 
   private markModifiedIfNeeded() {
-    const content = this.isSourceMode() ? this.sourceContent : this.editor.getMarkdown()
+    const content = this.isSourceMode() ? this.sourceContent() : this.editor.getMarkdown()
     this.isModified.set(content !== this.savedContent)
   }
 

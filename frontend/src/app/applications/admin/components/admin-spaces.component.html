@@ -12,7 +12,7 @@
   </button>
   <button (click)="openSpaceDialog()"
           [attr.aria-label]="'Edit space' | translate:locale.language"
-          [disabled]="!selected"
+          [disabled]="!selected()"
           class="btn btn-default app-top-menu-tool-bar__action--quiet"
           [tooltip]="'Edit space' | translate:locale.language"
           type="button">
@@ -21,7 +21,7 @@
   </button>
   <button (click)="openChildShareDialog()"
           [attr.aria-label]="'Edit children shares' | translate:locale.language"
-          [disabled]="!selected?.counts.shares"
+          [disabled]="!selected()?.counts.shares"
           class="btn btn-default"
           [tooltip]="'Edit children shares' | translate:locale.language"
           type="button">
@@ -33,7 +33,7 @@
             class="d-none d-md-block btn btn-default"
             [tooltip]="'Refresh' | translate:locale.language"
             type="button">
-      <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
+      <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading() ? 'icon-spin' : ''"></svg>
     </button>
   </div>
 </div>
@@ -61,15 +61,15 @@
 </table>
 <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                     [bufferAmount]="5"
-                    [items]="spaces | searchFilter:navbarSearch.viewFilter()">
+                    [items]="spaces() | searchFilter:navbarSearch.viewFilter()">
   <table class="app-table">
     <tbody tabindex="-1">
-      @for (s of scrollView?.viewPortItems; track s.id) {
+      @for (s of scrollView().viewPortItems(); track s.id) {
         <tr (click)="onSelect(s)"
             (contextmenu)="onTargetContextMenu($event, s)"
             (appTap)="onSpaceActivate(s)"
             [class.disabled]="!s.enabled"
-            [class.selected]="s.id === selected?.id">
+            [class.selected]="s.id === selected()?.id">
           @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
             @if (th.value.show) {
               <td [style.width.%]="th.value.width"
@@ -123,8 +123,8 @@
 <!--End Table Files Content-->
 <!--Start Foot Content-->
 <div class="app-foot-menu">
-  <span>{{ spaces.length }} {{ 'spaces' | translate:locale.language }}</span>
-  <div class="ms-auto">{{ storageUsage | toBytes }}</div>
+  <span>{{ spaces().length }} {{ 'spaces' | translate:locale.language }}</span>
+  <div class="ms-auto">{{ storageUsage() | toBytes }}</div>
 </div>
 <!--End Foot Content-->
 <!--Start Context Menu -->
@@ -142,7 +142,7 @@
   <ng-template (execute)="openSpaceDialog()" contextMenuItem>
     <span l10nTranslate><svg [lucideIcon]="icons.LucidePencil"></svg>Edit space</span>
   </ng-template>
-  @if (!!selected?.counts.shares) {
+  @if (!!selected()?.counts.shares) {
     <ng-template (execute)="openChildShareDialog()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.SHARES"></svg>Edit children shares</span>
     </ng-template>

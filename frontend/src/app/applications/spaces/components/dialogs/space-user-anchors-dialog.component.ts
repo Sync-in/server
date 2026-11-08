@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, inject, Input, OnInit } from '@angular/core'
+import { Component, inject, Input, OnInit, output, signal } from '@angular/core'
 import { LucideAnchor, LucideDynamicIcon, LucideLoader, LucidePlus } from '@lucide/angular'
 import type { SpaceRootProps } from '@sync-in-server/backend/src/applications/spaces/models/space-root-props.model'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -23,12 +23,14 @@ import { ExternalFilePathEvent } from './space-root-path-dialog.component'
 export class SpaceUserAnchorsDialogComponent implements OnInit {
   @Input({ required: true }) space: SpaceModel
   @Input({ required: true }) user: UserType
+  readonly rootsChange = output<SpaceModel>()
   protected readonly layout = inject(LayoutService)
-  protected addRootFileEvent = new Subject<FileTreeEvent | ExternalFilePathEvent>()
+  protected readonly addRootFileEvent = new Subject<FileTreeEvent | ExternalFilePathEvent>()
   protected readonly icons = { LucideAnchor, LucidePlus, LucideLoader, SPACES: SPACES_ICON.SPACES }
   // states
-  protected submitted = false
-  protected loading = false
+  protected readonly submitted = signal(false)
+  protected readonly loading = signal(false)
+  protected readonly roots = signal<SpaceRootModel[]>([])
   private readonly spacesService = inject(SpacesService)
 
   ngOnInit() {
@@ -36,6 +38,7 @@ export class SpaceUserAnchorsDialogComponent implements OnInit {
       // re-added after
       this.space.roots = []
     }
+    this.roots.set(this.space.roots)
     this.spacesService.getUserSpaceRoots(this.space.id).subscribe({
       next: (roots: SpaceRootModel[]) => this.setSpaceRoots(roots),
       error: (e: HttpErrorResponse) => {
@@ -47,15 +50,15 @@ export class SpaceUserAnchorsDialogComponent implements OnInit {
   openSelectRootDialog() {
     const modalRef: BsModalRef<FilesTreeDialogComponent> = this.layout.openDialog(FilesTreeDialogComponent, 'xl', {
       initialState: {
-        currentRoots: this.space.roots.filter((r: SpaceRootModel) => r.owner.id === this.user.id) as SpaceRootProps[]
+        currentRoots: this.roots().filter((root: SpaceRootModel) => root.owner.id === this.user.id) as SpaceRootProps[]
       } as FilesTreeDialogComponent
     })
     modalRef.content.submitEvent.pipe(take(1)).subscribe((file: FileTreeEvent) => this.addRootFileEvent.next(file))
   }
 
   onSubmit() {
-    this.loading = true
-    this.submitted = true
+    this.loading.set(true)
+    this.submitted.set(true)
     this.spacesService
       .updateUserSpaceRoots(
         this.space.id,
@@ -77,17 +80,19 @@ export class SpaceUserAnchorsDialogComponent implements OnInit {
         },
         error: (e: HttpErrorResponse) => {
           this.layout.sendNotification('error', 'Manage my anchored files', e.error.message)
-          this.submitted = false
-          this.loading = false
+          this.submitted.set(false)
+          this.loading.set(false)
         }
       })
   }
 
   private setSpaceRoots(roots: SpaceRootModel[]) {
     this.space.roots = []
-    for (const r of roots) {
-      this.space.addRoot({ ...r, owner: this.user }, true)
+    for (const root of roots) {
+      this.space.addRoot({ ...root, owner: this.user }, true)
     }
     this.space.counts.roots = this.space.roots.length
+    this.roots.set([...this.space.roots])
+    this.rootsChange.emit(this.space)
   }
 }

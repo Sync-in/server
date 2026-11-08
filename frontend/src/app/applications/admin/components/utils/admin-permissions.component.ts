@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
+import { Component, inject, input, output } from '@angular/core'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
@@ -14,7 +14,7 @@ import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
           <label class="form-check-label">
             <input
               (change)="updatePermissions(app, $event)"
-              [checked]="permissions.indexOf(app) > -1"
+              [checked]="permissions().includes(app)"
               [value]="app"
               class="form-check-input"
               type="checkbox"
@@ -27,18 +27,19 @@ import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
   </div>`
 })
 export class AdminPermissionsComponent {
-  @Input() permissions: USER_PERMISSION[] = []
-  @Output() permissionsChange = new EventEmitter<USER_PERMISSION[]>()
+  readonly permissions = input<USER_PERMISSION[]>([])
+  readonly permissionsChange = output<USER_PERMISSION[]>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly allApplications: USER_PERMISSION[] = Object.values(USER_PERMISSION) as USER_PERMISSION[]
 
   updatePermissions(app: USER_PERMISSION, event: Event) {
     const target = event.target as HTMLInputElement
+    const permissions = this.permissions()
     if (target.checked) {
-      this.permissions.push(app)
+      permissions.push(app)
     } else {
-      this.permissions.splice(this.permissions.indexOf(app), 1)
+      permissions.splice(permissions.indexOf(app), 1)
     }
-    this.permissionsChange.emit(this.permissions)
+    this.permissionsChange.emit(permissions)
   }
 }

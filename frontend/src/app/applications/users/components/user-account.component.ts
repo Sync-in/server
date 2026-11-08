@@ -1,5 +1,6 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http'
-import { Component, inject, OnDestroy, OnInit } from '@angular/core'
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { LucideCopy, LucideDynamicIcon, LucideKeyRound } from '@lucide/angular'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -11,7 +12,6 @@ import type { TwoFaSetup } from '@sync-in-server/backend/src/authentication/prov
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { ClipboardService } from 'ngx-clipboard'
-import { Subscription } from 'rxjs'
 import { filter, take } from 'rxjs/operators'
 import { AuthService } from '../../../auth/auth.service'
 import { InputPasswordComponent } from '../../../common/components/input-password.component'
@@ -23,7 +23,6 @@ import { TimeAgoPipe } from '../../../common/pipes/time-ago.pipe'
 import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
-import { UserType } from '../interfaces/user.interface'
 import { USER_ICON, USER_ONLINE_STATUS_LIST, USER_PATH, USER_TITLE } from '../user.constants'
 import { UserService } from '../user.service'
 import { UserAuth2faEnableDialogComponent } from './dialogs/user-auth-2fa-enable-dialog.component'
@@ -46,27 +45,26 @@ import { UserAuthManageAppPasswordsDialogComponent } from './dialogs/user-auth-m
   ],
   templateUrl: 'user-account.component.html'
 })
-export class UserAccountComponent implements OnInit, OnDestroy {
+export class UserAccountComponent implements OnInit {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly passwordMinLength = USER_PASSWORD_MIN_LENGTH
   protected readonly icons = { LucideCopy, LucideKeyRound }
-  protected user: UserType
-  protected userAvatar: string = null
-  protected webdavUrl = `${window.location.origin}/${WEBDAV_BASE_PATH}`
-  // password
-  protected oldPassword: string
-  protected newPassword: string
   protected readonly store = inject(StoreService)
+  protected readonly user = this.store.user
+  protected readonly userAvatar = this.store.userAvatarUrl
+  protected readonly webdavUrl = `${window.location.origin}/${WEBDAV_BASE_PATH}`
+  // password
+  protected readonly oldPassword = signal('')
+  protected readonly newPassword = signal('')
+  protected readonly requiresCurrentPassword = computed(() => this.user()?.authSession !== AUTH_SESSION.OIDC)
   private readonly layout = inject(LayoutService)
   private readonly authService = inject(AuthService)
   private readonly userService = inject(UserService)
   private readonly clipBoardService = inject(ClipboardService)
-  private subscriptions: Subscription[] = []
+  private readonly destroyRef = inject(DestroyRef)
 
   constructor() {
-    this.subscriptions.push(this.store.user.subscribe((user: UserType) => (this.user = user)))
-    this.subscriptions.push(this.store.userAvatarUrl.subscribe((avatarUrl) => (this.userAvatar = avatarUrl)))
     this.layout.setBreadcrumbIcon(USER_ICON.ACCOUNT)
     this.layout.setBreadcrumbNav({
       url: `/${USER_PATH.BASE}/${USER_PATH.ACCOUNT}/${USER_TITLE.ACCOUNT}`,
@@ -76,16 +74,8 @@ export class UserAccountComponent implements OnInit, OnDestroy {
     })
   }
 
-  get requiresCurrentPassword() {
-    return this.user?.authSession !== AUTH_SESSION.OIDC
-  }
-
   ngOnInit() {
     this.userService.refreshUser()
-  }
-
-  ngOnDestroy() {
-    this.subscriptions.forEach((s) => s.unsubscribe())
   }
 
   logOut() {
@@ -93,6 +83,8 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   }
 
   setOnlineStatus(status: number) {
+    this.user()!.onlineStatus = status
+    this.store.user.set(this.user())
     this.userService.changeOnlineStatus(status)
   }
 
@@ -105,31 +97,29 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   }
 
   async submitPassword() {
-    if (this.requiresCurrentPassword && !this.oldPassword) {
+    if (this.requiresCurrentPassword() && !this.oldPassword()) {
       this.layout.sendNotification('error', 'Configuration', 'Current password missing !')
       return
     }
-    if (!this.newPassword) {
+    if (!this.newPassword()) {
       this.layout.sendNotification('error', 'Configuration', 'New password missing !')
       return
     }
-    if (this.newPassword.length < USER_PASSWORD_MIN_LENGTH) {
+    if (this.newPassword().length < USER_PASSWORD_MIN_LENGTH) {
       this.layout.sendNotification('warning', 'Configuration', 'New password must have 8 characters minimum')
       return
     }
     const auth2FaHeaders = await this.userService.auth2FaVerifyDialog()
-    if (auth2FaHeaders === false) {
-      return
-    }
-    const oldPassword = this.requiresCurrentPassword ? this.oldPassword : this.newPassword
-    this.userService.changePassword({ oldPassword, newPassword: this.newPassword }, auth2FaHeaders).subscribe({
+    if (auth2FaHeaders === false) return
+    const oldPassword = this.requiresCurrentPassword() ? this.oldPassword() : this.newPassword()
+    this.userService.changePassword({ oldPassword, newPassword: this.newPassword() }, auth2FaHeaders).subscribe({
       next: () => {
-        this.oldPassword = ''
-        this.newPassword = ''
+        this.oldPassword.set('')
+        this.newPassword.set('')
         this.layout.sendNotification('info', 'Configuration', 'Password has been updated')
       },
       error: (e: HttpErrorResponse) => {
-        this.oldPassword = ''
+        this.oldPassword.set('')
         if (e.status === 403) {
           this.layout.sendNotification('error', 'Configuration', 'Unable to update password', e)
         } else {
@@ -144,7 +134,7 @@ export class UserAccountComponent implements OnInit, OnDestroy {
     this.layout.sendNotification('info', 'Link copied', this.webdavUrl)
   }
 
-  async enable2Fa() {
+  enable2Fa() {
     this.userService.init2Fa().subscribe({
       next: (init: TwoFaSetup) => {
         const modalRef: BsModalRef<UserAuth2faEnableDialogComponent> = this.layout.openDialog(
@@ -160,7 +150,7 @@ export class UserAccountComponent implements OnInit, OnDestroy {
           )
           .subscribe(() => {
             this.layout.sendNotification('success', 'Configuration', 'Two-Factor Authentication is enabled')
-            this.store.user.next({ ...this.store.user.getValue(), twoFaEnabled: true })
+            this.store.user.update((user) => ({ ...user!, twoFaEnabled: true }))
           })
       },
       error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Configuration', 'Two-Factor Authentication', e)
@@ -176,7 +166,7 @@ export class UserAccountComponent implements OnInit, OnDestroy {
     this.userService.disable2Fa({ code: auth2FaHeaders.get(TWO_FA_HEADER_CODE), password: auth2FaHeaders.get(TWO_FA_HEADER_PASSWORD) }).subscribe({
       next: () => {
         this.layout.sendNotification('success', 'Configuration', 'Two-Factor Authentication is disabled')
-        this.store.user.next({ ...this.store.user.getValue(), twoFaEnabled: false })
+        this.store.user.update((user) => ({ ...user!, twoFaEnabled: false }))
       },
       error: (e: HttpErrorResponse) => {
         this.layout.sendNotification('error', 'Configuration', 'Two-Factor Authentication', e)
@@ -184,7 +174,7 @@ export class UserAccountComponent implements OnInit, OnDestroy {
     })
   }
 
-  async manageAppPasswords() {
+  manageAppPasswords() {
     this.userService.listAppPasswords().subscribe({
       next: (appPasswords: Omit<UserAppPassword, 'password'>[]) => {
         const modalRef: BsModalRef<UserAuthManageAppPasswordsDialogComponent> = this.layout.openDialog(
@@ -192,8 +182,8 @@ export class UserAccountComponent implements OnInit, OnDestroy {
           'md',
           { initialState: { appPasswords: appPasswords } as UserAuthManageAppPasswordsDialogComponent }
         )
-        modalRef.content.nbAppPasswords.subscribe((nb: number) => {
-          this.store.user.next({ ...this.store.user.getValue(), appPasswords: nb })
+        modalRef.content.nbAppPasswords.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((nb: number) => {
+          this.store.user.update((user) => ({ ...user!, appPasswords: nb }))
         })
       },
       error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Configuration', 'Unable to get app passwords', e)

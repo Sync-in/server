@@ -1,6 +1,6 @@
 import { AsyncPipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { LucideDynamicIcon, LucideLoader, LucideLock, LucideLockOpen, LucideMessageSquareMore, LucideX } from '@lucide/angular'
@@ -49,14 +49,15 @@ import { FilesSummaryComponent } from '../utils/files-summary.component'
   styles: ['.card {width: 100%; background: transparent; border: none}']
 })
 export class FilesSelectionComponent {
-  files = input.required<FileModel[]>()
+  readonly files = input.required<FileModel[]>()
   private readonly router = inject(Router)
   private readonly layout = inject(LayoutService)
   private readonly filesService = inject(FilesService)
   private readonly store = inject(StoreService)
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly cardImageSize = defaultCardImageSize
-  protected selectedAction: SelectionAction = 'clipboard'
+  protected readonly selectedAction = signal<SelectionAction>('clipboard')
+  protected readonly canManageFavorite = computed(() => !this.store.user()?.isLink && this.store.repository() !== SPACES_PATH.TRASH)
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,
     SHARED: SPACES_ICON.SHARED_WITH_OTHERS,
@@ -84,17 +85,15 @@ export class FilesSelectionComponent {
     this.layout.showRSideBarTab(TAB_MENU.COMMENTS, true)
   }
 
-  protected get canManageFavorite(): boolean {
-    return !this.store.user.getValue()?.isLink && this.store.repository() !== SPACES_PATH.TRASH
-  }
-
   toggleFavorite(file: FileModel) {
-    if (!this.canManageFavorite) return
+    if (!this.canManageFavorite()) return
     this.filesService
       .toggleFavorite(file)
       .pipe(take(1))
       .subscribe({
-        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Favorites', file.name, e)
+        error: (e: HttpErrorResponse) => {
+          this.layout.sendNotification('error', 'Favorites', file.name, e)
+        }
       })
   }
 
@@ -109,11 +108,11 @@ export class FilesSelectionComponent {
   }
 
   doAction() {
-    if (this.selectedAction === 'clipboard') return this.addToClipboard()
-    if (this.selectedAction === 'copyMove') return this.filesService.openTreeCopyMove()
+    if (this.selectedAction() === 'clipboard') return this.addToClipboard()
+    if (this.selectedAction() === 'copyMove') return this.filesService.openTreeCopyMove()
     const archiveProps: CompressFileDto = {
       name: this.files()[0].name,
-      compressInDirectory: this.selectedAction === 'compress',
+      compressInDirectory: this.selectedAction() === 'compress',
       compression: false,
       files: this.files().map((file) => ({ name: file.name, rootAlias: file.root?.alias, path: file.path })),
       extension: TAR_EXTENSION

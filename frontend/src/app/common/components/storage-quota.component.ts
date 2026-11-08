@@ -29,34 +29,21 @@ import { quotaRegexp } from '../utils/regexp'
   `
 })
 export class StorageQuotaComponent implements OnInit {
-  // two-way binding via banana in parent: [(quota)]="..."
-  quota = model<number | null>(null)
-
-  // plain inputs converted to signals
-  maxWidthPercent = input<number>(75)
-  fullWidth = input<boolean>(false)
-
-  // derived: what we actually apply in the template
-  displayMaxWidth = computed(() => (this.fullWidth() ? 100 : this.maxWidthPercent()))
-
-  // locale as before
-  protected locale = inject<L10nLocale>(L10N_LOCALE)
-
-  // internal state as signals
-  protected quotaText = signal<string>('') // text shown/edited in the input
-  protected invalid = signal<boolean>(false)
+  readonly quota = model<number | null>(null)
+  readonly maxWidthPercent = input(75)
+  readonly fullWidth = input(false)
+  protected readonly displayMaxWidth = computed(() => (this.fullWidth() ? 100 : this.maxWidthPercent()))
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly quotaText = signal('')
+  protected readonly invalid = signal(false)
 
   ngOnInit() {
-    // initialize text from initial quota value (one-time on init)
-    const q = this.quota()
-    if (q !== null && q !== undefined) {
-      this.quotaText.set(q === 0 ? '0' : convertBytesToText(q))
+    const quota = this.quota()
+    if (quota !== null && quota !== undefined) {
+      this.quotaText.set(quota === 0 ? '0' : convertBytesToText(quota))
     }
-    // keep initial max width behavior but via computed (no mutation of inputs)
-    // -> handled by displayMaxWidth()
   }
 
-  // called on each keystroke
   onQuotaInput(value: string) {
     this.quotaText.set(value)
     this.validateQuota()
@@ -81,8 +68,8 @@ export class StorageQuotaComponent implements OnInit {
     this.quota.set(null)
   }
 
-  validateQuota() {
-    const t = this.quotaText()
-    this.invalid.set(!!t && t !== '0' && !quotaRegexp.test(t))
+  private validateQuota() {
+    const quotaText = this.quotaText()
+    this.invalid.set(!!quotaText && quotaText !== '0' && !quotaRegexp.test(quotaText))
   }
 }

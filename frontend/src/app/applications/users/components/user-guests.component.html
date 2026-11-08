@@ -12,7 +12,7 @@
   </button>
   <button (click)="openGuestDialog()"
           [attr.aria-label]="'Edit guest' | translate:locale.language"
-          [disabled]="!selected"
+          [disabled]="!selected()"
           class="btn btn-default app-top-menu-tool-bar__action--quiet"
           type="button">
     <svg [lucideIcon]="icons.LucidePencil"></svg>
@@ -24,7 +24,7 @@
             class="d-none d-md-block btn btn-default"
             [tooltip]="'Refresh' | translate:locale.language"
             type="button">
-      <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
+      <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading() ? 'icon-spin' : ''"></svg>
     </button>
   </div>
 </div>
@@ -53,15 +53,15 @@
 </table>
 <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                     [bufferAmount]="5"
-                    [items]="guests | searchFilter:navbarSearch.viewFilter()">
+                    [items]="guests() | searchFilter:navbarSearch.viewFilter()">
   <table class="app-table">
     <tbody tabindex="-1">
-      @for (u of scrollView?.viewPortItems; track u.id) {
+      @for (u of scrollView().viewPortItems(); track u.id) {
         <tr (click)="onSelect(u)"
             (contextmenu)="onTargetContextMenu($event, u)"
             (appTap)="onGuestActivate(u)"
             [class.disabled]="!u.isActive"
-            [class.selected]="u.id === selected?.id">
+            [class.selected]="u.id === selected()?.id">
           @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
             @if (th.value.show) {
               <td [style.width.%]="th.value.width"
@@ -126,7 +126,7 @@
 <!--End Table Files Content-->
 <!--Start Foot Content-->
 <div class="app-foot-menu">
-  <span class="mx-auto">{{ guests.length }} {{ 'guests' | translate:locale.language }}</span>
+  <span class="mx-auto">{{ guests().length }} {{ 'guests' | translate:locale.language }}</span>
 </div>
 <!--End Foot Content-->
 <!--Start Context Menu -->

@@ -1,6 +1,18 @@
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { AfterViewInit, Component, ElementRef, inject, NgZone, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core'
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  OnDestroy,
+  OnInit,
+  Renderer2,
+  signal,
+  viewChild,
+  ViewChild
+} from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import {
   LucideAnchor,
@@ -61,7 +73,7 @@ import { UploadFilesDirective } from '../../../common/directives/upload-files.di
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
-import { decrement, elementIsVisible, filterArray, increment, originalOrderKeyValue, pathFromRoutes } from '../../../common/utils/functions'
+import { elementIsVisible, filterArray, increment, originalOrderKeyValue, pathFromRoutes } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { dragClass, tableTrSelectedClass } from '../../../layout/layout.constants'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
@@ -115,22 +127,19 @@ const keyboardNavigationKeys: ReadonlySet<string> = new Set<KeyboardNavigationKe
     TapDirective,
     FileLockFormatPipe
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'spaces-browser.component.html',
   styleUrl: 'spaces-browser.component.scss'
 })
 export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild(VirtualScrollComponent) scrollView: {
-    element: ElementRef
-    viewPortItems: FileModel[]
-    scrollInto: (arg: FileModel | number) => void
-    itemsPerRow: number
-  }
+  protected readonly scrollView = viewChild<VirtualScrollComponent<FileModel>>(VirtualScrollComponent)
+  private readonly scrollViewElement = viewChild(VirtualScrollComponent, { read: ElementRef })
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: any
-  @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
-  @ViewChild('MainReadOnlyContextMenu', { static: true }) mainReadOnlyContextMenu: ContextMenuComponent<any>
-  @ViewChild('FileContextMenu', { static: true }) fileContextMenu: ContextMenuComponent<any>
-  @ViewChild('uploadFilesPicker') private uploadFilesPicker: UploadFilesDirective | undefined
-  @ViewChild('uploadFoldersPicker') private uploadFoldersPicker: UploadFilesDirective | undefined
+  readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
+  readonly mainReadOnlyContextMenu = viewChild.required<ContextMenuComponent<any>>('MainReadOnlyContextMenu')
+  readonly fileContextMenu = viewChild.required<ContextMenuComponent<any>>('FileContextMenu')
+  private readonly uploadFilesPicker = viewChild<UploadFilesDirective>('uploadFilesPicker')
+  private readonly uploadFoldersPicker = viewChild<UploadFilesDirective>('uploadFoldersPicker')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly navbarSearch = inject(NavbarSearchService)
@@ -173,29 +182,29 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     LucideClipboardList
   }
   // States
-  protected loading = false
-  protected locationNotFound = false
-  protected forbiddenResource = false
-  protected serviceError = false
-  protected serviceErrorMsg = SERVICE_UNAVAILABLE_ERROR
-  protected isFilesRepo: boolean
-  protected isSharesRepo: boolean
-  protected isTrashRepo: boolean
-  protected inSharesList: boolean
-  protected hasRoots = false
-  protected canShare: { inside: boolean; outside: boolean } = { inside: false, outside: false }
-  protected canAdminShares = false
-  protected spacePermissions: string
+  protected readonly loading = signal(false)
+  protected readonly locationNotFound = signal(false)
+  protected readonly forbiddenResource = signal(false)
+  protected readonly serviceError = signal(false)
+  protected readonly serviceErrorMsg = SERVICE_UNAVAILABLE_ERROR
+  protected readonly isFilesRepo = signal(false)
+  protected readonly isSharesRepo = signal(false)
+  protected readonly isTrashRepo = signal(false)
+  protected readonly inSharesList = signal(false)
+  protected readonly hasRoots = signal(false)
+  protected readonly canShare = signal({ inside: false, outside: false })
+  protected readonly canAdminShares = signal(false)
+  protected readonly spacePermissions = signal('')
   // Actions
-  protected multipleSelection = false
-  protected hasSelection = false
-  protected showSelectionChecks = false
-  protected hasDisabledItemsInSelection = false
-  protected canManageFavorite = false
-  protected canCompress = true
-  protected renamingInProgress = false
+  protected readonly multipleSelection = signal(false)
+  protected readonly hasSelection = signal(false)
+  protected readonly showSelectionChecks = signal(false)
+  protected readonly hasDisabledItemsInSelection = signal(false)
+  protected readonly canManageFavorite = signal(false)
+  protected readonly canCompress = signal(true)
+  protected readonly renamingInProgress = signal(false)
   // Upload
-  protected supportUploadFolder = false
+  protected readonly supportUploadFolder = signal(false)
   // Settings
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly TAB_MENU = TAB_MENU
@@ -213,7 +222,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       width: 5,
       class: 'd-none d-md-table-cell',
       textCenter: true,
-      show: this.hasRoots,
+      show: this.hasRoots(),
       sortable: true
     },
     info: { label: 'Info', width: 15, textCenter: true, class: 'd-none d-md-table-cell', show: true },
@@ -222,7 +231,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       width: 12,
       textCenter: true,
       class: 'd-none d-lg-table-cell',
-      show: this.hasRoots
+      show: this.hasRoots()
     },
     size: {
       label: 'Size',
@@ -242,25 +251,24 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       sortable: true
     }
   }
-  protected galleryMode: ViewMode
+  protected readonly galleryMode = signal<ViewMode>({ enabled: false })
   // Data
-  protected files: FileModel[] = []
-  protected selection: FileModel[] = []
-  protected stats = { dirs: 0, files: 0, size: 0, elements: 0 }
+  protected readonly files = signal<FileModel[]>([])
+  protected readonly selection = signal<FileModel[]>([])
+  protected readonly stats = signal({ dirs: 0, files: 0, size: 0, elements: 0 })
   private readonly router = inject(Router)
   private readonly activatedRoute = inject(ActivatedRoute)
-  private readonly zone = inject(NgZone)
   private readonly renderer = inject(Renderer2)
   private readonly store = inject(StoreService)
   private readonly userService = inject(UserService)
-  protected isElectronApp = this.store.isElectronApp()
+  protected readonly isElectronApp = this.store.isElectronApp.asReadonly()
   private readonly spacesBrowser = inject(SpacesBrowserService)
   private readonly filesService = inject(FilesService)
   private readonly filesUpload = inject(FilesUploadService)
   // Space
   private baseRepoUrl: string
   private currentRoute: string
-  protected isPersonalSpace: boolean
+  protected readonly isPersonalSpace = signal(false)
   // Others
   private subscriptions: Subscription[] = []
   private focusOnSelect: string
@@ -296,9 +304,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   private moveFromDrag = false
 
   ngOnInit() {
-    this.canAdminShares = this.userService.userHavePermission(USER_PERMISSION.SHARES_ADMIN)
-    this.galleryMode = this.btnNavigationView.currentView()
-    this.supportUploadFolder = this.filesUpload.supportUploadDirectory
+    this.canAdminShares.set(this.userService.userHavePermission(USER_PERMISSION.SHARES_ADMIN))
+    this.galleryMode.set(this.btnNavigationView.currentView())
+    this.supportUploadFolder.set(this.filesUpload.supportUploadDirectory)
     this.activatedRoute.queryParamMap.subscribe((params) => {
       this.setQueryParams(params.get('select'), params.get('open'))
       this.focusOn(this.focusOnSelect)
@@ -306,9 +314,20 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.activatedRoute.data.subscribe((route: Data) => this.setSpace(route as { repository: SPACE_REPOSITORY; routes: UrlSegment[] }))
     this.subscriptions.push(this.store.filesOnEvent.subscribe((update: FileEvent) => this.onFileEvent(update)))
     this.subscriptions.push(
-      this.filesService.fileSelectionRemove.subscribe((file) => this.setSelection(this.selection.filter((selected) => selected !== file)))
+      this.filesService.fileSelectionRemove.subscribe((file) => {
+        this.setSelection(this.selection().filter((selected) => selected !== file))
+      })
     )
-    this.subscriptions.push(this.filesService.fileSelectionClear.subscribe(() => this.resetFilesSelection()))
+    this.subscriptions.push(
+      this.filesService.fileSelectionClear.subscribe(() => {
+        this.resetFilesSelection()
+      })
+    )
+    this.subscriptions.push(
+      this.filesService.fileModelChanged.subscribe(({ file }) => {
+        if (this.files().includes(file)) this.notifyFilesChanged()
+      })
+    )
   }
 
   ngAfterViewInit() {
@@ -324,37 +343,39 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   loadFiles(focusView = false) {
     // Preserve the initial focus to avoid stealing it if the user interacts while files are loading.
     const focusOrigin = focusView ? document.activeElement : null
-    this.loading = true
-    this.forbiddenResource = false
-    this.locationNotFound = false
-    this.serviceError = false
+    this.loading.set(true)
+    this.forbiddenResource.set(false)
+    this.locationNotFound.set(false)
+    this.serviceError.set(false)
     this.navbarSearch.clearViewFilter()
     this.resetFilesSelection()
     this.spacesBrowser.loadFiles().subscribe({
       next: (spacesFiles: SpaceFiles) => {
-        this.spacePermissions = spacesFiles.permissions
-        this.canManageFavorite = !this.store.user.getValue()?.isLink && !this.isTrashRepo
-        this.canShare.outside = this.canAdminShares && this.spacePermissions.indexOf(SPACE_OPERATION.SHARE_OUTSIDE) > -1
-        // todo: share inside is not used, this should allow the file anchor dialog to add a personal file to the current space (?)
-        this.canShare.inside = this.spacePermissions.indexOf(SPACE_OPERATION.SHARE_INSIDE) > -1
-        this.hasRoots = spacesFiles.hasRoots
+        this.spacePermissions.set(spacesFiles.permissions)
+        this.canManageFavorite.set(!this.store.user()?.isLink && !this.isTrashRepo())
+        this.canShare.set({
+          outside: this.canAdminShares() && this.spacePermissions().indexOf(SPACE_OPERATION.SHARE_OUTSIDE) > -1,
+          // todo: share inside is not used, this should allow the file anchor dialog to add a personal file to the current space (?)
+          inside: this.spacePermissions().indexOf(SPACE_OPERATION.SHARE_INSIDE) > -1
+        })
+        this.hasRoots.set(spacesFiles.hasRoots)
         this.tableHeaders.anchored.show = spacesFiles.hasRoots
-        this.tableHeaders.anchored.label = this.isSharesRepo ? 'Owner' : 'Anchored by'
+        this.tableHeaders.anchored.label = this.isSharesRepo() ? 'Owner' : 'Anchored by'
         this.tableHeaders.anchored.width = 10
         this.tableHeaders.permissions.show = spacesFiles.hasRoots
         this.sortBy(
           this.sortTable.sortParam.column,
           false,
-          spacesFiles.files.map((f: FileProps) => new FileModel(f, this.baseRepoUrl, this.isSharesRepo, this.store.server().files.editors))
+          spacesFiles.files.map((f: FileProps) => new FileModel(f, this.baseRepoUrl, this.isSharesRepo(), this.store.server().files.editors))
         )
-        this.updateFilesStats(this.files)
-        this.loading = false
+        this.updateFilesStats(this.files())
+        this.loading.set(false)
         if (this.openOnSelect) {
           this.focusOn(this.openOnSelect)
         } else if (this.focusOnSelect) {
           this.focusOn(this.focusOnSelect)
         } else {
-          this.scrollView.scrollInto(-1)
+          this.scrollView()?.scrollInto(-1)
         }
         this.openCreatedFileAfterReload()
         if (focusView) {
@@ -363,37 +384,37 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       },
       error: (e: HttpErrorResponse) => {
         this.openAfterReload = null
-        this.files = []
-        this.updateFilesStats(this.files)
+        this.files.set([])
+        this.updateFilesStats(this.files())
         if (e.status !== 401) {
-          this.forbiddenResource = e.status === 403
-          this.locationNotFound = e.status === 404
-          this.serviceError = e.status === 0
+          this.forbiddenResource.set(e.status === 403)
+          this.locationNotFound.set(e.status === 404)
+          this.serviceError.set(e.status === 0)
           this.layout.sendNotification('error', 'Files', e.error?.message || this.serviceErrorMsg)
         }
-        this.loading = false
+        this.loading.set(false)
       }
     })
   }
 
   sortBy(column: string, toUpdate = true, collection?: FileModel[]) {
-    this.files = this.sortTable.sortBy(column, toUpdate, collection || this.files)
+    this.files.set(this.sortTable.sortBy(column, toUpdate, collection || this.files()))
   }
 
   switchView(view: ViewMode) {
-    const oldView = this.galleryMode
-    this.galleryMode = view
-    if (this.galleryMode.enabled !== oldView.enabled) {
+    const oldView = this.galleryMode()
+    this.galleryMode.set(view)
+    if (this.galleryMode().enabled !== oldView.enabled) {
       this.destroyEventHandlers()
       setTimeout(() => this.initEventHandlers(), 500)
     }
   }
 
   onSelect(ev: MouseEvent, file: FileModel) {
-    if (this.loading) {
+    if (this.loading()) {
       return
     }
-    if (ev.shiftKey && (this.selection.length > 0 || this.selectionAnchor)) {
+    if (ev.shiftKey && (this.selection().length > 0 || this.selectionAnchor)) {
       this.selectRangeFiles(file)
     } else if (!ev.ctrlKey && !ev.metaKey) {
       this.setSelection([file], file, file)
@@ -404,28 +425,28 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
 
   toggleFileSelection(ev: MouseEvent, file: FileModel) {
     ev.stopPropagation()
-    if (this.loading) return
-    if (ev.shiftKey && (this.selection.length > 0 || this.selectionAnchor)) {
+    if (this.loading()) return
+    if (ev.shiftKey && (this.selection().length > 0 || this.selectionAnchor)) {
       this.selectionControlMode = true
       this.selectRangeFiles(file)
       return
     }
-    if (!this.selectionControlMode && this.selection.length === 1) {
+    if (!this.selectionControlMode && this.selection().length === 1) {
       this.selectionControlMode = true
       this.setSelection([file], file, file, true)
       return
     }
-    if (!this.selection.length) this.selectionControlMode = true
+    if (!this.selection().length) this.selectionControlMode = true
     this.modifySelection(file)
   }
 
   onContextMenu(ev: MouseEvent | Event) {
     ev.preventDefault()
     ev.stopPropagation()
-    if (this.isTrashRepo) {
-      this.layout.openContextMenu(ev, this.mainReadOnlyContextMenu)
+    if (this.isTrashRepo()) {
+      this.layout.openContextMenu(ev, this.mainReadOnlyContextMenu())
     } else {
-      this.layout.openContextMenu(ev, this.mainContextMenu)
+      this.layout.openContextMenu(ev, this.mainContextMenu())
     }
   }
 
@@ -434,18 +455,18 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     if (ev.type === 'contextmenu') {
       ev.stopPropagation()
     }
-    if (this.selection.indexOf(file) === -1) {
+    if (this.selection().indexOf(file) === -1) {
       this.setSelection([file], file, file)
     } else {
       this.setSelectionCursor(file, file)
     }
-    this.layout.openContextMenu(ev, this.fileContextMenu)
+    this.layout.openContextMenu(ev, this.fileContextMenu())
   }
 
   onFileActivate(file: FileModel, sourceEvent?: PointerEvent) {
-    const multiSelectionWasActive = this.showSelectionChecks
+    const multiSelectionWasActive = this.showSelectionChecks()
     const selectOnly = this.closeOpenContextMenu() || multiSelectionWasActive
-    if (this.loading || !this.files.includes(file)) return
+    if (this.loading() || !this.files().includes(file)) return
 
     if (
       sourceEvent &&
@@ -456,7 +477,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       return
     }
 
-    if (multiSelectionWasActive || this.selection[0] !== file) {
+    if (multiSelectionWasActive || this.selection()[0] !== file) {
       this.setSelection([file], file, file)
     }
     if (selectOnly) return
@@ -464,7 +485,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private closeOpenContextMenu(): boolean {
-    if (!this.mainContextMenu.isOpen && !this.mainReadOnlyContextMenu.isOpen && !this.fileContextMenu.isOpen) return false
+    if (!this.mainContextMenu().isOpen && !this.mainReadOnlyContextMenu().isOpen && !this.fileContextMenu().isOpen) return false
     this.layout.closeContextMenu()
     return true
   }
@@ -484,19 +505,19 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   copyMoveFiles() {
-    if (!this.selection.length) return
+    if (!this.selection().length) return
     this.filesService.openTreeCopyMove()
   }
 
   downloadFiles() {
-    if (this.multipleSelection) {
+    if (this.multipleSelection()) {
       this.openCompressionDialog(false)
     } else {
-      this.filesService.download(this.selection[0])
+      this.filesService.download(this.selection()[0])
     }
   }
 
-  shortcutOpen(file: FileModel = this.selection[0]) {
+  shortcutOpen(file: FileModel = this.selection()[0]) {
     if (!file) return
     if (file.isDir) {
       this.browse(file)
@@ -508,22 +529,22 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   shortcutUploadFiles() {
-    this.uploadFilesPicker?.open()
+    this.uploadFilesPicker()?.open()
   }
 
   shortcutUploadFolders() {
-    this.uploadFoldersPicker?.open()
+    this.uploadFoldersPicker()?.open()
   }
 
   shortcutRename() {
-    this.selection[0].isRenamed = !this.selection[0].isRenamed
+    this.selection()[0].isRenamed = !this.selection()[0].isRenamed
   }
 
   async renameFile(ev: { object: FileModel; name: string }) {
     const f: FileModel = ev.object
     const renamedTo = ev.name
     let overwrite = false
-    const fileExists: FileModel = this.files.find((file) => file.name.toLowerCase() === renamedTo.toLowerCase() && file.id !== f.id)
+    const fileExists: FileModel = this.files().find((file) => file.name.toLowerCase() === renamedTo.toLowerCase() && file.id !== f.id)
     if (fileExists) {
       const action = await this.filesService.openOverwriteDialog([f], renamedTo)
       if (action !== 'overwrite') return
@@ -535,38 +556,44 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       .subscribe({
         next: (dto: CopyMoveFileResponse) => {
           f.rename(dto.name)
-          f.updateMime(dto.mime, this.isSharesRepo, this.store.server().files.editors)
+          f.updateMime(dto.mime, this.isSharesRepo(), this.store.server().files.editors)
           if (overwrite) {
             this.sortBy(
               this.sortTable.sortParam.column,
               false,
-              this.files.filter((file) => file.id !== fileExists.id)
+              this.files().filter((file) => file.id !== fileExists.id)
             )
           }
+          this.notifyFilesChanged()
         },
-        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Rename', f.name, e)
+        error: (e: HttpErrorResponse) => {
+          this.layout.sendNotification('error', 'Rename', f.name, e)
+        }
       })
   }
 
   setRenamingInProgress(ev: boolean) {
-    this.renamingInProgress = ev
+    this.renamingInProgress.set(ev)
   }
 
   addToSync() {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_CLIENT], { state: { file: this.selection[0] } }).catch(console.error)
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_CLIENT], { state: { file: this.selection()[0] } }).catch(console.error)
   }
 
   addToClipboard() {
-    this.filesService.addToClipboard(this.selection)
+    this.filesService.addToClipboard(this.selection())
   }
 
-  toggleFavorite(file: FileModel = this.selection[0]) {
-    if (!this.canManageFavorite || !file) return
+  toggleFavorite(file: FileModel = this.selection()[0]) {
+    if (!this.canManageFavorite() || !file) return
     this.filesService
       .toggleFavorite(file)
       .pipe(take(1))
       .subscribe({
-        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Favorites', file.name, e)
+        next: () => this.notifyFilesChanged(),
+        error: (e: HttpErrorResponse) => {
+          this.layout.sendNotification('error', 'Favorites', file.name, e)
+        }
       })
   }
 
@@ -576,16 +603,17 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     const modalRef: BsModalRef<ShareDialogComponent> = this.layout.openDialog(ShareDialogComponent, 'lg', {
       initialState: {
         file: f,
-        isSharesRepo: this.isSharesRepo,
-        inSharesList: this.inSharesList,
+        isSharesRepo: this.isSharesRepo(),
+        inSharesList: this.inSharesList(),
         allowFilesOptions: false
       } as ShareDialogComponent
     })
     modalRef.content.shareChange.pipe(take(1)).subscribe((r: ['add' | string, ShareModel]) => {
       const s = r[1]
-      if (this.selection[0].id < 0) this.selection[0].id = s.file.id
-      this.selection[0].shares.push({ id: s.id, alias: s.alias, name: s.name, type: SHARE_TYPE.COMMON })
-      this.selection[0].updateNbBadges()
+      if (this.selection()[0].id < 0) this.selection()[0].id = s.file.id
+      this.selection()[0].shares.push({ id: s.id, alias: s.alias, name: s.name, type: SHARE_TYPE.COMMON })
+      this.selection()[0].updateNbBadges()
+      this.notifyFilesChanged()
     })
   }
 
@@ -595,26 +623,27 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'lg', {
       initialState: {
         file: f,
-        isSharesRepo: this.isSharesRepo,
-        inSharesList: this.inSharesList
+        isSharesRepo: this.isSharesRepo(),
+        inSharesList: this.inSharesList()
       } as LinkDialogComponent
     })
     modalRef.content.shareChange.pipe(take(1)).subscribe((r: ['update' | 'delete', ShareLinkModel] | ['add', ShareModel]) => {
       const [action, s] = r
       if (action === 'add') {
-        if (this.selection[0].id < 0) this.selection[0].id = s.file.id
-        this.selection[0].links.push({ id: s.id, alias: s.alias, name: s.name, type: SHARE_TYPE.LINK })
-        this.selection[0].updateNbBadges()
+        if (this.selection()[0].id < 0) this.selection()[0].id = s.file.id
+        this.selection()[0].links.push({ id: s.id, alias: s.alias, name: s.name, type: SHARE_TYPE.LINK })
+        this.selection()[0].updateNbBadges()
       }
+      this.notifyFilesChanged()
     })
   }
 
   openSpaceAnchorFileDialog() {
     const modalRef: BsModalRef<SpaceAnchorFileDialogComponent> = this.layout.openDialog(SpaceAnchorFileDialogComponent, 'md', {
-      initialState: { files: this.selection } as SpaceAnchorFileDialogComponent
+      initialState: { files: this.selection() } as SpaceAnchorFileDialogComponent
     })
     modalRef.content.addAnchoredFiles.pipe(take(1)).subscribe((up: { space: SpaceModel; rootFiles: { id: number; name: string }[] }) => {
-      for (const f of this.selection) {
+      for (const f of this.selection()) {
         const rootFile = up.rootFiles.find((rf: { id: number; name: string }) => rf.name === f.name)
         if (rootFile && f.spaces.map((s: Partial<SpaceModel>) => s.id).indexOf(up.space.id) === -1) {
           if (f.id < 0) f.id = rootFile.id
@@ -622,6 +651,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
           f.updateNbBadges()
         }
       }
+      this.notifyFilesChanged()
     })
   }
 
@@ -630,56 +660,58 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     let exist: FileModel[] = []
     if (isDirectory) {
       const dirName = selectedFiles[0].webkitRelativePath.split('/')[0].normalize()
-      const dirExists = this.files.find((f) => f.name.normalize().toLowerCase() === dirName.normalize().toLowerCase())
+      const dirExists = this.files().find((f) => f.name.normalize().toLowerCase() === dirName.normalize().toLowerCase())
       if (dirExists) {
         exist = [dirExists]
       }
     } else {
-      exist = this.files.filter((x: FileModel) => selectedFiles.some((f) => f.name.normalize().toLowerCase() === x.name.normalize().toLowerCase()))
+      exist = this.files().filter((x: FileModel) => selectedFiles.some((f) => f.name.normalize().toLowerCase() === x.name.normalize().toLowerCase()))
     }
     this.filesUpload.addFilesWithConflictResolution(selectedFiles, exist).catch(console.error)
   }
 
   onDropFiles(ev: { dataTransfer: { files: File[] } }) {
-    const exist: FileModel[] = this.files.filter((x: FileModel) =>
+    const exist: FileModel[] = this.files().filter((x: FileModel) =>
       [...ev.dataTransfer.files].some((f) => f.name.normalize().toLowerCase() === x.name.normalize().toLowerCase())
     )
     this.filesUpload.onDropFiles(ev, exist)
   }
 
   decompressFile() {
-    this.filesService.decompress(this.selection[0])
+    this.filesService.decompress(this.selection()[0])
   }
 
   openCompressionDialog(inDir = true) {
     const archiveProps: CompressFileDto = {
-      name: this.selection[0].name,
-      compressInDirectory: this.isTrashRepo || this.inSharesList ? false : inDir,
+      name: this.selection()[0].name,
+      compressInDirectory: this.isTrashRepo() || this.inSharesList() ? false : inDir,
       compression: false,
-      files: this.selection.map((f: FileModel) => ({ name: f.name, rootAlias: f.root?.alias })),
+      files: this.selection().map((f: FileModel) => ({ name: f.name, rootAlias: f.root?.alias })),
       extension: TAR_EXTENSION
     }
     this.layout.openDialog(FilesCompressionDialogComponent, null, {
       initialState: {
         archiveProps: archiveProps,
-        disableInDirCompression: this.isTrashRepo || this.inSharesList
+        disableInDirCompression: this.isTrashRepo() || this.inSharesList()
       } as FilesCompressionDialogComponent
     })
   }
 
   openNewDialog(type: 'file' | 'directory' | 'download' = 'directory') {
-    this.layout.openDialog(FilesNewDialogComponent, null, { initialState: { files: this.files, inputType: type } as FilesNewDialogComponent })
+    this.layout.openDialog(FilesNewDialogComponent, null, { initialState: { files: this.files(), inputType: type } as FilesNewDialogComponent })
   }
 
   openTrashDialog(permanently = false) {
-    if (!this.selection.length) return
+    if (!this.selection().length) return
     const modalRef: BsModalRef<FilesTrashDialogComponent> = this.layout.openDialog(FilesTrashDialogComponent, null, {
       initialState: {
-        files: this.selection,
+        files: this.selection(),
         permanently: permanently
       } as FilesTrashDialogComponent
     })
-    modalRef.content.removeFiles.pipe(take(1)).subscribe(() => this.removeFiles())
+    modalRef.content.removeFiles.pipe(take(1)).subscribe(() => {
+      this.removeFiles()
+    })
   }
 
   openLockDialog(f: FileModel) {
@@ -690,12 +722,12 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.currentRoute = this.filesService.currentRoute = `${route.repository}${pathFromRoutes(route.routes)}`
     this.setQueryParams(this.activatedRoute.snapshot.queryParamMap.get('select'), this.activatedRoute.snapshot.queryParamMap.get('open'))
     this.baseRepoUrl = `${route.repository}${route.routes.length ? `/${route.routes[0].path}` : ''}`
-    this.isFilesRepo = route.repository === SPACES_PATH.FILES
-    this.isSharesRepo = route.repository === SPACES_PATH.SHARES
-    this.isTrashRepo = route.repository === SPACES_PATH.TRASH
-    this.inSharesList = this.isSharesRepo && route.routes.length === 0
+    this.isFilesRepo.set(route.repository === SPACES_PATH.FILES)
+    this.isSharesRepo.set(route.repository === SPACES_PATH.SHARES)
+    this.isTrashRepo.set(route.repository === SPACES_PATH.TRASH)
+    this.inSharesList.set(this.isSharesRepo() && route.routes.length === 0)
     this.spacesBrowser.setEnvironment(route.repository, route.routes)
-    this.isPersonalSpace = this.spacesBrowser.inPersonalSpace
+    this.isPersonalSpace.set(this.spacesBrowser.inPersonalSpace)
     this.loadFiles(true)
   }
 
@@ -718,13 +750,14 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         if (ev.openAfterCreate) this.openAfterReload = ev.fileName
         if (ev.delete && !mustReloadFocus) {
           if (ev.status === FileTaskStatus.SUCCESS) {
-            this.files = this.files.filter((file: FileModel) => file.name !== ev.fileName)
-            this.updateFilesStats(this.files)
+            this.files.update((files) => files.filter((file: FileModel) => file.name !== ev.fileName))
+            this.updateFilesStats(this.files())
             this.resetFilesSelection()
           } else {
-            const file = this.files.find((file: FileModel) => file.name === ev.fileName)
+            const file = this.files().find((file: FileModel) => file.name === ev.fileName)
             if (file) {
               file.isBeingDeleted = false
+              this.notifyFilesChanged()
             }
           }
         }
@@ -734,8 +767,8 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private removeFiles() {
-    const selection = this.selection.filter((f: FileModel) => !f.root?.alias)
-    if (this.selection.length !== selection.length) {
+    const selection = this.selection().filter((f: FileModel) => !f.root?.alias)
+    if (this.selection().length !== selection.length) {
       this.layout.sendNotification('warning', 'Remove', 'You can not remove an anchored file')
     }
     // process other files
@@ -745,24 +778,24 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private setFilePermissionsAndSpace(): Partial<FileSpace> {
-    if (this.selection[0]?.root && this.selection[0].root.permissions.indexOf(SPACE_OPERATION.SHARE_OUTSIDE) === -1) {
+    if (this.selection()[0]?.root && this.selection()[0].root.permissions.indexOf(SPACE_OPERATION.SHARE_OUTSIDE) === -1) {
       // Space case, if the file is a space root without the share outside permissions
-      this.layout.sendNotification('warning', this.selection[0].name, 'You do not have share permission')
+      this.layout.sendNotification('warning', this.selection()[0].name, 'You do not have share permission')
       return null
     }
-    const f: Partial<FileSpace> = { ...this.selection[0] }
-    if (this.isPersonalSpace) {
-      f.permissions = this.spacePermissions
-    } else if (this.selection[0]?.root) {
-      f.permissions = this.selection[0].root.permissions
-      if (this.inSharesList) {
-        f.space = { alias: this.selection[0].root.alias, name: this.selection[0].root.alias, root: undefined }
+    const f: Partial<FileSpace> = { ...this.selection()[0] }
+    if (this.isPersonalSpace()) {
+      f.permissions = this.spacePermissions()
+    } else if (this.selection()[0]?.root) {
+      f.permissions = this.selection()[0].root.permissions
+      if (this.inSharesList()) {
+        f.space = { alias: this.selection()[0].root.alias, name: this.selection()[0].root.alias, root: undefined }
       } else {
         const spaceAlias = this.currentRoute.split('/')[1]
-        f.space = { alias: spaceAlias, name: spaceAlias, root: { alias: this.selection[0].root.alias, name: this.selection[0].name } }
+        f.space = { alias: spaceAlias, name: spaceAlias, root: { alias: this.selection()[0].root.alias, name: this.selection()[0].name } }
       }
     } else {
-      f.permissions = this.spacePermissions
+      f.permissions = this.spacePermissions()
       const [spaceAlias, rootAlias] = this.currentRoute.split('/').slice(1, 3)
       f.space = { alias: spaceAlias, name: spaceAlias, root: { alias: rootAlias, name: rootAlias } }
     }
@@ -771,21 +804,21 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
 
   private openViewerDialog(f: FileModel) {
     let permissions: string
-    if (this.isTrashRepo) {
+    if (this.isTrashRepo()) {
       permissions = ''
-    } else if (this.inSharesList) {
+    } else if (this.inSharesList()) {
       permissions = f.root.permissions
     } else {
-      permissions = f?.root ? intersectPermissions(this.spacePermissions, f?.root.permissions) : this.spacePermissions
+      permissions = f?.root ? intersectPermissions(this.spacePermissions(), f?.root.permissions) : this.spacePermissions()
     }
-    this.filesService.openViewerDialog(f, this.files, permissions).catch(console.error)
+    this.filesService.openViewerDialog(f, this.files(), permissions, () => this.notifyFilesChanged()).catch(console.error)
   }
 
   private openCreatedFileAfterReload() {
     if (!this.openAfterReload) return
     const fileName = this.openAfterReload
     this.openAfterReload = null
-    const file = this.files.find((item) => item.name.toLowerCase() === fileName.toLowerCase())
+    const file = this.files().find((item) => item.name.toLowerCase() === fileName.toLowerCase())
     if (!file || (!file.isDir && !file.isViewable && !file.isEditable)) return
     this.setSelection([file], file, file)
     this.shortcutOpen()
@@ -797,18 +830,18 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       return
     }
     const route = this.activatedRoute.snapshot.data
-    if (this.loading || !Array.isArray(route.routes) || this.currentRoute !== `${route.repository}${pathFromRoutes(route.routes)}`) {
+    if (this.loading() || !Array.isArray(route.routes) || this.currentRoute !== `${route.repository}${pathFromRoutes(route.routes)}`) {
       // wait for the `loadFiles`
       this.focusOnSelect = selectName
       return
     }
     const open = this.openOnSelect === selectName
-    let f = this.files.find((file) => file.name.toLowerCase() === selectName.toLowerCase())
-    if (!f && this.hasRoots) {
-      f = this.files.find((file) => file.root?.alias.toLowerCase() === selectName.toLowerCase())
+    let f = this.files().find((file) => file.name.toLowerCase() === selectName.toLowerCase())
+    if (!f && this.hasRoots()) {
+      f = this.files().find((file) => file.root?.alias.toLowerCase() === selectName.toLowerCase())
     }
     if (f) {
-      setTimeout(() => this.scrollView.scrollInto(f), 100)
+      setTimeout(() => this.scrollView()?.scrollInto(f), 100)
       this.setSelection([f], f, f)
       if (open) {
         this.openOnSelect = null
@@ -825,20 +858,24 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private updateFilesStats(files: FileModel[]) {
-    this.stats = { dirs: 0, files: 0, size: 0, elements: 0 }
+    const stats = { dirs: 0, files: 0, size: 0, elements: 0 }
     for (const file of files) {
-      this.updateCounters(file)
+      stats.elements = increment(stats.elements, 1)
+      stats.size = increment(stats.size, file.size)
+      if (file.isDir) {
+        stats.dirs = increment(stats.dirs, 1)
+      } else {
+        stats.files = increment(stats.files, 1)
+      }
     }
+    this.stats.set(stats)
   }
 
-  private updateCounters(file: FileModel, added = true) {
-    const op = added ? increment : decrement
-    this.stats.elements = op(this.stats.elements, 1)
-    this.stats.size = op(this.stats.size, file.size)
-    if (file.isDir) {
-      this.stats.dirs = op(this.stats.dirs, 1)
-    } else {
-      this.stats.files = op(this.stats.files, 1)
+  private notifyFilesChanged() {
+    this.files.update((files) => [...files])
+    if (this.selection().length) {
+      this.selection.update((selection) => [...selection])
+      this.store.filesSelection.set(this.selection())
     }
   }
 
@@ -848,7 +885,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
 
   private modifySelection(file: FileModel) {
     if (!file) return
-    this.setSelection(file.isSelected ? this.selection.filter((selected) => selected !== file) : [file, ...this.selection], file, file, true)
+    this.setSelection(file.isSelected ? this.selection().filter((selected) => selected !== file) : [file, ...this.selection()], file, file, true)
   }
 
   private setSelection(
@@ -861,37 +898,40 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     const focusedDisabledFile = selectionFocus?.isDisabled && selection.includes(selectionFocus) ? selectionFocus : null
     const normalizedSelection = enabledSelection.length ? enabledSelection : focusedDisabledFile ? [focusedDisabledFile] : selection.slice(0, 1)
     const selected = new Set(normalizedSelection)
-    this.selection = this.files.filter((file: FileModel) => {
-      file.isSelected = selected.has(file)
-      return file.isSelected
-    })
-    if (!keepSelectionControlMode || !this.selection.length) {
+    this.selection.set(
+      this.files().filter((file: FileModel) => {
+        file.isSelected = selected.has(file)
+        return file.isSelected
+      })
+    )
+    if (!keepSelectionControlMode || !this.selection().length) {
       this.selectionControlMode = false
     }
-    this.showSelectionChecks = this.selection.length > 1 || this.selectionControlMode
-    const normalizedAnchor = selectionAnchor && selected.has(selectionAnchor) ? selectionAnchor : this.selection[0] || null
+    this.showSelectionChecks.set(this.selection().length > 1 || this.selectionControlMode)
+    const normalizedAnchor = selectionAnchor && selected.has(selectionAnchor) ? selectionAnchor : this.selection()[0] || null
     const normalizedFocus =
-      selectionFocus && (selected.has(selectionFocus) || (keepSelectionControlMode && this.files.includes(selectionFocus)))
+      selectionFocus && (selected.has(selectionFocus) || (keepSelectionControlMode && this.files().includes(selectionFocus)))
         ? selectionFocus
         : normalizedAnchor
     this.setSelectionCursor(normalizedAnchor, normalizedFocus)
     // update states
-    this.hasSelection = !!this.selection.length
-    this.hasDisabledItemsInSelection = !!this.selection.find((f: FileModel) => f.isDisabled)
-    this.canCompress =
-      !this.hasDisabledItemsInSelection && (this.selection.length > 1 || (this.selection.length === 1 && this.selection[0].isCompressible))
-    this.multipleSelection = this.selection.length > 1 || (this.selection.length === 1 && this.selection[0].isDir)
-    this.store.filesSelection.set(this.selection)
+    this.hasSelection.set(!!this.selection().length)
+    this.hasDisabledItemsInSelection.set(!!this.selection().find((f: FileModel) => f.isDisabled))
+    this.canCompress.set(
+      !this.hasDisabledItemsInSelection() && (this.selection().length > 1 || (this.selection().length === 1 && this.selection()[0].isCompressible))
+    )
+    this.multipleSelection.set(this.selection().length > 1 || (this.selection().length === 1 && this.selection()[0].isDir))
+    this.store.filesSelection.set(this.selection())
   }
 
   private setSelectionCursor(anchor: FileModel | null, focus: FileModel | null = anchor) {
-    this.selectionAnchor = anchor && this.files.indexOf(anchor) > -1 ? anchor : null
-    this.selectionFocus = focus && this.files.indexOf(focus) > -1 ? focus : this.selectionAnchor
+    this.selectionAnchor = anchor && this.files().indexOf(anchor) > -1 ? anchor : null
+    this.selectionFocus = focus && this.files().indexOf(focus) > -1 ? focus : this.selectionAnchor
   }
 
   private getFilteredFiles(): FileModel[] {
     const search = this.navbarSearch.viewFilter()
-    return search ? filterArray(search, this.files, 'name') : this.files
+    return search ? filterArray(search, this.files(), 'name') : this.files()
   }
 
   private selectAllFiles() {
@@ -909,13 +949,13 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     let anchor = this.selectionAnchor
     let anchorIndex = anchor ? files.indexOf(anchor) : -1
     if (anchorIndex === -1) {
-      anchor = this.selection.find((f: FileModel) => files.indexOf(f) > -1) || file
+      anchor = this.selection().find((f: FileModel) => files.indexOf(f) > -1) || file
       anchorIndex = files.indexOf(anchor)
     }
     const minIndex = Math.min(anchorIndex, fileIndex)
     const maxIndex = Math.max(anchorIndex, fileIndex)
     const filteredFiles = new Set(files)
-    const hiddenSelection = this.selection.filter((f: FileModel) => !filteredFiles.has(f))
+    const hiddenSelection = this.selection().filter((f: FileModel) => !filteredFiles.has(f))
     this.setSelection([...hiddenSelection, ...files.slice(minIndex, maxIndex + 1)], anchor, file, true)
   }
 
@@ -925,7 +965,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     extendSelection: boolean
   ): { file: FileModel; key: KeyboardNavigationKey } {
     let direction = key
-    let useGalleryColumns = this.galleryMode.enabled
+    let useGalleryColumns = this.galleryMode().enabled
     if (direction === 'ArrowLeft') {
       useGalleryColumns = false
       direction = 'ArrowUp'
@@ -934,7 +974,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       direction = 'ArrowDown'
     }
     const referenceIndexes = this.getSelectionReferenceIndexes(files, extendSelection)
-    const step = useGalleryColumns ? this.scrollView.itemsPerRow : 1
+    const step = useGalleryColumns ? (this.scrollView()?.itemsPerRow() ?? 1) : 1
     let index: number
     if (!referenceIndexes.length) {
       index = direction === 'ArrowUp' ? files.length - 1 : 0
@@ -953,7 +993,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     if (extendSelection && focusIndex > -1) {
       return [focusIndex]
     }
-    const selectedIndexes = this.selection.map((f: FileModel) => files.indexOf(f)).filter((index: number) => index > -1)
+    const selectedIndexes = this.selection()
+      .map((f: FileModel) => files.indexOf(f))
+      .filter((index: number) => index > -1)
     if (selectedIndexes.length) {
       return selectedIndexes
     }
@@ -981,23 +1023,21 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     }
     ev.preventDefault()
     ev.stopPropagation()
-    this.zone.run(() => {
-      switch (key) {
-        case 'a':
-          this.selectAllFiles()
-          break
-        case 'c':
-        case 'x':
-          if (this.selection.length) {
-            this.filesService.clipboardAction = key === 'c' ? 'copyPaste' : 'cutPaste'
-            this.filesService.addToClipboard(this.selection)
-          }
-          break
-        case 'v':
-          this.filesService.onPasteClipboard()
-          break
-      }
-    })
+    switch (key) {
+      case 'a':
+        this.selectAllFiles()
+        break
+      case 'c':
+      case 'x':
+        if (this.selection().length) {
+          this.filesService.clipboardAction = key === 'c' ? 'copyPaste' : 'cutPaste'
+          this.filesService.addToClipboard(this.selection())
+        }
+        break
+      case 'v':
+        this.filesService.onPasteClipboard()
+        break
+    }
     return true
   }
 
@@ -1008,18 +1048,21 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     let action: (() => void) | undefined
     switch (ev.key) {
       case 'Enter':
-        if (this.selection.length === 1) {
-          action = () => this.browse(this.selection[0])
+        if (this.selection().length === 1) {
+          action = () => this.browse(this.selection()[0])
         }
         break
       case 'F2':
-        if (this.selection.length === 1 && !this.isTrashRepo && !this.inSharesList) {
-          action = () => this.shortcutRename()
+        if (this.selection().length === 1 && !this.isTrashRepo() && !this.inSharesList()) {
+          action = () => {
+            this.shortcutRename()
+            this.notifyFilesChanged()
+          }
         }
         break
       case 'Delete':
-        if (this.selection.length && !this.inSharesList) {
-          action = () => this.openTrashDialog(this.isTrashRepo)
+        if (this.selection().length && !this.inSharesList()) {
+          action = () => this.openTrashDialog(this.isTrashRepo())
         }
         break
     }
@@ -1028,7 +1071,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     }
     ev.preventDefault()
     ev.stopPropagation()
-    this.zone.run(action)
+    action()
     return true
   }
 
@@ -1046,19 +1089,22 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     ) {
       return
     }
-    const selector = this.galleryMode.enabled ? '#thumb-files' : '#table-files'
-    const filesView = this.scrollView.element.nativeElement.querySelector(selector) as HTMLElement | null
+    const selector = this.galleryMode().enabled ? '#thumb-files' : '#table-files'
+    const filesView = this.scrollViewElement()?.nativeElement.querySelector(selector) as HTMLElement | null
     filesView?.focus({ preventScroll: true })
   }
 
   private scrollKeyboardSelectionIntoView(file: FileModel, key: KeyboardNavigationKey) {
-    if (this.scrollView.viewPortItems.indexOf(file) === -1) {
-      setTimeout(() => this.scrollView.scrollInto(file), 0)
+    const scrollView = this.scrollView()
+    const scrollViewElement = this.scrollViewElement()
+    if (!scrollView || !scrollViewElement) return
+    if (scrollView.viewPortItems().indexOf(file) === -1) {
+      setTimeout(() => this.scrollView()?.scrollInto(file), 0)
       return
     }
-    const selectedRows = this.scrollView.element.nativeElement.querySelectorAll(tableTrSelectedClass)
+    const selectedRows = scrollViewElement.nativeElement.querySelectorAll(tableTrSelectedClass)
     if (!selectedRows.length) {
-      setTimeout(() => this.scrollView.scrollInto(file), 0)
+      setTimeout(() => this.scrollView()?.scrollInto(file), 0)
       return
     }
     const element: HTMLElement = key === 'ArrowUp' ? selectedRows[0] : selectedRows[selectedRows.length - 1]
@@ -1068,122 +1114,125 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private initEventHandlers() {
-    this.zone.runOutsideAngular(() => {
-      this.eventDragOverHandler = this.renderer.listen(this.scrollView.element.nativeElement, 'dragover', (ev): boolean | void => {
-        if (this.inSharesList || (this.isTrashRepo && !this.moveFromDrag)) {
-          ev.preventDefault()
-          return false
-        }
-        if (['TD', 'TR', 'DIV', 'APP-VIRTUAL-SCROLL', 'IMG'].indexOf(ev.target.nodeName) > -1) {
-          ev.preventDefault()
-          if (this.moveFromDrag) {
-            ev.dataTransfer.dropEffect = 'move'
-          } else {
-            ev.dataTransfer.dropEffect = 'copy'
-          }
-        }
-      })
-      this.eventDragStartHandler = this.renderer.listen(this.scrollView.element.nativeElement, 'dragstart', (ev) => {
-        if (this.isTrashRepo || this.inSharesList) {
-          ev.preventDefault()
-        }
-        if (ev.target.parentElement.nodeName === 'TD' || ev.target.parentElement.nodeName === 'DIV') {
-          const f: FileModel =
-            this.scrollView.viewPortItems[
-              this.galleryMode.enabled ? ev.target.parentElement.getAttribute('rowIndex') : ev.target.parentElement.parentElement.rowIndex
-            ]
-          if (f) {
-            if (this.selection.indexOf(f) === -1) {
-              this.zone.run(() => this.setSelection([f], f, f))
-            }
-            this.moveFromDrag = true
-          }
-        }
-      })
-      this.eventDragEnterHandler = this.renderer.listen(this.scrollView.element.nativeElement, 'dragenter', (ev) => {
+    const scrollView = this.scrollView()
+    const scrollViewElement = this.scrollViewElement()
+    if (!scrollView || !scrollViewElement) {
+      return
+    }
+    this.eventDragOverHandler = this.renderer.listen(scrollViewElement.nativeElement, 'dragover', (ev): boolean | void => {
+      if (this.inSharesList() || (this.isTrashRepo() && !this.moveFromDrag)) {
         ev.preventDefault()
-        if (this.moveFromDrag && (ev.target.parentElement.nodeName === 'TD' || ev.target.parentElement.nodeName === 'DIV')) {
-          const f =
-            this.scrollView.viewPortItems[
-              this.galleryMode.enabled ? ev.target.parentElement.getAttribute('rowIndex') : ev.target.parentElement.parentElement.rowIndex
-            ]
-          if (f && f.isDir && this.selection.indexOf(f) === -1) {
-            if (ev.target.parentElement.nodeName === 'TD') {
-              this.renderer.addClass(ev.target.parentElement, dragClass)
-            } else if (ev.target.parentElement.classList.contains('card-body')) {
-              this.renderer.addClass(ev.target.parentElement.parentElement, dragClass)
-            }
-          }
-        }
-      })
-      this.eventDragLeaveHandler = this.renderer.listen(this.scrollView.element.nativeElement, 'dragleave', (ev) => {
+        return false
+      }
+      if (['TD', 'TR', 'DIV', 'APP-VIRTUAL-SCROLL', 'IMG'].indexOf(ev.target.nodeName) > -1) {
         ev.preventDefault()
         if (this.moveFromDrag) {
-          if (ev.target.parentElement.nodeName === 'TD') {
-            this.renderer.removeClass(ev.target.parentElement, dragClass)
-          } else if (ev.target.parentElement.classList.contains('card-body')) {
-            this.renderer.removeClass(ev.target.parentElement.parentElement, dragClass)
-          }
-        }
-      })
-      this.eventDragEndHandler = this.renderer.listen(this.scrollView.element.nativeElement, 'dragend', (ev) => {
-        ev.preventDefault()
-        this.moveFromDrag = false
-      })
-      this.eventDropHandler = this.renderer.listen(this.scrollView.element.nativeElement, 'drop', (ev): boolean | void => {
-        if (this.inSharesList || (this.isTrashRepo && !this.moveFromDrag)) {
-          ev.preventDefault()
-          return false
-        }
-        if (this.moveFromDrag && (ev.target.parentElement.nodeName === 'TD' || ev.target.parentElement.nodeName === 'DIV')) {
-          ev.preventDefault()
-          const f: FileModel =
-            this.scrollView.viewPortItems[
-              this.galleryMode.enabled ? ev.target.parentElement.getAttribute('rowIndex') : ev.target.parentElement.parentElement.rowIndex
-            ]
-          if (f && f.isDir && this.selection.indexOf(f) === -1) {
-            this.renderer.removeClass(ev.target.parentElement, dragClass)
-            // start move action
-            if (this.selection.length) {
-              void this.zone.run(() => this.filesService.copyMove(this.selection, f.path, FILE_OPERATION.MOVE))
-            }
-          }
-        } else if (ev.dataTransfer.files.length) {
-          ev.preventDefault()
-          this.zone.run(() => this.onDropFiles(ev))
-          return false
+          ev.dataTransfer.dropEffect = 'move'
         } else {
-          ev.preventDefault()
-          return false
+          ev.dataTransfer.dropEffect = 'copy'
         }
-      })
-      this.eventKeysHandler = this.renderer.listen(this.scrollView.element.nativeElement, 'keydown', (ev: KeyboardEvent) => {
-        if (this.renamingInProgress || this.isEditableKeyboardTarget(ev.target)) {
-          return
-        }
-        if (this.handleKeyboardShortcut(ev)) {
-          return
-        }
-        if (this.handleKeyboardAction(ev)) {
-          return
-        }
-        if (!keyboardNavigationKeys.has(ev.key)) {
-          return
-        }
-        const key = ev.key as KeyboardNavigationKey
-        if ((key === 'ArrowLeft' || key === 'ArrowRight') && !this.galleryMode.enabled) {
-          return
-        }
+      }
+    })
+    this.eventDragStartHandler = this.renderer.listen(scrollViewElement.nativeElement, 'dragstart', (ev) => {
+      if (this.isTrashRepo() || this.inSharesList()) {
         ev.preventDefault()
-        ev.stopPropagation()
-        const files = this.getFilteredFiles()
-        if (!files.length) {
-          return
+      }
+      if (ev.target.parentElement.nodeName === 'TD' || ev.target.parentElement.nodeName === 'DIV') {
+        const f: FileModel =
+          scrollView.viewPortItems()[
+            this.galleryMode().enabled ? ev.target.parentElement.getAttribute('rowIndex') : ev.target.parentElement.parentElement.rowIndex
+          ]
+        if (f) {
+          if (this.selection().indexOf(f) === -1) {
+            this.setSelection([f], f, f)
+          }
+          this.moveFromDrag = true
         }
-        const target = this.getKeyboardNavigationTarget(files, key, ev.shiftKey)
-        this.zone.run(() => this.applyKeyboardSelection(ev, target.file))
-        this.scrollKeyboardSelectionIntoView(target.file, target.key)
-      })
+      }
+    })
+    this.eventDragEnterHandler = this.renderer.listen(scrollViewElement.nativeElement, 'dragenter', (ev) => {
+      ev.preventDefault()
+      if (this.moveFromDrag && (ev.target.parentElement.nodeName === 'TD' || ev.target.parentElement.nodeName === 'DIV')) {
+        const f =
+          scrollView.viewPortItems()[
+            this.galleryMode().enabled ? ev.target.parentElement.getAttribute('rowIndex') : ev.target.parentElement.parentElement.rowIndex
+          ]
+        if (f && f.isDir && this.selection().indexOf(f) === -1) {
+          if (ev.target.parentElement.nodeName === 'TD') {
+            this.renderer.addClass(ev.target.parentElement, dragClass)
+          } else if (ev.target.parentElement.classList.contains('card-body')) {
+            this.renderer.addClass(ev.target.parentElement.parentElement, dragClass)
+          }
+        }
+      }
+    })
+    this.eventDragLeaveHandler = this.renderer.listen(scrollViewElement.nativeElement, 'dragleave', (ev) => {
+      ev.preventDefault()
+      if (this.moveFromDrag) {
+        if (ev.target.parentElement.nodeName === 'TD') {
+          this.renderer.removeClass(ev.target.parentElement, dragClass)
+        } else if (ev.target.parentElement.classList.contains('card-body')) {
+          this.renderer.removeClass(ev.target.parentElement.parentElement, dragClass)
+        }
+      }
+    })
+    this.eventDragEndHandler = this.renderer.listen(scrollViewElement.nativeElement, 'dragend', (ev) => {
+      ev.preventDefault()
+      this.moveFromDrag = false
+    })
+    this.eventDropHandler = this.renderer.listen(scrollViewElement.nativeElement, 'drop', (ev): boolean | void => {
+      if (this.inSharesList() || (this.isTrashRepo() && !this.moveFromDrag)) {
+        ev.preventDefault()
+        return false
+      }
+      if (this.moveFromDrag && (ev.target.parentElement.nodeName === 'TD' || ev.target.parentElement.nodeName === 'DIV')) {
+        ev.preventDefault()
+        const f: FileModel =
+          scrollView.viewPortItems()[
+            this.galleryMode().enabled ? ev.target.parentElement.getAttribute('rowIndex') : ev.target.parentElement.parentElement.rowIndex
+          ]
+        if (f && f.isDir && this.selection().indexOf(f) === -1) {
+          this.renderer.removeClass(ev.target.parentElement, dragClass)
+          // start move action
+          if (this.selection().length) {
+            void this.filesService.copyMove(this.selection(), f.path, FILE_OPERATION.MOVE)
+          }
+        }
+      } else if (ev.dataTransfer.files.length) {
+        ev.preventDefault()
+        this.onDropFiles(ev)
+        return false
+      } else {
+        ev.preventDefault()
+        return false
+      }
+    })
+    this.eventKeysHandler = this.renderer.listen(scrollViewElement.nativeElement, 'keydown', (ev: KeyboardEvent) => {
+      if (this.renamingInProgress() || this.isEditableKeyboardTarget(ev.target)) {
+        return
+      }
+      if (this.handleKeyboardShortcut(ev)) {
+        return
+      }
+      if (this.handleKeyboardAction(ev)) {
+        return
+      }
+      if (!keyboardNavigationKeys.has(ev.key)) {
+        return
+      }
+      const key = ev.key as KeyboardNavigationKey
+      if ((key === 'ArrowLeft' || key === 'ArrowRight') && !this.galleryMode().enabled) {
+        return
+      }
+      ev.preventDefault()
+      ev.stopPropagation()
+      const files = this.getFilteredFiles()
+      if (!files.length) {
+        return
+      }
+      const target = this.getKeyboardNavigationTarget(files, key, ev.shiftKey)
+      this.applyKeyboardSelection(ev, target.file)
+      this.scrollKeyboardSelectionIntoView(target.file, target.key)
     })
   }
 

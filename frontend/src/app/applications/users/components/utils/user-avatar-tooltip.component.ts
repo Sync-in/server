@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, Input, ViewEncapsulation } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, input, ViewEncapsulation } from '@angular/core'
 import { LucideDynamicIcon, LucideLightbulb, LucideUserRoundKey, LucideUsersRound } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import { OwnerType } from '../../interfaces/owner.interface'
@@ -62,14 +62,14 @@ import { MemberModel } from '../../models/member.model'
   ],
   template: `
     <div class="user-avatar-tooltip">
-      @for (tooltipUser of tooltipUsers; track trackUser($index, tooltipUser)) {
+      @for (tooltipUser of tooltipUsers(); track trackUser($index, tooltipUser)) {
         <div class="user-avatar-tooltip-user">
           @if (userHasAvatar(tooltipUser)) {
             <img alt="" class="avatar-base-img user-avatar-tooltip-avatar" height="24" width="24" [src]="tooltipUser.avatarUrl" />
           } @else {
             <span
-              [class.circle-primary-icon]="isMember"
-              [class.circle-gray-icon]="!isMember"
+              [class.circle-primary-icon]="isMember()"
+              [class.circle-gray-icon]="!isMember()"
               class="user-avatar-tooltip-avatar"
               [style.min-width.px]="24"
               [style.min-height.px]="24"
@@ -98,44 +98,41 @@ import { MemberModel } from '../../models/member.model'
   `
 })
 export class UserAvatarTooltipComponent {
-  @Input() user: OwnerType | MemberModel | any
-  @Input() users: (OwnerType | MemberModel | any)[] = []
-  @Input() isMember = false
-  @Input() unknownUserAsInfo = false
+  readonly user = input<OwnerType | MemberModel | any>()
+  readonly users = input<(OwnerType | MemberModel | any)[]>([])
+  readonly isMember = input(false)
+  readonly unknownUserAsInfo = input(false)
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { LucideUsersRound, LucideUserRoundKey, LucideLightbulb }
 
-  protected get tooltipUsers(): (OwnerType | MemberModel | any)[] {
-    if (this.users?.length) {
-      return this.users
-    }
-    return this.user ? [this.user] : []
-  }
+  protected readonly tooltipUsers = computed<(OwnerType | MemberModel | any)[]>(() =>
+    this.users().length ? this.users() : this.user() ? [this.user()] : []
+  )
 
   protected trackUser(index: number, user: OwnerType | MemberModel | any): string | number {
     return user?.mid ?? user?.id ?? user?.login ?? user?.name ?? index
   }
 
   protected userHasAvatar(user: OwnerType | MemberModel | any): boolean {
-    return this.isMember ? user?.isUser : !!user?.login
+    return this.isMember() ? user?.isUser : !!user?.login
   }
 
   protected userIcon() {
-    return this.isMember ? this.icons.LucideUsersRound : this.unknownUserAsInfo ? this.icons.LucideLightbulb : this.icons.LucideUserRoundKey
+    return this.isMember() ? this.icons.LucideUsersRound : this.unknownUserAsInfo() ? this.icons.LucideLightbulb : this.icons.LucideUserRoundKey
   }
 
   protected userTitle(user: OwnerType | MemberModel | any): string {
-    if (this.isMember) {
+    if (this.isMember()) {
       return user?.name
     }
     if (user?.login) {
       return user?.fullName
     }
-    return this.unknownUserAsInfo ? 'Info' : 'Administrator'
+    return this.unknownUserAsInfo() ? 'Info' : 'Administrator'
   }
 
   protected userSubtitle(user: OwnerType | MemberModel | any): string {
-    if (this.isMember) {
+    if (this.isMember()) {
       return user?.description ?? user?.type
     }
     if (user?.login) {
@@ -145,10 +142,10 @@ export class UserAvatarTooltipComponent {
   }
 
   protected translateTitle(user: OwnerType | MemberModel | any): boolean {
-    return !this.isMember && !user?.login
+    return !this.isMember() && !user?.login
   }
 
   protected translateSubtitle(user: OwnerType | MemberModel | any): boolean {
-    return this.isMember && !user?.isUser && !!user?.type
+    return this.isMember() && !user?.isUser && !!user?.type
   }
 }

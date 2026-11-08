@@ -1,6 +1,6 @@
 import { TitleCasePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
 import { LucideDynamicIcon, LucideLoader, LucidePencil, LucidePlus, LucideShieldHalf, LucideUserRoundCog, LucideUsersRound } from '@lucide/angular'
 import { USER_LOGIN_VALIDATION, USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -65,10 +65,9 @@ export class UserGuestDialogComponent implements OnInit {
   protected readonly defaultPassword: string = this.layout.translateString(USER_PASSWORD_CHANGE_TEXT)
   protected readonly languages: string[] = this.layout.getLanguages(true)
   // states
-  protected submitted = false
-  protected loading = false
-  protected confirmDeletion = false
-  protected tabView: undefined | 'managers' | 'groups'
+  protected readonly submitted = signal(false)
+  protected readonly loading = signal(false)
+  protected readonly confirmDeletion = signal(false)
   // form
   protected guestForm: FormGroup<{
     login: FormControl<string>
@@ -83,7 +82,6 @@ export class UserGuestDialogComponent implements OnInit {
     groups: FormControl<MemberModel[]>
   }>
   protected readonly i18nLanguageText = i18nLanguageText
-
   ngOnInit() {
     this.guestForm = new FormGroup({
       login: new FormControl<string>(this.guest?.login || '', [Validators.required, Validators.pattern(USER_LOGIN_VALIDATION)]),
@@ -139,16 +137,16 @@ export class UserGuestDialogComponent implements OnInit {
   }
 
   onCancel() {
-    if (this.confirmDeletion) {
-      this.confirmDeletion = false
+    if (this.confirmDeletion()) {
+      this.confirmDeletion.set(false)
     } else {
       this.layout.closeDialog()
     }
   }
 
   onSubmit() {
-    this.submitted = true
-    if (this.confirmDeletion) {
+    this.submitted.set(true)
+    if (this.confirmDeletion()) {
       // delete
       this.userService.deleteGuest(this.guest.id).subscribe({
         next: () => {
@@ -172,8 +170,8 @@ export class UserGuestDialogComponent implements OnInit {
       // update
       const updateDto = this.makeDto()
       if (!Object.keys(updateDto).length) {
-        this.loading = false
-        this.submitted = false
+        this.loading.set(false)
+        this.submitted.set(false)
         return
       }
       this.userService.updateGuest(this.guest.id, updateDto).subscribe({
@@ -220,7 +218,7 @@ export class UserGuestDialogComponent implements OnInit {
 
   protected onError(e: HttpErrorResponse) {
     this.layout.sendNotification('error', 'Guest error', this.guestForm.value.login, e)
-    this.submitted = false
-    this.confirmDeletion = false
+    this.submitted.set(false)
+    this.confirmDeletion.set(false)
   }
 }

@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, inject, ViewChild } from '@angular/core'
+import { Component, inject, signal, viewChild } from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import {
   LucideArrowDown,
@@ -66,13 +66,9 @@ import { AdminGroupEditUserDialogComponent } from './dialogs/admin-group-edit-us
   templateUrl: 'admin-groups.component.html'
 })
 export class AdminGroupsComponent {
-  @ViewChild(VirtualScrollComponent) scrollView: {
-    element: ElementRef
-    viewPortItems: MemberModel[]
-    scrollInto: (arg: MemberModel | number) => void
-  }
-  @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
-  @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  readonly scrollView = viewChild.required<VirtualScrollComponent<MemberModel>>(VirtualScrollComponent)
+  readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
+  readonly targetContextMenu = viewChild.required<ContextMenuComponent<any>>('TargetContextMenu')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly navbarSearch = inject(NavbarSearchService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
@@ -123,13 +119,13 @@ export class AdminGroupsComponent {
       sortable: true
     }
   }
-  protected personalGroupsView = false
-  protected loading = false
-  protected currentGroup: GroupBrowseModel['parentGroup']
-  protected selected: MemberModel = null
-  protected members: MemberModel[] = []
   private readonly router = inject(Router)
   private readonly activatedRoute = inject(ActivatedRoute)
+  protected readonly personalGroupsView = signal(false)
+  protected readonly loading = signal(false)
+  protected readonly currentGroup = signal<GroupBrowseModel['parentGroup']>(undefined)
+  protected readonly selected = signal<MemberModel>(null)
+  protected readonly members = signal<MemberModel[]>([])
   private readonly layout = inject(LayoutService)
   private readonly adminService = inject(AdminService)
   private readonly sortSettings: SortSettings = {
@@ -147,7 +143,7 @@ export class AdminGroupsComponent {
 
   constructor() {
     this.activatedRoute.data.subscribe((route: Data) => {
-      this.personalGroupsView = route.type === GROUP_TYPE.PERSONAL
+      this.personalGroupsView.set(route.type === GROUP_TYPE.PERSONAL)
       this.setEnv(route.routes as UrlSegment[])
     })
     this.activatedRoute.queryParams.subscribe((params) => (this.focusOnSelect = params.select))
@@ -155,12 +151,12 @@ export class AdminGroupsComponent {
   }
 
   onPersonalGroupsView(state: boolean) {
-    this.personalGroupsView = state
+    this.personalGroupsView.set(state)
     this.router.navigate([ADMIN_PATH.BASE, state ? ADMIN_PATH.PGROUPS : ADMIN_PATH.GROUPS]).catch(console.error)
   }
 
   refresh() {
-    this.loadGroups(this.currentGroup?.name)
+    this.loadGroups(this.currentGroup()?.name)
   }
 
   browse(m: MemberModel) {
@@ -170,7 +166,7 @@ export class AdminGroupsComponent {
   }
 
   onSelect(member: MemberModel = null) {
-    this.selected = member
+    this.selected.set(member)
   }
 
   onMemberActivate(member: MemberModel) {
@@ -181,7 +177,7 @@ export class AdminGroupsComponent {
   onContextMenu(ev: any) {
     ev.preventDefault()
     ev.stopPropagation()
-    this.layout.openContextMenu(ev, this.mainContextMenu)
+    this.layout.openContextMenu(ev, this.mainContextMenu())
   }
 
   onTargetContextMenu(ev: any, member: MemberModel) {
@@ -190,18 +186,20 @@ export class AdminGroupsComponent {
       ev.stopPropagation()
     }
     this.onSelect(member)
-    this.layout.openContextMenu(ev, this.targetContextMenu)
+    this.layout.openContextMenu(ev, this.targetContextMenu())
   }
 
   sortBy(column: string, toUpdate = true, collection?: MemberModel[]) {
-    this.members = this.sortTable.sortBy(column, toUpdate, collection || this.members)
+    this.members.set(this.sortTable.sortBy(column, toUpdate, collection || this.members()))
   }
 
   addUserToGroupDialog() {
     const modalRef: BsModalRef<AdminGroupAddUsersDialogComponent> = this.layout.openDialog(AdminGroupAddUsersDialogComponent, 'md', {
       initialState: {
-        parentGroup: this.currentGroup,
-        currentMemberIds: this.members.filter((m) => m.isUser).map((u) => u.id)
+        parentGroup: this.currentGroup(),
+        currentMemberIds: this.members()
+          .filter((m) => m.isUser)
+          .map((u) => u.id)
       } as AdminGroupAddUsersDialogComponent
     })
     modalRef.content.hasChanges
@@ -214,27 +212,27 @@ export class AdminGroupsComponent {
 
   openDialog(add = false, remove = false) {
     if (add) {
-      if (this.personalGroupsView) {
+      if (this.personalGroupsView()) {
         const modalRef: BsModalRef<UserGroupDialogComponent> = this.layout.openDialog(UserGroupDialogComponent, 'md')
         modalRef.content.groupChange.pipe(take(1)).subscribe((r: ['add' | string, MemberModel]) => {
           const [action, g] = r
           if (action === 'add') {
             g.setGroupRole(USER_GROUP_ROLE.MANAGER)
             g.counts = { users: 1 }
-            this.sortBy(this.sortTable.sortParam.column, false, this.members.concat(g))
+            this.sortBy(this.sortTable.sortParam.column, false, this.members().concat(g))
             this.onSelect(g)
           }
         })
       } else {
         const modalRef: BsModalRef<AdminGroupDialogComponent> = this.layout.openDialog(AdminGroupDialogComponent, 'lg', {
-          initialState: { parentGroup: this.currentGroup } as AdminGroupDialogComponent
+          initialState: { parentGroup: this.currentGroup() } as AdminGroupDialogComponent
         })
         modalRef.content.groupChange.pipe(take(1)).subscribe((r: ['add' | 'update', AdminGroupModel]) => {
           const [action, g] = r
           if (action === 'add') {
-            if ((!this.currentGroup && !g?.parent) || g.parent.id === this.currentGroup.id) {
+            if ((!this.currentGroup() && !g?.parent) || g.parent.id === this.currentGroup().id) {
               const member = new MemberModel({ ...g, type: MEMBER_TYPE.GROUP })
-              this.sortBy(this.sortTable.sortParam.column, false, this.members.concat(new MemberModel({ ...g, type: MEMBER_TYPE.GROUP })))
+              this.sortBy(this.sortTable.sortParam.column, false, this.members().concat(new MemberModel({ ...g, type: MEMBER_TYPE.GROUP })))
               this.onSelect(member)
             } else {
               this.router
@@ -246,7 +244,7 @@ export class AdminGroupsComponent {
       }
     } else if (remove) {
       const modalRef: BsModalRef<AdminGroupDeleteDialogComponent> = this.layout.openDialog(AdminGroupDeleteDialogComponent, 'md', {
-        initialState: { parentGroup: this.currentGroup, member: this.selected } as AdminGroupDeleteDialogComponent
+        initialState: { parentGroup: this.currentGroup(), member: this.selected() } as AdminGroupDeleteDialogComponent
       })
       modalRef.content.wasDeleted
         .pipe(
@@ -254,61 +252,65 @@ export class AdminGroupsComponent {
           take(1)
         )
         .subscribe(() => {
-          if (!this.currentGroup) {
+          if (!this.currentGroup()) {
             this.loadGroups()
-          } else if (this.selected.counts?.groups) {
-            this.loadGroups(this.currentGroup.name)
+          } else if (this.selected().counts?.groups) {
+            this.loadGroups(this.currentGroup().name)
           } else {
             this.sortBy(
               this.sortTable.sortParam.column,
               false,
-              this.members.filter((member: MemberModel) => this.selected.mid !== member.mid)
+              this.members().filter((member: MemberModel) => this.selected().mid !== member.mid)
             )
             this.onSelect()
           }
         })
     } else {
       // edit
-      if (this.selected.isGroup) {
-        if (this.personalGroupsView) {
+      if (this.selected().isGroup) {
+        if (this.personalGroupsView()) {
           const modalRef: BsModalRef<UserGroupDialogComponent> = this.layout.openDialog(UserGroupDialogComponent, 'md', {
-            initialState: { originalGroup: this.selected } as UserGroupDialogComponent
+            initialState: { originalGroup: this.selected() } as UserGroupDialogComponent
           })
           modalRef.content.groupChange.pipe(take(1)).subscribe((r: ['update' | string, MemberModel]) => {
             const [action, g] = r
             if (action === 'update') {
-              this.selected = Object.assign(this.selected, {
+              Object.assign(this.selected(), {
                 name: g.name,
                 description: g.description,
                 modifiedAt: g.modifiedAt
               })
+              this.members.update((members) => [...members])
             }
           })
         } else {
-          this.adminService.getGroup(this.selected.id).subscribe({
+          this.adminService.getGroup(this.selected().id).subscribe({
             next: (group: AdminGroupModel) => {
               const modalRef: BsModalRef<AdminGroupDialogComponent> = this.layout.openDialog(AdminGroupDialogComponent, 'lg', {
-                initialState: { group: group, parentGroup: this.currentGroup } as AdminGroupDialogComponent
+                initialState: { group: group, parentGroup: this.currentGroup() } as AdminGroupDialogComponent
               })
               modalRef.content.groupChange.pipe(take(1)).subscribe((r: ['add' | 'update', AdminGroupModel]) => {
                 const [action, g] = r
                 if (action === 'update') {
-                  if ((!this.currentGroup && !g?.parent) || g.parent.id === this.currentGroup.id) {
-                    this.selected = Object.assign(this.selected, g)
+                  if ((!this.currentGroup() && !g?.parent) || g.parent.id === this.currentGroup().id) {
+                    Object.assign(this.selected(), g)
+                    this.members.update((members) => [...members])
                   } else {
                     this.router
-                      .navigate([`${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}`, g.parent?.id ? g.parent.name : ''], { queryParams: { select: g.name } })
+                      .navigate([`${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}`, g.parent?.id ? g.parent.name : ''], {
+                        queryParams: { select: g.name }
+                      })
                       .catch(console.error)
                   }
                 }
               })
             },
-            error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Edit group', this.selected.name, e)
+            error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Edit group', this.selected().name, e)
           })
         }
       } else {
         this.layout.openDialog(AdminGroupEditUserDialogComponent, 'md', {
-          initialState: { user: this.selected, parentGroup: this.currentGroup } as AdminGroupEditUserDialogComponent
+          initialState: { user: this.selected(), parentGroup: this.currentGroup() } as AdminGroupEditUserDialogComponent
         })
       }
     }
@@ -318,7 +320,7 @@ export class AdminGroupsComponent {
     let currentGroupName: string
     if (!routes.length) {
       this.layout.setBreadcrumbNav({
-        url: this.personalGroupsView
+        url: this.personalGroupsView()
           ? `/${ADMIN_PATH.BASE}/${ADMIN_PATH.PGROUPS}/${ADMIN_TITLE.PGROUPS}`
           : `/${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}/${ADMIN_TITLE.GROUPS}`,
         splicing: 2,
@@ -328,16 +330,16 @@ export class AdminGroupsComponent {
     } else {
       currentGroupName = routes[routes.length - 1].path
       this.layout.setBreadcrumbNav({
-        url: this.personalGroupsView
+        url: this.personalGroupsView()
           ? `/${ADMIN_PATH.BASE}/${ADMIN_PATH.PGROUPS}${pathFromRoutes(routes)}`
           : `/${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}${pathFromRoutes(routes)}`,
-        firstLink: `/${ADMIN_PATH.BASE}/${this.personalGroupsView ? ADMIN_PATH.PGROUPS : ADMIN_PATH.GROUPS}`,
+        firstLink: `/${ADMIN_PATH.BASE}/${this.personalGroupsView() ? ADMIN_PATH.PGROUPS : ADMIN_PATH.GROUPS}`,
         splicing: 1,
         translating: false,
         sameLink: false,
         mutateLevel: {
           0: {
-            setTitle: this.personalGroupsView ? ADMIN_TITLE.PGROUPS : ADMIN_TITLE.GROUPS,
+            setTitle: this.personalGroupsView() ? ADMIN_TITLE.PGROUPS : ADMIN_TITLE.GROUPS,
             translateTitle: true
           }
         }
@@ -347,33 +349,33 @@ export class AdminGroupsComponent {
   }
 
   private loadGroups(currentGroupName?: string) {
-    this.loading = true
+    this.loading.set(true)
     this.onSelect()
-    this.adminService.browseGroup(currentGroupName, this.personalGroupsView).subscribe({
+    this.adminService.browseGroup(currentGroupName, this.personalGroupsView()).subscribe({
       next: (browse: GroupBrowseModel) => {
-        this.currentGroup = browse.parentGroup
+        this.currentGroup.set(browse.parentGroup)
         this.sortBy(this.sortTable.sortParam.column, false, browse.members)
         if (this.focusOnSelect) {
           this.focusOn(this.focusOnSelect)
         } else {
-          this.scrollView.scrollInto(-1)
+          this.scrollView().scrollInto(-1)
         }
-        this.loading = false
+        this.loading.set(false)
       },
       error: (e: HttpErrorResponse) => {
-        this.members = []
+        this.members.set([])
         this.layout.sendNotification('error', 'Groups', e.error.message)
         this.onSelect()
-        this.loading = false
+        this.loading.set(false)
       }
     })
   }
 
   private focusOn(select: string) {
-    const s = this.members.find((m) => m.name === select)
-    if (s) {
-      setTimeout(() => this.scrollView.scrollInto(s), 100)
-      this.onSelect(s)
+    const member = this.members().find((item) => item.name === select)
+    if (member) {
+      setTimeout(() => this.scrollView().scrollInto(member), 100)
+      this.onSelect(member)
     }
   }
 }

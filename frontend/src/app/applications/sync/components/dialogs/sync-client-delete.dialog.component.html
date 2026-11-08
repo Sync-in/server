@@ -2,7 +2,7 @@
   <h4 class="modal-title" translate>
     <svg [lucideIcon]="icons.LucideTrash"></svg>
     <span l10nTranslate>Client</span>
-    @if (submitted) {
+    @if (submitted()) {
       <svg [lucideIcon]="icons.LucideLoader" class="ms-2 icon-spin"></svg>
     }
   </h4>
@@ -14,5 +14,5 @@
 </div>
 <div class="modal-footer">
   <button (click)="layout.closeDialog()" class="btn btn-secondary" data-dismiss="modal" l10nTranslate type="button">Cancel</button>
-  <button (click)="onSubmit()" [disabled]="submitted" class="btn btn-danger" l10nTranslate type="button">Confirm</button>
+  <button (click)="onSubmit()" [disabled]="submitted()" class="btn btn-danger" l10nTranslate type="button">Confirm</button>
 </div>

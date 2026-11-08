@@ -1,3 +1,6 @@
+@let currentGroup = this.currentGroup();
+@let selected = this.selected();
+@let allowedAction = this.allowedAction();
 <!--Start Top Menu-->
 <div class="app-top-menu app-top-menu-tool-bar"
      [attr.aria-label]="'Actions' | translate:locale.language"
@@ -59,7 +62,7 @@
             class="d-none d-md-block btn btn-default"
             [tooltip]="'Refresh' | translate:locale.language"
             type="button">
-      <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
+      <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading() ? 'icon-spin' : ''"></svg>
     </button>
   </div>
 </div>
@@ -88,10 +91,10 @@
 </table>
 <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                     [bufferAmount]="5"
-                    [items]="members | searchFilter:navbarSearch.viewFilter()">
+                    [items]="members() | searchFilter:navbarSearch.viewFilter()">
   <table class="app-table">
     <tbody tabindex="-1">
-      @for (m of scrollView?.viewPortItems; track m.mid) {
+      @for (m of scrollView().viewPortItems(); track m.mid) {
         <tr (click)="onSelect(m)"
             (contextmenu)="onTargetContextMenu($event, m)"
             (appTap)="onMemberActivate(m)"
@@ -166,7 +169,7 @@
 <!--End Table Files Content-->
 <!--Start Foot Content-->
 <div class="app-foot-menu">
-  <span class="mx-auto">{{ members.length }} {{ 'groups' | translate:locale.language }}</span>
+  <span class="mx-auto">{{ members().length }} {{ 'groups' | translate:locale.language }}</span>
 </div>
 <!--End Foot Content-->
 <!--Start Member Template -->

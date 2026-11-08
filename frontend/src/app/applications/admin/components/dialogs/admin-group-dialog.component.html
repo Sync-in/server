@@ -17,7 +17,7 @@
 </div>
 <div class="modal-body form-validation" [formGroup]="groupForm">
   <tabset [justified]="true" type="pills">
-    <tab (selectTab)="tabView=null" customClass="tab-dialog form-validation">
+    <tab customClass="tab-dialog form-validation">
       <ng-template tabHeading>
         <span class="app-tab-heading">
           <svg [lucideIcon]="icons.LucideSettings"></svg>
@@ -116,7 +116,7 @@
         </div>
       </div>
     </tab>
-    <tab (selectTab)="tabView='permissions'" customClass="tab-dialog form-validation">
+    <tab customClass="tab-dialog form-validation">
       <ng-template tabHeading>
         <span class="app-tab-heading">
           <svg [lucideIcon]="icons.LucideShieldCheck"></svg>
@@ -136,7 +136,7 @@
 <div class="modal-footer">
   <button (click)="layout.closeDialog()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="submitted || groupForm.invalid" class="btn btn-primary"
+          [disabled]="submitted() || groupForm.invalid" class="btn btn-primary"
           type="button"
           l10nTranslate>
     Confirm

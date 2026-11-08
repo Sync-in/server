@@ -53,8 +53,7 @@
     "ngx-toastr": "^20.0.5",
     "pdfjs-dist": "6.5.438",
     "rxjs": "^7.8.2",
-    "tslib": "^2.7.0",
-    "zone.js": "^0.15.1"
+    "tslib": "^2.7.0"
   },
   "devDependencies": {
     "@angular/build": "^21.2.14",

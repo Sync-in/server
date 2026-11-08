@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject, Input, Output } from '@angular/core'
+import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject, Input, Output, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideLoader, LucideTrash } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
@@ -18,7 +18,7 @@ export class FilesTrashDialogComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected layout = inject(LayoutService)
   protected readonly icons = { LucideTrash, LucideLoader }
-  protected submitted = false
+  protected readonly submitted = signal(false)
 
   @HostListener('document:keyup.enter')
   onEnter() {
@@ -26,8 +26,8 @@ export class FilesTrashDialogComponent {
   }
 
   onSubmit() {
-    if (!this.submitted) {
-      this.submitted = true
+    if (!this.submitted()) {
+      this.submitted.set(true)
       this.removeFiles.next()
       this.layout.closeDialog()
     }

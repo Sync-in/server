@@ -10,7 +10,7 @@ import type { FileViewerSearchAdapter } from '../../../interfaces/file-viewer-se
   templateUrl: 'files-viewer-search.component.html'
 })
 export class FilesViewerSearchComponent {
-  adapter = input.required<FileViewerSearchAdapter>()
+  readonly adapter = input.required<FileViewerSearchAdapter>()
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput')
   protected readonly icons = { LucideChevronDown, LucideChevronUp, LucideSearch, LucideX }
   protected readonly query = signal('')

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnDestroy } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import type { LucideIcon } from '@lucide/angular'
 import {
@@ -25,7 +25,6 @@ import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applicatio
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import { ProgressbarComponent } from 'ngx-bootstrap/progressbar'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
-import { Subscription } from 'rxjs'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { ToBytesPipe } from '../../../../common/pipes/to-bytes.pipe'
 import { StoreService } from '../../../../store/store.service'
@@ -41,7 +40,7 @@ import { TimeAgoPipe } from '../../../../common/pipes/time-ago.pipe'
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'files-tasks.component.html'
 })
-export class FilesTasksComponent implements OnDestroy {
+export class FilesTasksComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { LucideX, LucideFlag, LucideClock, LucideFile, LucideFolderClosed, LucideOctagonX }
   protected readonly iconsStatus: Record<FileTaskStatus, LucideIcon> = {
@@ -60,62 +59,34 @@ export class FilesTasksComponent implements OnDestroy {
     [FILE_OPERATION.COMPRESS]: LucideFileArchive,
     [FILE_OPERATION.DECOMPRESS]: LucideFileArchive
   } as const
-  protected nbActiveTasks = 0
-  protected nbEndedTasks = 0
-  protected nbTotalTasks = 0
-  protected hasCancellableTasks = false
-  protected tasks: FileTaskView[] = []
   private readonly router = inject(Router)
   private readonly store = inject(StoreService)
   private readonly filesService = inject(FilesService)
   private readonly filesTasksService = inject(FilesTasksService)
-  private readonly cdr = inject(ChangeDetectorRef)
-  private subscriptions: Subscription[] = []
-
-  constructor() {
-    this.subscriptions.push(this.store.filesActiveTasks.subscribe((tasks: FileTask[]) => this.updateTasks(tasks, true)))
-    this.subscriptions.push(this.store.filesEndedTasks.subscribe((tasks: FileTask[]) => this.updateTasks(tasks, false)))
-  }
-
-  ngOnDestroy() {
-    this.subscriptions.forEach((s) => s.unsubscribe())
-  }
-
-  updateTasks(tasks: FileTask[], active = false) {
-    if (active) {
-      this.tasks = this.sortTasksForDisplay([...tasks, ...this.store.filesEndedTasks.getValue()])
-      this.nbActiveTasks = tasks.length
-      this.nbEndedTasks = this.store.filesEndedTasks.getValue().length
-    } else {
-      this.tasks = this.sortTasksForDisplay([...this.store.filesActiveTasks.getValue(), ...tasks])
-      this.nbEndedTasks = tasks.length
-      this.nbActiveTasks = this.store.filesActiveTasks.getValue().length
-    }
-    this.nbTotalTasks = this.nbActiveTasks + this.nbEndedTasks
-    this.updateHasCancellableTasks()
-    this.cdr.markForCheck()
-  }
+  private readonly activeTasks = this.store.filesActiveTasks
+  private readonly endedTasks = this.store.filesEndedTasks
+  protected readonly nbActiveTasks = computed(() => this.activeTasks().length)
+  protected readonly nbEndedTasks = computed(() => this.endedTasks().length)
+  protected readonly nbTotalTasks = computed(() => this.nbActiveTasks() + this.nbEndedTasks())
+  protected readonly tasks = computed(() => this.sortTasksForDisplay([...this.activeTasks(), ...this.endedTasks()]))
+  protected readonly hasCancellableTasks = computed(() => this.tasks().some((task: FileTaskView) => task.ui.cancellable))
 
   removeTasks() {
     this.filesTasksService.removeAll()
   }
 
   cancelTasks() {
-    for (const task of this.tasks) {
+    for (const task of this.tasks()) {
       if (task.ui.cancellable) {
         this.filesTasksService.cancel(task)
-        task.ui.cancellable = false
       }
     }
-    this.updateHasCancellableTasks()
   }
 
   cancelTask(event: MouseEvent, task: FileTaskView) {
     event.stopPropagation()
     if (!task.ui.cancellable) return
     this.filesTasksService.cancel(task)
-    task.ui.cancellable = false
-    this.updateHasCancellableTasks()
   }
 
   openTask(task: FileTask) {
@@ -187,9 +158,5 @@ export class FilesTasksComponent implements OnDestroy {
       items.push({ icon: this.icons.LucideClock, type: 'endedAt', value: task.endedAt })
     }
     return items
-  }
-
-  private updateHasCancellableTasks() {
-    this.hasCancellableTasks = this.tasks.some((task: FileTaskView) => task.ui.cancellable)
   }
 }

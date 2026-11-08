@@ -1,11 +1,12 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Component, inject, input, model, OnDestroy, OnInit } from '@angular/core'
+import { Component, computed, inject, input, model, OnDestroy, OnInit, output, signal } from '@angular/core'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { EURO_OFFICE_APP_LOCK, ONLY_OFFICE_APP_LOCK } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
 import type { OnlyOfficeReqDto } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.dtos'
 import { API_ONLY_OFFICE_SETTINGS } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.routes'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
+import type { FileChangeHandler } from '../../interfaces/file-viewer.interface'
 import { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
 import { fileLockPropsToString } from '../utils/file-lock.utils'
@@ -23,13 +24,13 @@ import { OnlyOfficeComponent } from './utils/only-office.component'
     `
   ],
   template: `
-    @if (documentConfig) {
+    @if (documentConfig(); as config) {
       <div [style.height.px]="currentHeight()">
         <app-files-onlyoffice-document
-          [id]="docId"
-          [editorName]="officeEditorName"
-          [documentServerUrl]="documentConfig.documentServerUrl"
-          [config]="documentConfig.config"
+          [id]="docId()"
+          [editorName]="officeEditorName()"
+          [documentServerUrl]="config.documentServerUrl"
+          [config]="config.config"
           (loadError)="loadError($event)"
         ></app-files-onlyoffice-document>
       </div>
@@ -37,20 +38,21 @@ import { OnlyOfficeComponent } from './utils/only-office.component'
   `
 })
 export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
-  file = input.required<FileModel>()
-  isReadonly = model.required<boolean>()
-  currentHeight = input.required<number>()
-  protected docId: string
-  protected documentConfig: OnlyOfficeReqDto = null
+  readonly file = input.required<FileModel>()
+  readonly fileChange = output<FileModel>()
+  readonly fileChangeHandler = input<FileChangeHandler | undefined>()
+  readonly isReadonly = model.required<boolean>()
+  readonly currentHeight = input.required<number>()
+  protected readonly docId = computed(() => `viewer-doc-${this.file().id}`)
+  protected readonly documentConfig = signal<OnlyOfficeReqDto | null>(null)
   private readonly http = inject(HttpClient)
   private readonly filesService = inject(FilesService)
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
   private shouldReconcileMetadata = false
-  protected readonly officeEditorName = this.store.server().files.editors.onlyoffice ? ONLY_OFFICE_APP_LOCK : EURO_OFFICE_APP_LOCK
+  protected readonly officeEditorName = computed(() => (this.store.server().files.editors.onlyoffice ? ONLY_OFFICE_APP_LOCK : EURO_OFFICE_APP_LOCK))
 
   ngOnInit() {
-    this.docId = `viewer-doc-${this.file().id}`
     const theme = this.layout.getCurrentTheme()
     this.http.get<OnlyOfficeReqDto>(`${API_ONLY_OFFICE_SETTINGS}/${this.file().path}`, { params: { theme } }).subscribe({
       next: (data) => {
@@ -59,9 +61,11 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
           this.layout.sendNotification('error', 'Unable to open document', 'Settings are missing')
           return
         }
+        let lockChanged = false
         if (data.hasLock) {
           if (!this.file().lock) {
             this.file().createLock(data.hasLock)
+            lockChanged = true
           } else if (!this.file().lock.isExclusive) {
             // If a lock already exists and is exclusive, a notification was previously fired
             this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(data.hasLock))
@@ -73,24 +77,26 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
           // Set lock on file
           this.file().createLock({
             owner: {
-              login: this.store.user.getValue().login,
-              fullName: this.store.user.getValue().fullName,
-              email: this.store.user.getValue().email
+              login: this.store.user().login,
+              fullName: this.store.user().fullName,
+              email: this.store.user().email
             },
             app: this.store.server().files.editors.onlyoffice ? ONLY_OFFICE_APP_LOCK : EURO_OFFICE_APP_LOCK,
             isExclusive: false
           })
+          lockChanged = true
         }
+        if (lockChanged) this.publishFile()
         data.config.editorConfig.lang = this.layout.getCurrentLanguage()
         data.config.editorConfig.region = data.config.editorConfig.lang
-        this.documentConfig = data
+        this.documentConfig.set(data)
       },
       error: (e: HttpErrorResponse) => {
         this.layout.closeDialog()
         this.layout.sendNotification(
           'error',
           'Unable to open document',
-          e.status === 404 ? this.layout.translateString('office_editor_load_error', { editor: this.officeEditorName }) : e.error.message
+          e.status === 404 ? this.layout.translateString('office_editor_load_error', { editor: this.officeEditorName() }) : e.error.message
         )
       }
     })
@@ -103,11 +109,17 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     if (this.shouldReconcileMetadata) {
-      this.filesService.reconcileMetadataAfterEditorClose(this.file())
+      this.filesService.reconcileMetadataAfterEditorClose(this.file(), this.fileChangeHandler())
     }
-    if (!this.isReadonly() && this.file().lock && this.file().lock.owner.login === this.store.user.getValue().login) {
+    if (!this.isReadonly() && this.file().lock && this.file().lock.owner.login === this.store.user().login) {
       // Remove lock
       this.file().removeLock()
+      this.publishFile()
     }
+  }
+
+  private publishFile() {
+    this.file().updateNbBadges()
+    this.fileChange.emit(this.file())
   }
 }

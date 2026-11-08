@@ -124,9 +124,9 @@ import { FileModel } from '../../models/file.model'
   `
 })
 export class FilesViewerMediaComponent {
-  file = input.required<FileModel>()
-  currentHeight = input<number>()
-  sidebarMode = input(false)
+  readonly file = input.required<FileModel>()
+  readonly currentHeight = input<number>()
+  readonly sidebarMode = input(false)
   private readonly audioSkin = viewChild<ElementRef<HTMLElement>>('audioSkin')
   protected readonly playerLanguage = toSignal(
     inject(L10nTranslationService)

@@ -1,5 +1,5 @@
 import { HttpHeaders } from '@angular/common/http'
-import { Component, inject, Input, OnInit } from '@angular/core'
+import { Component, inject, Input, OnInit, signal } from '@angular/core'
 import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
 import { LucideDynamicIcon, LucideKeyRound, LucideLock } from '@lucide/angular'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -18,8 +18,8 @@ export class UserAuth2FaVerifyDialogComponent implements OnInit {
   @Input() withPassword = false
   @Input() withTwoFaEnabled = true
   isValid!: (result: false | HttpHeaders) => void // injected callback
-  protected submitted = false
-  protected hasError: any = null
+  protected readonly submitted = signal(false)
+  protected readonly hasError = signal<any>(null)
   protected readonly icons = { LucideKeyRound, LucideLock }
   protected readonly twoFaCodelength = TWO_FA_CODE_LENGTH
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
@@ -43,7 +43,7 @@ export class UserAuth2FaVerifyDialogComponent implements OnInit {
   }
 
   onSubmit() {
-    this.submitted = true
+    this.submitted.set(true)
     const headers = new HttpHeaders({
       ...(this.withTwoFaEnabled ? { [TWO_FA_HEADER_CODE]: this.twoFaForm.value.totpCode } : {}),
       ...(this.withPassword ? { [TWO_FA_HEADER_PASSWORD]: this.twoFaForm.value.password } : {})

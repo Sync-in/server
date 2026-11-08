@@ -1,9 +1,9 @@
-@for (r of space.roots; track r.alias) {
+@for (r of displayedRoots(); track r) {
   <div class="bg-theme mb-1 px-3 py-2" style="border-radius: 4px">
     <div class="d-flex align-items-center text-truncate no-select space-root-row">
       <div class="d-flex align-items-center text-truncate w-100">
         <div class="d-flex align-items-center text-truncate w-100">
-          @if (showUsers) {
+          @if (showUsers()) {
             <app-user-avatar [user]="r.owner" tooltipPlacement="bottom"></app-user-avatar>
             <div class="vr mx-2"></div>
           }
@@ -17,13 +17,13 @@
             alt="">
           <div class="d-flex flex-column text-truncate w-100 ms-2">
             @if (r.isRenamed) {
-              <input #InputRename appInputEdit (updateObject)="onRenameRoot($event)" [inputObject]="r" [fullWidth]="true" type="text" required>
+              <input #InputRename appInputEdit (updateObject)="onRenameRoot($event)" [inputObject]="r" [(renaming)]="r.isRenamed" [fullWidth]="true" type="text" required>
             } @else {
               <div class="text-truncate">
                 <span>{{ r.name }}</span>
               </div>
               <div class="d-none d-lg-block fs-xs text-truncate text-muted">
-                @if (user.isAdmin && r.externalPath) {
+                @if (user().isAdmin && r.externalPath) {
                   <span>{{ r.externalPath }}</span>
                 } @else {
                   <span>{{ r.file.path | pathSlice:-2 }}</span>
@@ -32,7 +32,7 @@
             }
           </div>
         </div>
-        @if (showInfo) {
+        @if (showInfo()) {
           <div class="d-flex flex-shrink-0 fs-2xs text-muted ms-3">
             <div class="d-flex justify-content-end">{{ r.createdAt | amTimeAgo }}</div>
           </div>
@@ -41,7 +41,7 @@
       <div class="d-flex no-select space-root-actions">
         <div class="vr mx-2 space-root-actions__separator"></div>
         @for (perm of r.hPerms| keyvalue: originalOrderKeyValue; track perm.key) {
-          @if (!r.owner?.id && user.isAdmin || r.owner?.id === user.id) {
+          @if (!r.owner?.id && user().isAdmin || r.owner?.id === user().id) {
             <button btnCheckbox
                     [(ngModel)]="r.hPerms[perm.key]"
                     (ngModelChange)="onPermissionChange(r)"
@@ -64,11 +64,11 @@
           (click)="setRenamed(r)"
           [tooltip]="'Rename' | translate:locale.language"
           class="btn {{r.isRenamed ? 'btn-success' : 'btn-secondary'}}"
-          [class.me-2]="showRemove"
+          [class.me-2]="showRemove()"
           type="button">
           <svg [lucideIcon]="icons.LucidePencil"></svg>
         </button>
-        @if (showRemove) {
+        @if (showRemove()) {
           <button
             (click)="removeRoot(r)"
             [tooltip]="'Remove' | translate:locale.language"

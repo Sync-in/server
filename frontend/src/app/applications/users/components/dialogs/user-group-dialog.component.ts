@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideLoader, LucidePencil, LucideSettings } from '@lucide/angular'
 import { MEMBER_TYPE } from '@sync-in-server/backend/src/applications/users/constants/member'
@@ -25,9 +25,9 @@ export class UserGroupDialogComponent implements OnInit {
   protected group: MemberModel
   protected readonly icons = { GROUPS: USER_ICON.GROUPS, LucideLoader, LucideSettings, LucidePencil }
   // states
-  protected isPersonalGroup = true
-  protected submitted = false
-  protected loading = false
+  protected readonly isPersonalGroup = signal(true)
+  protected readonly submitted = signal(false)
+  protected readonly loading = signal(false)
   private readonly userService = inject(UserService)
   protected readonly user: UserType = this.userService.user
 
@@ -42,7 +42,7 @@ export class UserGroupDialogComponent implements OnInit {
         type: MEMBER_TYPE.PGROUP
       })
     } else {
-      this.isPersonalGroup = this.originalGroup.isPersonalGroup
+      this.isPersonalGroup.set(this.originalGroup.isPersonalGroup)
       this.group = new MemberModel({
         id: this.originalGroup.id,
         name: this.originalGroup.name,
@@ -59,13 +59,13 @@ export class UserGroupDialogComponent implements OnInit {
   }
 
   onSubmit() {
-    this.loading = true
-    this.submitted = true
+    this.loading.set(true)
+    this.submitted.set(true)
     if (this.group.id === 0) {
       // create
       this.userService.createPersonalGroup(this.makeDto(true)).subscribe({
         next: (g: MemberModel) => {
-          this.loading = false
+          this.loading.set(false)
           this.groupChange.emit(['add', g])
           this.layout.sendNotification('success', 'Group created', g.name)
           this.layout.closeDialog()
@@ -76,13 +76,13 @@ export class UserGroupDialogComponent implements OnInit {
       // update
       const updateDto = this.makeDto()
       if (!Object.keys(updateDto).length) {
-        this.loading = false
-        this.submitted = false
+        this.loading.set(false)
+        this.submitted.set(false)
         return
       }
       this.userService.updatePersonalGroup(this.originalGroup.id, this.makeDto()).subscribe({
         next: (g: MemberModel) => {
-          this.loading = false
+          this.loading.set(false)
           this.groupChange.emit(['update', g])
           this.layout.sendNotification('success', 'Group updated', g.name)
           this.layout.closeDialog()
@@ -101,7 +101,7 @@ export class UserGroupDialogComponent implements OnInit {
 
   private onError(e: HttpErrorResponse) {
     this.layout.sendNotification('error', 'Group error', this.group.name, e)
-    this.submitted = false
-    this.loading = false
+    this.submitted.set(false)
+    this.loading.set(false)
   }
 }

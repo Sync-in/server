@@ -1,5 +1,6 @@
 import { AsyncPipe, Location, NgTemplateOutlet } from '@angular/common'
-import { Component, inject, OnDestroy } from '@angular/core'
+import { Component, effect, inject, signal, untracked } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ResolveEnd, Router, RouterLink } from '@angular/router'
 import { LucideChevronLeft, LucideChevronRight, LucideDynamicIcon, LucideLogOut, LucideVenetianMask } from '@lucide/angular'
 import {
@@ -7,7 +8,6 @@ import {
   USER_SIDEBAR_QUICK_ACCESS_VISIBILITY
 } from '@sync-in-server/backend/src/applications/users/constants/user-preferences'
 import { L10nTranslateDirective } from 'angular-l10n'
-import { Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { APP_NAME } from '../../app.constants'
 import { ADMIN_MENU } from '../../applications/admin/admin.constants'
@@ -29,16 +29,16 @@ import { NavbarSearchService } from '../navbar/services/navbar-search.service'
   templateUrl: 'sidebar.left.component.html',
   imports: [RouterLink, LucideDynamicIcon, L10nTranslateDirective, AsyncPipe, NgTemplateOutlet]
 })
-export class SideBarLeftComponent implements OnDestroy {
+export class SideBarLeftComponent {
   protected readonly store = inject(StoreService)
   protected readonly icons = { LucideChevronLeft, LucideChevronRight, LucideLogOut, LucideVenetianMask }
   protected readonly appName = APP_NAME
-  protected readonly appMenus = [SPACES_MENU, SEARCH_MENU, SYNC_MENU, USER_MENU, ADMIN_MENU]
-  protected dynamicTitle: string
-  protected navigationSubmenus: AppMenuEntry[] = (this.appMenus[0].navigationMenu ?? this.appMenus[0]).submenus ?? []
-  protected showLogoutShortcut = false
+  protected readonly appMenus = signal<AppMenu[]>([SPACES_MENU, SEARCH_MENU, SYNC_MENU, USER_MENU, ADMIN_MENU])
+  protected readonly dynamicTitle = signal<string | undefined>(undefined)
+  protected readonly navigationSubmenus = signal<AppMenuEntry[]>((this.appMenus()[0].navigationMenu ?? this.appMenus()[0]).submenus ?? [])
+  protected readonly showLogoutShortcut = signal(false)
   protected readonly isMenu = isAppMenu
-  private currentMenu: AppMenu = this.appMenus[0]
+  private currentMenu: AppMenu = this.appMenus()[0]
   private visibleShortcutCount = 0
   private readonly location = inject(Location)
   private readonly router = inject(Router)
@@ -47,21 +47,24 @@ export class SideBarLeftComponent implements OnDestroy {
   private readonly navbarSearch = inject(NavbarSearchService)
   private readonly userService = inject(UserService)
   private readonly canPreviewMenuTitle = window.matchMedia('(hover: hover) and (pointer: fine)')
-  private subscriptions: Subscription[] = []
 
   constructor() {
-    this.subscriptions.push(this.store.user.pipe(filter((u) => !!u)).subscribe(() => this.loadMenus()))
-    this.subscriptions.push(
-      this.router.events.pipe(filter((ev) => ev instanceof ResolveEnd)).subscribe((ev: any) => this.updateUrl(ev.urlAfterRedirects))
-    )
-  }
-
-  ngOnDestroy() {
-    this.subscriptions.forEach((s) => s.unsubscribe())
+    effect(() => {
+      if (this.store.user()) {
+        untracked(() => this.loadMenus())
+      }
+    })
+    this.router.events
+      .pipe(
+        filter((ev): ev is ResolveEnd => ev instanceof ResolveEnd),
+        takeUntilDestroyed()
+      )
+      .subscribe((ev: ResolveEnd) => this.updateUrl(ev.urlAfterRedirects))
   }
 
   loadMenus() {
-    this.userService.setMenusVisibility(this.appMenus)
+    this.userService.setMenusVisibility(this.appMenus())
+    this.appMenus.set([...this.appMenus()])
     this.updateAppShortcutsVisibility()
     this.updateUrl(this.router.url)
   }
@@ -138,7 +141,7 @@ export class SideBarLeftComponent implements OnDestroy {
   protected showNavigationMenu(menu: AppMenu): boolean {
     if (menu.hide) return false
     if (!this.isQuickAccessMenu(menu)) return true
-    const quickAccess = this.store.user.getValue()?.preferences?.sidebarQuickAccessVisibility ?? USER_SIDEBAR_QUICK_ACCESS_VISIBILITY.BOTH
+    const quickAccess = this.store.user()?.preferences?.sidebarQuickAccessVisibility ?? USER_SIDEBAR_QUICK_ACCESS_VISIBILITY.BOTH
     if (menu.link === RECENTS_PATH.BASE) {
       return quickAccess === USER_SIDEBAR_QUICK_ACCESS_VISIBILITY.BOTH || quickAccess === USER_SIDEBAR_QUICK_ACCESS_VISIBILITY.RECENTS
     }
@@ -147,7 +150,7 @@ export class SideBarLeftComponent implements OnDestroy {
 
   protected isBottomMenu(menu: AppMenuEntry): boolean {
     if (isAppMenu(menu) && this.isQuickAccessMenu(menu)) {
-      const position = this.store.user.getValue()?.preferences?.sidebarQuickAccessPosition ?? USER_SIDEBAR_QUICK_ACCESS_POSITION.TOP
+      const position = this.store.user()?.preferences?.sidebarQuickAccessPosition ?? USER_SIDEBAR_QUICK_ACCESS_POSITION.TOP
       return position === USER_SIDEBAR_QUICK_ACCESS_POSITION.BOTTOM
     }
     return menu.placement === 'bottom'
@@ -185,8 +188,8 @@ export class SideBarLeftComponent implements OnDestroy {
 
   private updateUrl(url: string) {
     const currentUrl = url.substring(1)
-    this.currentMenu = this.appMenus.find((menu) => !menu.hide) ?? this.appMenus[0]
-    for (const mainMenu of this.appMenus) {
+    this.currentMenu = this.appMenus().find((menu) => !menu.hide) ?? this.appMenus()[0]
+    for (const mainMenu of this.appMenus()) {
       mainMenu.isActive = !!(!mainMenu.hide && (mainMenu.link === currentUrl || (!!mainMenu.matchLink && mainMenu.matchLink.test(currentUrl))))
       if (mainMenu.isActive) {
         this.currentMenu = mainMenu
@@ -208,17 +211,20 @@ export class SideBarLeftComponent implements OnDestroy {
         }
       }
     }
-    this.navigationSubmenus = (this.currentMenu.navigationMenu ?? this.currentMenu).submenus ?? []
+    this.navigationSubmenus.set((this.currentMenu.navigationMenu ?? this.currentMenu).submenus ?? [])
     this.updateDynamicTitle()
+    this.appMenus.set([...this.appMenus()])
   }
 
   private updateAppShortcutsVisibility() {
     const isImpersonated = this.store.userImpersonate()
-    this.visibleShortcutCount = this.appMenus.filter((menu) => !menu.hide).length + (isImpersonated ? 1 : 0)
-    this.showLogoutShortcut = !this.store.isElectronApp() && !isImpersonated && this.appMenus.filter((menu) => this.showAppShortcut(menu)).length <= 3
+    this.visibleShortcutCount = this.appMenus().filter((menu) => !menu.hide).length + (isImpersonated ? 1 : 0)
+    this.showLogoutShortcut.set(
+      !this.store.isElectronApp() && !isImpersonated && this.appMenus().filter((menu) => this.showAppShortcut(menu)).length <= 3
+    )
   }
 
   private updateDynamicTitle(title?: string) {
-    this.dynamicTitle = title ?? this.currentMenu.title
+    this.dynamicTitle.set(title ?? this.currentMenu.title)
   }
 }

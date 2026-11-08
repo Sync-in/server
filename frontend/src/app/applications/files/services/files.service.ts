@@ -1,6 +1,6 @@
 import type { TreeNode } from '@ali-hm/angular-tree-component'
 import { HttpClient, HttpErrorResponse, HttpParams, HttpResponse } from '@angular/common/http'
-import { inject, Injectable } from '@angular/core'
+import { inject, Injectable, signal } from '@angular/core'
 import { TAR_EXTENSION, TAR_GZ_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
 import {
   FILE_MODE,
@@ -72,29 +72,32 @@ import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
 import { UserService } from '../../users/user.service'
 import { FilesLockDialogComponent } from '../components/dialogs/files-lock-dialog.component'
-import { type FilesOverwriteAction, FilesOverwriteDialogComponent } from '../components/dialogs/files-overwrite-dialog.component'
+import { FilesOverwriteDialogComponent } from '../components/dialogs/files-overwrite-dialog.component'
 import type { FilesViewerDialogComponent as FilesViewerDialogComponentState } from '../components/dialogs/files-viewer-dialog.component'
 import { FilesViewerSelectDialog } from '../components/dialogs/files-viewer-select-dialog.component'
 import { fileLockPropsToString } from '../components/utils/file-lock.utils'
 import { MAX_CLIENT_EDITOR_FILE_SIZE, SHORT_MIME } from '../files.constants'
+import type { FilesOverwriteAction } from '../interfaces/files-dialog.interface'
+import type { FileModelChange, FileModelChangeKind } from '../interfaces/file-model-change.interface'
 import type { FileOpenOptions, ResolvedFile } from '../interfaces/file-open.interface'
+import type { FileChangeHandler, ViewerHookResult } from '../interfaces/file-viewer.interface'
 import { FileContentModel } from '../models/file-content.model'
 import { FileFavoriteModel } from '../models/file-favorite.model'
 import { FileRecentModel } from '../models/file-recent.model'
 import { FileModel } from '../models/file.model'
 import { FilesTasksService } from './files-tasks.service'
 
-type ViewerHookResult = { action: 'open'; shortMime: string } | { action: 'offerDownload'; message?: string }
-
 @Injectable({ providedIn: 'root' })
 export class FilesService {
   // Tree section
-  public treeNodeSelected: TreeNode = null
+  public readonly treeNodeSelected = signal<TreeNode | null>(null)
   private readonly treeCopyMoveRequested = new BehaviorSubject(false)
   public readonly treeCopyMoveOn = this.treeCopyMoveRequested.pipe(filter(Boolean))
   // Selection section
   public readonly fileSelectionRemove = new Subject<FileModel>()
   public readonly fileSelectionClear = new Subject<void>()
+  private readonly fileModelChangeSubject = new Subject<FileModelChange>()
+  public readonly fileModelChanged = this.fileModelChangeSubject.asObservable()
   // Clipboard section
   public clipboardAction: 'copyPaste' | 'cutPaste' = 'copyPaste'
   // Files
@@ -125,32 +128,32 @@ export class FilesService {
 
   addToClipboard(files: FileModel[]) {
     if (!files.length) return
-    if (!this.store.filesClipboard.getValue().length) {
+    const clipboard = this.store.filesClipboard()
+    if (!clipboard.length) {
       this.layout.showRSideBarTab(TAB_MENU.CLIPBOARD, true)
-      this.store.filesClipboard.next(files)
+      this.store.filesClipboard.set(files)
     } else {
-      const uniq = files.filter((f: FileModel) => this.store.filesClipboard.getValue().indexOf(f) === -1)
+      const uniq = files.filter((f: FileModel) => !clipboard.includes(f))
       if (uniq.length) {
-        this.store.filesClipboard.next([...uniq, ...this.store.filesClipboard.getValue()])
+        this.store.filesClipboard.set([...uniq, ...clipboard])
       }
     }
   }
 
   removeFromClipboard(file: FileModel) {
-    this.store.filesClipboard.next(this.store.filesClipboard.getValue().filter((f: FileModel) => f.id !== file.id))
+    this.store.filesClipboard.update((files) => files.filter((f: FileModel) => f.id !== file.id))
   }
 
   clearClipboard() {
-    this.store.filesClipboard.next([])
+    this.store.filesClipboard.set([])
   }
 
   onPasteClipboard(action?: 'copyPaste' | 'cutPaste') {
     const operation = action ? action : this.clipboardAction
-    if (this.store.filesClipboard.getValue().length) {
+    const clipboard = this.store.filesClipboard()
+    if (clipboard.length) {
       const dirPath: string = this.currentRoute
-      this.copyMove([...this.store.filesClipboard.getValue()], dirPath, operation === 'copyPaste' ? FILE_OPERATION.COPY : FILE_OPERATION.MOVE).catch(
-        console.error
-      )
+      this.copyMove([...clipboard], dirPath, operation === 'copyPaste' ? FILE_OPERATION.COPY : FILE_OPERATION.MOVE).catch(console.error)
       this.clearClipboard()
     }
   }
@@ -299,8 +302,10 @@ export class FilesService {
   }
 
   private updateFavoriteState(file: FileModel, isFavorite: boolean) {
+    const favoriteChanged = file.isFavorite !== isFavorite
     file.isFavorite = isFavorite
     file.updateNbBadges()
+    if (favoriteChanged) this.emitFileModelChange(file, 'favorite')
     if (this.store.filesSelection().includes(file)) {
       this.store.filesSelection.update((files) => [...files])
     }
@@ -360,17 +365,28 @@ export class FilesService {
 
   getSizeLazy(file: FileModel): Observable<number | undefined> {
     return (file.dirSize ??= this.getSize(file).pipe(
-      tap((size) => file.updateSize(size)),
+      tap((size) => {
+        const sizeChanged = file.size !== size
+        file.updateSize(size)
+        if (sizeChanged) this.emitFileModelChange(file, 'size')
+      }),
       catchError(() => of(undefined)),
       shareReplay(1)
     ))
   }
 
+  notifyFileLockChange(file: FileModel): void {
+    file.updateNbBadges()
+    this.emitFileModelChange(file, 'lock')
+  }
+
+  notifyFileCommentsChange(file: FileModel): void {
+    this.emitFileModelChange(file, 'comments')
+  }
+
   openLockDialog(file: FileModel): void {
     this.layout.openDialog(FilesLockDialogComponent, null, {
-      initialState: {
-        file: file
-      }
+      initialState: { file }
     })
   }
 
@@ -415,19 +431,19 @@ export class FilesService {
     })
   }
 
-  async openViewerDialog(file: FileModel, directoryFiles: FileModel[], permissions: string): Promise<void> {
+  async openViewerDialog(file: FileModel, directoryFiles: FileModel[], permissions: string, fileChangeHandler?: FileChangeHandler): Promise<void> {
     try {
       if (!this.useTextProbeAsAvailabilityCheck(file)) {
         const response = await firstValueFrom(this.http.head(file.dataUrl, { observe: 'response' }))
-        this.syncFileMetadata(file, response)
+        if (this.syncFileMetadata(file, response)) fileChangeHandler?.(file)
       }
-      await this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions)
+      await this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions, fileChangeHandler)
     } catch (error) {
       this.sendOpenDocumentError(file, error)
     }
   }
 
-  reconcileMetadataAfterEditorClose(file: FileModel, delay = this.editorMetadataReconciliationDelay): void {
+  reconcileMetadataAfterEditorClose(file: FileModel, fileChangeHandler?: FileChangeHandler, delay = this.editorMetadataReconciliationDelay): void {
     const fileDirectory = file.path.split('/').slice(0, -1).join('/')
     timer(delay)
       .pipe(
@@ -435,10 +451,17 @@ export class FilesService {
         switchMap(() => this.http.head(file.dataUrl, { observe: 'response' })),
         catchError(() => EMPTY)
       )
-      .subscribe((response) => this.syncFileMetadata(file, response))
+      .subscribe((response) => {
+        if (this.syncFileMetadata(file, response)) fileChangeHandler?.(file)
+      })
   }
 
-  private async openViewerAfterAvailabilityCheck(file: FileModel, directoryFiles: FileModel[], permissions: string): Promise<void> {
+  private async openViewerAfterAvailabilityCheck(
+    file: FileModel,
+    directoryFiles: FileModel[],
+    permissions: string,
+    fileChangeHandler?: FileChangeHandler
+  ): Promise<void> {
     // Client-side editable viewers use this flag; office editors enforce permissions on the backend.
     const fromMarkdownLink = file.markdownFragment !== undefined
     const isWriteable = !file?.lock?.isExclusive && permissions.includes(SPACE_OPERATION.MODIFY)
@@ -488,7 +511,7 @@ export class FilesService {
       }
     }
 
-    this.layout.openDialog(FilesViewerDialogComponent, 'full', {
+    const modalRef = this.layout.openDialog(FilesViewerDialogComponent, 'full', {
       id: file.path,
       initialState: {
         currentFile: file,
@@ -496,9 +519,11 @@ export class FilesService {
         mode: mode,
         isWriteable: isWriteable,
         hookedShortMime: hookedShortMime,
-        editorProvider: editorProvider
+        editorProvider: editorProvider,
+        fileChangeHandler
       } satisfies Partial<FilesViewerDialogComponentState>
     })
+    modalRef.content!.fileChangeHandler = fileChangeHandler
   }
 
   sendOpenDocumentError(file: FileModel | string, e: HttpErrorResponse | any): void {
@@ -522,19 +547,24 @@ export class FilesService {
     return { file, permissions: pathSegments[0] === SPACE_REPOSITORY.TRASH ? '' : permissions }
   }
 
-  private syncFileMetadata(file: FileModel, response: HttpResponse<unknown>): void {
+  private syncFileMetadata(file: FileModel, response: HttpResponse<unknown>): boolean {
     const lastModified = response.headers.get('last-modified')
     const contentLength = response.headers.get('content-length')
     const mtime = lastModified ? Date.parse(lastModified) : NaN
     const size = contentLength !== null ? Number(contentLength) : NaN
     const mtimeChanged = Number.isFinite(mtime) && mtime !== Math.floor(file.mtime / 1_000) * 1_000
     const sizeChanged = Number.isFinite(size) && size !== file.size
-    if (!mtimeChanged && !sizeChanged) return
+    if (!mtimeChanged && !sizeChanged) return false
     if (Number.isFinite(mtime)) {
       file.mtime = mtime
       file.updateHTimeAgo(mtime)
     }
     if (Number.isFinite(size)) file.updateSize(size)
+    return true
+  }
+
+  private emitFileModelChange(file: FileModel, kind: FileModelChangeKind): void {
+    this.fileModelChangeSubject.next({ file, kind })
   }
 
   private async viewerHook(file: FileModel): Promise<ViewerHookResult> {

@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Injector, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Injector, Input, OnInit, Output, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import {
   LucideAnchor,
@@ -89,22 +89,24 @@ export class SpaceDialogComponent implements OnInit {
   }
   protected readonly SPACE_MAX_DISABLED_DAYS = SPACE_MAX_DISABLED_DAYS
   // states
-  protected addRootFileEvent = new Subject<FileTreeEvent | ExternalFilePathEvent>()
-  protected tabView: undefined | 'roots' | 'members' | 'links'
-  protected allowedLinkPermissions: SPACE_OPERATION[] = [SPACE_OPERATION.ADD, SPACE_OPERATION.DELETE, SPACE_OPERATION.MODIFY]
-  protected editManagers = false
-  protected confirmDeletion = false
-  protected loading = false
-  protected submitted = false
+  protected readonly addRootFileEvent = new Subject<FileTreeEvent | ExternalFilePathEvent>()
+  protected readonly tabView = signal<undefined | 'roots' | 'members' | 'links'>(undefined)
+  protected readonly allowedLinkPermissions: SPACE_OPERATION[] = [SPACE_OPERATION.ADD, SPACE_OPERATION.DELETE, SPACE_OPERATION.MODIFY]
+  protected readonly editManagers = signal(false)
+  protected readonly confirmDeletion = signal(false)
+  protected readonly loading = signal(false)
+  protected readonly submitted = signal(false)
+  protected readonly viewSpace = signal<SpaceModel>(undefined, { equal: () => false })
   private readonly injector = inject(Injector)
   private memberSearchService!: Pick<UserService, 'searchMembers'> | Pick<AdminService, 'searchMembers'>
   private readonly store = inject(StoreService)
   private readonly spacesService = inject(SpacesService)
   private readonly linksService = inject(LinksService)
-  protected readonly user: UserType = this.store.user.getValue()
+  protected readonly user: UserType = this.store.user()
 
   ngOnInit() {
     this.memberSearchService = this.fromAdmin ? this.injector.get(AdminService) : this.injector.get(UserService)
+    this.viewSpace.set(this.space)
     if (!this.space.id) {
       this.space.managers.unshift(ownerToMember(this.user, SPACE_ROLE.IS_MANAGER))
     }
@@ -152,11 +154,11 @@ export class SpaceDialogComponent implements OnInit {
   }
 
   openEditLinkDialog(member: MemberModel) {
-    this.linksService.editLinkDialog(member, this.space, LINK_TYPE.SPACE)
+    this.linksService.editLinkDialog(member, this.space, LINK_TYPE.SPACE, () => this.viewSpace.set(this.space))
   }
 
   openCreateLinkDialog() {
-    this.linksService.createLinkDialog(this.space)
+    this.linksService.createLinkDialog(this.space, () => this.viewSpace.set(this.space))
   }
 
   setSpaceStatus(status: boolean) {
@@ -173,23 +175,23 @@ export class SpaceDialogComponent implements OnInit {
   }
 
   onCancel() {
-    if (this.confirmDeletion) {
-      this.confirmDeletion = false
+    if (this.confirmDeletion()) {
+      this.confirmDeletion.set(false)
     } else {
       this.layout.closeDialog()
     }
   }
 
   onSubmit() {
-    this.loading = true
-    this.submitted = true
-    if (this.confirmDeletion) {
+    this.loading.set(true)
+    this.submitted.set(true)
+    if (this.confirmDeletion()) {
       if (this.space.id === 0) {
         this.layout.closeDialog()
       }
       this.spacesService.deleteSpace(this.space.id, { deleteNow: true }).subscribe({
         next: () => {
-          this.loading = false
+          this.loading.set(false)
           this.spaceChange.emit(['delete', this.space])
           this.layout.closeDialog()
         },
@@ -202,7 +204,7 @@ export class SpaceDialogComponent implements OnInit {
       if (this.space.id === 0) {
         this.spacesService.createSpace(this.space).subscribe({
           next: (space: SpaceModel) => {
-            this.loading = false
+            this.loading.set(false)
             this.space = space
             this.spaceChange.emit(['add', space])
             this.layout.closeDialog()
@@ -215,7 +217,7 @@ export class SpaceDialogComponent implements OnInit {
       } else {
         this.spacesService.updateSpace(this.space).subscribe({
           next: (space: SpaceModel) => {
-            this.loading = false
+            this.loading.set(false)
             if (space) {
               this.space = space
               this.spaceChange.emit(['update', space])
@@ -234,13 +236,13 @@ export class SpaceDialogComponent implements OnInit {
   }
 
   cantSubmit() {
-    const canDeleteWithoutManagers = this.confirmDeletion && this.space.id !== 0 && this.user.isAdmin
-    return this.submitted || !this.space.name || (!this.space.managers.length && !canDeleteWithoutManagers)
+    const canDeleteWithoutManagers = this.confirmDeletion() && this.space.id !== 0 && this.user.isAdmin
+    return this.submitted() || !this.space.name || (!this.space.managers.length && !canDeleteWithoutManagers)
   }
 
   private onError() {
-    this.confirmDeletion = false
-    this.submitted = false
-    this.loading = false
+    this.confirmDeletion.set(false)
+    this.submitted.set(false)
+    this.loading.set(false)
   }
 }

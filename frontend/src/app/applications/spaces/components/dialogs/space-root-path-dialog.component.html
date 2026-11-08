@@ -9,9 +9,9 @@
   @if (withRootName) {
     <input class="form-control my-2"
            appAutofocus
-           [ngModel]="newSpaceRoot.name"
+           [ngModel]="newSpaceRoot().name"
            (ngModelChange)="checkInput($event, true)"
-           [class.is-invalid]="!rootNameIsValid"
+           [class.is-invalid]="!rootNameIsValid()"
            [placeholder]="'Name' | translate:locale.language"
            type="text"
            required>
@@ -19,18 +19,18 @@
   <input class="form-control my-4"
          appAutofocus
          [autoFocus]="!withRootName"
-         [ngModel]="newSpaceRoot.externalPath"
+         [ngModel]="newSpaceRoot().externalPath"
          (ngModelChange)="checkInput($event)"
-         [class.is-invalid]="!rootPathIsValid"
+         [class.is-invalid]="!rootPathIsValid()"
          placeholder="{{'Location' | translate:locale.language}}: /home/sync-in/data"
          type="text"
          required>
 </div>
 <div class="modal-footer">
-  @if (error) {
-    <span class="me-auto fs-sm text-danger text-truncate" l10nTranslate>{{ error }}</span>
+  @if (error()) {
+    <span class="me-auto fs-sm text-danger text-truncate" l10nTranslate>{{ error() }}</span>
   }
-  @if (rootIsValid) {
+  @if (rootIsValid()) {
     <button (click)="onSubmit()" class="btn btn-primary" type="button" l10nTranslate>Confirm</button>
   } @else {
     <button (click)="onValidRoot()" class="btn btn-success" type="button" l10nTranslate>Check the location</button>

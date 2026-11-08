@@ -1,4 +1,4 @@
-import { Component, inject, Input, OnChanges, OnInit } from '@angular/core'
+import { Component, computed, inject, input } from '@angular/core'
 import type { LucideIcon } from '@lucide/angular'
 import { LucideCircleQuestionMark, LucideDynamicIcon } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
@@ -19,112 +19,109 @@ interface ShareRepository {
   selector: 'app-share-repository',
   imports: [L10nTranslatePipe, LucideDynamicIcon],
   template: `
-    @if (galleryMode?.enabled) {
+    @let view = galleryMode();
+    @let currentRepository = repository();
+    @if (view?.enabled) {
       <span
-        [class]="repository.class"
-        [style.min-width.px]="galleryMode.dimensions / 3.5"
-        [style.min-height.px]="galleryMode.dimensions / 3.5"
-        [style.font-size.px]="galleryMode.iconSize / 2.2"
+        [class]="currentRepository.class"
+        [style.min-width.px]="view.dimensions / 3.5"
+        [style.min-height.px]="view.dimensions / 3.5"
+        [style.font-size.px]="view.iconSize / 2.2"
       >
-        <svg [lucideIcon]="repository.icon"></svg>
+        <svg [lucideIcon]="currentRepository.icon"></svg>
       </span>
     } @else {
       <div class="d-flex align-items-center overflow-wrap-and-whitespace">
-        @if (showIcon) {
-          <span [class]="repository.class" class="me-2">
-            <svg [lucideIcon]="repository.icon"></svg>
+        @if (showIcon()) {
+          <span [class]="currentRepository.class" class="me-2">
+            <svg [lucideIcon]="currentRepository.icon"></svg>
           </span>
         }
         <span class="no-pointer-events" draggable="false">
-          @if (repository.translate) {
-            {{ repository.label | translate: locale.language }}
+          @if (currentRepository.translate) {
+            {{ currentRepository.label | translate: locale.language }}
           } @else {
-            {{ repository.label }}
+            {{ currentRepository.label }}
           }
         </span>
       </div>
     }
   `
 })
-export class ShareRepositoryComponent implements OnInit, OnChanges {
-  @Input({ required: true }) share: Partial<ShareModel> | ShareFileModel | ShareLinkModel
-  @Input() galleryMode: ViewMode
-  @Input() showIcon = true
-  @Input() showFullPath = false
+export class ShareRepositoryComponent {
+  readonly share = input.required<Partial<ShareModel> | ShareFileModel | ShareLinkModel>()
+  readonly galleryMode = input<ViewMode>()
+  readonly showIcon = input(true)
+  readonly showFullPath = input(false)
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected repository: ShareRepository
-  private unknownRepository: ShareRepository = {
+  private readonly unknownRepository: ShareRepository = {
     icon: LucideCircleQuestionMark,
     label: '',
     class: 'circle-primary-icon',
     translate: false
   }
-
-  ngOnInit() {
-    this.setRepository()
-  }
-
-  ngOnChanges() {
-    this.setRepository()
-  }
-
-  private setRepository() {
-    if (this.share.parent?.id || this.share.parent?.id === 0) {
-      this.repository = {
+  protected readonly repository = computed(() => {
+    const share = this.share()
+    let repository: ShareRepository
+    if (share.parent?.id || share.parent?.id === 0) {
+      repository = {
         icon: SPACES_ICON.SHARES,
-        label: this.share.parent.name,
+        label: share.parent.name,
         class: 'circle-purple-icon',
         translate: false
       }
-    } else if (this.share.file?.ownerId) {
-      this.repository = {
+    } else if (share.file?.ownerId) {
+      repository = {
         icon: SPACES_ICON.PERSONAL,
         label: SPACES_TITLE.PERSONAL_SPACE,
         class: 'circle-primary-icon',
         translate: true
       }
-    } else if (this.share.file?.space?.alias) {
-      this.repository = {
+    } else if (share.file?.space?.alias) {
+      repository = {
         icon: SPACES_ICON.SPACES,
-        label: `${this.share.file.space.name}`,
+        label: `${share.file.space.name}`,
         class: 'circle-primary-icon',
         translate: false
       }
-    } else if (this.share.externalPath) {
-      this.repository = {
+    } else if (share.externalPath) {
+      repository = {
         icon: SPACES_ICON.EXTERNAL,
         label: 'External',
         class: 'circle-primary-icon',
         translate: true
       }
     } else {
-      this.repository = { ...this.unknownRepository }
+      repository = { ...this.unknownRepository }
     }
-    if (this.showFullPath) {
-      this.setFullPath()
+    if (this.showFullPath()) {
+      return this.withFullPath(repository, share)
     }
-  }
+    return repository
+  })
 
-  private setFullPath() {
-    if (!this.repository.label) return
-    const paths: string[] = this.share.file?.path ? this.share.file.path.split('/').filter((p: string) => p && p !== '.') : []
-    if (this.share.parent?.id && !this.share.file?.id && this.share.file?.path.indexOf('/') === -1) {
+  private withFullPath(repository: ShareRepository, share: Partial<ShareModel> | ShareFileModel | ShareLinkModel): ShareRepository {
+    if (!repository.label) return repository
+    repository = { ...repository }
+    const paths: string[] = share.file?.path ? share.file.path.split('/').filter((p: string) => p && p !== '.') : []
+    if (share.parent?.id && !share.file?.id && share.file?.path.indexOf('/') === -1) {
       // remove the first element, it is replaced by the share itself
       paths.shift()
-    } else if (this.share.file?.space?.alias) {
-      if (this.share.file.space?.root?.alias) {
+    } else if (share.file?.space?.alias) {
+      if (share.file.space?.root?.alias) {
         if (paths.length) {
-          paths.unshift(this.share.file.space.root.name)
+          paths.unshift(share.file.space.root.name)
         } else {
-          paths.push(this.share.file.space.root.name)
+          paths.push(share.file.space.root.name)
         }
       }
     }
-    if (this.repository.label === SPACES_TITLE.PERSONAL_SPACE && paths.length) {
-      this.repository.label = paths.join('/')
-      this.repository.translate = false
+    if (repository.label === SPACES_TITLE.PERSONAL_SPACE && paths.length) {
+      repository.label = paths.join('/')
+      repository.translate = false
     } else if (paths.length) {
-      this.repository.label = `${this.repository.label}/${paths.join('/')}`
+      repository.label = `${repository.label}/${paths.join('/')}`
     }
+    return repository
   }
 }

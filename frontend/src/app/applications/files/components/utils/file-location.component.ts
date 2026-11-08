@@ -1,48 +1,41 @@
-import { Component, inject, Input } from '@angular/core'
-import type { LucideIcon } from '@lucide/angular'
+import { Component, computed, inject, input } from '@angular/core'
 import { LucideDynamicIcon, LucideTrash } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
+import type { FileLocationDisplay } from '../../interfaces/file-location.interface'
 
-export interface FileLocationDisplay {
-  icon?: LucideIcon
-  iconClass: 'primary' | 'purple'
-  showedPath?: string
-  repositoryTitle?: string
-  displayRootName?: string
-  inTrash?: boolean | number
-}
+export type { FileLocationDisplay } from '../../interfaces/file-location.interface'
 
 @Component({
   selector: 'app-file-location',
   imports: [LucideDynamicIcon, L10nTranslatePipe],
   template: `
-    @if (location) {
+    @if (location(); as fileLocation) {
       <span
         class="file-location d-flex align-items-center"
-        [class.file-location--repository]="displayAsRepository"
-        [class.overflow-wrap-and-whitespace]="displayAsRepository"
-        [class.text-primary]="!displayAsRepository && location.iconClass === 'primary'"
-        [class.text-purple]="!displayAsRepository && location.iconClass === 'purple'"
+        [class.file-location--repository]="displayAsRepository()"
+        [class.overflow-wrap-and-whitespace]="displayAsRepository()"
+        [class.text-primary]="!displayAsRepository() && fileLocation.iconClass === 'primary'"
+        [class.text-purple]="!displayAsRepository() && fileLocation.iconClass === 'purple'"
       >
-        @if (displayAsRepository) {
-          @if (displayedIcon) {
-            <span [class]="displayedIconClass" class="me-2">
-              <svg [lucideIcon]="displayedIcon"></svg>
+        @if (displayAsRepository()) {
+          @if (displayedIcon(); as icon) {
+            <span [class]="displayedIconClass()" class="me-2">
+              <svg [lucideIcon]="icon"></svg>
             </span>
           }
         } @else {
-          @if (location.inTrash) {
+          @if (fileLocation.inTrash) {
             <svg [lucideIcon]="LucideTrash" class="file-location__icon"></svg>
           }
-          @if (location.icon) {
-            <svg [lucideIcon]="location.icon" class="file-location__icon"></svg>
+          @if (fileLocation.icon) {
+            <svg [lucideIcon]="fileLocation.icon" class="file-location__icon"></svg>
           }
         }
         <span class="file-location__label no-pointer-events" draggable="false">
-          @if (translateLabel) {
-            {{ label | translate: locale.language }}
+          @if (translateLabel()) {
+            {{ label() | translate: locale.language }}
           } @else {
-            {{ label }}
+            {{ label() }}
           }
         </span>
       </span>
@@ -85,24 +78,16 @@ export interface FileLocationDisplay {
   ]
 })
 export class FileLocationComponent {
-  @Input({ required: true }) location: FileLocationDisplay
-  @Input() displayAsRepository = false
+  readonly displayAsRepository = input(false)
+  readonly location = input.required<FileLocationDisplay>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly LucideTrash = LucideTrash
-
-  protected get displayedIcon(): LucideIcon | undefined {
-    return this.location?.inTrash ? this.LucideTrash : this.location?.icon
-  }
-
-  protected get displayedIconClass(): string {
-    return this.location?.inTrash ? 'circle-error-icon' : `circle-${this.location?.iconClass || 'primary'}-icon`
-  }
-
-  protected get label(): string {
-    return this.location?.showedPath || this.location?.displayRootName || this.location?.repositoryTitle || ''
-  }
-
-  protected get translateLabel(): boolean {
-    return !this.location?.showedPath && !this.location?.displayRootName && !!this.location?.repositoryTitle
-  }
+  protected readonly displayedIcon = computed(() => (this.location().inTrash ? this.LucideTrash : this.location().icon))
+  protected readonly displayedIconClass = computed(() =>
+    this.location().inTrash ? 'circle-error-icon' : `circle-${this.location().iconClass || 'primary'}-icon`
+  )
+  protected readonly label = computed(() => this.location().showedPath || this.location().displayRootName || this.location().repositoryTitle || '')
+  protected readonly translateLabel = computed(
+    () => !this.location().showedPath && !this.location().displayRootName && !!this.location().repositoryTitle
+  )
 }

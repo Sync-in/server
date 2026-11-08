@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChange } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core'
 
 @Component({
   selector: 'app-password-strength-bar',
@@ -29,24 +29,24 @@ import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChange } fr
   template: `
     <div id="strength" #strength>
       <ul id="strengthBar">
-        <li class="point" [style.background-color]="bar0"></li>
-        <li class="point" [style.background-color]="bar1"></li>
-        <li class="point" [style.background-color]="bar2"></li>
-        <li class="point" [style.background-color]="bar3"></li>
-        <li class="point" [style.background-color]="bar4"></li>
+        @for (color of barColors(); track $index) {
+          <li class="point" [style.background-color]="color"></li>
+        }
       </ul>
     </div>
   `
 })
-export class PasswordStrengthBarComponent implements OnChanges {
-  @Input() passwordToCheck = ''
-  protected bar0 = ''
-  protected bar1 = ''
-  protected bar2 = ''
-  protected bar3 = ''
-  protected bar4 = ''
+export class PasswordStrengthBarComponent {
+  readonly passwordToCheck = input('')
+  private readonly colors = ['#F00', '#F90', '#FF0', '#7ACC00', '#06854B']
+  protected readonly barColors = computed(() => {
+    const colors = Array<string>(5).fill('#DDD')
+    const password = this.passwordToCheck()
+    if (!password) return colors
 
-  private colors = ['#F00', '#F90', '#FF0', '#7ACC00', '#06854B']
+    const color = this.getColor(PasswordStrengthBarComponent.measureStrength(password))
+    return colors.map((defaultColor, index) => (index < color.idx ? color.col : defaultColor))
+  })
 
   private static measureStrength(p: string) {
     let _force = 0
@@ -78,15 +78,6 @@ export class PasswordStrengthBarComponent implements OnChanges {
     return _force
   }
 
-  ngOnChanges(changes: Record<string, SimpleChange>) {
-    const password = changes['passwordToCheck'].currentValue
-    this.setBarColors(5, '#DDD')
-    if (password) {
-      const c = this.getColor(PasswordStrengthBarComponent.measureStrength(password))
-      this.setBarColors(c.idx, c.col)
-    }
-  }
-
   private getColor(s: number) {
     // Compute index from 0 to 4 depending on s value (in steps of 10)
     const idx = Math.min(Math.floor((s - 1) / 10), 4)
@@ -94,12 +85,6 @@ export class PasswordStrengthBarComponent implements OnChanges {
     return {
       idx: idx + 1,
       col: this.colors[idx]
-    }
-  }
-
-  private setBarColors(count: number, col: string) {
-    for (let _n = 0; _n < count; _n++) {
-      this[`bar${_n}`] = col
     }
   }
 }

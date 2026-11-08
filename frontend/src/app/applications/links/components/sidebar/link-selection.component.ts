@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, InputSignal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, input, Signal, signal } from '@angular/core'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BadgePermissionsComponent } from '../../../../common/components/badge-permissions.component'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
@@ -15,10 +15,11 @@ import { ShareLinkModel } from '../../models/share-link.model'
   styles: ['.card {width: 100%; background: transparent; border: none}']
 })
 export class LinkSelectionComponent {
-  link: InputSignal<ShareLinkModel> = input.required<ShareLinkModel>()
+  readonly link = input.required<Signal<ShareLinkModel>>()
+  protected readonly selectedLink = computed(() => this.link()(), { equal: () => false })
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly cardImageSize = defaultCardImageSize
   protected readonly resizeOffset = defaultResizeOffset
-  protected accessHover = false
-  protected lastAccessHover = false
+  protected readonly accessHover = signal(false)
+  protected readonly lastAccessHover = signal(false)
 }

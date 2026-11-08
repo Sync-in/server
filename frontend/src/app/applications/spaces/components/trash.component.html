@@ -2,17 +2,17 @@
 <div class="app-top-menu app-top-menu-tool-bar"
      [attr.aria-label]="'Actions' | translate:locale.language"
      role="toolbar">
-  <button (click)="browse(selected)"
+  <button (click)="browse(selected())"
           [attr.aria-label]="'Open' | translate:locale.language"
-          [disabled]="!selected?.enabled || loading"
+          [disabled]="!selected()?.enabled || loading()"
           class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
           type="button">
     <svg [lucideIcon]="icons.LucideFolderOpen"></svg>
     <span class="app-top-menu-tool-bar__label" l10nTranslate>Open</span>
   </button>
-  <button (click)="openEmptyTrashDialog(selected)"
+  <button (click)="openEmptyTrashDialog(selected())"
           [attr.aria-label]="'Empty' | translate:locale.language"
-          [disabled]="!selected?.enabled || !selected?.nb || loading"
+          [disabled]="!selected()?.enabled || !selected()?.nb || loading()"
           class="btn btn-default app-top-menu-tool-bar__action--quiet"
           type="button">
     <svg [lucideIcon]="icons.TRASH"></svg>
@@ -23,37 +23,38 @@
           [tooltip]="'Refresh' | translate:locale.language"
           class="d-none d-md-block btn btn-default app-top-menu-tool-bar__action--icon app-top-menu-tool-bar__action--quiet"
           type="button">
-    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
+    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading() ? 'icon-spin' : ''"></svg>
   </button>
   <div class="d-flex align-items-center ms-auto">
     <!--Start View Button-->
-    <app-navigation-view (switchView)="galleryMode = $event">
+    <app-navigation-view (switchView)="galleryMode.set($event)">
     </app-navigation-view>
     <!--End View Button-->
   </div>
 </div>
 <!--End Top Menu-->
-@if (galleryMode?.enabled) {
+@let view = galleryMode();
+@if (view?.enabled) {
   <!--Start Gallery Content-->
-  <div [style.--gallery-card-size]="galleryMode.dimensions + 'px'"
-       [style.--gallery-badge-size]="galleryMode.badgeSize + 'px'"
-       [style.--gallery-image-size]="galleryMode.image + 'px'"
-       [style.--gallery-icon-size]="galleryMode.iconSize + 'px'"
-       [style.--gallery-text-size]="galleryMode.textSize + 'px'"
+  <div [style.--gallery-card-size]="view.dimensions + 'px'"
+       [style.--gallery-badge-size]="view.badgeSize + 'px'"
+       [style.--gallery-image-size]="view.image + 'px'"
+       [style.--gallery-icon-size]="view.iconSize + 'px'"
+       [style.--gallery-text-size]="view.textSize + 'px'"
        class="app-gallery">
     <app-virtual-scroll (contextmenu)="onContextMenu($event)"
-                        [childHeight]="galleryMode.dimensions"
-                        [childWidth]="galleryMode.dimensions"
-                        [items]="trashBins | searchFilter:navbarSearch.viewFilter()"
+                        [childHeight]="view.dimensions"
+                        [childWidth]="view.dimensions"
+                        [items]="trashBins() | searchFilter:navbarSearch.viewFilter()"
                         [galleryMode]="true"
                         [resizeOffset]="115">
       <div class="row g-0" tabindex="-1">
-        @for (t of scrollView?.viewPortItems; track t.id) {
+        @for (t of scrollView()?.viewPortItems(); track t.id) {
           <div (click)="onSelect(t)"
                (contextmenu)="onTargetContextMenu($event, t)"
                (appTap)="onTrashActivate(t)"
                [class.disabled]="!t.enabled"
-               [class.selected]="t.id === selected?.id"
+               [class.selected]="t.id === selected()?.id"
                class="card">
             <div [attr.rowIndex]="$index" class="card-body">
               <span class="circle-primary-icon gallery-icon">
@@ -106,15 +107,15 @@
   </table>
   <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                       [bufferAmount]="5"
-                      [items]="trashBins | searchFilter:navbarSearch.viewFilter()">
+                      [items]="trashBins() | searchFilter:navbarSearch.viewFilter()">
     <table class="app-table">
       <tbody tabindex="-1">
-        @for (t of scrollView?.viewPortItems; track t.id) {
+        @for (t of scrollView()?.viewPortItems(); track t.id) {
           <tr (click)="onSelect(t)"
               (contextmenu)="onTargetContextMenu($event, t)"
               (appTap)="onTrashActivate(t)"
               [class.disabled]="!t.enabled"
-              [class.selected]="t.id === selected?.id">
+              [class.selected]="t.id === selected()?.id">
             @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
               @if (th.value.show) {
                 <td [style.width.%]="th.value.width"
@@ -159,14 +160,14 @@
   </ng-template>
 </context-menu>
 <context-menu #TargetContextMenu>
-  @if (selected?.enabled) {
-    <ng-template (execute)="browse(selected)" contextMenuItem>
+  @if (selected()?.enabled) {
+    <ng-template (execute)="browse(selected())" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.LucideFolderOpen"></svg>Open</span>
     </ng-template>
   }
-  @if (selected?.enabled && selected?.nb) {
+  @if (selected()?.enabled && selected()?.nb) {
     <ng-template [divider]="true" contextMenuItem></ng-template>
-    <ng-template (execute)="openEmptyTrashDialog(selected)" contextMenuItem>
+    <ng-template (execute)="openEmptyTrashDialog(selected())" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.TRASH" class="text-danger"></svg>Empty</span>
     </ng-template>
   }
@@ -174,6 +175,6 @@
 <!--End Context Menu-->
 <!--Start Foot Content-->
 <div class="app-foot-menu">
-  <span class="mx-auto">{{ trashBins.length }} {{ 'trash bins' | translate:locale.language }}</span>
+  <span class="mx-auto">{{ trashBins().length }} {{ 'trash bins' | translate:locale.language }}</span>
 </div>
 <!--End Foot Content-->

@@ -59,10 +59,10 @@ import { FilesViewerUnsavedChangesComponent } from './components/files-viewer-un
   templateUrl: 'files-viewer-text.component.html'
 })
 export class FilesViewerTextComponent extends FilesViewerEditableBase implements OnInit, OnDestroy {
-  editor = viewChild<CodeEditor>('editor')
-  protected lineWrapping = signal(false)
-  protected content = ''
-  protected currentLanguage = undefined
+  readonly editor = viewChild<CodeEditor>('editor')
+  protected readonly lineWrapping = signal(false)
+  protected readonly content = signal('')
+  protected readonly currentLanguage = signal<string | undefined>(undefined)
   protected readonly languages: LanguageDescription[] = languages
   protected readonly icons = { LucideSave, LucideLock, LucideLockOpen, LucideSearch, LucideLoader, LucideTextWrap, LucideUndo, LucideRedo }
   protected readonly searchAdapter = new CodeMirrorFileViewerSearchAdapter(() => this.editor()?.view)
@@ -110,7 +110,7 @@ export class FilesViewerTextComponent extends FilesViewerEditableBase implements
 
   ngOnInit() {
     const language: LanguageDescription = LanguageDescription.matchFilename(languages, this.file().name)
-    this.currentLanguage = language?.name
+    this.currentLanguage.set(language?.name)
     this.isSupported.set(true)
     this.loadContent().catch(console.error)
   }
@@ -155,12 +155,12 @@ export class FilesViewerTextComponent extends FilesViewerEditableBase implements
   }
 
   protected currentFileContent(): string {
-    return this.content
+    return this.content()
   }
 
   protected onContentLoaded(content: string) {
     this.savedContent = content
-    this.content = content
+    this.content.set(content)
     this.isModified.set(false)
     this.scheduleEditorFocus(0)
   }

@@ -11,10 +11,10 @@
     </div>
     <div class="d-flex ms-2 pe-lg-5 flex-grow-1 overflow-hidden typeahead-option-text {{member.description ? 'flex-column align-items-start' : 'align-items-center'}}"
          style="min-width: 0">
-      <div class="w-100 text-truncate typeahead-option-name" [innerHTML]="member.name | highlight: selection"></div>
+      <div class="w-100 text-truncate typeahead-option-name" [innerHTML]="member.name | highlight: selection()"></div>
       @if (member.description) {
         <span class="fs-xs me-lg-4 text-muted w-100 text-truncate typeahead-option-description"
-              [innerHTML]="member.description | highlight: selection"></span>
+              [innerHTML]="member.description | highlight: selection()"></span>
       }
     </div>
     <div class="ms-auto ps-5 me-1 text-muted d-none d-lg-block fs-2xs align-self-center">
@@ -22,7 +22,7 @@
     </div>
   </div>
 </ng-template>
-@if (!hideInput) {
+@if (!hideInput()) {
   <div class="form-validation">
     <input
       #InputTypeHead
@@ -30,8 +30,9 @@
       (typeaheadLoading)="onLoading()"
       (typeaheadNoResults)="onNoResults()"
       (typeaheadOnPreview)="onPreview()"
-      [(ngModel)]="selection"
-      [placeholder]="placeHolder | translate: locale.language"
+      [ngModel]="selection()"
+      (ngModelChange)="selection.set($event)"
+      [placeholder]="placeHolder() | translate: locale.language"
       [typeaheadItemTemplate]="searchMembers"
       [typeaheadAsync]="true"
       [typeaheadMinLength]="0"
@@ -45,11 +46,11 @@
   </div>
 }
 <div class="col-12 mt-1">
-  @for (member of members; track member.mid) {
-    <div class="{{rowBackgroundClass}} mb-1 px-3 py-2" style="border-radius: 4px">
+  @for (member of members(); track member.mid) {
+    <div class="{{rowBackgroundClass()}} mb-1 px-3 py-2" style="border-radius: 4px">
       <div
         class="d-flex align-items-center text-truncate no-select user-search-member-row"
-        [class.user-search-member-row--with-permissions]="withPermissions">
+        [class.user-search-member-row--with-permissions]="withPermissions()">
         <div class="d-flex align-items-center text-truncate w-100">
           <div class="d-flex align-items-center text-truncate w-100">
             @if (member.isUser) {
@@ -79,12 +80,12 @@
             <div class="d-flex justify-content-end">{{ member.createdAt | amTimeAgo }}</div>
           </div>
         </div>
-        @if (editMode) {
+        @if (editMode()) {
           <div class="d-flex no-select user-search-member-actions">
             <div class="vr mx-2 user-search-member-actions__separator"></div>
-            @if (withPermissions) {
+            @if (withPermissions()) {
               @for (p of member.hPerms| keyvalue: originalOrderKeyValue; track p.key) {
-                @if (!filterPermissions || (filterPermissions && allowedPermissions.indexOf($any(p.key))) > -1) {
+                @if (!filterPermissions() || (filterPermissions() && allowedPermissions().indexOf($any(p.key))) > -1) {
                   <button [(ngModel)]="member.hPerms[p.key]"
                           (ngModelChange)="onPermissionChange(member)"
                           btnCheckbox
@@ -97,8 +98,8 @@
               }
               <div class="vr"  style="margin-left: 0.15rem; margin-right: 0.35rem"></div>
             }
-            @if (editFunction) {
-              <button (click)="editFunction(member)"
+            @if (editFunction()) {
+              <button (click)="editMember(member)"
                       [tooltip]="'Edit' | translate:locale.language"
                       class="btn btn-custom me-2"
                       type="button">

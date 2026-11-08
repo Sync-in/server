@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { AfterViewInit, Component, effect, ElementRef, inject, QueryList, ViewChildren } from '@angular/core'
+import { AfterViewInit, Component, effect, ElementRef, inject, viewChildren } from '@angular/core'
 import { Router } from '@angular/router'
 import { LucideCheck, LucideDynamicIcon, LucideInfo, LucideSearch, LucideTrash, LucideX } from '@lucide/angular'
 import { NOTIFICATION_APP } from '@sync-in-server/backend/src/applications/notifications/constants/notifications'
@@ -19,7 +19,7 @@ import { NotificationsService } from '../../notifications.service'
   templateUrl: 'notifications.component.html'
 })
 export class NotificationsComponent implements AfterViewInit {
-  @ViewChildren('notificationsHtml') notificationsHtml!: QueryList<ElementRef>
+  private readonly notificationsHtml = viewChildren<ElementRef<HTMLElement>>('notificationsHtml')
   protected readonly store = inject(StoreService)
   protected readonly icons = { LucideCheck, LucideX, LucideSearch, LucideTrash, LucideInfo }
   private readonly router = inject(Router)
@@ -31,6 +31,7 @@ export class NotificationsComponent implements AfterViewInit {
     // Re-observe the elements if notifications array has changes
     effect(() => {
       this.store.unreadNotifications()
+      this.notificationsHtml()
       setTimeout(() => this.observeUnreadNotifications(), 0)
     })
   }
@@ -41,12 +42,13 @@ export class NotificationsComponent implements AfterViewInit {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const element = entry.target as HTMLElement
-            const notificationIndex = this.notificationsHtml.toArray().findIndex((el) => el.nativeElement === element)
+            const notificationIndex = this.notificationsHtml().findIndex((el) => el.nativeElement === element)
             if (notificationIndex !== -1) {
               const notification = this.store.notifications()[notificationIndex]
               if (notification && !notification.wasRead) {
                 notification.wasRead = true
                 notification.soonRead = true
+                this.store.notifications.update((notifications) => [...notifications])
                 this.observer.unobserve(element)
                 setTimeout(() => this.wasRead(notification), 2000)
               }
@@ -88,8 +90,8 @@ export class NotificationsComponent implements AfterViewInit {
 
   private observeUnreadNotifications() {
     // Only watch the unread notifications
-    if (!this.notificationsHtml) return
-    this.notificationsHtml.forEach((notificationElement, index) => {
+    if (!this.observer) return
+    this.notificationsHtml().forEach((notificationElement, index) => {
       const notification: NotificationModel = this.store.notifications()[index]
       if (notification && !notification.wasRead) {
         this.observer.observe(notificationElement.nativeElement)
@@ -102,10 +104,10 @@ export class NotificationsComponent implements AfterViewInit {
       next: () => {
         this.store.notifications.update((notifications: NotificationModel[]) => {
           const updatedNotifications = [...notifications]
-          const n = updatedNotifications.find((n) => n.id === notification.id)
-          if (n) {
-            n.soonRead = false
-            n.wasRead = true
+          const item = updatedNotifications.find(({ id }) => id === notification.id)
+          if (item) {
+            item.soonRead = false
+            item.wasRead = true
           }
           return updatedNotifications
         })

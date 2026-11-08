@@ -2,7 +2,7 @@
   <h4 class="modal-title">
     <svg [lucideIcon]="icons.LucideTrash"></svg>
     <span l10nTranslate>Remove</span>
-    @if (submitted) {
+    @if (submitted()) {
       <svg [lucideIcon]="icons.LucideLoader" class="ms-2 icon-spin"></svg>
     }
   </h4>
@@ -10,7 +10,7 @@
 </div>
 <div class="modal-body">
   <div class="overflow-wrap-and-whitespace">
-    @switch (submitted) {
+    @switch (submitted()) {
       @case (false) {
         @if (files.length > 1) {
           <div [innerHTML]="(permanently ? 'delete_multiple_files' : 'trash_multiple_files') | translate:locale.language:{arg: files.length}"></div>
@@ -26,5 +26,5 @@
 </div>
 <div class="modal-footer">
   <button (click)="layout.closeDialog()" class="btn btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
-  <button (click)="onSubmit()" [disabled]="submitted" [autoSelect]="false" appAutofocus class="btn btn-danger" type="button" l10nTranslate>Confirm</button>
+  <button (click)="onSubmit()" [disabled]="submitted()" [autoSelect]="false" appAutofocus class="btn btn-danger" type="button" l10nTranslate>Confirm</button>
 </div>

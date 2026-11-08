@@ -1,6 +1,8 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import {
   AfterViewInit,
+  computed,
+  DestroyRef,
   Directive,
   effect,
   HostListener,
@@ -15,12 +17,9 @@ import {
 } from '@angular/core'
 import { CACHE_LOCK_FILE_TTL } from '@sync-in-server/backend/src/applications/files/constants/cache'
 import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
-import { USER_THEME } from '@sync-in-server/backend/src/applications/users/constants/user-preferences'
-import type { UserTheme } from '@sync-in-server/backend/src/applications/users/interfaces/user-preferences.interface'
 import { L10N_LOCALE, L10nLocale } from 'angular-l10n'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { catchError, EMPTY, exhaustMap, filter, firstValueFrom, Subscription, tap, timer } from 'rxjs'
-import type { AppWindow } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
 import { MAX_CLIENT_EDITOR_FILE_SIZE } from '../../files.constants'
 import { FileModel } from '../../models/file.model'
@@ -33,24 +32,25 @@ const HTTP_STATUS_LOCKED = 423
 
 @Directive()
 export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestroy {
-  currentHeight = input.required<number>()
-  file = model.required<FileModel>()
-  isWriteable = input.required<boolean>()
-  isReadonly = model.required<boolean>()
-  modalClosing = input.required<boolean>()
+  readonly currentHeight = input.required<number>()
+  readonly file = input.required<FileModel>()
+  readonly fileChange = output<FileModel>()
+  readonly isWriteable = input.required<boolean>()
+  readonly isReadonly = model.required<boolean>()
+  readonly modalClosing = input.required<boolean>()
   readonly viewerReady = output<void>()
-  protected isSupported = signal(false)
-  protected isModified = signal(false)
-  protected isSaving = signal(false)
-  protected warnOnUnsavedChanges = signal(false)
-  protected currentTheme: UserTheme = USER_THEME.LIGHT
+  protected readonly isSupported = signal(false)
+  protected readonly isModified = signal(false)
+  protected readonly isSaving = signal(false)
+  protected readonly warnOnUnsavedChanges = signal(false)
   protected readonly layout = inject(LayoutService)
+  protected readonly currentTheme = computed(() => this.layout.getCurrentTheme())
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly http = inject(HttpClient)
   protected readonly filesService = inject(FilesService)
   private readonly tooltips = viewChildren(TooltipDirective)
   private readonly filesUpload = inject(FilesUploadService)
-  private readonly themeSubscription = this.layout.switchTheme.subscribe(() => (this.currentTheme = this.layout.getCurrentTheme()))
+  protected readonly destroyRef = inject(DestroyRef)
   private lockRefreshSubscription: Subscription | null = null
   private lockRefreshWarningSent = false
   private isDestroyed = false
@@ -68,7 +68,6 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   }
 
   ngOnDestroy() {
-    this.themeSubscription.unsubscribe()
     this.stopLockRefresh()
     this.isDestroyed = true
     // Fallback for programmatic closes that bypass onClose().
@@ -138,6 +137,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
         }
         this.file().updateSize(contentSize)
         this.file().updateHTimeAgo()
+        this.publishFile()
       },
       error: (e: HttpErrorResponse) => {
         if (this.isDestroyed) return
@@ -167,7 +167,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   protected requestClose(): void {
     if (this.isModified()) {
       this.warnOnUnsavedChanges.set(true)
-      if (this.layout.windows.getValue().find((window: AppWindow) => window.id === this.file().path)) {
+      if (this.layout.windows().some((window) => window.id === this.file().path)) {
         this.layout.restoreDialog(this.file().path)
       }
     } else {
@@ -203,10 +203,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
     if (!this.isSupported() || !this.isWriteable()) return false
     try {
       const lock: FileLockProps = await firstValueFrom(this.filesService.lock(this.file()))
-      this.file.update((f) => {
-        f.lock = lock
-        return f
-      })
+      this.setFileLock(lock)
       if (this.isDestroyed) {
         await this.unlockFile()
         return false
@@ -246,10 +243,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
           this.filesService.lock(this.file()).pipe(
             tap((lock: FileLockProps) => {
               this.lockRefreshWarningSent = false
-              this.file.update((file) => {
-                file.lock = lock
-                return file
-              })
+              this.setFileLock(lock)
             }),
             catchError((e: HttpErrorResponse) => {
               this.handleLockRefreshError(e)
@@ -281,10 +275,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   private async releaseLock(): Promise<boolean> {
     try {
       await firstValueFrom(this.filesService.unlock(this.file()))
-      this.file.update((f) => {
-        delete f.lock
-        return f
-      })
+      this.setFileLock()
       return true
     } catch (e) {
       // Keep the local lock and the editor state intact so a later close or toggle can retry.
@@ -306,13 +297,25 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
     this.isReadonly.set(true)
     if (e.error?.owner) {
       const lock: FileLockProps = e.error
-      this.file.update((f) => {
-        f.lock = lock
-        return f
-      })
+      this.setFileLock(lock)
       this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(lock))
     } else {
       this.layout.sendNotification('warning', this.file().name, e.error.message)
     }
+  }
+
+  private setFileLock(lock?: FileLockProps) {
+    const file = this.file()
+    if (lock) {
+      file.createLock(lock)
+    } else {
+      file.removeLock()
+    }
+    file.updateNbBadges()
+    this.publishFile()
+  }
+
+  private publishFile() {
+    this.fileChange.emit(this.file())
   }
 }

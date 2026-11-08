@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, Input, OnChanges } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core'
 import type { LucideIcon } from '@lucide/angular'
 import { LucideDynamicIcon, LucideLink, LucideUserRound, LucideUsersRound } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
@@ -22,10 +22,10 @@ interface BadgeEntry {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, TooltipModule, L10nTranslatePipe],
   template: `
-    @if (entries.length) {
+    @if (entries().length) {
       <span class="members-summary" [tooltip]="membersTooltip" [container]="'body'">
         <span class="members-breakdown">
-          @for (entry of entries; track entry.key) {
+          @for (entry of entries(); track entry.key) {
             <span class="members-part">
               <svg [lucideIcon]="entry.icon" [class]="entry.key === 'users' ? 'members-icon-user' : ''"></svg>
               <span class="members-value">{{ entry.value }}</span>
@@ -34,7 +34,7 @@ interface BadgeEntry {
         </span>
       </span>
       <ng-template #membersTooltip>
-        @for (entry of entries; track entry.key) {
+        @for (entry of entries(); track entry.key) {
           <div>{{ entry.label | translate: locale.language }}: {{ entry.value }}</div>
         }
       </ng-template>
@@ -91,17 +91,13 @@ interface BadgeEntry {
     `
   ]
 })
-export class BadgeMembersComponent implements OnChanges {
-  @Input({ required: true }) members: BadgeMembersCounts = { users: 0, groups: 0, links: 0 }
-  protected entries: BadgeEntry[] = []
+export class BadgeMembersComponent {
+  readonly members = input.required<BadgeMembersCounts>()
+  protected readonly entries = computed<BadgeEntry[]>(() => this.buildEntries())
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
 
-  ngOnChanges() {
-    this.entries = this.buildEntries()
-  }
-
   private buildEntries(): BadgeEntry[] {
-    const members = this.members ?? {}
+    const members = this.members() ?? {}
     const entries: BadgeEntry[] = [
       { key: 'users', label: 'Users', icon: LucideUserRound, value: members.users ?? 0 },
       { key: 'groups', label: 'Groups', icon: LucideUsersRound, value: members.groups ?? 0 },

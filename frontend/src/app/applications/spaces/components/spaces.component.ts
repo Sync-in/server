@@ -1,6 +1,7 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core'
+import { Component, computed, inject, OnInit, signal, viewChild, ViewChild } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
 import {
   LucideAnchor,
@@ -62,16 +63,16 @@ import { SpaceUserAnchorsDialogComponent } from './dialogs/space-user-anchors-di
   templateUrl: 'spaces.component.html'
 })
 export class SpacesComponent implements OnInit {
-  @ViewChild(VirtualScrollComponent) scrollView: { element: ElementRef; viewPortItems: SpaceModel[]; scrollInto: (arg: SpaceModel | number) => void }
+  protected readonly scrollView = viewChild<VirtualScrollComponent<SpaceModel>>(VirtualScrollComponent)
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
-  @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
-  @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
+  readonly targetContextMenu = viewChild.required<ContextMenuComponent<any>>('TargetContextMenu')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly navbarSearch = inject(NavbarSearchService)
   protected readonly SPACE_ROLE = SPACE_ROLE
   protected readonly originalOrderKeyValue = originalOrderKeyValue
-  protected galleryMode: ViewMode
+  protected readonly galleryMode = signal<ViewMode>(undefined)
   protected readonly TAB_MENU = TAB_MENU
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,
@@ -129,19 +130,21 @@ export class SpacesComponent implements OnInit {
       sortable: true
     }
   }
-  protected loading = false
-  protected spaces: SpaceModel[] = []
-  protected selected: SpaceModel = null
-  protected canCreateSpace = false
-  protected canEditSpace = false
-  protected canManageSpaces = false
-  protected canManageRoots = false
-  protected canUsePersonalSpace = false
+  protected readonly canCreateSpace = signal(false)
+  protected readonly canManageSpaces = signal(false)
+  protected readonly canUsePersonalSpace = signal(false)
   private readonly router = inject(Router)
   private readonly activatedRoute = inject(ActivatedRoute)
   private readonly spacesService = inject(SpacesService)
   private readonly store = inject(StoreService)
   private readonly userService = inject(UserService)
+  protected readonly loading = signal(false)
+  protected readonly spaces = signal<SpaceModel[]>([])
+  protected readonly selected = signal<SpaceModel>(null, { equal: () => false })
+  protected readonly canEditSpace = computed(() => !!this.selected()?.managers.find((m: Member) => m.id === this.userService.user.id))
+  protected readonly canManageRoots = computed(
+    () => this.canUsePersonalSpace() && (this.canEditSpace() || !!this.selected()?.havePermission(SPACE_OPERATION.SHARE_INSIDE))
+  )
   private readonly sortSettings: SortSettings = {
     default: [{ prop: 'name', type: 'string' }],
     name: [{ prop: 'name', type: 'string' }],
@@ -155,34 +158,37 @@ export class SpacesComponent implements OnInit {
 
   constructor() {
     this.loadSpaces()
-    this.canCreateSpace = this.userService.userHavePermission(USER_PERMISSION.SPACES_ADMIN)
-    this.canManageSpaces = this.userService.user.isUser
-    this.canUsePersonalSpace = this.userService.userHavePermission(USER_PERMISSION.PERSONAL_SPACE)
+    this.canCreateSpace.set(this.userService.userHavePermission(USER_PERMISSION.SPACES_ADMIN))
+    this.canManageSpaces.set(this.userService.user.isUser)
+    this.canUsePersonalSpace.set(this.userService.userHavePermission(USER_PERMISSION.PERSONAL_SPACE))
     this.layout.setBreadcrumbIcon(SPACES_ICON.SPACES)
     this.layout.setBreadcrumbNav({ url: `/${SPACES_PATH.SPACES}/${SPACES_TITLE.COLLABORATIVE_SPACES}`, translating: true, sameLink: true })
     this.activatedRoute.queryParams.subscribe((params) => (this.focusOnSelect = params.select))
+    this.spacesService.spaceModelChanged.pipe(takeUntilDestroyed()).subscribe((space) => {
+      if (this.spaces().includes(space)) this.notifySpaceMutation(space)
+    })
   }
 
   ngOnInit() {
-    this.galleryMode = this.btnNavigationView.currentView()
+    this.galleryMode.set(this.btnNavigationView.currentView())
   }
 
   loadSpaces() {
-    this.loading = true
+    this.loading.set(true)
     this.onSelect()
     this.spacesService.listSpaces().subscribe({
       next: (spaces: SpaceModel[]) => {
         this.sortBy(this.sortTable.sortParam.column, false, spaces)
-        this.loading = false
+        this.loading.set(false)
         if (this.focusOnSelect) {
           this.focusOn(this.focusOnSelect)
         } else {
-          this.scrollView.scrollInto(-1)
+          this.scrollView()?.scrollInto(-1)
         }
       },
       error: (e: HttpErrorResponse) => {
-        this.spaces = []
-        this.loading = false
+        this.spaces.set([])
+        this.loading.set(false)
         this.layout.sendNotification('error', 'Spaces', e.error.message)
       }
     })
@@ -202,26 +208,18 @@ export class SpacesComponent implements OnInit {
   }
 
   onSelect(space: SpaceModel = null) {
-    if (space) {
-      this.selected = space
-      this.canEditSpace = !!space.managers.find((m: Member) => m.id === this.userService.user.id)
-      this.canManageRoots = this.canUsePersonalSpace && (this.canEditSpace || space.havePermission(SPACE_OPERATION.SHARE_INSIDE))
-    } else {
-      this.selected = null
-      this.canEditSpace = false
-      this.canManageRoots = false
-    }
-    this.store.spaceSelection.set(this.selected)
+    this.selected.set(space)
+    this.store.spaceSelection.set(this.selected())
   }
 
   sortBy(column: string, toUpdate = true, collection?: SpaceModel[]) {
-    this.spaces = this.sortTable.sortBy(column, toUpdate, collection || this.spaces)
+    this.spaces.set(this.sortTable.sortBy(column, toUpdate, collection || this.spaces()))
   }
 
   onContextMenu(ev: any) {
     ev.preventDefault()
     ev.stopPropagation()
-    this.layout.openContextMenu(ev, this.mainContextMenu)
+    this.layout.openContextMenu(ev, this.mainContextMenu())
   }
 
   onTargetContextMenu(ev: any, space: SpaceModel) {
@@ -230,7 +228,7 @@ export class SpacesComponent implements OnInit {
       ev.stopPropagation()
     }
     this.onSelect(space)
-    this.layout.openContextMenu(ev, this.targetContextMenu)
+    this.layout.openContextMenu(ev, this.targetContextMenu())
   }
 
   openSpaceDialog(add = false) {
@@ -239,12 +237,12 @@ export class SpacesComponent implements OnInit {
       modalRef.content.spaceChange.pipe(take(1)).subscribe((r: ['add' | string, SpaceModel]) => {
         const [action, s] = r
         if (action === 'add') {
-          this.sortBy(this.sortTable.sortParam.column, false, this.spaces.concat(s))
+          this.sortBy(this.sortTable.sortParam.column, false, this.spaces().concat(s))
           this.onSelect(s)
         }
       })
-    } else if (this.selected && this.canEditSpace) {
-      this.spacesService.getSpace(this.selected.id).subscribe({
+    } else if (this.selected() && this.canEditSpace()) {
+      this.spacesService.getSpace(this.selected()!.id).subscribe({
         next: (space: SpaceModel) => {
           const modalRef: BsModalRef<SpaceDialogComponent> = this.layout.openDialog(SpaceDialogComponent, 'xl', {
             initialState: { space: space } as SpaceDialogComponent
@@ -252,25 +250,25 @@ export class SpacesComponent implements OnInit {
           modalRef.content.spaceChange.pipe(take(1)).subscribe((r: ['update' | 'delete' | string, SpaceModel]) => {
             const [action, s] = r
             if (action === 'update') {
-              this.selected.name = s.name
-              this.selected.alias = s.alias
-              this.selected.description = s.description
-              // hook to keep the shares count
-              this.selected.counts = { ...s.counts, shares: this.selected.counts.shares }
-              this.selected.modifiedAt = s.modifiedAt
-              this.selected.enabled = s.enabled
-              this.selected.managers = [...s.managers]
+              this.selected()!.name = s.name
+              this.selected()!.alias = s.alias
+              this.selected()!.description = s.description
+              this.selected()!.counts = { ...s.counts, shares: this.selected()!.counts.shares }
+              this.selected()!.modifiedAt = s.modifiedAt
+              this.selected()!.enabled = s.enabled
+              this.selected()!.managers = [...s.managers]
+              this.notifySpaceMutation(this.selected()!)
             } else if (action === 'delete') {
               this.onSelect()
               this.sortBy(
                 this.sortTable.sortParam.column,
                 false,
-                this.spaces.filter((sp: SpaceModel) => sp.id !== s.id)
+                this.spaces().filter((sp: SpaceModel) => sp.id !== s.id)
               )
             }
           })
         },
-        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Edit space', this.selected.name, e)
+        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Edit space', this.selected()!.name, e)
       })
     }
   }
@@ -278,30 +276,42 @@ export class SpacesComponent implements OnInit {
   openSpaceRootsDialog() {
     setTimeout(
       () => {
-        this.layout.openDialog(SpaceUserAnchorsDialogComponent, 'md', {
+        const modalRef: BsModalRef<SpaceUserAnchorsDialogComponent> = this.layout.openDialog(SpaceUserAnchorsDialogComponent, 'md', {
           initialState: {
-            space: this.selected,
+            space: this.selected(),
             user: this.userService.user
           } as SpaceUserAnchorsDialogComponent
         })
+        modalRef.content.rootsChange.subscribe((space: SpaceModel) => this.notifySpaceMutation(space))
       },
-      this.selected ? 0 : 100
+      this.selected() ? 0 : 100
     )
   }
 
   openChildShareDialog(space?: SpaceModel) {
     if (space) this.onSelect(space)
     const modalRef: BsModalRef<SharedChildrenDialogComponent> = this.layout.openDialog(SharedChildrenDialogComponent, null, {
-      initialState: { space: this.selected } as SharedChildrenDialogComponent
+      initialState: { space: this.selected() } as SharedChildrenDialogComponent
     })
-    modalRef.content.sharesCountEvent.subscribe((sharesCount: number) => (this.selected.counts.shares = sharesCount))
+    modalRef.content.sharesCountEvent.subscribe((sharesCount: number) => {
+      this.selected()!.counts.shares = sharesCount
+      this.notifySpaceMutation(this.selected()!)
+    })
+  }
+
+  private notifySpaceMutation(space: SpaceModel) {
+    this.spaces.update((spaces) => [...spaces])
+    if (this.selected() === space) {
+      this.selected.set(space)
+      this.store.spaceSelection.set(space)
+    }
   }
 
   private focusOn(select: string) {
-    const s = this.spaces.find((space) => space.name === select)
-    if (s) {
-      setTimeout(() => this.scrollView.scrollInto(s), 100)
-      this.onSelect(s)
+    const space = this.spaces().find((item) => item.name === select)
+    if (space) {
+      setTimeout(() => this.scrollView()?.scrollInto(space), 100)
+      this.onSelect(space)
     }
   }
 }

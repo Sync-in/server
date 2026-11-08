@@ -1,4 +1,4 @@
-import { afterNextRender, ChangeDetectorRef, Component, DestroyRef, ElementRef, inject, input } from '@angular/core'
+import { afterNextRender, Component, DestroyRef, ElementRef, inject, input, signal } from '@angular/core'
 import type { StorageQuota } from '@sync-in-server/backend/src/common/interfaces'
 import { ProgressbarComponent } from 'ngx-bootstrap/progressbar'
 import { ToBytesPipe } from '../pipes/to-bytes.pipe'
@@ -13,7 +13,7 @@ import { ToBytesPipe } from '../pipes/to-bytes.pipe'
         class="bg-black"
         [type]="this.item().storageUsage >= this.item().storageQuota ? 'danger' : null"
       >
-        <span [style.width.px]="labelWidth ?? null" class="ms-1 me-1">
+        <span [style.width.px]="labelWidth()" class="ms-1 me-1">
           {{ item().storageUsage | toBytes: 2 : true }} / {{ item().storageQuota | toBytes }}
         </span>
       </progressbar>
@@ -27,10 +27,8 @@ import { ToBytesPipe } from '../pipes/to-bytes.pipe'
 })
 export class StorageUsageComponent {
   item = input<StorageQuota>({ storageUsage: 0, storageQuota: null })
-  labelWidth: number | null = null
+  readonly labelWidth = signal<number | null>(null)
   protected readonly elRef = inject(ElementRef)
-  // helpers for safe updates
-  private readonly cdr = inject(ChangeDetectorRef)
   private readonly destroyRef = inject(DestroyRef)
 
   constructor() {
@@ -40,10 +38,8 @@ export class StorageUsageComponent {
 
       const measure = () => {
         const w = host.offsetWidth
-        if (w !== this.labelWidth) {
-          this.labelWidth = w
-          // force CD since we update after first check
-          this.cdr.detectChanges()
+        if (w !== this.labelWidth()) {
+          this.labelWidth.set(w)
         }
       }
       measure()

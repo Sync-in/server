@@ -11,7 +11,7 @@
   </button>
   <button (click)="openShareDialog()"
           [attr.aria-label]="'Edit share' | translate:locale.language"
-          [disabled]="!selected"
+          [disabled]="!selected()"
           class="btn btn-default app-top-menu-tool-bar__action--quiet"
           type="button">
     <svg [lucideIcon]="icons.LucidePencil"></svg>
@@ -19,7 +19,7 @@
   </button>
   <button (click)="openChildShareDialog()"
           [attr.aria-label]="'Edit children shares' | translate:locale.language"
-          [disabled]="!selected?.counts.shares"
+          [disabled]="!selected()?.counts.shares"
           class="btn btn-default"
           [tooltip]="'Edit children shares' | translate:locale.language"
           type="button">
@@ -27,7 +27,7 @@
   </button>
   <button (click)="goTo()"
           [attr.aria-label]="'Go to' | translate:locale.language"
-          [disabled]="!selected"
+          [disabled]="!selected()"
           class="btn btn-default"
           [tooltip]="'Go to' | translate:locale.language"
           type="button">
@@ -38,36 +38,37 @@
           class="d-none d-md-block btn btn-default"
           [tooltip]="'Refresh' | translate:locale.language"
           type="button">
-    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
+    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading() ? 'icon-spin' : ''"></svg>
   </button>
   <div class="d-flex align-items-center ms-auto">
     <!--Start View Button-->
-    <app-navigation-view (switchView)="galleryMode = $event">
+    <app-navigation-view (switchView)="galleryMode.set($event)">
     </app-navigation-view>
     <!--End View Button-->
   </div>
 </div>
 <!--End Top Menu-->
-@if (galleryMode?.enabled) {
+@let view = galleryMode();
+@if (view?.enabled) {
   <!--Start Gallery Content-->
-  <div [style.--gallery-card-size]="galleryMode.dimensions + 'px'"
-       [style.--gallery-badge-size]="galleryMode.badgeSize + 'px'"
-       [style.--gallery-image-size]="galleryMode.image + 'px'"
-       [style.--gallery-text-size]="galleryMode.textSize + 'px'"
+  <div [style.--gallery-card-size]="view.dimensions + 'px'"
+       [style.--gallery-badge-size]="view.badgeSize + 'px'"
+       [style.--gallery-image-size]="view.image + 'px'"
+       [style.--gallery-text-size]="view.textSize + 'px'"
        class="app-gallery">
     <app-virtual-scroll (contextmenu)="onContextMenu($event)"
-                        [childHeight]="galleryMode.dimensions"
-                        [childWidth]="galleryMode.dimensions"
-                        [items]="shares | searchFilter:navbarSearch.viewFilter()"
+                        [childHeight]="view.dimensions"
+                        [childWidth]="view.dimensions"
+                        [items]="shares() | searchFilter:navbarSearch.viewFilter()"
                         [galleryMode]="true"
                         [resizeOffset]="115">
       <div class="row g-0" tabindex="-1">
-        @for (s of scrollView?.viewPortItems; track s.id) {
+        @for (s of scrollView()?.viewPortItems(); track s.id) {
           <div (click)="onSelect(s)"
                (contextmenu)="onTargetContextMenu($event, s)"
                (appTap)="onShareActivate(s)"
                [class.disabled]="!s.enabled"
-               [class.selected]="s.id === selected?.id"
+               [class.selected]="s.id === selected()?.id"
                class="card">
             <div [attr.rowIndex]="$index" class="card-body">
               <img [src]="s.mimeUrl"
@@ -98,7 +99,7 @@
                 }
               </span>
               <span class="label-bottom-left">
-                <app-share-repository [share]="s" [galleryMode]="galleryMode"></app-share-repository>
+                <app-share-repository [share]="s" [galleryMode]="view"></app-share-repository>
               </span>
 
             </div>
@@ -136,15 +137,15 @@
   </table>
   <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                       [bufferAmount]="5"
-                      [items]="shares | searchFilter:navbarSearch.viewFilter()">
+                      [items]="shares() | searchFilter:navbarSearch.viewFilter()">
     <table class="app-table">
       <tbody tabindex="-1">
-        @for (s of scrollView?.viewPortItems; track s.id) {
+        @for (s of scrollView()?.viewPortItems(); track s.id) {
           <tr (click)="onSelect(s)"
               (contextmenu)="onTargetContextMenu($event, s)"
               (appTap)="onShareActivate(s)"
               [class.disabled]="!s.enabled"
-              [class.selected]="s.id === selected?.id">
+              [class.selected]="s.id === selected()?.id">
             @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
               @if (th.value.show) {
                 <td [style.width.%]="th.value.width"
@@ -197,7 +198,7 @@
 }
 <!--Start Foot Content-->
 <div class="app-foot-menu">
-  <span class="mx-auto">{{ shares.length }} {{ 'shares' | translate:locale.language }}</span>
+  <span class="mx-auto">{{ shares().length }} {{ 'shares' | translate:locale.language }}</span>
 </div>
 <!--End Foot Content-->
 <!--Start Context Menu -->
@@ -217,7 +218,7 @@
   <ng-template (execute)="openShareDialog()" contextMenuItem>
     <span l10nTranslate><svg [lucideIcon]="icons.LucidePencil"></svg>Edit</span>
   </ng-template>
-  @if (!!selected?.counts.shares) {
+  @if (!!selected()?.counts.shares) {
     <ng-template (execute)="openChildShareDialog()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.SHARES"></svg>Edit children shares</span>
     </ng-template>

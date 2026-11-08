@@ -1,6 +1,7 @@
-import { Component, DOCUMENT, HostListener, inject, OnDestroy, OnInit, Renderer2 } from '@angular/core'
+import { Component, DOCUMENT, effect, HostListener, inject, OnInit, Renderer2 } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { NavigationStart, Router, RouterOutlet } from '@angular/router'
-import { filter, Subscription } from 'rxjs'
+import { filter } from 'rxjs'
 import { themeLight } from './layout.interfaces'
 import { LayoutService } from './layout.service'
 import { NavBarComponent } from './navbar/navbar.component'
@@ -12,7 +13,7 @@ import { SideBarRightComponent } from './sidebar/sidebar.right.component'
   templateUrl: 'layout.component.html',
   imports: [RouterOutlet, NavBarComponent, SideBarLeftComponent, SideBarRightComponent]
 })
-export class LayoutComponent implements OnDestroy, OnInit {
+export class LayoutComponent implements OnInit {
   protected themeMode = themeLight
   private readonly document = inject<Document>(DOCUMENT)
   private readonly layout = inject(LayoutService)
@@ -22,24 +23,22 @@ export class LayoutComponent implements OnDestroy, OnInit {
   private leftSideBarCollapsedClass = 'sidebar-collapse'
   private leftSideBarOpenedClass = 'sidebar-open'
   private isSmallerThanMediumScreen = false
-  private subscriptions: Subscription[] = []
 
   constructor() {
-    this.subscriptions.push(this.layout.switchTheme.subscribe((theme: string) => this.setTheme(theme)))
-    this.subscriptions.push(this.layout.toggleRightSideBar.subscribe((status: boolean) => this.toggleRightSideBar(status)))
-    this.subscriptions.push(this.layout.toggleLeftSideBar.subscribe((status) => this.toggleLeftSideBar(status)))
-    this.subscriptions.push(
-      this.router.events.pipe(filter((event) => event instanceof NavigationStart)).subscribe(() => this.layout.closeContextMenu())
-    )
+    effect(() => this.setTheme(this.layout.switchTheme()))
+    this.layout.toggleRightSideBar.pipe(takeUntilDestroyed()).subscribe((status) => this.toggleRightSideBar(status))
+    this.layout.toggleLeftSideBar.pipe(takeUntilDestroyed()).subscribe((status) => this.toggleLeftSideBar(status))
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationStart),
+        takeUntilDestroyed()
+      )
+      .subscribe(() => this.layout.closeContextMenu())
   }
 
   ngOnInit() {
     this.isSmallerThanMediumScreen = this.layout.isSmallerMediumScreen()
     this.checkLeftSideBarCollapse()
-  }
-
-  ngOnDestroy() {
-    this.subscriptions.forEach((s) => s.unsubscribe())
   }
 
   @HostListener('window:resize')
@@ -66,18 +65,18 @@ export class LayoutComponent implements OnDestroy, OnInit {
     // 1: open / 2: collapse / 3: toggle
     if (status === 1) {
       this.openLeftSideBar()
-      this.layout.leftSideBarIsOpen.next(true)
+      this.layout.leftSideBarIsOpen.set(true)
     } else if (status === 2) {
       this.collapseLeftSideBar()
-      this.layout.leftSideBarIsOpen.next(false)
+      this.layout.leftSideBarIsOpen.set(false)
     } else if (this.document.body.classList.contains(this.leftSideBarOpenedClass)) {
       this.collapseLeftSideBar()
-      this.layout.saveLeftSideBarIsOpen.next(false)
-      this.layout.leftSideBarIsOpen.next(false)
+      this.layout.saveLeftSideBarIsOpen.set(false)
+      this.layout.leftSideBarIsOpen.set(false)
     } else {
       this.openLeftSideBar()
-      this.layout.saveLeftSideBarIsOpen.next(true)
-      this.layout.leftSideBarIsOpen.next(true)
+      this.layout.saveLeftSideBarIsOpen.set(true)
+      this.layout.leftSideBarIsOpen.set(true)
     }
   }
 
@@ -103,7 +102,7 @@ export class LayoutComponent implements OnDestroy, OnInit {
     if (this.isSmallerThanMediumScreen) {
       this.toggleLeftSideBar(2)
     } else {
-      this.layout.saveLeftSideBarIsOpen.next(true)
+      this.layout.saveLeftSideBarIsOpen.set(true)
       this.toggleLeftSideBar(1)
     }
   }

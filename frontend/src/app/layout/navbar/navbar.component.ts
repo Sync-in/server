@@ -1,6 +1,4 @@
-import { Component, inject, OnDestroy } from '@angular/core'
-import { Subscription } from 'rxjs'
-import { UserType } from '../../applications/users/interfaces/user.interface'
+import { Component, inject } from '@angular/core'
 import { USER_ONLINE_STATUS_LIST } from '../../applications/users/user.constants'
 import { StoreService } from '../../store/store.service'
 import { BreadcrumbComponent } from '../breadcrumb/breadcrumb.component'
@@ -14,25 +12,14 @@ import { NavbarSearchService } from './services/navbar-search.service'
   templateUrl: 'navbar.component.html',
   imports: [BreadcrumbComponent, NavbarSearchComponent]
 })
-export class NavBarComponent implements OnDestroy {
+export class NavBarComponent {
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly navbarSearch = inject(NavbarSearchService)
-  protected leftSideBarIsOpen = true
-  protected user: UserType
-  protected userAvatar: string = null
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
-  private subscriptions: Subscription[] = []
-
-  constructor() {
-    this.subscriptions.push(this.store.user.subscribe((user: UserType) => (this.user = user)))
-    this.subscriptions.push(this.store.userAvatarUrl.subscribe((avatarUrl) => (this.userAvatar = avatarUrl)))
-    this.subscriptions.push(this.layout.leftSideBarIsOpen.subscribe((isOpen) => (this.leftSideBarIsOpen = isOpen)))
-  }
-
-  ngOnDestroy() {
-    this.subscriptions.forEach((s) => s.unsubscribe())
-  }
+  protected readonly leftSideBarIsOpen = this.layout.leftSideBarIsOpen
+  protected readonly user = this.store.user
+  protected readonly userAvatar = this.store.userAvatarUrl
 
   openSidebarUser() {
     this.layout.showRSideBarTab(TAB_MENU.PROFILE)

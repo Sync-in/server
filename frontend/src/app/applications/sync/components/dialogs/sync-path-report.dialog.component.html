@@ -9,108 +9,111 @@
 <div class="modal-body sync-report-body">
   <div class="sync-report-layout">
     <div class="card dialog-tab-card sync-report-toolbar">
-        <div class="sync-report-top-menu">
-          <button (click)="manageReport(!running)" class="btn btn-default ms-1" type="button">
-            <svg [lucideIcon]="running ? icons.LucideSquare : icons.LucideFlaskConical"></svg>
-            <span l10nTranslate>Simulate</span>
-          </button>
-          <div class="sync-report-summary ms-3">
-            @if (running) {
-              <svg [lucideIcon]="icons.LucideLoader" class="me-2 icon-spin"></svg>
-            }
-            @if (transfers().length) {
-              <span class="badge bg-default sync-report-count-badge">{{ 'nb_actions' | translate:locale.language:{ nb: count.actions } }}</span>
-            }
-          </div>
+      <div class="sync-report-top-menu">
+        <button (click)="manageReport(!running())" class="btn btn-default ms-1" type="button">
+          <svg [lucideIcon]="running() ? icons.LucideSquare : icons.LucideFlaskConical"></svg>
+          <span l10nTranslate>Simulate</span>
+        </button>
+        <div class="sync-report-summary ms-3">
+          @if (running()) {
+            <svg [lucideIcon]="icons.LucideLoader" class="me-2 icon-spin"></svg>
+          }
+          @if (transfers().length) {
+            <span class="badge bg-default sync-report-count-badge">{{ 'nb_actions' | translate: locale.language : { nb: count().actions } }}</span>
+          }
+        </div>
 
-          <div class="d-flex align-items-center ms-auto">
-            @if (count.filtered) {
-              <button [(ngModel)]="this.showFiltered"
-                      [tooltip]="'Show filtered files'|translate:locale.language"
-                      placement="top"
-                      class="btn btn-custom me-2"
-                      role="button"
-                      type="button"
-                      btnCheckbox>
-                <svg [lucideIcon]="icons.LucideFunnel"></svg>
-                <span>{{ count.filtered }}</span>
+        <div class="d-flex align-items-center ms-auto">
+          @if (count().filtered) {
+            <button
+              [ngModel]="showFiltered()"
+              (ngModelChange)="showFiltered.set($event)"
+              [tooltip]="'Show filtered files' | translate: locale.language"
+              placement="top"
+              class="btn btn-custom me-2"
+              role="button"
+              type="button"
+              btnCheckbox
+            >
+              <svg [lucideIcon]="icons.LucideFunnel"></svg>
+              <span>{{ count().filtered }}</span>
+            </button>
+          }
+          <div [tooltip]="'Go to' | translate: locale.language">
+            <div [isDisabled]="!transferSelected()" class="btn-group me-2" dropdown>
+              <button class="btn btn-default dropdown-toggle" dropdownToggle type="button">
+                <svg [lucideIcon]="icons.LucideMapPin"></svg>
               </button>
-            }
-            <div [tooltip]="'Go to' | translate:locale.language">
-              <div [isDisabled]="!transferSelected" class="btn-group me-2" dropdown>
-                <button class="btn btn-default dropdown-toggle" dropdownToggle type="button">
-                  <svg [lucideIcon]="icons.LucideMapPin"></svg>
-                </button>
-                <ul *dropdownMenu class="dropdown-menu" role="menu">
-                  <li role="menuitem">
-                    <a (click)="goToPath()" class="dropdown-item">
+              <ul *dropdownMenu class="dropdown-menu" role="menu">
+                <li role="menuitem">
+                  <a (click)="goToPath()" class="dropdown-item">
                     <span l10nTranslate>
                       <svg [lucideIcon]="icons.CLIENT"></svg>
                       <span class="ms-2">Client</span>
                     </span>
+                  </a>
+                </li>
+                @if (transferSelected()?.action !== SYNC_TRANSFER_ACTION.FILTERED) {
+                  <li role="menuitem">
+                    <a (click)="goToPath(false)" class="dropdown-item">
+                      <span l10nTranslate>
+                        <svg [lucideIcon]="icons.SERVER"></svg>
+                        <span class="ms-2">Server</span>
+                      </span>
                     </a>
                   </li>
-                  @if (transferSelected.action !== SYNC_TRANSFER_ACTION.FILTERED) {
-                    <li role="menuitem">
-                      <a (click)="goToPath(false)" class="dropdown-item">
-                        <span l10nTranslate>
-                          <svg [lucideIcon]="icons.SERVER"></svg>
-                          <span class="ms-2">Server</span>
-                        </span>
-                      </a>
-                    </li>
-                  }
-                </ul>
-              </div>
+                }
+              </ul>
             </div>
           </div>
-          <!--Start Filter Button-->
-          <app-input-filter></app-input-filter>
-          <!--End Filter Button-->
         </div>
+        <!--Start Filter Button-->
+        <app-input-filter></app-input-filter>
+        <!--End Filter Button-->
+      </div>
     </div>
     <div class="card dialog-tab-card sync-report-results">
       <div class="card-body">
-        @if (hasNoChanges) {
+        @if (hasNoChanges()) {
           <div class="sync-report-empty" l10nTranslate>No differences</div>
         } @else {
           <table class="app-table">
             <thead>
-            <tr>
-              @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
-                @if (th.value.show) {
-                  <th (click)="sortBy(th.key)"
+              <tr>
+                @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
+                  @if (th.value.show) {
+                    <th
+                      (click)="sortBy(th.key)"
                       [style.width.%]="th.value.width"
                       [class.text-align-center]="th.value.textCenter"
                       [class.cursor-pointer]="th.value.sortable"
-                      class="{{th.value.class}}"
-                      l10nTranslate>
-                    {{ th.value.label }}
-                    @if (sortTable.sortParam.column === th.key) {
-                      <svg [lucideIcon]="sortTable.sortParam.asc ? icons.LucideArrowDown : icons.LucideArrowUp"></svg>
-                    }
-                  </th>
+                      class="{{ th.value.class }}"
+                      l10nTranslate
+                    >
+                      {{ th.value.label }}
+                      @if (sortTable.sortParam.column === th.key) {
+                        <svg [lucideIcon]="sortTable.sortParam.asc ? icons.LucideArrowDown : icons.LucideArrowUp"></svg>
+                      }
+                    </th>
+                  }
                 }
-              }
-            </tr>
+              </tr>
             </thead>
           </table>
         }
         <div [resizeOffset]="275" [useMaxHeight]="false" appAutoResize class="sync-report-table-scroll bg-white">
           <table class="app-table">
             <tbody tabindex="-1">
-              @for (s of transfers() | searchFilter:inputFilter.search() | paginate:currentPage:itemsPerPage; track s.nbTasks) {
-                @if (!s.isFiltered || showFiltered && s.isFiltered) {
-                  <tr (click)="onSelect(s)" [class.selected]="this.transferSelected && this.transferSelected.nbTasks === s.nbTasks">
+              @for (s of transfers() | searchFilter: inputFilter.search() | paginate: currentPage() : itemsPerPage; track s) {
+                @if (!s.isFiltered || (showFiltered() && s.isFiltered)) {
+                  <tr (click)="onSelect(s)" [class.selected]="transferSelected() === s">
                     @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
                       @if (th.value.show) {
-                        <td [style.width.%]="th.value.width"
-                            [class.text-align-center]="th.value.textCenter"
-                            class="{{th.value.class}}">
+                        <td [style.width.%]="th.value.width" [class.text-align-center]="th.value.textCenter" class="{{ th.value.class }}">
                           @switch (th.key) {
                             @case ('action') {
-                              <span class="d-flex align-items-center" [title]="s.actionText | translate:locale.language">
-                                <span class="{{s.sideIconClass}} me-1">
+                              <span class="d-flex align-items-center" [title]="s.actionText | translate: locale.language">
+                                <span class="{{ s.sideIconClass }} me-1">
                                   <svg [lucideIcon]="s.sideIcon" class="fs-lg"></svg>
                                 </span>
                                 <span class="circle-gray-icon-sm">
@@ -120,15 +123,17 @@
                             }
                             @case ('file') {
                               <div class="d-flex align-items-center fs-sm">
-                                <img [src]="s.mimeUrl" (error)="s.fallBackMimeUrl()" class="me-2" alt="" width="24">
+                                <img [src]="s.mimeUrl" (error)="s.fallBackMimeUrl()" class="me-2" alt="" width="24" />
                                 <span class="d-flex flex-column fs-sm">
-                              @if (s.fileDst) {
-                                <span class="{{s.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}}">{{ s.fileDst }}</span>
-                                <span class="{{s.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} fs-sm"><b l10nTranslate>Source</b>:&nbsp;{{ s.file }}</span>
-                              } @else {
-                                <span class="{{s.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}}">{{ s.file }}</span>
-                              }
-                              </span>
+                                  @if (s.fileDst) {
+                                    <span class="{{ transferSelected() === s ? 'overflow-wrap-and-whitespace' : 'truncate' }}">{{ s.fileDst }}</span>
+                                    <span class="{{ transferSelected() === s ? 'overflow-wrap-and-whitespace' : 'truncate' }} fs-sm"
+                                      ><b l10nTranslate>Source</b>:&nbsp;{{ s.file }}</span
+                                    >
+                                  } @else {
+                                    <span class="{{ transferSelected() === s ? 'overflow-wrap-and-whitespace' : 'truncate' }}">{{ s.file }}</span>
+                                  }
+                                </span>
                               </div>
                             }
                           }
@@ -146,17 +151,20 @@
   </div>
 </div>
 <div class="modal-footer justify-content-center align-items-center fs-sm">
-  <pagination class="pagination sync-report-pagination"
-              style="margin-bottom: -.6rem;"
-              (pageChanged)="pageChanged()"
-              [(ngModel)]="currentPage"
-              [boundaryLinks]="true"
-              [itemsPerPage]=itemsPerPage
-              [maxSize]="20"
-              [totalItems]="transfers().length"
-              previousText="&lsaquo;"
-              nextText="&rsaquo;"
-              firstText="&laquo;"
-              lastText="&raquo;">
+  <pagination
+    class="pagination sync-report-pagination"
+    style="margin-bottom: -0.6rem"
+    (pageChanged)="pageChanged()"
+    [ngModel]="currentPage()"
+    (ngModelChange)="currentPage.set($event)"
+    [boundaryLinks]="true"
+    [itemsPerPage]="itemsPerPage"
+    [maxSize]="20"
+    [totalItems]="transfers().length"
+    previousText="&lsaquo;"
+    nextText="&rsaquo;"
+    firstText="&laquo;"
+    lastText="&raquo;"
+  >
   </pagination>
 </div>

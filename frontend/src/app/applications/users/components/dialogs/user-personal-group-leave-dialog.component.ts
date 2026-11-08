@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideLogOut } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -16,7 +16,7 @@ import { UserService } from '../../user.service'
 export class UserPersonalGroupLeaveDialogComponent {
   @Input({ required: true }) member: MemberModel
   @Output() wasLeft = new EventEmitter<boolean>()
-  protected submitted = false
+  protected readonly submitted = signal(false)
   protected readonly icons = { GROUPS: USER_ICON.GROUPS, LucideLogOut }
   private readonly layout = inject(LayoutService)
   private readonly userService = inject(UserService)
@@ -27,7 +27,7 @@ export class UserPersonalGroupLeaveDialogComponent {
   }
 
   onSubmit() {
-    this.submitted = true
+    this.submitted.set(true)
     this.userService.leavePersonalGroup(this.member.id).subscribe({
       next: () => {
         this.wasLeft.emit(true)
@@ -35,7 +35,7 @@ export class UserPersonalGroupLeaveDialogComponent {
         this.onClose()
       },
       error: (e: HttpErrorResponse) => {
-        this.submitted = false
+        this.submitted.set(false)
         this.layout.sendNotification('error', 'The group was not left', this.member.name, e)
       }
     })

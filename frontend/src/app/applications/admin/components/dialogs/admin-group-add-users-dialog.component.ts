@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideUserRoundPlus } from '@lucide/angular'
 import { GROUP_TYPE } from '@sync-in-server/backend/src/applications/users/constants/group'
 import { USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -22,8 +22,8 @@ export class AdminGroupAddUsersDialogComponent {
   @Input({ required: true }) currentMemberIds: number[] = []
   @Output() hasChanges = new EventEmitter<boolean>()
   protected readonly layout = inject(LayoutService)
-  protected newMembers: MemberModel[] = []
-  protected submitted = false
+  protected readonly newMembers = signal<MemberModel[]>([])
+  protected readonly submitted = signal(false)
   protected readonly icons = { LucideUserRoundPlus }
   private readonly adminService = inject(AdminService)
 
@@ -32,27 +32,43 @@ export class AdminGroupAddUsersDialogComponent {
       search: query,
       onlyUsers: true,
       usersRole: this.parentGroup.type === GROUP_TYPE.USER ? USER_ROLE.USER : undefined,
-      ignoreUserIds: [...this.currentMemberIds, ...this.newMembers.map((m) => m.id)]
+      ignoreUserIds: [...this.currentMemberIds, ...this.newMembers().map((m) => m.id)]
     }
     return this.adminService.searchMembers(search)
   }
 
   onSubmit() {
-    this.submitted = true
+    this.submitted.set(true)
     this.adminService
       .addUsersToGroup(
         this.parentGroup.id,
-        this.newMembers.map((m) => m.id)
+        this.newMembers().map((m) => m.id)
       )
       .subscribe({
         next: () => {
           this.hasChanges.emit(true)
-          this.layout.sendNotification('success', 'Add members', this.newMembers.map((m) => m.name).join('<br>'), null, { enableHtml: true })
+          this.layout.sendNotification(
+            'success',
+            'Add members',
+            this.newMembers()
+              .map((m) => m.name)
+              .join('<br>'),
+            null,
+            { enableHtml: true }
+          )
           this.layout.closeDialog()
         },
         error: (e: HttpErrorResponse) => {
-          this.submitted = false
-          this.layout.sendNotification('error', 'Add members', this.newMembers.map((m) => m.name).join('<br>'), e, { enableHtml: true })
+          this.submitted.set(false)
+          this.layout.sendNotification(
+            'error',
+            'Add members',
+            this.newMembers()
+              .map((m) => m.name)
+              .join('<br>'),
+            e,
+            { enableHtml: true }
+          )
         }
       })
   }

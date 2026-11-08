@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core'
+import { Component, inject, OnInit, signal, ViewChild, viewChild } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 import {
   LucideArrowDown,
@@ -60,14 +60,10 @@ import { LinkDialogComponent } from './dialogs/link-dialog.component'
   templateUrl: 'links.component.html'
 })
 export class LinksComponent implements OnInit {
-  @ViewChild(VirtualScrollComponent) scrollView: {
-    element: ElementRef
-    viewPortItems: ShareLinkModel[]
-    scrollInto: (arg: ShareLinkModel | number) => void
-  }
+  protected readonly scrollView = viewChild<VirtualScrollComponent<ShareLinkModel>>(VirtualScrollComponent)
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
-  @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
-  @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
+  readonly targetContextMenu = viewChild.required<ContextMenuComponent<any>>('TargetContextMenu')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly navbarSearch = inject(NavbarSearchService)
@@ -87,11 +83,7 @@ export class LinksComponent implements OnInit {
   }
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly TAB_MENU = TAB_MENU
-  protected loading = false
-  protected linkWasCopied = false
-  protected galleryMode: ViewMode
-  protected shares: ShareLinkModel[] = []
-  protected selected: ShareLinkModel = null
+  protected readonly galleryMode = signal<ViewMode>(undefined)
   // Sort
   protected tableHeaders: Record<'name' | 'link' | 'from' | 'info' | 'permissions' | 'accessed', TableHeaderConfig> = {
     name: {
@@ -137,6 +129,10 @@ export class LinksComponent implements OnInit {
     }
   }
   private readonly activatedRoute = inject(ActivatedRoute)
+  protected readonly loading = signal(false)
+  protected readonly linkWasCopied = signal(false)
+  protected readonly shares = signal<ShareLinkModel[]>([])
+  protected readonly selected = signal<ShareLinkModel>(null)
   private readonly store = inject(StoreService)
   private readonly linksService = inject(LinksService)
   private readonly sharesService = inject(SharesService)
@@ -159,37 +155,37 @@ export class LinksComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.galleryMode = this.btnNavigationView.currentView()
+    this.galleryMode.set(this.btnNavigationView.currentView())
   }
 
   loadShareLinks() {
-    this.loading = true
+    this.loading.set(true)
     this.onSelect()
     this.linksService.shareLinksList().subscribe({
       next: (shares: ShareLinkModel[]) => {
         this.sortBy(this.sortTable.sortParam.column, false, shares)
-        this.loading = false
+        this.loading.set(false)
         if (this.focusOnSelect) {
           this.focusOn(this.focusOnSelect)
         } else {
-          this.scrollView.scrollInto(-1)
+          this.scrollView()?.scrollInto(-1)
         }
       },
       error: (e: HttpErrorResponse) => {
-        this.shares = []
-        this.loading = false
+        this.shares.set([])
+        this.loading.set(false)
         this.layout.sendNotification('error', 'Links', e.error.message)
       }
     })
   }
 
   sortBy(column: string, toUpdate = true, collection?: ShareLinkModel[]) {
-    this.shares = this.sortTable.sortBy(column, toUpdate, collection || this.shares)
+    this.shares.set(this.sortTable.sortBy(column, toUpdate, collection || this.shares()))
   }
 
   onSelect(share: ShareLinkModel = null) {
-    this.selected = share
-    this.store.linkSelection.set(this.selected)
+    this.selected.set(share)
+    this.store.linkSelection.set(this.selected())
   }
 
   onLinkActivate(share: ShareLinkModel) {
@@ -198,20 +194,21 @@ export class LinksComponent implements OnInit {
   }
 
   openLinkDialog() {
-    this.linksService.shareLink(this.selected.id).subscribe((share: ShareLinkModel) => {
+    this.linksService.shareLink(this.selected().id).subscribe((share: ShareLinkModel) => {
       const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'lg', {
         initialState: { share: share } as LinkDialogComponent
       })
       modalRef.content.shareChange.pipe(take(1)).subscribe((r: ['update' | 'delete', ShareLinkModel] | ['add', ShareModel]) => {
         const [action, s] = r
         if (action === 'update') {
-          this.selected = Object.assign(this.selected, s)
+          Object.assign(this.selected(), s)
+          this.notifyLinkMutation(this.selected()!)
         } else if (action === 'delete') {
           this.onSelect()
           this.sortBy(
             this.sortTable.sortParam.column,
             false,
-            this.shares.filter((share: ShareLinkModel) => share.id !== s.id)
+            this.shares().filter((item: ShareLinkModel) => item.id !== s.id)
           )
         }
       })
@@ -221,7 +218,7 @@ export class LinksComponent implements OnInit {
   onContextMenu(ev: any) {
     ev.preventDefault()
     ev.stopPropagation()
-    this.layout.openContextMenu(ev, this.mainContextMenu)
+    this.layout.openContextMenu(ev, this.mainContextMenu())
   }
 
   onTargetContextMenu(ev: any, share: ShareLinkModel) {
@@ -230,28 +227,35 @@ export class LinksComponent implements OnInit {
       ev.stopPropagation()
     }
     this.onSelect(share)
-    this.layout.openContextMenu(ev, this.targetContextMenu)
+    this.layout.openContextMenu(ev, this.targetContextMenu())
   }
 
   copyToClipboard() {
-    if (this.selected) {
-      this.linksService.copyLinkToClipboard(this.selected.link.uuid)
-      this.linkWasCopied = true
-      this.layout.sendNotification('info', 'Link copied', this.selected.file.name || this.selected.name)
-      setTimeout(() => (this.linkWasCopied = false), 3000)
+    if (this.selected()) {
+      this.linksService.copyLinkToClipboard(this.selected().link.uuid)
+      this.linkWasCopied.set(true)
+      this.layout.sendNotification('info', 'Link copied', this.selected().file.name || this.selected().name)
+      setTimeout(() => this.linkWasCopied.set(false), 3000)
     }
   }
 
   goTo(share?: ShareLinkModel) {
-    share = share || this.selected
+    share = share || this.selected()
     this.sharesService.goTo(share).catch(console.error)
   }
 
   private focusOn(select: string) {
-    const s = this.shares.find((share) => share.name === select)
-    if (s) {
-      setTimeout(() => this.scrollView.scrollInto(s), 100)
-      this.onSelect(s)
+    const share = this.shares().find((item) => item.name === select)
+    if (share) {
+      setTimeout(() => this.scrollView()?.scrollInto(share), 100)
+      this.onSelect(share)
+    }
+  }
+
+  private notifyLinkMutation(link: ShareLinkModel) {
+    this.shares.update((shares) => [...shares])
+    if (this.selected() === link) {
+      this.store.linkSelection.set(link)
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject } from '@angular/core'
+import { Component, inject, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { LucideDynamicIcon, LucidePlay, LucideSquare, LucideTrash } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -18,19 +18,24 @@ import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
 export class AdminToolsComponent {
   protected readonly icons = { LucideTrash, LucidePlay, LucideSquare }
   protected readonly IndexingState = IndexingState
-  protected confirmResetIndexing = false
-  protected indexingStatus: IndexingStatus = { indexesCount: 0, state: this.IndexingState.IDLE, lastFullRunAt: null, lastPartialRunAt: null }
+  protected readonly confirmResetIndexing = signal(false)
+  protected readonly indexingStatus = signal<IndexingStatus>({
+    indexesCount: 0,
+    state: this.IndexingState.IDLE,
+    lastFullRunAt: null,
+    lastPartialRunAt: null
+  })
   private readonly adminService = inject(AdminService)
   private readonly layout = inject(LayoutService)
-  private readonly destroyRef = inject(DestroyRef)
-
   constructor() {
     timer(0, 6_000)
       .pipe(
         switchMap(() => this.adminService.indexingStatus()),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed()
       )
-      .subscribe((r: IndexingStatus) => (this.indexingStatus = { ...r }))
+      .subscribe((r: IndexingStatus) => {
+        this.indexingStatus.set({ ...r })
+      })
     this.layout.setBreadcrumbIcon(ADMIN_ICON.TOOLS)
     this.layout.setBreadcrumbNav({
       url: `/${ADMIN_PATH.BASE}/${ADMIN_PATH.TOOLS}/${ADMIN_TITLE.TOOLS}`,
@@ -42,24 +47,24 @@ export class AdminToolsComponent {
 
   startIndexing() {
     this.adminService.startIndexing().subscribe((pending) => {
-      if (pending) this.indexingStatus.state = IndexingState.PENDING
+      if (pending) this.indexingStatus.update((status) => ({ ...status, state: IndexingState.PENDING }))
     })
   }
 
   stopIndexing() {
     this.adminService.stopIndexing().subscribe((stopping) => {
-      if (stopping) this.indexingStatus.state = IndexingState.STOPPING
+      if (stopping) this.indexingStatus.update((status) => ({ ...status, state: IndexingState.STOPPING }))
     })
   }
 
   dropIndexes() {
-    if (!this.confirmResetIndexing) {
-      this.confirmResetIndexing = true
+    if (!this.confirmResetIndexing()) {
+      this.confirmResetIndexing.set(true)
       return
     }
     this.adminService.dropIndexes().subscribe(() => {
-      this.indexingStatus.indexesCount = 0
-      this.confirmResetIndexing = false
+      this.indexingStatus.update((status) => ({ ...status, indexesCount: 0 }))
+      this.confirmResetIndexing.set(false)
     })
   }
 }

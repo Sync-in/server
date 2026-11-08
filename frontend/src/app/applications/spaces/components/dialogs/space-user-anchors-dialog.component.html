@@ -3,7 +3,7 @@
     <svg [lucideIcon]="icons.SPACES"></svg>
     <span>{{ space.name }}</span>
   </h4>
-  @if (loading) {
+  @if (loading()) {
     <svg [lucideIcon]="icons.LucideLoader" class="ms-2 icon-spin"></svg>
   }
   <h4 class="modal-title ms-auto">
@@ -12,8 +12,15 @@
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white ms-2" type="button"></button>
 </div>
 <div class="modal-body">
-  <app-space-manage-roots [space]="space" [user]="user" [showUsers]="false" [addRootFile]="addRootFileEvent"></app-space-manage-roots>
-  @if (!space.roots.length) {
+  <app-space-manage-roots
+    [space]="space"
+    [roots]="roots()"
+    [user]="user"
+    [showUsers]="false"
+    [addRootFile]="addRootFileEvent"
+    (rootsChange)="roots.set($event)">
+  </app-space-manage-roots>
+  @if (!roots().length) {
     <span l10nTranslate>You have no files anchored on this space</span>
   }
 </div>
@@ -25,7 +32,7 @@
     File
   </button>
   <button (click)="layout.closeDialog()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
-  <button (click)="onSubmit()" [disabled]="submitted" class="btn btn-primary" type="button" l10nTranslate>
+  <button (click)="onSubmit()" [disabled]="submitted()" class="btn btn-primary" type="button" l10nTranslate>
     Confirm
   </button>
 </div>

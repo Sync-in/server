@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core'
 
 // Brand SVG paths from Font Awesome Free 7.3.1 by Fonticons, Inc.
 // Icons licensed under CC BY 4.0: https://fontawesome.com/license/free
@@ -9,7 +9,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core'
   host: {
     class: 'platform-icon',
     'aria-hidden': 'true',
-    '[style.font-size]': 'size'
+    '[style.font-size]': 'size()'
   },
   styles: [
     `
@@ -32,14 +32,14 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core'
   ]
 })
 export class PlatformIconComponent {
-  @Input({ required: true }) platform: string
-  @Input() size: string = null
+  readonly platform = input.required<string>()
+  readonly size = input<string | null>(null)
 
-  protected get platformFamily(): 'apple' | 'windows' | 'linux' | null {
-    const platform = this.platform?.toLowerCase()
+  protected readonly platformFamily = computed<'apple' | 'windows' | 'linux' | null>(() => {
+    const platform = this.platform()?.toLowerCase()
     if (platform === 'darwin' || platform === 'mac') return 'apple'
     if (platform?.startsWith('win')) return 'windows'
     if (platform?.startsWith('linux')) return 'linux'
     return null
-  }
+  })
 }

@@ -1,5 +1,5 @@
 import { KeyValuePipe } from '@angular/common'
-import { Component, effect, ElementRef, inject, ViewChild } from '@angular/core'
+import { Component, effect, inject, signal, untracked, viewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { LucideArrowDown, LucideArrowUp, LucideDynamicIcon, LucideRotateCw, LucideTrash } from '@lucide/angular'
@@ -27,15 +27,12 @@ import { SyncTransfersDeleteDialogComponent } from './dialogs/sync-transfers-del
   templateUrl: 'sync-transfers.component.html'
 })
 export class SyncTransfersComponent {
-  locale = inject<L10nLocale>(L10N_LOCALE)
-  @ViewChild(VirtualScrollComponent) scrollView: {
-    element: ElementRef
-    viewPortItems: SyncTransferModel[]
-    scrollInto: (arg: SyncTransferModel | number) => void
-  }
-  public action: string = null
-  public syncPathSelected: SyncPathModel = null
-  public transfers: SyncTransferModel[] = []
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly scrollView = viewChild<VirtualScrollComponent<SyncTransferModel>>(VirtualScrollComponent)
+  protected readonly action = signal<string | null>(null)
+  protected readonly syncPathSelected = signal<SyncPathModel | null>(null)
+  protected readonly transfers = signal<SyncTransferModel[]>([])
+
   protected readonly store = inject(StoreService)
   protected readonly navbarSearch = inject(NavbarSearchService)
   // Sort
@@ -100,13 +97,14 @@ export class SyncTransfersComponent {
       sameLink: true
     })
     effect(() => {
-      this.doSearch(this.navbarSearch.viewFilter())
+      const search = this.navbarSearch.viewFilter()
+      untracked(() => this.doSearch(search))
     })
     this.checkRouteState()
     if (this.focusOnSyncPathErrorsId) {
       const syncPath = this.store.clientSyncPaths().find((s) => s.id === this.focusOnSyncPathErrorsId)
       if (syncPath) {
-        this.syncPathSelected = syncPath
+        this.syncPathSelected.set(syncPath)
         this.onSelectAction('ERROR')
       } else {
         this.refresh()
@@ -123,54 +121,55 @@ export class SyncTransfersComponent {
 
   refresh() {
     this.onSelect()
-    this.syncService.getTransfers(this.syncPathSelected?.id, this.query).then((transfers: SyncTransfer[]) => {
-      this.transfers = transfers.map((t) => new SyncTransferModel(t))
-      this.scrollView?.scrollInto(-1)
+    this.syncService.getTransfers(this.syncPathSelected()?.id, this.query).then((transfers: SyncTransfer[]) => {
+      this.transfers.set(transfers.map((t) => new SyncTransferModel(t)))
+      this.scrollView()?.scrollInto(-1)
     })
   }
 
   onSelectPath(syncPath: SyncPathModel | null) {
-    this.syncPathSelected = syncPath
-    this.tableHeaders.sync.show = !this.syncPathSelected
+    this.syncPathSelected.set(syncPath)
+    this.tableHeaders.sync.show = !this.syncPathSelected()
     this.refresh()
   }
 
   onSelectAction(action: string | null) {
-    this.action = action
+    this.action.set(action)
     this.doQueryRefresh()
   }
 
   onSelect(t?: SyncTransferModel) {
-    for (const t of this.transfers.filter((l: SyncTransferModel) => l.selected)) {
+    for (const t of this.transfers().filter((l: SyncTransferModel) => l.selected)) {
       t.selected = false
     }
     if (t) {
       t.selected = true
     }
+    this.transfers.update((transfers) => [...transfers])
   }
 
   openClearDialog() {
     const modalRef: BsModalRef<SyncTransfersDeleteDialogComponent> = this.layout.openDialog(SyncTransfersDeleteDialogComponent, 'md', {
       initialState: {
-        syncPath: this.syncPathSelected || null
+        syncPath: this.syncPathSelected()
       } as SyncTransfersDeleteDialogComponent
     })
     modalRef.content.wasDeleted.pipe(take(1)).subscribe(() => this.refresh())
   }
 
   sortBy(column: string, toUpdate = true, collection?: SyncTransferModel[]) {
-    this.transfers = this.sortTable.sortBy(column, toUpdate, collection || this.transfers)
+    this.transfers.set(this.sortTable.sortBy(column, toUpdate, collection || this.transfers()))
   }
 
   private doQueryRefresh() {
-    if (this.search && this.action) {
-      if (this.action === 'ERROR') {
+    if (this.search && this.action()) {
+      if (this.action() === 'ERROR') {
         this.query = `(?=.*${this.search})(?=.*"ok":"false")`
       } else {
-        this.query = `(?=.*${this.search})(?=.*"action":"${this.action}")`
+        this.query = `(?=.*${this.search})(?=.*"action":"${this.action()}")`
       }
-    } else if (this.action) {
-      this.query = this.action === 'ERROR' ? '"ok":false' : `"action":"${this.action}"`
+    } else if (this.action()) {
+      this.query = this.action() === 'ERROR' ? '"ok":false' : `"action":"${this.action()}"`
     } else if (this.search) {
       this.query = this.search
     } else {

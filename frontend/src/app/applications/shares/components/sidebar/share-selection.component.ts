@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, InputSignal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, input, Signal } from '@angular/core'
 import { LucideDynamicIcon, LucideMessageSquareMore } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BadgeMembersComponent } from '../../../../common/components/badge-members.component'
@@ -29,7 +29,8 @@ import { ShareRepositoryComponent } from '../utils/share-repository.component'
   styles: ['.card {width: 100%; background: transparent; border: none}']
 })
 export class ShareSelectionComponent {
-  share: InputSignal<ShareFileModel> = input.required<ShareFileModel>()
+  readonly share = input.required<Signal<ShareFileModel>>()
+  protected readonly selectedShare = computed(() => this.share()(), { equal: () => false })
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly iconShares = SPACES_ICON.SHARES
   protected readonly LucideMessageSquareMore = LucideMessageSquareMore
@@ -44,6 +45,6 @@ export class ShareSelectionComponent {
   }
 
   goToComments() {
-    this.sharesService.goTo(this.share()).then(() => this.layout.showRSideBarTab(TAB_MENU.COMMENTS, true))
+    this.sharesService.goTo(this.selectedShare()).then(() => this.layout.showRSideBarTab(TAB_MENU.COMMENTS, true))
   }
 }

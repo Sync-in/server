@@ -1,5 +1,5 @@
 import { KeyValuePipe } from '@angular/common'
-import { Component, effect, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Component, effect, inject, OnDestroy, OnInit, signal, untracked, viewChild } from '@angular/core'
 import { Router } from '@angular/router'
 import {
   LucideArrowDown,
@@ -27,7 +27,6 @@ import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { Subscription } from 'rxjs'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
-import { AutoResizeDirective } from '../../../common/directives/auto-resize.directive'
 import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
 import { CapitalizePipe } from '../../../common/pipes/capitalize.pipe'
@@ -72,18 +71,14 @@ import { LiveTimeAgoPipe } from '../../../common/pipes/time-ago-live.pipe'
   templateUrl: 'sync-paths.component.html'
 })
 export class SyncPathsComponent implements OnInit, OnDestroy {
-  @ViewChild(VirtualScrollComponent) scrollView: {
-    element: ElementRef
-    viewPortItems: SyncPathModel[]
-    scrollInto: (arg: SyncPathModel | number) => void
-  }
-  @ViewChild(AutoResizeDirective, { static: true }) autoResize: AutoResizeDirective
-  @ViewChild('SyncPathContextMenu', { static: true }) syncPathContextMenu: ContextMenuComponent<any>
-  @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
+  protected readonly scrollView = viewChild<VirtualScrollComponent<SyncPathModel>>(VirtualScrollComponent)
+  readonly syncPathContextMenu = viewChild.required<ContextMenuComponent<any>>('SyncPathContextMenu')
+  readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
   // data
-  public syncsInProgress: SyncStatus[] = []
-  public syncPathSelected: SyncPathModel = null
-  public allSyncsRunning = false
+  private readonly syncsInProgress = signal<SyncStatus[]>([])
+  protected readonly syncPathSelected = signal<SyncPathModel | null>(null)
+  protected readonly allSyncsRunning = signal(false)
+
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly store = inject(StoreService)
   protected readonly navbarSearch = inject(NavbarSearchService)
@@ -184,7 +179,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
     lastSync: [{ prop: 'lastSync', type: 'date' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
-  private subscriptions: Subscription[] = []
+  private readonly subscriptions: Subscription[] = []
   private focusOnPathId: number = null
   private focusOnPathSettings = false
 
@@ -197,11 +192,15 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
       sameLink: true
     })
     effect(() => {
-      this.onSelect(this.store.clientSyncPaths().find((s) => s.id === this.syncPathSelected?.id))
+      const syncPaths = this.store.clientSyncPaths()
+      untracked(() => this.onSelect(syncPaths.find((s) => s.id === this.syncPathSelected()?.id)))
     })
-    this.subscriptions.push(this.store.clientSyncsWithErrors.subscribe((syncs: SyncStatus[]) => this.onSyncErrors(syncs)))
-    this.subscriptions.push(this.store.clientSyncs.subscribe((syncs: SyncStatus[]) => this.onSync(syncs)))
-    this.subscriptions.push(this.store.clientSyncTask.subscribe((syncTask: SyncTask) => this.onSyncTask(syncTask)))
+    effect(() => {
+      const syncs = this.store.clientSyncsWithErrors()
+      untracked(() => this.onSyncErrors(syncs))
+    })
+    this.subscriptions.push(this.store.clientSyncs.subscribe((syncs) => this.onSync(syncs)))
+    this.subscriptions.push(this.store.clientSyncTask.subscribe((syncTask) => this.onSyncTask(syncTask)))
     this.checkRouteState()
   }
 
@@ -210,7 +209,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
       const syncPath = this.store.clientSyncPaths().find((s) => s.id === this.focusOnPathId)
       if (syncPath) {
         this.onSelect(syncPath)
-        setTimeout(() => this.scrollView.scrollInto(syncPath), 200)
+        setTimeout(() => this.scrollView()?.scrollInto(syncPath), 200)
         if (this.focusOnPathSettings) {
           setTimeout(() => this.openSettingsDialog(), 500)
         }
@@ -219,51 +218,59 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    for (const sub of this.subscriptions) {
-      sub.unsubscribe()
+    for (const subscription of this.subscriptions) {
+      subscription.unsubscribe()
     }
   }
 
   onSelect(syncPath: SyncPathModel = null) {
-    this.syncPathSelected = syncPath
+    this.syncPathSelected.set(syncPath)
   }
 
   onSync(syncs: SyncStatus[]) {
-    this.syncsInProgress = syncs
-    for (const syncPath of this.store.clientSyncPaths()) {
-      if (this.syncsInProgress.find((s) => s.syncPathId === syncPath.id)) {
-        if (!syncPath.inSync) {
-          syncPath.setStatus(true)
+    this.syncsInProgress.set(syncs)
+    this.store.clientSyncPaths.update((syncPaths) => {
+      for (const syncPath of syncPaths) {
+        if (this.syncsInProgress().find((s) => s.syncPathId === syncPath.id)) {
+          if (!syncPath.inSync) {
+            syncPath.setStatus(true)
+          }
+        } else {
+          if (syncPath.inSync) {
+            syncPath.settings.lastSync = new Date()
+          }
+          syncPath.setStatus(false)
         }
-      } else {
-        if (syncPath.inSync) {
-          syncPath.settings.lastSync = new Date()
-        }
-        syncPath.setStatus(false)
       }
-    }
-    if (this.allSyncsRunning && !this.syncsInProgress.length) {
-      this.allSyncsRunning = false
+      return [...syncPaths]
+    })
+    if (this.allSyncsRunning() && !this.syncsInProgress().length) {
+      this.allSyncsRunning.set(false)
     }
   }
 
   onSyncErrors(syncs: SyncStatus[]) {
-    for (const syncPath of this.store.clientSyncPaths()) {
-      const sync = syncs.find((s) => s.syncPathId === syncPath.id)
-      const mainError = sync ? sync.mainError : null
-      if (syncPath.mainError !== mainError) {
-        syncPath.mainError = mainError
-        syncPath.setStatus(false)
+    this.store.clientSyncPaths.update((syncPaths) => {
+      for (const syncPath of syncPaths) {
+        const sync = syncs.find((s) => s.syncPathId === syncPath.id)
+        const mainError = sync ? sync.mainError : null
+        if (syncPath.mainError !== mainError) {
+          syncPath.mainError = mainError
+          syncPath.setStatus(false)
+        }
+        syncPath.lastErrors = sync ? sync.lastErrors : []
       }
-      syncPath.lastErrors = sync ? sync.lastErrors : []
-    }
+      return [...syncPaths]
+    })
   }
 
   onSyncTask(syncTask: SyncTask) {
-    const syncPath = this.store.clientSyncPaths().find((s) => s.id === syncTask.syncPathId)
-    if (syncPath) {
+    this.store.clientSyncPaths.update((syncPaths) => {
+      const syncPath = syncPaths.find((path) => path.id === syncTask.syncPathId)
+      if (!syncPath) return syncPaths
       syncPath.nbSyncTasks = syncTask.nbTasks
-    }
+      return [...syncPaths]
+    })
   }
 
   onRefresh() {
@@ -272,13 +279,13 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
   }
 
   doSync(run: boolean) {
-    this.syncService.doSync(run, [this.syncPathSelected.id], false)
+    this.syncService.doSync(run, [this.syncPathSelected()!.id], false)
   }
 
   doAllSyncs(run: boolean, async = true) {
     let ids: number[] = []
     if (run) {
-      this.allSyncsRunning = run
+      this.allSyncsRunning.set(run)
       ids = this.store
         .clientSyncPaths()
         .filter((s: SyncPathModel) => s.settings.enabled && !s.inSync)
@@ -295,14 +302,14 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
 
   openReportDialog() {
     this.layout.openDialog(SyncPathReportDialogComponent, 'xl', {
-      id: this.syncPathSelected.id,
-      initialState: { syncPath: this.syncPathSelected } as SyncPathReportDialogComponent
+      id: this.syncPathSelected()!.id,
+      initialState: { syncPath: this.syncPathSelected() } as SyncPathReportDialogComponent
     })
   }
 
   openSettingsDialog() {
     this.layout.openDialog(SyncPathSettingsDialogComponent, 'md', {
-      initialState: { syncPathSelected: this.syncPathSelected } as SyncPathSettingsDialogComponent
+      initialState: { syncPathSelected: this.syncPathSelected() } as SyncPathSettingsDialogComponent
     })
   }
 
@@ -312,7 +319,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
   }
 
   goToPath(local = true) {
-    this.syncService.goToPath(this.syncPathSelected, local)
+    this.syncService.goToPath(this.syncPathSelected()!, local)
   }
 
   addToSync() {
@@ -329,13 +336,13 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
       event.stopPropagation()
     }
     this.onSelect(syncPath)
-    this.layout.openContextMenu(event, this.syncPathContextMenu)
+    this.layout.openContextMenu(event, this.syncPathContextMenu())
   }
 
   onContextMenu(event: MouseEvent) {
     event.preventDefault()
     event.stopPropagation()
-    this.layout.openContextMenu(event, this.mainContextMenu)
+    this.layout.openContextMenu(event, this.mainContextMenu())
   }
 
   showErrors(syncPath: SyncPathModel) {

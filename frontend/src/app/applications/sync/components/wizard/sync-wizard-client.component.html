@@ -7,15 +7,20 @@
     </div>
   </div>
   <div class="d-flex flex-column h-100">
-    @if (syncService.wizard.localPath) {
+    @if (syncService.wizard().localPath) {
       <div class="d-flex flex-column my-auto">
-        <svg (click)="onReset()" [lucideIcon]="icons.LucideCircleX" class="position-absolute align-self-center cursor-pointer sync-wizard-reset-icon" style="margin-left: 85px"></svg>
-        <img [src]="syncService.wizard.localPath.mimeUrl" alt="" class="align-self-center mb-2" height="96">
-        <div class="align-self-center mt-2 fs-md word-break-all fw-500">{{ syncService.wizard.localPath.path }}</div>
-        @if (infoMsg) {
+        <svg
+          (click)="onReset()"
+          [lucideIcon]="icons.LucideCircleX"
+          class="position-absolute align-self-center cursor-pointer sync-wizard-reset-icon"
+          style="margin-left: 85px"
+        ></svg>
+        <img [src]="syncService.wizard().localPath.mimeUrl" alt="" class="align-self-center mb-2" height="96" />
+        <div class="align-self-center mt-2 fs-md word-break-all fw-500">{{ syncService.wizard().localPath.path }}</div>
+        @if (infoMsg()) {
           <div class="align-self-center text-warning mt-4">
-            <span l10nTranslate>{{ infoMsg }}</span>
-            <span class="text-bold ms-1">:&nbsp;{{ syncService.wizard.localPath.origin }}</span>
+            <span l10nTranslate>{{ infoMsg() }}</span>
+            <span class="text-bold ms-1">:&nbsp;{{ syncService.wizard().localPath.origin }}</span>
           </div>
         }
       </div>
@@ -37,7 +42,7 @@
         <svg [lucideIcon]="icons.LucideHardDriveDownload"></svg>
         Select a folder
       </button>
-      <button (click)="onNext()" [disabled]="!pathIsValid" class="btn btn-default ms-auto" type="button" l10nTranslate>
+      <button (click)="onNext()" [disabled]="!pathIsValid()" class="btn btn-default ms-auto" type="button" l10nTranslate>
         <svg [lucideIcon]="icons.LucideCircleArrowRight"></svg>
         Next
       </button>

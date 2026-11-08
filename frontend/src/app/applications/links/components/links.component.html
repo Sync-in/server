@@ -4,17 +4,17 @@
      role="toolbar">
   <button (click)="copyToClipboard()"
           [attr.aria-label]="'Copy link' | translate:locale.language"
-          [class.btn-default]="!linkWasCopied"
-          [class.btn-primary]="linkWasCopied"
-          [disabled]="!selected"
+          [class.btn-default]="!linkWasCopied()"
+          [class.btn-primary]="linkWasCopied()"
+          [disabled]="!selected()"
           class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
           type="button">
-    <svg [lucideIcon]="linkWasCopied? icons.LucideClipboardCheck : icons.LucideClipboard"></svg>
+    <svg [lucideIcon]="linkWasCopied() ? icons.LucideClipboardCheck : icons.LucideClipboard"></svg>
     <span class="app-top-menu-tool-bar__label" l10nTranslate>Copy link</span>
   </button>
   <button (click)="openLinkDialog()"
           [attr.aria-label]="'Edit link' | translate:locale.language"
-          [disabled]="!selected"
+          [disabled]="!selected()"
           class="btn btn-default app-top-menu-tool-bar__action--quiet"
           type="button">
     <svg [lucideIcon]="icons.LucidePencil"></svg>
@@ -22,7 +22,7 @@
   </button>
   <button (click)="goTo()"
           [attr.aria-label]="'Go to' | translate:locale.language"
-          [disabled]="!selected"
+          [disabled]="!selected()"
           class="btn btn-default"
           [tooltip]="'Go to' | translate:locale.language"
           type="button">
@@ -33,35 +33,36 @@
           class="d-none d-md-block btn btn-default"
           [tooltip]="'Refresh' | translate:locale.language"
           type="button">
-    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
+    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading() ? 'icon-spin' : ''"></svg>
   </button>
   <div class="d-flex align-items-center ms-auto">
     <!--Start View Button-->
-    <app-navigation-view (switchView)="galleryMode = $event">
+    <app-navigation-view (switchView)="galleryMode.set($event)">
     </app-navigation-view>
     <!--End View Button-->
   </div>
 </div>
 <!--End Top Menu-->
-@if (galleryMode?.enabled) {
+@let view = galleryMode();
+@if (view?.enabled) {
   <!--Start Gallery Content-->
-  <div [style.--gallery-card-size]="galleryMode.dimensions + 'px'"
-       [style.--gallery-badge-size]="galleryMode.badgeSize + 'px'"
-       [style.--gallery-image-size]="galleryMode.image + 'px'"
-       [style.--gallery-text-size]="galleryMode.textSize + 'px'"
+  <div [style.--gallery-card-size]="view.dimensions + 'px'"
+       [style.--gallery-badge-size]="view.badgeSize + 'px'"
+       [style.--gallery-image-size]="view.image + 'px'"
+       [style.--gallery-text-size]="view.textSize + 'px'"
        class="app-gallery">
     <app-virtual-scroll (contextmenu)="onContextMenu($event)"
-                        [childHeight]="galleryMode.dimensions"
-                        [childWidth]="galleryMode.dimensions"
-                        [items]="shares | searchFilter:navbarSearch.viewFilter()"
+                        [childHeight]="view.dimensions"
+                        [childWidth]="view.dimensions"
+                        [items]="shares() | searchFilter:navbarSearch.viewFilter()"
                         [galleryMode]="true"
                         [resizeOffset]="115">
       <div class="row g-0" tabindex="-1">
-        @for (s of scrollView?.viewPortItems; track s.id) {
+        @for (s of scrollView()?.viewPortItems(); track s.id) {
           <div (click)="onSelect(s)"
                (contextmenu)="onTargetContextMenu($event, s)"
                (appTap)="onLinkActivate(s)"
-               [class.selected]="s.id === selected?.id"
+               [class.selected]="s.id === selected()?.id"
                [class.disabled]="!s.link.isActive"
                class="card">
             <div [attr.rowIndex]="$index" class="card-body">
@@ -91,7 +92,7 @@
                 }
               </span>
               <span class="label-bottom-left">
-                <app-share-repository [share]="s" [galleryMode]="galleryMode"></app-share-repository>
+                <app-share-repository [share]="s" [galleryMode]="view"></app-share-repository>
               </span>
             </div>
             <div class="card-footer text-center text-truncate p-1">
@@ -128,14 +129,14 @@
   </table>
   <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                       [bufferAmount]="5"
-                      [items]="shares | searchFilter:navbarSearch.viewFilter()">
+                      [items]="shares() | searchFilter:navbarSearch.viewFilter()">
     <table class="app-table">
       <tbody tabindex="-1">
-        @for (s of scrollView?.viewPortItems; track s.id) {
+        @for (s of scrollView()?.viewPortItems(); track s.id) {
           <tr (click)="onSelect(s)"
               (contextmenu)="onTargetContextMenu($event, s)"
               (appTap)="onLinkActivate(s)"
-              [class.selected]="s.id === selected?.id"
+              [class.selected]="s.id === selected()?.id"
               [class.disabled]="!s.link.isActive">
             @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
               @if (th.value.show) {
@@ -212,7 +213,7 @@
 }
 <!--Start Foot Content-->
 <div class="app-foot-menu">
-  <span class="mx-auto">{{ shares.length }} {{ 'shares' | translate:locale.language }}</span>
+  <span class="mx-auto">{{ shares().length }} {{ 'shares' | translate:locale.language }}</span>
 </div>
 <!--End Foot Content-->
 <!--Start Context Menu -->

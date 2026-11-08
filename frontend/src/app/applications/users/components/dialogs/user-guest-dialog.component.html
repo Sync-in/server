@@ -7,7 +7,7 @@
       <svg [lucideIcon]="icons.LucidePlus"></svg>
       <span l10nTranslate>New guest</span>
     }
-    @if (loading) {
+    @if (loading()) {
       <svg [lucideIcon]="icons.LucideLoader" class="ms-2 icon-spin"></svg>
     }
   </h4>
@@ -21,7 +21,7 @@
 <div class="modal-body" [formGroup]="guestForm">
   <tabset [justified]="true" type="pills">
 
-    <tab (selectTab)="tabView=null" customClass="tab-dialog form-validation">
+    <tab customClass="tab-dialog form-validation">
       <ng-template tabHeading>
         <span class="app-tab-heading">
           <svg [lucideIcon]="icons.LucideUserRoundCog"></svg>
@@ -183,7 +183,7 @@
       </div>
     </tab>
 
-    <tab (selectTab)="tabView='managers'" customClass="tab-dialog">
+    <tab customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
           <svg [lucideIcon]="icons.LucideUsersRound"></svg>
@@ -205,7 +205,7 @@
       </div>
     </tab>
 
-    <tab (selectTab)="tabView='groups'" customClass="tab-dialog">
+    <tab customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
           <svg [lucideIcon]="icons.LucideUsersRound"></svg>
@@ -227,17 +227,17 @@
 </div>
 <div class="modal-footer">
   @if (guest?.id) {
-    <button (click)="confirmDeletion = true"
-            [disabled]="confirmDeletion"
+    <button (click)="confirmDeletion.set(true)"
+            [disabled]="confirmDeletion()"
             class="btn btn-danger" type="button" l10nTranslate>
       Remove
     </button>
   }
   <button (click)="onCancel()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="guestForm.invalid || submitted" class="btn {{confirmDeletion ? 'btn-danger' : 'btn-primary'}}"
+          [disabled]="guestForm.invalid || submitted()" class="btn {{confirmDeletion() ? 'btn-danger' : 'btn-primary'}}"
           type="button"
           l10nTranslate>
-    {{ confirmDeletion ? 'Confirm deletion' : 'Confirm' }}
+    {{ confirmDeletion() ? 'Confirm deletion' : 'Confirm' }}
   </button>
 </div>

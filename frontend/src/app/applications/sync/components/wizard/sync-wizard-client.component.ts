@@ -1,4 +1,4 @@
-import { Component, inject, Renderer2 } from '@angular/core'
+import { Component, inject, Renderer2, signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { LucideCircleArrowRight, LucideCircleX, LucideDynamicIcon, LucideHardDriveDownload } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -18,8 +18,9 @@ import { isSameOrDescendantPath } from '../../sync.utils'
   templateUrl: 'sync-wizard-client.component.html'
 })
 export class SyncWizardClientComponent {
-  public pathIsValid = false
-  public infoMsg: string = null
+  protected readonly pathIsValid = signal(false)
+  protected readonly infoMsg = signal<string | null>(null)
+
   protected readonly syncService = inject(SyncService)
   protected readonly icons = { LucideCircleX, LucideCircleArrowRight, LucideHardDriveDownload }
   private readonly router = inject(Router)
@@ -35,7 +36,7 @@ export class SyncWizardClientComponent {
       translating: true,
       sameLink: true
     })
-    if (this.syncService.wizard.localPath) {
+    if (this.syncService.wizard().localPath) {
       this.checkSelection()
     }
     const routeState = this.router.currentNavigation()?.extras.state as { file: FileModel }
@@ -70,12 +71,12 @@ export class SyncWizardClientComponent {
     ev.stopPropagation()
     const element: FileSystemEntry = ev.dataTransfer.items[0].webkitGetAsEntry()
     if (element && element.isDirectory) {
-      this.syncService.wizard.localPath = {
+      this.syncService.setWizardLocalPath({
         name: element.name,
         path: this.syncService.getFilePath(ev.dataTransfer.files[0]),
         mimeUrl: getAssetsMimeUrl(mimeDirectory),
         origin: null
-      }
+      })
       this.checkSelection()
       return true
     } else {
@@ -86,21 +87,21 @@ export class SyncWizardClientComponent {
   onSelect() {
     this.syncService.showOpenDialog({ properties: [ELECTRON_DIALOG.DIRECTORY, ELECTRON_DIALOG.CREATE_DIRECTORY], defaultPath: '' }).then((ev) => {
       if (!ev.canceled) {
-        this.syncService.wizard.localPath = {
+        this.syncService.setWizardLocalPath({
           name: ev.filePaths[0].split('\\').pop().split('/').pop(),
           path: ev.filePaths[0],
           mimeUrl: getAssetsMimeUrl(mimeDirectory),
           origin: null
-        }
+        })
         this.checkSelection()
       }
     })
   }
 
   onReset() {
-    this.syncService.wizard.localPath = null
-    this.pathIsValid = false
-    this.infoMsg = null
+    this.syncService.setWizardLocalPath(null)
+    this.pathIsValid.set(false)
+    this.infoMsg.set(null)
   }
 
   onNext() {
@@ -115,15 +116,17 @@ export class SyncWizardClientComponent {
   private checkSelection() {
     const root = this.store
       .clientSyncPaths()
-      .find((sp: SyncPathModel) => isSameOrDescendantPath(sp.settings.localPath, this.syncService.wizard.localPath.path))
+      .find((sp: SyncPathModel) => isSameOrDescendantPath(sp.settings.localPath, this.syncService.wizard().localPath.path))
     if (root) {
-      this.pathIsValid = false
-      this.syncService.wizard.localPath.mimeUrl = getAssetsMimeUrl(`${mimeDirectory}_sync`)
-      this.syncService.wizard.localPath.origin = root.settings.localPath
-      this.infoMsg = 'The parent directory is already synced'
+      this.pathIsValid.set(false)
+      this.syncService.updateWizardLocalPath({
+        mimeUrl: getAssetsMimeUrl(`${mimeDirectory}_sync`),
+        origin: root.settings.localPath
+      })
+      this.infoMsg.set('The parent directory is already synced')
     } else {
-      this.infoMsg = null
-      this.pathIsValid = true
+      this.infoMsg.set(null)
+      this.pathIsValid.set(true)
     }
   }
 }

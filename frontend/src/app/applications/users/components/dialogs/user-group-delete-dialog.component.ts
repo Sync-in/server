@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideTrash, LucideUserMinus } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
@@ -18,13 +18,13 @@ export class UserGroupDeleteDialogComponent {
   @Input({ required: true }) parentGroup: GroupBrowseModel['parentGroup']
   @Input({ required: true }) member: MemberModel
   @Output() wasDeleted = new EventEmitter<boolean>()
-  protected submitted = false
+  protected readonly submitted = signal(false)
   protected readonly icons = { GROUPS: USER_ICON.GROUPS, LucideTrash, LucideUserMinus }
   private readonly layout = inject(LayoutService)
   private readonly userService = inject(UserService)
 
   onSubmit() {
-    this.submitted = true
+    this.submitted.set(true)
     const notification = this.member.isUser ? 'Remove from group' : 'Delete group'
     const action = this.member.isUser
       ? this.userService.removeUserFromGroup(this.parentGroup.id, this.member.id)
@@ -36,7 +36,7 @@ export class UserGroupDeleteDialogComponent {
         this.onClose()
       },
       error: (e: HttpErrorResponse) => {
-        this.submitted = false
+        this.submitted.set(false)
         this.layout.sendNotification('error', notification, this.member.name, e)
       }
     })

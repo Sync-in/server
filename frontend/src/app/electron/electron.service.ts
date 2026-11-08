@@ -1,6 +1,5 @@
-import { effect, inject, Injectable, NgZone } from '@angular/core'
+import { effect, inject, Injectable } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
-import { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import type { SyncClientAuthDto } from '@sync-in-server/backend/src/applications/sync/dtos/sync-client-auth.dto'
 import type {
   SyncClientAuthCookie,
@@ -36,14 +35,14 @@ declare global {
 export class Electron {
   public readonly enabled = checkIfElectronApp()
   public readonly ipcRenderer = this.enabled ? window.ipcRenderer : null
-  private readonly ngZone = inject(NgZone)
   private readonly store = inject(StoreService)
   private syncTasksCount: Record<number, number> = {}
 
   constructor() {
     this.store.isElectronApp.set(this.enabled)
     if (this.enabled) {
-      this.store.user.subscribe((user) => {
+      effect(() => {
+        const user = this.store.user()
         if (!user) return
         this.send(EVENT.APPLICATIONS.SYSTEM_NOTIFICATIONS, user.preferences?.useSystemNotifications ?? true)
       })
@@ -51,10 +50,10 @@ export class Electron {
         const count = this.store.notifications().filter((n: NotificationModel) => !n.wasRead).length
         this.send(EVENT.APPLICATIONS.COUNTER, CLIENT_APP_COUNTER.NOTIFICATIONS, count)
       })
-      this.store.filesActiveTasks.subscribe((tasks: FileTask[]) => this.send(EVENT.APPLICATIONS.COUNTER, CLIENT_APP_COUNTER.TASKS, tasks.length))
+      effect(() => this.send(EVENT.APPLICATIONS.COUNTER, CLIENT_APP_COUNTER.TASKS, this.store.filesActiveTasks().length))
       this.ipcRenderer.on(EVENT.SYNC.SCHEDULER_STATE, (_ev, state: CLIENT_SCHEDULER_STATE) => this.store.clientScheduler.set(state))
-      this.ipcRenderer.on(EVENT.SYNC.STATUS, (_ev, sync: SyncStatus) => this.ngZone.run(() => this.setSync(sync)))
-      this.ipcRenderer.on(EVENT.SYNC.TASKS_COUNT, (_ev, syncTask: SyncTask) => this.ngZone.run(() => this.setSyncTasksCount(syncTask)))
+      this.ipcRenderer.on(EVENT.SYNC.STATUS, (_ev, sync: SyncStatus) => this.setSync(sync))
+      this.ipcRenderer.on(EVENT.SYNC.TASKS_COUNT, (_ev, syncTask: SyncTask) => this.setSyncTasksCount(syncTask))
       this.updateSyncMenuIcon()
       this.getSyncsWithErrors()
       this.getClientSchedulerSettings()
@@ -140,19 +139,19 @@ export class Electron {
     if (sync.state) {
       this.store.clientSyncs.next([...this.store.clientSyncs.getValue(), sync])
     } else {
-      this.store.clientSyncs.next(this.store.clientSyncs.getValue().filter((s) => s.syncPathId !== sync.syncPathId))
+      this.store.clientSyncs.next(this.store.clientSyncs.getValue().filter((item) => item.syncPathId !== sync.syncPathId))
       this.setSyncTasksCount({ syncPathId: sync.syncPathId, nbTasks: 0 })
       if (sync.lastErrors.length || sync.mainError) {
-        this.store.clientSyncsWithErrors.next([...this.store.clientSyncsWithErrors.getValue().filter((s) => s.syncPathId !== sync.syncPathId), sync])
+        this.store.clientSyncsWithErrors.update((syncs) => [...syncs.filter((item) => item.syncPathId !== sync.syncPathId), sync])
       } else {
-        this.store.clientSyncsWithErrors.next(this.store.clientSyncsWithErrors.getValue().filter((s) => s.syncPathId !== sync.syncPathId))
+        this.store.clientSyncsWithErrors.update((syncs) => syncs.filter((item) => item.syncPathId !== sync.syncPathId))
       }
     }
     this.send(EVENT.APPLICATIONS.COUNTER, CLIENT_APP_COUNTER.SYNCS, this.store.clientSyncs.getValue().length)
   }
 
   private setSyncTasksCount(syncTask: SyncTask) {
-    if (!this.store.clientSyncs.getValue().find((s) => s.syncPathId === syncTask.syncPathId)) {
+    if (!this.store.clientSyncs.getValue().find((sync) => sync.syncPathId === syncTask.syncPathId)) {
       syncTask.nbTasks = 0
     }
     this.store.clientSyncTask.next(syncTask)
@@ -163,7 +162,7 @@ export class Electron {
     } else {
       this.syncTasksCount[syncTask.syncPathId] = syncTask.nbTasks
     }
-    this.store.clientSyncTasksCount.next(Object.values(this.syncTasksCount).reduce((a, b) => a + b, 0))
+    this.store.clientSyncTasksCount.set(Object.values(this.syncTasksCount).reduce((a, b) => a + b, 0))
   }
 
   private getClientSchedulerSettings() {
@@ -172,7 +171,7 @@ export class Electron {
 
   private getSyncsWithErrors() {
     this.invoke(EVENT.SYNC.ERRORS)
-      .then((syncs: SyncStatus[]) => this.store.clientSyncsWithErrors.next(syncs))
+      .then((syncs: SyncStatus[]) => this.store.clientSyncsWithErrors.set(syncs))
       .catch(console.error)
   }
 
@@ -203,19 +202,19 @@ export class Electron {
   }
 
   private updateSyncMenuIcon() {
-    combineLatest([this.store.clientSyncs, this.store.clientSyncsWithErrors, toObservable(this.store.clientScheduler)]).subscribe(
+    combineLatest([this.store.clientSyncs, toObservable(this.store.clientSyncsWithErrors), toObservable(this.store.clientScheduler)]).subscribe(
       ([syncs, errors, scheduler]) => {
         if (syncs.length) {
-          SYNC_MENU.count.level = 'purple'
-          SYNC_MENU.count.value.next(syncs.length)
-        } else if (errors.find((s: SyncStatus) => s.lastErrors.length || !!s.mainError)) {
-          SYNC_MENU.count.level = 'danger'
-          SYNC_MENU.count.value.next('!')
+          SYNC_MENU.count.level.set('purple')
+          SYNC_MENU.count.value.set(syncs.length)
+        } else if (errors.find((sync: SyncStatus) => sync.lastErrors.length || !!sync.mainError)) {
+          SYNC_MENU.count.level.set('danger')
+          SYNC_MENU.count.value.set('!')
         } else if (scheduler === CLIENT_SCHEDULER_STATE.DISABLED) {
-          SYNC_MENU.count.level = 'warning'
-          SYNC_MENU.count.value.next('!')
+          SYNC_MENU.count.level.set('warning')
+          SYNC_MENU.count.value.set('!')
         } else {
-          SYNC_MENU.count.value.next(0)
+          SYNC_MENU.count.value.set(0)
         }
       }
     )

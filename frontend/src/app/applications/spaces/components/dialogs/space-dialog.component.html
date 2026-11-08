@@ -6,7 +6,7 @@
     } @else {
       <span l10nTranslate>Create a new space</span>
     }
-    @if (loading) {
+    @if (loading()) {
       <svg [lucideIcon]="icons.LucideLoader" class="ms-2 icon-spin"></svg>
     }
   </h4>
@@ -23,7 +23,7 @@
 </div>
 <div class="modal-body">
   <tabset [justified]="true" type="pills">
-    <tab (selectTab)="tabView=null" customClass="tab-dialog">
+    <tab (selectTab)="tabView.set(undefined)" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
           <svg [lucideIcon]="icons.LucideSettings"></svg>
@@ -116,19 +116,19 @@
         <div class="col-12 col-lg-6 d-flex flex-column">
           <div class="card dialog-tab-card flex-grow-1 d-flex mb-3">
             <div class="card-body d-flex flex-column">
-              <div (click)="editManagers = !editManagers" type="button">
+              <div (click)="editManagers.set(!editManagers())" type="button">
                 <label for="editManagers" class="form-label no-select-pointer" l10nTranslate>Managers</label>
                 <svg id="editManagers" class="ms-1" [lucideIcon]="icons.LucidePencil"></svg>
               </div>
               <app-user-search
                 [(members)]="space.managers"
                 [searchFunction]="searchManagers.bind(this)"
-                [editMode]="editManagers"
-                [hideInput]="!editManagers"
+                [editMode]="editManagers()"
+                [hideInput]="!editManagers()"
                 [rowBackgroundClass]="''"
                 [customPlaceholder]="'Type to search for managers to add'">
               </app-user-search>
-              @if (!space.managers.length && !confirmDeletion) {
+              @if (!space.managers.length && !confirmDeletion()) {
                 <small class="text-danger" l10nTranslate>At least one manager is required</small>
               }
             </div>
@@ -159,7 +159,7 @@
       </div>
     </tab>
 
-    <tab (selectTab)="tabView='roots'" customClass="tab-dialog">
+    <tab (selectTab)="tabView.set('roots')" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
           <svg [lucideIcon]="icons.LucideAnchor"></svg>
@@ -168,11 +168,16 @@
         </span>
       </ng-template>
       <div class="app-tab-content">
-        <app-space-manage-roots [space]="space" [user]="user" [addRootFile]="addRootFileEvent"></app-space-manage-roots>
+        <app-space-manage-roots
+          [space]="space"
+          [user]="user"
+          [addRootFile]="addRootFileEvent"
+          (rootsChange)="space.roots = $event">
+        </app-space-manage-roots>
       </div>
     </tab>
 
-    <tab (selectTab)="tabView='members'" customClass="tab-dialog">
+    <tab (selectTab)="tabView.set('members')" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
           <svg [lucideIcon]="icons.LucideUsersRound"></svg>
@@ -188,16 +193,16 @@
       </div>
     </tab>
 
-    <tab (selectTab)="tabView='links'" customClass="tab-dialog">
+    <tab (selectTab)="tabView.set('links')" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
           <svg [lucideIcon]="icons.LINKS"></svg>
           <span class="app-tab-label" l10nTranslate>Links</span>
-          <span class="app-tab-count">{{ space.links.length }}</span>
+          <span class="app-tab-count">{{ viewSpace().links.length }}</span>
         </span>
       </ng-template>
       <div class="app-tab-content">
-        <app-user-search [(members)]="space.links"
+        <app-user-search [(members)]="viewSpace().links"
                          [filterPermissions]="true"
                          [allowedPermissions]="allowedLinkPermissions"
                          [withPermissions]="true"
@@ -209,10 +214,10 @@
   </tabset>
 </div>
 <div class="modal-footer">
-  @if (!tabView && space.id) {
+  @if (!tabView() && space.id) {
     @if (user.isAdmin) {
-      <button (click)="confirmDeletion = true"
-              [disabled]="confirmDeletion"
+      <button (click)="confirmDeletion.set(true)"
+              [disabled]="confirmDeletion()"
               class="btn btn-danger" type="button" l10nTranslate>
         Remove
       </button>
@@ -230,7 +235,7 @@
       </div>
     }
   }
-  @if (tabView === 'links') {
+  @if (tabView() === 'links') {
     <button (click)="openCreateLinkDialog()"
             class="btn btn-success" type="button" l10nTranslate>
       <svg [lucideIcon]="icons.LucidePlus"></svg>
@@ -238,7 +243,7 @@
       Link
     </button>
   }
-  @if (tabView === 'roots') {
+  @if (tabView() === 'roots') {
     <button (click)="openSelectRootDialog()"
             class="btn btn-success" type="button" l10nTranslate>
       <svg [lucideIcon]="icons.LucidePlus"></svg>
@@ -256,9 +261,9 @@
   }
   <button (click)="onCancel()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="cantSubmit()" class="btn {{confirmDeletion ? 'btn-danger' : 'btn-primary'}}"
+          [disabled]="cantSubmit()" class="btn {{confirmDeletion() ? 'btn-danger' : 'btn-primary'}}"
           type="button"
           l10nTranslate>
-    {{ confirmDeletion ? 'Confirm permanent deletion of data' : 'Confirm' }}
+    {{ confirmDeletion() ? 'Confirm permanent deletion of data' : 'Confirm' }}
   </button>
 </div>

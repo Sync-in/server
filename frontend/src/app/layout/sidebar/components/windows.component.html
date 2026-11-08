@@ -2,7 +2,7 @@
   <div class="sidebar-component-title-side"></div>
   <div class="sidebar-component-title-label" l10nTranslate>Windows Manager</div>
   <div class="sidebar-component-title-side">
-    @if (windows.length) {
+    @if (windows().length) {
       <button (click)="onCloseAll()"
               class="btn btn-default"
               type="button"
@@ -13,7 +13,7 @@
   </div>
 </div>
 <div class="sidebar-item" appAutoResize>
-  @for (modal of windows; track modal.id) {
+  @for (modal of windows(); track modal.id) {
     <div class="sidebar-item-container cursor-pointer" (click)="onMaximize(modal)">
       <div class="sidebar-item-content">
         <img [ngSrc]="modal.element.mimeUrl" alt="" width="28" height="28">

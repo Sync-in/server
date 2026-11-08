@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
 import { LucideDynamicIcon, LucidePencil, LucidePlus, LucideSettings, LucideShieldCheck } from '@lucide/angular'
 import { GROUP_VISIBILITY } from '@sync-in-server/backend/src/applications/users/constants/group'
@@ -45,8 +45,7 @@ export class AdminGroupDialogComponent implements OnInit {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly icons = { GROUPS: USER_ICON.GROUPS, LucidePencil, LucidePlus, LucideSettings, LucideShieldCheck }
-  protected tabView: undefined | 'permissions'
-  protected submitted = false
+  protected readonly submitted = signal(false)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly allVisibilities = {
     Visible: GROUP_VISIBILITY.VISIBLE,
@@ -93,7 +92,7 @@ export class AdminGroupDialogComponent implements OnInit {
   }
 
   onSubmit() {
-    this.submitted = true
+    this.submitted.set(true)
     if (this.group?.id) {
       // update
       const dto: CreateOrUpdateGroupDto = this.makeDto()
@@ -147,6 +146,6 @@ export class AdminGroupDialogComponent implements OnInit {
 
   private onError(e: HttpErrorResponse) {
     this.layout.sendNotification('error', 'Group error', this.groupForm.value.name, e)
-    this.submitted = false
+    this.submitted.set(false)
   }
 }

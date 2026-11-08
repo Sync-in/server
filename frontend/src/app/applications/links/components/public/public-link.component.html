@@ -4,21 +4,21 @@
     <div class="d-flex flex-column align-items-center mt-3 mb-1 mx-auto cursor-pointer">
       <div (click)="followLink()" class="resource">
         <div class="mime">
-          @if (file?.mimeUrl) {
-            <img [src]="file.mimeUrl" alt="" class="no-select-pointer" (error)="fallBackMimeUrl()">
+          @if (file()?.mimeUrl) {
+            <img [src]="file().mimeUrl" alt="" class="no-select-pointer" (error)="fallBackMimeUrl()">
           } @else {
             <span class="circle-primary-icon">
               <svg [lucideIcon]="icons.SPACES"></svg>
             </span>
           }
         </div>
-        <span class="mime-text">{{ link.share?.name || link.space?.name }}</span>
+        <span class="mime-text">{{ link().share?.name || link().space?.name }}</span>
       </div>
-      @if (file?.isDir === false) {
+      @if (file()?.isDir === false) {
         <div class="btn-group-action">
-          @if (file?.isViewable) {
+          @if (file()?.isViewable) {
             <button (click)="openLink()" class="btn btn-lg btn-outline-light me-2" l10nTranslate>
-              <svg [lucideIcon]="fileCanBeModified && file.isEditable ? icons.LucidePencil : icons.LucideEye"></svg>
+              <svg [lucideIcon]="fileCanBeModified() && file().isEditable ? icons.LucidePencil : icons.LucideEye"></svg>
             </button>
           }
           <button (click)="downloadLink()" class="btn btn-lg btn-outline-light">
@@ -31,15 +31,15 @@
   <div class="link-text">
     <span class="hr"></span>
     <div class="d-flex justify-content-center align-items-center">
-      @if (link.owner) {
-        <img [src]="link.owner.avatar" alt="" class="avatar-base-img me-3" width="42" height="42">
-        <span class="owner-text me-2">{{ link.owner.fullName }}</span>
+      @if (link().owner) {
+        <img [src]="link().owner.avatar" alt="" class="avatar-base-img me-3" width="42" height="42">
+        <span class="owner-text me-2">{{ link().owner.fullName }}</span>
       }
       <span class="info">
-      @if (link.space) {
+      @if (link().space) {
         <span l10nTranslate>You have been invited to join this space</span>
-      } @else if (link.owner) {
-        <span>{{ 'share with you this' | translate:locale.language }} {{ (link.share.isDir ? 'directory' : 'file') | translate:locale.language }}</span>
+      } @else if (link().owner) {
+        <span>{{ 'share with you this' | translate:locale.language }} {{ (link().share.isDir ? 'directory' : 'file') | translate:locale.language }}</span>
       } @else {
         <span l10nTranslate>You have been invited to join this share</span>
       }

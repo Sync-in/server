@@ -96,7 +96,7 @@ export class UserService {
   }
 
   get user() {
-    return this.store.user.getValue()
+    return this.store.user()
   }
 
   initUser(user: UserType, impersonate = false) {
@@ -104,7 +104,7 @@ export class UserService {
     this.layout.setLanguage(user.language).catch(console.error)
     if (!user.isLink) this.layout.setThemePreference(user.preferences.theme)
     this.store.userImpersonate.set(impersonate || user.impersonated)
-    this.store.user.next(user)
+    this.store.user.set(user)
     this.checkQuota(this.user)
     if (impersonate) {
       this.disconnectWebSocket()
@@ -120,7 +120,7 @@ export class UserService {
     this.loadUser().subscribe({
       next: (r: Omit<LoginResponseDto, 'token'>) => {
         if (!r.user.isLink) this.layout.setThemePreference(r.user.preferences.theme)
-        this.store.user.next(r.user)
+        this.store.user.set(r.user)
       },
       error: (e: HttpErrorResponse) => console.error(e)
     })
@@ -268,7 +268,7 @@ export class UserService {
         const user = this.user
         if (user?.id !== userId) return
         const preferences = { ...user.preferences, ...patch }
-        this.store.user.next({ ...user, preferences })
+        this.store.user.set({ ...user, preferences })
         if (patch.theme !== undefined) this.layout.setThemePreference(preferences.theme)
       })
     )
@@ -285,6 +285,7 @@ export class UserService {
   receiveOnlineStatus(userOnlineStatus: EventUpdateOnlineStatus) {
     if (this.user.id === userOnlineStatus.userId) {
       this.user.onlineStatus = userOnlineStatus.status
+      this.store.user.set(this.user)
     } else if (this.store.onlineUsers().length) {
       this.store.onlineUsers.update((users) =>
         users.map((user) =>
@@ -342,7 +343,7 @@ export class UserService {
   }
 
   refreshAvatar() {
-    this.store.userAvatarUrl.next(myAvatarUrl())
+    this.store.userAvatarUrl.set(myAvatarUrl())
   }
 
   checkAppStoreAvailability() {

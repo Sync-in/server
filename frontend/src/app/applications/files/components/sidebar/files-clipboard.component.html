@@ -16,11 +16,12 @@
     </button>
   </div>
 </div>
-@if (files.length) {
+@let clipboardFiles = files();
+@if (clipboardFiles.length) {
   <div class="px-2 pt-2 pb-2 fs-xs">
-    <app-files-summary [files]="files" class="mb-2"></app-files-summary>
+    <app-files-summary [files]="clipboardFiles" class="mb-2"></app-files-summary>
     <div class="d-flex">
-      <select [(ngModel)]="selectedAction" class="form-select form-select-sm">
+      <select [ngModel]="selectedAction()" (ngModelChange)="selectedAction.set($event)" class="form-select form-select-sm">
         @for (item of operations| keyvalue: originalOrderKeyValue; track item.key) {
           <option [ngValue]="item.key" l10nTranslate>{{ item.value.text }}</option>
         }
@@ -30,7 +31,7 @@
   </div>
   <hr class="mx-0 my-1">
   <div appAutoResize class="sidebar-item" [resizeOffset]="175">
-    @for (f of files; track f.id) {
+    @for (f of clipboardFiles; track f.id) {
       <div class="sidebar-item-container">
         <div class="sidebar-item-content" [tooltip]="fileLocation(f)">
           <img [src]="f.mimeUrl" alt="" height="28" width="28" (error)="f.fallBackMimeUrl()">

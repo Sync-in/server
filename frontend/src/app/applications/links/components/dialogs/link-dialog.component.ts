@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms'
 import { LucideClipboard, LucideClipboardCheck, LucideDynamicIcon, LucideEye, LucideEyeOff, LucideLock, LucideLockOpen } from '@lucide/angular'
 import type { FileSpace } from '@sync-in-server/backend/src/applications/files/interfaces/file-space.interface'
@@ -67,20 +67,20 @@ export class LinkDialogComponent implements OnInit {
   @Output() submitEvent = new EventEmitter<CreateOrUpdateLinkDto>()
   @Output() shareChange = new EventEmitter<['update' | 'delete', ShareLinkModel] | ['add', ShareModel]>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected confirmDeletion = false
-  protected submitted = false
+  protected readonly confirmDeletion = signal(false)
+  protected readonly submitted = signal(false)
   protected readonly SPACES_PERMISSIONS_TEXT = SPACES_PERMISSIONS_TEXT
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = { LucideEye, LucideEyeOff, links: SPACES_ICON.LINKS, LucideClipboard, LucideClipboardCheck, LucideLock, LucideLockOpen }
   protected readonly languages: string[] = this.layout.getLanguages()
   protected readonly minDate: Date = currentDate()
   protected readonly passwordMinLength = USER_PASSWORD_MIN_LENGTH
-  protected password = ''
-  protected passwordProtectionWasConfigured = false
+  protected readonly password = signal('')
+  protected readonly passwordProtectionWasConfigured = signal(false)
   protected permissions: Partial<Record<`${SPACE_OPERATION}`, boolean>>
-  protected linkIsExpired = false
-  protected linkWasCopied = false
-  protected publicLinkUrl = ''
+  protected readonly linkIsExpired = signal(false)
+  protected readonly linkWasCopied = signal(false)
+  protected readonly publicLinkUrl = signal('')
   protected shareFileContext: ShareModel | ShareLinkModel
   protected linkForm: FormGroup<{
     shareName: FormControl<string>
@@ -118,7 +118,7 @@ export class LinkDialogComponent implements OnInit {
       this.initShareLink()
     }
     this.updatePublicLinkUrl(this.share?.link?.uuid || this.link?.uuid)
-    this.passwordProtectionWasConfigured = this.linkForm.controls.requireAuth.value
+    this.passwordProtectionWasConfigured.set(this.linkForm.controls.requireAuth.value)
     if (this.linkForm.value.expiresAt) {
       this.isLinkIsExpired(this.share ? this.share.link.expiresAt : this.link.expiresAt)
     }
@@ -147,22 +147,22 @@ export class LinkDialogComponent implements OnInit {
 
   copyToClipboard() {
     this.linksService.copyLinkToClipboard(this.share ? this.share.link.uuid : this.link.uuid)
-    this.linkWasCopied = true
+    this.linkWasCopied.set(true)
     this.layout.sendNotification('info', `Link copied`, this.linkForm.value.name || this.linkForm.value.shareName)
-    setTimeout(() => (this.linkWasCopied = false), 3000)
+    setTimeout(() => this.linkWasCopied.set(false), 3000)
   }
 
   onCancel() {
-    if (this.confirmDeletion) {
-      this.confirmDeletion = false
+    if (this.confirmDeletion()) {
+      this.confirmDeletion.set(false)
     } else {
       this.layout.closeDialog()
     }
   }
 
   onSubmit() {
-    this.submitted = true
-    if (this.confirmDeletion) {
+    this.submitted.set(true)
+    if (this.confirmDeletion()) {
       // share case only
       const deleteShare: Observable<void> = this.parentSpaceId
         ? this.spacesService.deleteSpaceShare(this.parentSpaceId, this.share.id)
@@ -188,7 +188,7 @@ export class LinkDialogComponent implements OnInit {
       const linkGuest: LinkGuest & { password: string } = {
         ...link,
         ...this.linkForm.value,
-        password: this.mustIncludePassword() ? this.password : undefined
+        password: this.mustIncludePassword() ? this.password() : undefined
       }
       share.name = popFromObject('shareName', linkGuest)
       share.description = popFromObject('shareDescription', linkGuest)
@@ -214,7 +214,7 @@ export class LinkDialogComponent implements OnInit {
       }
     }
     if (this.mustIncludePassword()) {
-      update['password'] = this.password
+      update['password'] = this.password()
     }
 
     if (this.share?.id) {
@@ -312,7 +312,7 @@ export class LinkDialogComponent implements OnInit {
 
   private isLinkIsExpired(date: Date | string | null | undefined) {
     if (date === undefined || date === null) {
-      this.linkIsExpired = false
+      this.linkIsExpired.set(false)
       if (date === undefined) {
         // change value from undefined to null
         this.linkForm.controls.expiresAt.setValue(null)
@@ -320,14 +320,14 @@ export class LinkDialogComponent implements OnInit {
       return
     }
     const expirationDate = typeof date === 'string' ? currentDate(date) : date
-    this.linkIsExpired = currentDate() >= expirationDate
+    this.linkIsExpired.set(currentDate() >= expirationDate)
   }
 
   private updatePublicLinkUrl(uuid?: string) {
-    this.publicLinkUrl = uuid ? this.linksService.getPublicLinkUrl(uuid) : ''
+    this.publicLinkUrl.set(uuid ? this.linksService.getPublicLinkUrl(uuid) : '')
   }
 
   private mustIncludePassword(): boolean {
-    return this.linkForm.value.requireAuth && !!this.password.length
+    return this.linkForm.value.requireAuth && !!this.password().length
   }
 }

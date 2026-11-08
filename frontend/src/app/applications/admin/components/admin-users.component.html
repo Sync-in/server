@@ -3,25 +3,25 @@
      [attr.aria-label]="'Actions' | translate:locale.language"
      role="toolbar">
   <button (click)="openDialog(true)"
-          [attr.aria-label]="(guestsView ? 'New guest' : 'New user') | translate:locale.language"
+          [attr.aria-label]="(guestsView() ? 'New guest' : 'New user') | translate:locale.language"
           class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
-          [tooltip]="(guestsView ? 'New guest' : 'New user') | translate:locale.language"
+          [tooltip]="(guestsView() ? 'New guest' : 'New user') | translate:locale.language"
           type="button">
     <svg [lucideIcon]="icons.LucideUserRoundPlus"></svg>
     <span class="app-top-menu-tool-bar__label" l10nTranslate>New</span>
   </button>
   <button (click)="openDialog()"
-          [attr.aria-label]="(guestsView ? 'Edit guest' : 'Edit user') | translate:locale.language"
-          [disabled]="!selected"
+          [attr.aria-label]="(guestsView() ? 'Edit guest' : 'Edit user') | translate:locale.language"
+          [disabled]="!selected()"
           class="btn btn-default app-top-menu-tool-bar__action--quiet"
-          [tooltip]="(guestsView ? 'Edit guest' : 'Edit user') | translate:locale.language"
+          [tooltip]="(guestsView() ? 'Edit guest' : 'Edit user') | translate:locale.language"
           type="button">
     <svg [lucideIcon]="icons.LucideUserRoundPen"></svg>
     <span class="app-top-menu-tool-bar__label" l10nTranslate>Edit</span>
   </button>
   <button (click)="impersonateIdentity()"
           [attr.aria-label]="'Impersonate identity' | translate:locale.language"
-          [disabled]="!selected"
+          [disabled]="!selected()"
           class="btn btn-default"
           [tooltip]="'Impersonate identity' | translate:locale.language"
           type="button">
@@ -32,7 +32,7 @@
           class="d-none d-md-block btn btn-default"
           [tooltip]="'Refresh' | translate:locale.language"
           type="button">
-    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
+    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading() ? 'icon-spin' : ''"></svg>
   </button>
   <div class="d-flex align-items-center ms-auto">
     <!--Start View Switch-->
@@ -40,8 +40,8 @@
       <button
         type="button"
         class="view-switch__option"
-        [class.active]="!guestsView"
-        [attr.aria-pressed]="!guestsView"
+        [class.active]="!guestsView()"
+        [attr.aria-pressed]="!guestsView()"
         (click)="onGuestsView(false)"
         l10nTranslate
       >
@@ -50,8 +50,8 @@
       <button
         type="button"
         class="view-switch__option"
-        [class.active]="guestsView"
-        [attr.aria-pressed]="guestsView"
+        [class.active]="guestsView()"
+        [attr.aria-pressed]="guestsView()"
         (click)="onGuestsView(true)"
         l10nTranslate
       >
@@ -86,15 +86,15 @@
 </table>
 <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                     [bufferAmount]="5"
-                    [items]="users | searchFilter:navbarSearch.viewFilter()">
+                    [items]="users() | searchFilter:navbarSearch.viewFilter()">
   <table class="app-table">
     <tbody tabindex="-1">
-      @for (u of scrollView?.viewPortItems; track u.id) {
+      @for (u of scrollView().viewPortItems(); track u.id) {
         <tr (click)="onSelect(u)"
             (contextmenu)="onTargetContextMenu($event, u)"
             (appTap)="onUserActivate(u)"
             [class.disabled]="!u.isActive"
-            [class.selected]="u.id === selected?.id">
+            [class.selected]="u.id === selected()?.id">
           @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
             @if (th.value.show) {
               <td [style.width.%]="th.value.width"
@@ -173,14 +173,14 @@
 <!--End Table Files Content-->
 <!--Start Foot Content-->
 <div class="app-foot-menu">
-  <div>{{ users.length }} {{ (guestsView ? 'guests' : 'users') | translate:locale.language }}</div>
-  <div class="ms-auto">{{ storageUsage | toBytes }}</div>
+  <div>{{ users().length }} {{ (guestsView() ? 'guests' : 'users') | translate:locale.language }}</div>
+  <div class="ms-auto">{{ storageUsage() | toBytes }}</div>
 </div>
 <!--End Foot Content-->
 <!--Start Context Menu -->
 <context-menu #MainContextMenu>
   <ng-template (execute)="openDialog(true)" contextMenuItem>
-    <span l10nTranslate><svg [lucideIcon]="icons.LucideUserRoundPlus"></svg>New {{ guestsView ? 'guest' : 'user' }}</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideUserRoundPlus"></svg>New {{ guestsView() ? 'guest' : 'user' }}</span>
   </ng-template>
   <ng-template [divider]="true" contextMenuItem></ng-template>
   <ng-template (execute)="loadUsersOrGuests()" contextMenuItem>
@@ -189,7 +189,7 @@
 </context-menu>
 <context-menu #TargetContextMenu>
   <ng-template (execute)="openDialog()" contextMenuItem>
-    <span l10nTranslate><svg [lucideIcon]="icons.LucideUserRoundPen"></svg>Edit {{ guestsView ? 'guest' : 'user' }}</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideUserRoundPen"></svg>Edit {{ guestsView() ? 'guest' : 'user' }}</span>
   </ng-template>
   <ng-template [divider]="true" contextMenuItem></ng-template>
   <ng-template (execute)="impersonateIdentity()" contextMenuItem>

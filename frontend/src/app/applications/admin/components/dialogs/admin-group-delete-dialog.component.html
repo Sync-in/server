@@ -35,7 +35,7 @@
 <div class="modal-footer">
   <button (click)="onClose()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="submitted" class="btn btn-danger"
+          [disabled]="submitted()" class="btn btn-danger"
           type="button"
           l10nTranslate>
     Remove

@@ -83,10 +83,11 @@
   <code-editor
     #editor
     [languages]="languages"
-    [language]="currentLanguage"
-    [(ngModel)]="content"
+    [language]="currentLanguage()"
+    [ngModel]="content()"
+    (ngModelChange)="content.set($event)"
     (change)="contentChange($event)"
-    [theme]="currentTheme"
+    [theme]="currentTheme()"
     [readonly]="!canEditContent()"
     [disabled]="!canEditContent()"
     [extensions]="searchAdapter.extensions"

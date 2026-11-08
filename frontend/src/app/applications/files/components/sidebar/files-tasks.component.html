@@ -1,15 +1,15 @@
 <div class="sidebar-component-title app-top-menu-tool-bar justify-content-between">
   <div class="sidebar-component-title-side"></div>
   <div class="sidebar-component-title-label">
-    @switch (nbActiveTasks) {
+    @switch (nbActiveTasks()) {
       @case (0) {
-        <span>{{ (nbTotalTasks === 0 ? 'no_task' : nbTotalTasks > 1 ? 'nb_tasks' : 'one_task') | translate:locale.language:{ nb: nbTotalTasks } }}</span>
+        <span>{{ (nbTotalTasks() === 0 ? 'no_task' : nbTotalTasks() > 1 ? 'nb_tasks' : 'one_task') | translate:locale.language:{ nb: nbTotalTasks() } }}</span>
       }
       @default {
         <span>{{
-            (nbActiveTasks > 1 ? 'nb_active_tasks' : 'one_active_task') | translate:locale.language:{
-              nba: nbActiveTasks,
-              nb: nbTotalTasks
+            (nbActiveTasks() > 1 ? 'nb_active_tasks' : 'one_active_task') | translate:locale.language:{
+              nba: nbActiveTasks(),
+              nb: nbTotalTasks()
             }
           }}
       </span>
@@ -17,8 +17,8 @@
     }
   </div>
   <div class="sidebar-component-title-side gap-1">
-    @if (nbTotalTasks) {
-      @if (hasCancellableTasks) {
+    @if (nbTotalTasks()) {
+      @if (hasCancellableTasks()) {
         <button type="button"
                 (click)="cancelTasks()"
                 [tooltip]="'Stop' | translate:locale.language"
@@ -37,7 +37,7 @@
 </div>
 <!-- Inner menu: contains the tasks -->
 <div appAutoResize>
-  @for (task of tasks; track task.id) {
+  @for (task of tasks(); track task.id) {
     <div class="task-list"
          [class.task-list--cancelled]="task.ui.cancelled"
          [class.task-list--error]="task.ui.error"

@@ -1,24 +1,9 @@
-import type { LucideIcon } from '@lucide/angular'
 import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { SPACE_ALIAS, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SPACES_ICON, SPACES_TITLE } from '../../../spaces/spaces.constants'
+import type { FileLocationOptions, FileLocationPresentation, FileLocationRepository } from '../../interfaces/file-location.interface'
 
-export type FileLocationRepository = SPACE_ALIAS.PERSONAL | FILE_REPOSITORY.SPACE | FILE_REPOSITORY.SHARE
-
-export interface FileLocationPresentation {
-  repository: FileLocationRepository
-  repositoryTitle: string
-  relativePath: string
-  icon: LucideIcon
-  iconClass: 'primary' | 'purple'
-}
-
-interface FileLocationOptions {
-  repository?: FileLocationRepository
-  appendName?: string
-  excludeLeaf?: boolean
-  displayRootName?: string
-}
+export type { FileLocationPresentation, FileLocationRepository } from '../../interfaces/file-location.interface'
 
 const FILE_LOCATION_PRESENTATION: Record<FileLocationRepository, Pick<FileLocationPresentation, 'repositoryTitle' | 'icon' | 'iconClass'>> = {
   [SPACE_ALIAS.PERSONAL]: {

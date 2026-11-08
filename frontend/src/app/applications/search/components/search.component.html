@@ -2,12 +2,12 @@
      [resizeOffset]="45"
      class="app-search-results-list"
      role="list">
-  @if (errorMessage) {
-    <div class="p-3 text-danger fw-500" l10nTranslate>{{ errorMessage }}</div>
+  @if (errorMessage()) {
+    <div class="p-3 text-danger fw-500" l10nTranslate>{{ errorMessage() }}</div>
   }
   @for (file of store.filesSearch() | searchFilter:navbarSearch.viewFilter(); track $index) {
     <article
-      [class.selected]="$index === selectedId"
+      [class.selected]="$index === selectedId()"
       class="app-search-result-item"
       role="listitem">
       <div
@@ -35,7 +35,7 @@
         <svg [lucideIcon]="icons.LucideMapPin" aria-hidden="true"></svg>
       </button>
       @if (file.matches?.length) {
-        <div (pointerdown)="selectedId = $index" class="app-search-result-matches" data-app-tap-ignore>
+        <div (pointerdown)="selectedId.set($index)" class="app-search-result-matches" data-app-tap-ignore>
           @for (match of file.matches; track $index) {
             <p class="app-search-result-match" [innerHTML]="match"></p>
           }

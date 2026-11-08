@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy } from '@angular/core'
+import { Component, computed, inject, OnDestroy, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Params } from '@angular/router'
 import { LucideDynamicIcon, LucideKeyRound, LucideLogIn } from '@lucide/angular'
@@ -20,16 +20,19 @@ export class PublicLinkAuthComponent implements OnDestroy {
   protected readonly linkProtected = linkProtected
   protected readonly icons = { LucideKeyRound, LucideLogIn }
   protected readonly passwordMinLength = USER_PASSWORD_MIN_LENGTH
-  protected password = ''
-  protected retryAfter = 0
-  protected submitted = false
+  protected readonly password = signal('')
+  protected readonly retryAfter = signal(0)
+  protected readonly submitted = signal(false)
+  protected readonly retryDelayLabel = computed(() =>
+    new Intl.RelativeTimeFormat(this.locale.language, { numeric: 'always' }).format(this.retryAfter(), 'second')
+  )
   private readonly activatedRoute = inject(ActivatedRoute)
   private readonly linksService = inject(LinksService)
   private retryTimer: ReturnType<typeof setInterval> | null = null
   private uuid: string
 
   constructor() {
-    this.activatedRoute.params.subscribe((p: Params) => (this.uuid = p.uuid))
+    this.activatedRoute.params.subscribe((params: Params) => (this.uuid = params.uuid))
   }
 
   ngOnDestroy() {
@@ -37,40 +40,36 @@ export class PublicLinkAuthComponent implements OnDestroy {
   }
 
   validPassword() {
-    if (!this.password || this.password.length < this.passwordMinLength || this.submitted || this.retryAfter > 0) return
+    if (!this.password() || this.password().length < this.passwordMinLength || this.submitted() || this.retryAfter() > 0) return
 
-    this.submitted = true
+    this.submitted.set(true)
     this.linksService
-      .linkAuthentication(this.uuid, this.password)
-      .pipe(finalize(() => (this.submitted = false)))
+      .linkAuthentication(this.uuid, this.password())
+      .pipe(finalize(() => this.submitted.set(false)))
       .subscribe({
-        next: () => (this.password = ''),
+        next: () => this.password.set(''),
         error: (e) => {
-          this.password = ''
+          this.password.set('')
           const retryAfter = getAuthRetryAfter(e)
           if (retryAfter) this.startRetryCountdown(retryAfter)
         }
       })
   }
 
-  protected retryDelayLabel(): string {
-    return new Intl.RelativeTimeFormat(this.locale.language, { numeric: 'always' }).format(this.retryAfter, 'second')
-  }
-
   private startRetryCountdown(delay: number) {
     this.clearRetryCountdown()
     const retryAt = Date.now() + delay * 1000
     const updateRetryAfter = () => {
-      this.retryAfter = Math.max(0, Math.ceil((retryAt - Date.now()) / 1000))
-      if (this.retryAfter === 0) this.clearRetryCountdown()
+      this.retryAfter.set(Math.max(0, Math.ceil((retryAt - Date.now()) / 1000)))
+      if (this.retryAfter() === 0) this.clearRetryCountdown()
     }
     updateRetryAfter()
-    if (this.retryAfter > 0) this.retryTimer = setInterval(updateRetryAfter, 1000)
+    if (this.retryAfter() > 0) this.retryTimer = setInterval(updateRetryAfter, 1000)
   }
 
   private clearRetryCountdown() {
     if (this.retryTimer !== null) clearInterval(this.retryTimer)
     this.retryTimer = null
-    this.retryAfter = 0
+    this.retryAfter.set(0)
   }
 }

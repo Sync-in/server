@@ -1,4 +1,4 @@
-import { Component, computed, effect, ElementRef, HostListener, inject, signal, ViewChild } from '@angular/core'
+import { Component, computed, effect, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormControl, ReactiveFormsModule } from '@angular/forms'
 import { NavigationStart, Router } from '@angular/router'
@@ -15,7 +15,7 @@ import { NavbarSearchService } from '../../../layout/navbar/services/navbar-sear
   templateUrl: 'navbar-search.component.html'
 })
 export class NavbarSearchComponent {
-  @ViewChild('searchInput', { static: true }) searchInput: ElementRef<HTMLInputElement>
+  readonly searchInput = viewChild.required<ElementRef<HTMLInputElement>>('searchInput')
   protected readonly search = inject(NavbarSearchService)
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly searchControl = new FormControl('', { nonNullable: true })
@@ -92,7 +92,7 @@ export class NavbarSearchComponent {
       (!event.ctrlKey && !event.metaKey) ||
       event.altKey ||
       event.shiftKey ||
-      (this.isEditableTarget(event.target) && event.target !== this.searchInput.nativeElement) ||
+      (this.isEditableTarget(event.target) && event.target !== this.searchInput().nativeElement) ||
       document.querySelector('.modal.show')
     ) {
       return
@@ -139,7 +139,7 @@ export class NavbarSearchComponent {
   }
 
   private focusInput() {
-    setTimeout(() => this.searchInput.nativeElement.focus())
+    setTimeout(() => this.searchInput().nativeElement.focus())
   }
 
   private isEditableTarget(target: EventTarget | null): boolean {

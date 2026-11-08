@@ -1,38 +1,38 @@
-@if (share()) {
+@if (selectedShare()) {
   <div appAutoResize class="fs-sm" [resizeOffset]=resizeOffset>
     <div class="card selection-panel">
       <div class="card-body align-self-center p-0 my-1">
-        <img [src]="share().mimeUrl" alt="" draggable="false" [style.height.px]="cardImageSize" (error)="share().fallBackMimeUrl()">
+        <img [src]="selectedShare().mimeUrl" alt="" draggable="false" [style.height.px]="cardImageSize" (error)="selectedShare().fallBackMimeUrl()">
       </div>
     </div>
     <hr class="my-1" />
     <div class="selection-panel">
       <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Name</div>
-        <div class="word-break-all fs-sm">{{ share().name }}</div>
+        <div class="word-break-all fs-sm">{{ selectedShare().name }}</div>
       </div>
       <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Created</div>
-        <div class="fs-sm">{{ share().createdAt | amDateFormat }}</div>
+        <div class="fs-sm">{{ selectedShare().createdAt | amDateFormat }}</div>
       </div>
       <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Modified</div>
-        <div class="fs-sm">{{ share().modifiedAt | amDateFormat }}</div>
+        <div class="fs-sm">{{ selectedShare().modifiedAt | amDateFormat }}</div>
       </div>
       <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Members</div>
-        @if (share().counts.users || share().counts.groups) {
-          <app-badge-members [members]="share().counts"></app-badge-members>
+        @if (selectedShare().counts.users || selectedShare().counts.groups) {
+          <app-badge-members [members]="selectedShare().counts"></app-badge-members>
         } @else {
           <span class="badge bg-default" l10nTranslate>no</span>
         }
       </div>
       <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Child shares</div>
-        @if (share().counts.shares) {
-          <span (click)="childShareDialog(share())" class="badge bg-purple cursor-pointer me-1">
+        @if (selectedShare().counts.shares) {
+          <span (click)="childShareDialog(selectedShare())" class="badge bg-purple cursor-pointer me-1">
             <svg [lucideIcon]="iconShares"></svg>
-            {{ share().counts.shares }}
+            {{ selectedShare().counts.shares }}
           </span>
         } @else {
           <span class="badge bg-default" l10nTranslate>no</span>
@@ -41,7 +41,7 @@
       <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Comments</div>
         <button (click)="goToComments()"
-                class="badge {{share().hasComments ? 'bg-success' : 'bg-default'}} cursor-pointer"
+                class="badge {{selectedShare().hasComments ? 'bg-success' : 'bg-default'}} cursor-pointer"
                 type="button"
                 [attr.aria-label]="'Comments' | translate:locale.language">
           <svg [lucideIcon]="LucideMessageSquareMore"></svg>
@@ -52,7 +52,7 @@
     <div class="selection-panel">
       <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Shared from</div>
-        <app-share-repository [share]="share()" [showIcon]="false"></app-share-repository>
+        <app-share-repository [share]="selectedShare()" [showIcon]="false"></app-share-repository>
       </div>
     </div>
   </div>

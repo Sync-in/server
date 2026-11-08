@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, Input, OnChanges } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core'
 import { LucideDynamicIcon } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AvailableBSPositions } from 'ngx-bootstrap/positioning'
@@ -15,19 +15,19 @@ interface FilePermissionEntry {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TooltipModule, L10nTranslateDirective, LucideDynamicIcon, L10nTranslatePipe],
   template: `
-    @if (replaceEmptyPermissions && !permissionEntries.length) {
+    @if (replaceEmptyPermissions() && !permissionEntries().length) {
       <span l10nTranslate>No permissions</span>
     } @else {
-      @if (permissionEntries.length) {
-        <span class="badge bg-secondary-alt permission-badge" [tooltip]="permissionsTooltip" [placement]="tooltipPlacement" [container]="'body'">
-          @for (p of permissionEntries; track p.key) {
+      @if (permissionEntries().length) {
+        <span class="badge bg-secondary-alt permission-badge" [tooltip]="permissionsTooltip" [placement]="tooltipPlacement()" [container]="'body'">
+          @for (p of permissionEntries(); track p.key) {
             <span class="permission-icon">
               <svg [lucideIcon]="p.value.icon"></svg>
             </span>
           }
         </span>
         <ng-template #permissionsTooltip>
-          @for (p of permissionEntries; track p.key) {
+          @for (p of permissionEntries(); track p.key) {
             <div>{{ p.value.text | translate: locale.language }}</div>
           }
         </ng-template>
@@ -74,19 +74,15 @@ interface FilePermissionEntry {
     `
   ]
 })
-export class BadgePermissionsComponent implements OnChanges {
-  @Input({ required: true }) permissions: Partial<typeof SPACES_PERMISSIONS_TEXT> = {}
-  @Input() tooltipPlacement: AvailableBSPositions = 'top'
-  @Input() replaceEmptyPermissions = false
-  protected permissionEntries: FilePermissionEntry[] = []
+export class BadgePermissionsComponent {
+  readonly permissions = input.required<Partial<typeof SPACES_PERMISSIONS_TEXT>>()
+  readonly tooltipPlacement = input<AvailableBSPositions>('top')
+  readonly replaceEmptyPermissions = input(false)
+  protected readonly permissionEntries = computed<FilePermissionEntry[]>(() => this.buildPermissionEntries())
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
 
-  ngOnChanges() {
-    this.permissionEntries = this.buildPermissionEntries()
-  }
-
   private buildPermissionEntries(): FilePermissionEntry[] {
-    return Object.entries(this.permissions)
+    return Object.entries(this.permissions())
       .filter((entry): entry is [string, FilePermissionEntry['value']] => entry[1] !== undefined)
       .map(([key, value]) => ({ key, value }))
   }

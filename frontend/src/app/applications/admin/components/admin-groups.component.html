@@ -12,33 +12,33 @@
     </button>
     <ul *dropdownMenu class="dropdown-menu" role="menu">
       <li role="menuitem">
-        <a (click)="openDialog(true)" class="dropdown-item" [class.disabled]="!!currentGroup && personalGroupsView">
+        <a (click)="openDialog(true)" class="dropdown-item" [class.disabled]="!!currentGroup() && personalGroupsView()">
           <span l10nTranslate><svg [lucideIcon]="icons.GROUPS"></svg>
-            {{ personalGroupsView ? 'Personal group' : 'Group' }}</span>
+            {{ personalGroupsView() ? 'Personal group' : 'Group' }}</span>
         </a>
       </li>
       <li role="menuitem">
-        <a (click)="addUserToGroupDialog()" class="dropdown-item" [class.disabled]="!currentGroup">
+        <a (click)="addUserToGroupDialog()" class="dropdown-item" [class.disabled]="!currentGroup()">
           <span l10nTranslate><svg [lucideIcon]="icons.LucideUserRoundPlus"></svg>Add members</span>
         </a>
       </li>
     </ul>
   </div>
   <button (click)="openDialog()"
-          [attr.aria-label]="(selected?.isGroup ? 'Edit group' : 'Edit user') | translate:locale.language"
-          [disabled]="!selected"
+          [attr.aria-label]="(selected()?.isGroup ? 'Edit group' : 'Edit user') | translate:locale.language"
+          [disabled]="!selected()"
           class="btn btn-default app-top-menu-tool-bar__action--quiet"
-          [tooltip]="(selected?.isGroup ? 'Edit group' : 'Edit user') | translate:locale.language"
+          [tooltip]="(selected()?.isGroup ? 'Edit group' : 'Edit user') | translate:locale.language"
           type="button">
     <svg [lucideIcon]="icons.LucidePencil"></svg>
     <span class="app-top-menu-tool-bar__label" l10nTranslate>Edit</span>
   </button>
   <button (click)="openDialog(false, true)"
-          [attr.aria-label]="(selected?.isUser ? 'Remove from group' : 'Delete group') | translate:locale.language"
+          [attr.aria-label]="(selected()?.isUser ? 'Remove from group' : 'Delete group') | translate:locale.language"
           class="d-none d-sm-block btn btn-default app-top-menu-tool-bar__action--quiet"
-          [disabled]="!selected"
+          [disabled]="!selected()"
           type="button">
-    <svg [lucideIcon]="selected?.isUser ? icons.LucideUserMinus : icons.LucideTrash"></svg>
+    <svg [lucideIcon]="selected()?.isUser ? icons.LucideUserMinus : icons.LucideTrash"></svg>
     <span class="app-top-menu-tool-bar__label" l10nTranslate>Delete</span>
   </button>
   <button (click)="refresh()"
@@ -46,15 +46,15 @@
           class="d-none d-md-block btn btn-default"
           [tooltip]="'Refresh' | translate:locale.language"
           type="button">
-    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
+    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading() ? 'icon-spin' : ''"></svg>
   </button>
   <div class="d-flex align-items-center ms-auto">
     <div class="view-switch" role="group" aria-label="Select group type">
       <button
         type="button"
         class="view-switch__option"
-        [class.active]="!personalGroupsView"
-        [attr.aria-pressed]="!personalGroupsView"
+        [class.active]="!personalGroupsView()"
+        [attr.aria-pressed]="!personalGroupsView()"
         (click)="onPersonalGroupsView(false)"
       >
         {{ 'administrative_groups_short' | translate:locale.language }}
@@ -62,8 +62,8 @@
       <button
         type="button"
         class="view-switch__option"
-        [class.active]="personalGroupsView"
-        [attr.aria-pressed]="personalGroupsView"
+        [class.active]="personalGroupsView()"
+        [attr.aria-pressed]="personalGroupsView()"
         (click)="onPersonalGroupsView(true)"
       >
         {{ 'personal_groups_short' | translate:locale.language }}
@@ -96,14 +96,14 @@
 </table>
 <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                     [bufferAmount]="5"
-                    [items]="members | searchFilter:navbarSearch.viewFilter()">
+                    [items]="members() | searchFilter:navbarSearch.viewFilter()">
   <table class="app-table">
     <tbody tabindex="-1">
-      @for (m of scrollView?.viewPortItems; track m.mid) {
+      @for (m of scrollView().viewPortItems(); track m.mid) {
         <tr (click)="onSelect(m)"
             (contextmenu)="onTargetContextMenu($event, m)"
             (appTap)="onMemberActivate(m)"
-            [class.selected]="m.mid === selected?.mid">
+            [class.selected]="m.mid === selected()?.mid">
           @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
             @if (th.value.show) {
               <td [style.width.%]="th.value.width"
@@ -164,18 +164,18 @@
 <!--End Table Files Content-->
 <!--Start Foot Content-->
 <div class="app-foot-menu">
-  <span class="mx-auto">{{ members.length }} {{ 'groups' | translate:locale.language }}</span>
+  <span class="mx-auto">{{ members().length }} {{ 'groups' | translate:locale.language }}</span>
 </div>
 <!--End Foot Content-->
 <!--Start Context Menu -->
 <context-menu #MainContextMenu>
-  @if (!!currentGroup && !personalGroupsView || !currentGroup && personalGroupsView) {
+  @if (!!currentGroup() && !personalGroupsView() || !currentGroup() && personalGroupsView()) {
     <ng-template (execute)="openDialog(true)" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.LucidePlus"></svg>
-        {{ personalGroupsView ? 'Personal group' : 'Group' }}</span>
+        {{ personalGroupsView() ? 'Personal group' : 'Group' }}</span>
     </ng-template>
   }
-  @if (!!currentGroup) {
+  @if (!!currentGroup()) {
     <ng-template (execute)="addUserToGroupDialog()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.LucideUserRoundPlus"></svg>Add members</span>
     </ng-template>
@@ -186,12 +186,12 @@
   </ng-template>
 </context-menu>
 <context-menu #TargetContextMenu>
-  @if (selected) {
+  @if (selected()) {
     <ng-template (execute)="openDialog()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.LucidePencil"></svg>
-        {{ selected.isGroup ? 'Edit group' : 'Edit user' }}</span>
+        {{ selected().isGroup ? 'Edit group' : 'Edit user' }}</span>
     </ng-template>
-    @if (selected.isGroup) {
+    @if (selected().isGroup) {
       <ng-template (execute)="openDialog(false, true)" contextMenuItem>
         <span l10nTranslate><svg [lucideIcon]="icons.LucideTrash"></svg>Delete group</span>
       </ng-template>

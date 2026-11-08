@@ -15,7 +15,7 @@ import { SPACES_ICON } from '../../spaces.constants'
   styles: ['.card {width: 100%; background: transparent; border: none}']
 })
 export class TrashSelectionComponent {
-  trash: InputSignal<TrashModel> = input.required<TrashModel>()
+  readonly trash: InputSignal<TrashModel> = input.required<TrashModel>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly iconTrash = SPACES_ICON.TRASH
   protected readonly cardImageSize = defaultCardImageSize

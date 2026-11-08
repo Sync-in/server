@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideUserRoundPlus } from '@lucide/angular'
 import { GROUP_TYPE } from '@sync-in-server/backend/src/applications/users/constants/group'
 import { USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -22,8 +22,8 @@ export class UserGroupAddUsersDialogComponent {
   @Input({ required: true }) currentMemberIds: number[] = []
   @Output() hasChanges = new EventEmitter<boolean>()
   protected readonly layout = inject(LayoutService)
-  protected newMembers: MemberModel[] = []
-  protected submitted = false
+  protected readonly newMembers = signal<MemberModel[]>([])
+  protected readonly submitted = signal(false)
   protected readonly icons = { LucideUserRoundPlus }
   private readonly userService = inject(UserService)
 
@@ -32,17 +32,17 @@ export class UserGroupAddUsersDialogComponent {
       search: query,
       onlyUsers: true,
       usersRole: this.parentGroup.type === GROUP_TYPE.USER ? USER_ROLE.USER : undefined,
-      ignoreUserIds: [...this.currentMemberIds, ...this.newMembers.map((m) => m.id)]
+      ignoreUserIds: [...this.currentMemberIds, ...this.newMembers().map((m) => m.id)]
     }
     return this.userService.searchMembers(search)
   }
 
   onSubmit() {
-    this.submitted = true
+    this.submitted.set(true)
     this.userService
       .addUsersToGroup(
         this.parentGroup.id,
-        this.newMembers.map((m) => m.id)
+        this.newMembers().map((m) => m.id)
       )
       .subscribe({
         next: () => {
@@ -51,7 +51,7 @@ export class UserGroupAddUsersDialogComponent {
           this.layout.closeDialog()
         },
         error: (e: HttpErrorResponse) => {
-          this.submitted = false
+          this.submitted.set(false)
           this.layout.sendNotification('error', 'Add members', this.parentGroup.name, e)
         }
       })

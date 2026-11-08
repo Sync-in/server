@@ -3,7 +3,7 @@
     <div class="selection-panel fs-sm">
       <app-files-summary [files]="files()" class="mb-2"></app-files-summary>
       <div class="d-flex">
-        <select [(ngModel)]="selectedAction" class="form-select form-select-sm">
+        <select [ngModel]="selectedAction()" (ngModelChange)="selectedAction.set($event)" class="form-select form-select-sm">
           <option value="clipboard" l10nTranslate>Clipboard</option>
           <option value="copyMove" l10nTranslate>Copy • Move</option>
           <option value="download" l10nTranslate>Download</option>
@@ -126,7 +126,7 @@
               {{ (f.syncs.length ? 'yes' : 'no') | translate:locale.language }}
             </span>
           </div>
-          @if (canManageFavorite) {
+          @if (canManageFavorite()) {
           <div class="selection-panel-row">
               <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Favorites</div>
               <button (click)="toggleFavorite(f)"

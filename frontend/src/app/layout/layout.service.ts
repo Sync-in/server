@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { inject, Injectable, NgZone, signal, WritableSignal } from '@angular/core'
+import { inject, Injectable, signal } from '@angular/core'
 import { Title } from '@angular/platform-browser'
 import type { LucideIcon } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuService } from '@perfectmemory/ngx-contextmenu'
@@ -9,7 +9,7 @@ import { L10nTranslationService } from 'angular-l10n'
 import { BsModalRef, BsModalService, ModalContainerComponent, ModalOptions } from 'ngx-bootstrap/modal'
 import { setTheme } from 'ngx-bootstrap/utils'
 import { ActiveToast, ToastrService } from 'ngx-toastr'
-import { BehaviorSubject, fromEvent, mergeWith, Observable, Subject } from 'rxjs'
+import { BehaviorSubject, fromEvent, mergeWith, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { getBrowserL10nLocale, i18nLanguageText } from '../../i18n/l10n'
 import { APP_NAME } from '../app.constants'
@@ -29,37 +29,36 @@ interface ModalComponent extends ModalContainerComponent {
 
 @Injectable({ providedIn: 'root' })
 export class LayoutService {
-  public currentRightSideBarTab: string | null = null
+  public readonly currentRightSideBarTab = signal<string | null>(null)
   // Resize event
-  public resizeEvent = new BehaviorSubject<void | null>(null)
-  public switchTheme = new BehaviorSubject<string>(getTheme())
+  public readonly resizeEvent = new BehaviorSubject<void | null>(null)
+  public readonly switchTheme = signal<string>(getTheme(), { equal: () => false })
   // Toggle Left sidebar tabs (1: open / 2: collapse / 3: toggle)
-  public toggleLeftSideBar = new BehaviorSubject<number>(this.isSmallerMediumScreen() ? 2 : 1)
+  public readonly toggleLeftSideBar = new BehaviorSubject<number>(this.isSmallerMediumScreen() ? 2 : 1)
   // Left sidebar: save user action
-  public saveLeftSideBarIsOpen = new BehaviorSubject<boolean>(true)
+  public readonly saveLeftSideBarIsOpen = signal(true, { equal: () => false })
   // Left sidebar: get status
-  public leftSideBarIsOpen = new BehaviorSubject<boolean>(true)
-  // Toggle Right sidebar show / hide
-  public toggleRightSideBar = new Subject<boolean>()
+  public readonly leftSideBarIsOpen = signal(true, { equal: () => false })
+  // Imperative DOM command; keep event semantics, including repeated values.
+  public readonly toggleRightSideBar = new Subject<boolean>()
   // Right sidebar / show / hide
-  public rightSideBarIsOpen = new BehaviorSubject<boolean>(false)
-  public rightSideBarOpenAndShowTab = new Subject<string | null>()
+  public readonly rightSideBarIsOpen = signal(false, { equal: () => false })
+  public readonly rightSideBarOpenAndShowTab = new Subject<string | null>()
   // Right sidebar tabs
-  public rightSideBarSetTabs = new Subject<{ name: TAB_GROUP; tabs: TabMenu[] }>()
+  public readonly rightSideBarSetTabs = new Subject<{ name: TAB_GROUP; tabs: TabMenu[] }>()
   // Right sidebar select tab
-  public rightSideBarSelectTab = new Subject<string | null>()
+  public readonly rightSideBarSelectTab = new Subject<string | null>()
   // Used by the breadcrumb
-  public breadcrumbNav = new BehaviorSubject<BreadCrumbUrl>({ url: '' })
+  public readonly breadcrumbNav = signal<BreadCrumbUrl>({ url: '' }, { equal: () => false })
   // Navigation breadcrumb icon
-  public breadcrumbIcon = new BehaviorSubject<LucideIcon>(null)
+  public readonly breadcrumbIcon = signal<LucideIcon>(null, { equal: () => false })
   // Modal section
-  public windows = new BehaviorSubject<AppWindow[]>([]) // minimized modals
-  public modalRefs = new Map<number | string, BsModalRef>()
-  public collapseRSideBarPreference: WritableSignal<boolean> = signal(this.getAutoCollapseRSideBarPreference())
+  public readonly windows = signal<AppWindow[]>([], { equal: () => false }) // minimized modals
+  public readonly modalRefs = new Map<number | string, BsModalRef>()
+  public readonly collapseRSideBarPreference = signal(this.getAutoCollapseRSideBarPreference())
   public readonly themePreference = signal<USER_THEME>(USER_THEME.AUTO)
   // Services
   private readonly title = inject(Title)
-  private readonly ngZone = inject(NgZone)
   private readonly translation = inject(L10nTranslationService)
   private readonly bsModal = inject(BsModalService)
   private readonly toastr = inject(ToastrService)
@@ -72,12 +71,13 @@ export class LayoutService {
   private collapseRSideBarTimeoutId: ReturnType<typeof setTimeout> | null = null
   private escapeCloseInProgress = false
   // Network events
-  private _networkIsOnline = new BehaviorSubject<boolean>(navigator.onLine)
-  public networkIsOnline: Observable<boolean> = this._networkIsOnline
-    .asObservable()
-    .pipe(mergeWith(fromEvent(window, 'online').pipe(map(() => true)), fromEvent(window, 'offline').pipe(map(() => false))))
-  private preferTheme = fromEvent(window.matchMedia('(prefers-color-scheme: dark)'), 'change').pipe(
-    map((e: any) => (e.matches ? themeDark : themeLight))
+  public readonly networkIsOnline = signal(navigator.onLine, { equal: () => false })
+  private readonly networkStatusChanges = fromEvent(window, 'online').pipe(
+    map(() => true),
+    mergeWith(fromEvent(window, 'offline').pipe(map(() => false)))
+  )
+  private readonly preferredThemeChanges = fromEvent<MediaQueryListEvent>(window.matchMedia('(prefers-color-scheme: dark)'), 'change').pipe(
+    map((event) => (event.matches ? themeDark : themeLight))
   )
   // Modal options
   private readonly modalOptions: ModalOptions = {
@@ -91,14 +91,15 @@ export class LayoutService {
   constructor() {
     setTheme('bs5')
     this.title.setTitle(APP_NAME)
-    this.preferTheme.subscribe((theme) => {
+    this.networkStatusChanges.subscribe((online) => this.networkIsOnline.set(online))
+    this.preferredThemeChanges.subscribe((theme) => {
       if (this.themePreference() === USER_THEME.AUTO) this.setTheme(theme)
     })
   }
 
   showRSideBarTab(tabName: TAB_MENU = null, tabVisible = false, delay: number = 0) {
     // show or collapse right sidebar
-    if (tabVisible && this.rightSideBarIsOpen.getValue()) {
+    if (tabVisible && this.rightSideBarIsOpen()) {
       this.rightSideBarSelectTab.next(tabName)
     } else {
       this.rightSideBarOpenAndShowTab.next(tabName)
@@ -110,14 +111,14 @@ export class LayoutService {
 
   hideRSideBarTab(tabName: string, delay: number = 0) {
     setTimeout(() => {
-      if (this.currentRightSideBarTab === tabName) {
+      if (this.currentRightSideBarTab() === tabName) {
         this.toggleRSideBar(false)
       }
     }, delay)
   }
 
   toggleRSideBar(show: boolean) {
-    this.rightSideBarIsOpen.next(show)
+    this.rightSideBarIsOpen.set(show)
     this.toggleRightSideBar.next(show)
 
     // Cancel the current timeout if it exists
@@ -128,7 +129,7 @@ export class LayoutService {
     if (show && this.collapseRSideBarPreference()) {
       this.collapseRSideBarTimeoutId = setTimeout(() => {
         if (!this.collapseRSideBarPreference()) return
-        this.rightSideBarIsOpen.next(false)
+        this.rightSideBarIsOpen.set(false)
         this.toggleRightSideBar.next(false)
         this.collapseRSideBarTimeoutId = null
       }, 10_000)
@@ -148,7 +149,7 @@ export class LayoutService {
   }
 
   getCurrentTheme(): UserTheme {
-    return this.switchTheme.getValue() === themeDark ? USER_THEME.DARK : USER_THEME.LIGHT
+    return this.switchTheme() === themeDark ? USER_THEME.DARK : USER_THEME.LIGHT
   }
 
   openDialog(dialog: any, size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full', componentState: any = {}, override: ModalOptions = {}): BsModalRef {
@@ -168,10 +169,10 @@ export class LayoutService {
     const modal = this.getModalComponent(modalId)
     if (modal) {
       this.closeModalWithEffect(modal)
-      if (!this.windows.getValue().find((m: AppWindow) => m.id === modalId)) {
-        this.windows.next([...this.windows.getValue(), { id: modalId, element }])
+      if (!this.windows().find((m: AppWindow) => m.id === modalId)) {
+        this.windows.update((windows) => [...windows, { id: modalId, element }])
       }
-      if (this.windows.getValue().length === 1) {
+      if (this.windows().length === 1) {
         this.showRSideBarTab(TAB_MENU.WINDOWS, false, 3000)
       }
     }
@@ -190,7 +191,7 @@ export class LayoutService {
     if (all) {
       this.bsModal.hide()
       this.modalRefs.clear()
-      this.windows.next([])
+      this.windows.set([])
       return
     }
     if (!id) {
@@ -210,7 +211,7 @@ export class LayoutService {
     } else {
       this.closeModalWithEffect(modal, true)
     }
-    this.windows.next(this.windows.getValue().filter((m) => m.id !== id))
+    this.windows.update((windows) => windows.filter((m) => m.id !== id))
   }
 
   openContextMenu(event: any, component: ContextMenuComponent<any>) {
@@ -232,7 +233,7 @@ export class LayoutService {
     override: any = {},
     forceLocal = false
   ): ActiveToast<any> | void {
-    const useSystemNotifications = !forceLocal && this.electron.enabled && (this.store.user.getValue()?.preferences?.useSystemNotifications ?? true)
+    const useSystemNotifications = !forceLocal && this.electron.enabled && (this.store.user()?.preferences?.useSystemNotifications ?? true)
     if (type === 'error' && e) {
       const errorMessage = e.error
         ? Array.isArray(e.error.message)
@@ -283,11 +284,11 @@ export class LayoutService {
   }
 
   setBreadcrumbIcon(icon: LucideIcon) {
-    this.breadcrumbIcon.next(icon)
+    this.breadcrumbIcon.set(icon)
   }
 
   setBreadcrumbNav(url: BreadCrumbUrl) {
-    this.breadcrumbNav.next(url)
+    this.breadcrumbNav.set(url)
   }
 
   openUrl(url: string) {
@@ -334,9 +335,9 @@ export class LayoutService {
     if (!modal) return null
 
     const element = modal['instance']._element.nativeElement as HTMLElement
-    if (this.windows.getValue().some((window) => window.id === modalId)) {
+    if (this.windows().some((window) => window.id === modalId)) {
       this.openModalWithEffect(modal)
-      this.windows.next(this.windows.getValue().filter((window) => window.id !== modalId))
+      this.windows.update((windows) => windows.filter((window) => window.id !== modalId))
     }
     const modalRef = this.modalRefs.get(modalId)
     if (modalRef) {
@@ -398,7 +399,7 @@ export class LayoutService {
 
   private getLastOpenDialogId(): number | string | null {
     let lastOpenDialogId: number | string | null = null
-    const minimizedIds = new Set(this.windows.getValue().map((window) => window.id))
+    const minimizedIds = new Set(this.windows().map((window) => window.id))
     for (const id of this.modalRefs.keys()) {
       if (!minimizedIds.has(id)) {
         lastOpenDialogId = id
@@ -408,12 +409,12 @@ export class LayoutService {
   }
 
   private atLeastOneModalOpen(): boolean {
-    return this.modalRefs.size - this.windows.getValue().length > 0
+    return this.modalRefs.size - this.windows().length > 0
   }
 
   private setTheme(theme: string) {
     this.electron.send(EVENT.MISC.SWITCH_THEME, theme)
-    this.ngZone.run(() => this.switchTheme.next(theme))
+    this.switchTheme.set(theme)
   }
 
   private getAutoCollapseRSideBarPreference(): boolean {

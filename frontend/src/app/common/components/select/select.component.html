@@ -1,9 +1,9 @@
 <div (keyup)="mainClick($event)" [offClick]="clickedOutside" class="ui-select-container dropdown open">
-  <div [class.ui-disabled]="disabled"></div>
-  @if (inputMode) {
+  <div [class.ui-disabled]="disabled()"></div>
+  @if (inputMode()) {
     <input (keydown)="inputEvent($event)"
            (keyup)="inputEvent($event, true)"
-           [disabled]="disabled"
+           [disabled]="disabled()"
            autocomplete="false"
            class="form-control ui-select-search"
            tabindex="-1"
@@ -11,30 +11,30 @@
   } @else {
     <div class="ui-select-match form-control">
       <span (click)="matchClick($event)" class="ui-select-toggle no-select" style="outline: 0" tabindex="-1">
-        @if (active) {
-          <span [class.ui-select-allow-clear]="allowClear && active" class="ui-select-match-text w-100">
-            <ng-container *ngTemplateOutlet="customTemplateSelect || DefaultSelect; context: {active: active}"></ng-container>
+        @if (activeState(); as selectedOption) {
+          <span [class.ui-select-allow-clear]="allowClear()" class="ui-select-match-text w-100">
+            <ng-container *ngTemplateOutlet="customTemplateSelect() || DefaultSelect; context: {active: selectedOption}"></ng-container>
           </span>
         } @else {
-          <span class="ui-select-placeholder">{{ placeholder }}</span>
+          <span class="ui-select-placeholder">{{ placeholder() }}</span>
         }
-        @if (allowClear && active) {
-          <svg class="ui-select-clear-icon cursor-pointer me-2" (click)="removeClick(active, $event)" [lucideIcon]="xMarkIcon"></svg>
+        @if (allowClear() && activeState(); as selectedOption) {
+          <svg class="ui-select-clear-icon cursor-pointer me-2" (click)="removeClick(selectedOption, $event)" [lucideIcon]="xMarkIcon"></svg>
         }
         <i class="dropdown-toggle"></i>
       </span>
     </div>
   }
-  @if (optionsOpened && options && options.length > 0) {
+  @if (optionsOpened() && options().length > 0) {
     <!-- options template -->
     <ul class="ui-select-choices dropdown-menu" role="menu">
-      @for (o of options; track $index) {
+      @for (o of options(); track $index) {
         <li role="menuitem">
           <div (click)="selectMatch(o, $event)"
                (mouseenter)="selectActive(o)"
                [class.active]="isActive(o)"
                class="ui-select-choices-row">
-            <ng-container *ngTemplateOutlet="customTemplateOptions || DefaultOptions; context: {o: o, i: inputValue}"></ng-container>
+            <ng-container *ngTemplateOutlet="customTemplateOptions() || DefaultOptions; context: {o: o, i: inputValue()}"></ng-container>
           </div>
         </li>
       }
@@ -46,7 +46,7 @@
 <ng-template #DefaultSelect let-active="active">
   <div class="d-flex align-items-center">
     <span class="ui-icon circle-primary-icon me-2">
-      <svg [lucideIcon]="itemIcon"></svg>
+      <svg [lucideIcon]="itemIcon()"></svg>
     </span>
     <div class="d-flex flex-column text-truncate">
       <span class="text-truncate">{{ active.name }}</span>
@@ -60,7 +60,7 @@
   <button class="dropdown-item cursor-pointer" style="padding: 3px 5px" type="button">
     <div class="d-flex align-items-center">
       <span class="ui-icon circle-primary-icon me-2">
-        <svg [lucideIcon]="itemIcon"></svg>
+        <svg [lucideIcon]="itemIcon()"></svg>
       </span>
       <div class="d-flex flex-column text-truncate">
         <span class="text-truncate" [innerHTML]="o.name | highlight:i"></span>

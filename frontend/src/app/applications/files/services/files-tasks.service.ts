@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { inject, Injectable } from '@angular/core'
+import { effect, inject, Injectable, signal, untracked } from '@angular/core'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import {
   API_FILES_TASKS,
@@ -17,7 +17,6 @@ import { genRandomUUID } from '../../../common/utils/functions'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
-import { UserType } from '../../users/interfaces/user.interface'
 import { FileEvent } from '../interfaces/file-event.interface'
 import type { FileTaskClient } from '../interfaces/file-task-view.interface'
 
@@ -59,7 +58,7 @@ export class FilesTasksService {
     }
   }
   private currentUserId: number
-  private cancellingTasks = new Set<string>()
+  private readonly cancellingTasks = signal<ReadonlySet<string>>(new Set())
   private uploadCancellationHandlers = new Map<string, () => void>()
   private loadSubscription: Subscription = null
   private watcher: Subscription = null
@@ -69,26 +68,29 @@ export class FilesTasksService {
   )
 
   constructor() {
-    this.store.user.subscribe((u: UserType) => {
-      if (this.currentUserId !== u?.id) {
-        this.loadSubscription?.unsubscribe()
-        this.stopWatch(false)
-      }
-      if (u && this.currentUserId !== u.id) {
-        // Load tasks when the user is defined and has changed to prevent interceptor redirects
-        this.loadAll()
-      }
-      this.currentUserId = u?.id
+    effect(() => {
+      const user = this.store.user()
+      untracked(() => {
+        if (this.currentUserId !== user?.id) {
+          this.loadSubscription?.unsubscribe()
+          this.stopWatch(false)
+        }
+        if (user && this.currentUserId !== user.id) {
+          // Load tasks when the user is defined and has changed to prevent interceptor redirects
+          this.loadAll()
+        }
+        this.currentUserId = user?.id
+      })
     })
   }
 
   addTask(task: FileTaskClient, displayName?: string) {
     if (displayName !== undefined) task.displayName = displayName
     if (this.isActiveStatus(task.status)) {
-      this.store.filesActiveTasks.next(this.prependUniqueTasks(this.store.filesActiveTasks.getValue(), [task]))
+      this.store.filesActiveTasks.update((tasks) => this.prependUniqueTasks(tasks, [task]))
       this.startWatch()
     } else {
-      this.store.filesEndedTasks.next(this.prependUniqueTasks(this.store.filesEndedTasks.getValue(), [task]))
+      this.store.filesEndedTasks.update((tasks) => this.prependUniqueTasks(tasks, [task]))
     }
   }
 
@@ -98,7 +100,7 @@ export class FilesTasksService {
     task.cancellable = false
     task.startedAt = currentTimeStamp(null, true)
     task.props = { progress: 1, size: 0, totalSize }
-    this.store.filesActiveTasks.next(this.prependUniqueTasks(this.store.filesActiveTasks.getValue(), [task]))
+    this.store.filesActiveTasks.update((tasks) => this.prependUniqueTasks(tasks, [task]))
     this.layout.showRSideBarTab(TAB_MENU.TASKS, true)
     return task
   }
@@ -116,7 +118,7 @@ export class FilesTasksService {
     this.http.post<void>(API_FILES_TASKS_DELETE, { taskIds }).subscribe({
       next: () => {
         const removedTaskIds = new Set(taskIds)
-        this.store.filesEndedTasks.next(this.store.filesEndedTasks.getValue().filter((task: FileTask) => !removedTaskIds.has(task.id)))
+        this.store.filesEndedTasks.update((tasks) => tasks.filter((task: FileTask) => !removedTaskIds.has(task.id)))
       },
       error: (e) => console.error(e)
     })
@@ -124,19 +126,19 @@ export class FilesTasksService {
 
   cancel(task: FileTask) {
     if (!this.canCancel(task)) return
-    this.cancellingTasks.add(task.id)
+    this.setTaskCancelling(task.id, true)
     if (task.type === FILE_OPERATION.UPLOAD) {
       const cancelUpload = this.uploadCancellationHandlers.get(task.id)
       if (cancelUpload) {
         cancelUpload()
       } else {
-        this.cancellingTasks.delete(task.id)
+        this.setTaskCancelling(task.id, false)
       }
       return
     }
     this.http.post<void>(`${API_FILES_TASKS_CANCEL}/${task.id}`, null).subscribe({
       error: (e) => {
-        this.cancellingTasks.delete(task.id)
+        this.setTaskCancelling(task.id, false)
         console.error(e)
       }
     })
@@ -146,33 +148,36 @@ export class FilesTasksService {
     return (
       this.isActiveStatus(task.status) &&
       task.cancellable &&
-      !this.cancellingTasks.has(task.id) &&
+      !this.cancellingTasks().has(task.id) &&
       (task.type !== FILE_OPERATION.UPLOAD || this.uploadCancellationHandlers.has(task.id))
     )
   }
 
   registerUploadCancellation(taskId: string, cancel: () => void) {
     this.uploadCancellationHandlers.set(taskId, cancel)
-    const task = this.store.filesActiveTasks.getValue().find((activeTask: FileTask) => activeTask.id === taskId)
-    if (task) {
+    this.store.filesActiveTasks.update((tasks) => {
+      const task = tasks.find((activeTask: FileTask) => activeTask.id === taskId)
+      if (!task) return tasks
       task.cancellable = true
-    }
-    this.store.filesActiveTasks.next([...this.store.filesActiveTasks.getValue()])
+      return [...tasks]
+    })
   }
 
   unregisterUploadCancellation(taskId: string) {
     this.uploadCancellationHandlers.delete(taskId)
-    const task = this.store.filesActiveTasks.getValue().find((activeTask: FileTask) => activeTask.id === taskId)
-    if (task) {
+    this.store.filesActiveTasks.update((tasks) => {
+      const task = tasks.find((activeTask: FileTask) => activeTask.id === taskId)
+      if (!task) return tasks
       task.cancellable = false
-    }
+      return [...tasks]
+    })
   }
 
   updateTask(task: FileTask, notifyCompletion = true) {
     if (this.isActiveStatus(task.status)) {
       this.updateActiveTask(task)
     } else {
-      this.cancellingTasks.delete(task.id)
+      this.setTaskCancelling(task.id, false)
       this.deleteTask(task.id, true)
       this.addTask(task)
       this.taskDone(task, notifyCompletion)
@@ -188,9 +193,9 @@ export class FilesTasksService {
           const target = this.isActiveStatus(task.status) ? activeTasks : endedTasks
           target.push(task)
         }
-        const uploads = this.store.filesActiveTasks.getValue().filter((task: FileTask) => task.type === FILE_OPERATION.UPLOAD)
-        this.store.filesActiveTasks.next([...uploads, ...activeTasks])
-        this.store.filesEndedTasks.next(endedTasks)
+        const uploads = this.store.filesActiveTasks().filter((task: FileTask) => task.type === FILE_OPERATION.UPLOAD)
+        this.store.filesActiveTasks.set([...uploads, ...activeTasks])
+        this.store.filesEndedTasks.set(endedTasks)
         if (activeTasks.length) {
           this.startWatch()
         }
@@ -215,7 +220,7 @@ export class FilesTasksService {
   }
 
   private fetchActiveTasks(): Observable<{ activeTasks: FileTask[]; endedTasks: FileTask[] }> {
-    const currentServerTasks = this.store.filesActiveTasks.getValue().filter((task: FileTask) => task.type !== FILE_OPERATION.UPLOAD)
+    const currentServerTasks = this.store.filesActiveTasks().filter((task: FileTask) => task.type !== FILE_OPERATION.UPLOAD)
     if (!currentServerTasks.length) {
       this.stopWatch(false)
       return EMPTY
@@ -245,7 +250,7 @@ export class FilesTasksService {
   }
 
   private reconcileServerTasks(activeTasks: FileTask[], endedTasks: FileTask[]) {
-    const currentTasks = this.store.filesActiveTasks.getValue()
+    const currentTasks = this.store.filesActiveTasks()
     const activeTasksById = new Map(activeTasks.map((task: FileTask) => [task.id, task]))
     const nextTasks: FileTask[] = []
     for (const task of currentTasks) {
@@ -261,16 +266,16 @@ export class FilesTasksService {
       }
     }
     nextTasks.push(...activeTasksById.values())
-    this.store.filesActiveTasks.next(nextTasks)
+    this.store.filesActiveTasks.set(nextTasks)
 
     if (endedTasks.length) {
       const currentTasksById = new Map(currentTasks.map((task: FileTaskClient) => [task.id, task]))
       for (const task of endedTasks) {
         const displayName = currentTasksById.get(task.id)?.displayName
         if (displayName !== undefined) Object.assign(task, { displayName })
-        this.cancellingTasks.delete(task.id)
+        this.setTaskCancelling(task.id, false)
       }
-      this.store.filesEndedTasks.next(this.prependUniqueTasks(this.store.filesEndedTasks.getValue(), endedTasks))
+      this.store.filesEndedTasks.update((tasks) => this.prependUniqueTasks(tasks, endedTasks))
       for (const task of endedTasks) {
         this.taskDone(task)
       }
@@ -285,12 +290,25 @@ export class FilesTasksService {
     return status === FileTaskStatus.PENDING || status === FileTaskStatus.QUEUED
   }
 
+  private setTaskCancelling(taskId: string, cancelling: boolean) {
+    this.cancellingTasks.update((taskIds) => {
+      if (taskIds.has(taskId) === cancelling) return taskIds
+      const nextTaskIds = new Set(taskIds)
+      if (cancelling) {
+        nextTaskIds.add(taskId)
+      } else {
+        nextTaskIds.delete(taskId)
+      }
+      return nextTaskIds
+    })
+  }
+
   private updateActiveTask(task: FileTask) {
-    const activeTasks = this.store.filesActiveTasks.getValue()
+    const activeTasks = this.store.filesActiveTasks()
     const currentTask = activeTasks.find((activeTask: FileTask) => activeTask.id === task.id)
     if (!currentTask) return
     Object.assign(currentTask, task)
-    this.store.filesActiveTasks.next([...activeTasks])
+    this.store.filesActiveTasks.set([...activeTasks])
   }
 
   private prependUniqueTasks(currentTasks: FileTask[], tasks: FileTask[]): FileTask[] {
@@ -301,9 +319,9 @@ export class FilesTasksService {
 
   private deleteTask(taskId: string, active: boolean) {
     if (active) {
-      this.store.filesActiveTasks.next(this.store.filesActiveTasks.getValue().filter((task: FileTask) => task.id !== taskId))
+      this.store.filesActiveTasks.update((tasks) => tasks.filter((task: FileTask) => task.id !== taskId))
     } else {
-      this.store.filesEndedTasks.next(this.store.filesEndedTasks.getValue().filter((task: FileTask) => task.id !== taskId))
+      this.store.filesEndedTasks.update((tasks) => tasks.filter((task: FileTask) => task.id !== taskId))
     }
   }
 
@@ -345,7 +363,7 @@ export class FilesTasksService {
     } else if (deleteTask.path.startsWith(SPACE_REPOSITORY.TRASH)) {
       const deletedTrashPath = `${deleteTask.path}/${deleteTask.name}`
       const deletedFilesPath = `${SPACE_REPOSITORY.FILES}${deletedTrashPath.slice(SPACE_REPOSITORY.TRASH.length)}`
-      const relatedTasks = this.store.filesEndedTasks.getValue().filter((task: FileTask) => {
+      const relatedTasks = this.store.filesEndedTasks().filter((task: FileTask) => {
         if (task.id === deleteTask.id || task.type !== FILE_OPERATION.DELETE) return false
         const taskPath = `${task.path}/${task.name}`
         return (
@@ -360,6 +378,6 @@ export class FilesTasksService {
   }
 
   private clearEndedTasks() {
-    this.store.filesEndedTasks.next([])
+    this.store.filesEndedTasks.set([])
   }
 }

@@ -1,6 +1,6 @@
+import type { Signal } from '@angular/core'
 import type { LucideIcon } from '@lucide/angular'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
-import { BehaviorSubject, Observable } from 'rxjs'
 import { UserStatus } from '../applications/users/interfaces/user.interface'
 
 export const themeDark = 'theme-dark'
@@ -59,7 +59,7 @@ export interface AppMenu {
   placement?: AppMenuPlacement
   isActive?: boolean
   hide?: boolean
-  count?: { value: Observable<any> & BehaviorSubject<any>; level: string }
+  count?: { value: Signal<any>; level: Signal<string> }
   // prop must be an attribute of the userService
   checks?: { negate?: boolean; prop: 'user'; value: UserStatus }[]
   // Allows an application to display another application's navigation while remaining active.
@@ -78,7 +78,7 @@ export interface TabMenu {
   active: boolean
   firstOfLasts?: boolean
   showOnCount?: boolean
-  count?: { value: Observable<any>; level: string }
+  count?: { value: Signal<any>; level: Signal<string> }
 }
 
 export interface AppWindow {

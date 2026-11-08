@@ -1,19 +1,9 @@
 import type { LucideIcon } from '@lucide/angular'
 import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
-import { type FileLocationRepository, resolveFileLocation } from '../components/utils/file-location.utils'
+import { resolveFileLocation } from '../components/utils/file-location.utils'
 import { defaultMimeUrl, getAssetsMimeUrl, mimeDirectory, mimeDirectoryShare } from '../files.constants'
-
-interface FileLocationProps {
-  id: number
-  path: string
-  name: string
-  mime: string
-  mtime: number
-  isDir?: boolean
-  inTrash?: boolean
-  displayRootName?: string
-}
+import type { FileLocationProps, FileLocationRepository } from '../interfaces/file-location.interface'
 
 export abstract class FileLocationModel {
   id: number

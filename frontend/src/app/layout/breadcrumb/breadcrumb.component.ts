@@ -1,7 +1,5 @@
-import { afterNextRender, ChangeDetectorRef, Component, ElementRef, inject, OnDestroy, ViewChild } from '@angular/core'
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
+import { afterNextRender, Component, effect, ElementRef, inject, OnDestroy, signal, viewChild } from '@angular/core'
 import { RouterLink } from '@angular/router'
-import type { LucideIcon } from '@lucide/angular'
 import { LucideChevronDown, LucideChevronRight, LucideCornerDownRight, LucideDynamicIcon, LucideFolder } from '@lucide/angular'
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
 import { LayoutService } from '../layout.service'
@@ -13,16 +11,15 @@ import type { BreadcrumbLevel, BreadCrumbUrl } from './breadcrumb.interfaces'
   imports: [RouterLink, LucideDynamicIcon, BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective]
 })
 export class BreadcrumbComponent implements OnDestroy {
-  @ViewChild('breadcrumbContent') private breadcrumbContent: ElementRef<HTMLElement>
-  @ViewChild('breadcrumbMeasure') private breadcrumbMeasure: ElementRef<HTMLElement>
-  @ViewChild('pathToggle') private pathToggle: ElementRef<HTMLButtonElement>
-  protected readonly icons = { LucideChevronDown, LucideChevronRight, LucideCornerDownRight, LucideFolder }
-  protected breadcrumbIcon: LucideIcon = null
-  protected isOverflowing = false
-  protected levels: BreadcrumbLevel[] = []
-  private readonly canHoverPathMenu = window.matchMedia('(hover: hover) and (pointer: fine)')
-  private readonly cdr = inject(ChangeDetectorRef)
+  private readonly breadcrumbContent = viewChild<ElementRef<HTMLElement>>('breadcrumbContent')
+  private readonly breadcrumbMeasure = viewChild<ElementRef<HTMLElement>>('breadcrumbMeasure')
+  private readonly pathToggle = viewChild<ElementRef<HTMLButtonElement>>('pathToggle')
   private readonly layout = inject(LayoutService)
+  protected readonly icons = { LucideChevronDown, LucideChevronRight, LucideCornerDownRight, LucideFolder }
+  protected readonly breadcrumbIcon = this.layout.breadcrumbIcon
+  protected readonly isOverflowing = signal(false)
+  protected readonly levels = signal<BreadcrumbLevel[]>([])
+  private readonly canHoverPathMenu = window.matchMedia('(hover: hover) and (pointer: fine)')
   private menuFocusFrame: number = null
   private pathMenuHoverCloseTimeout: ReturnType<typeof setTimeout> = null
   private pathMenuOpenedByHover = false
@@ -30,14 +27,14 @@ export class BreadcrumbComponent implements OnDestroy {
   private resizeObserver: ResizeObserver = null
 
   constructor() {
-    this.layout.breadcrumbNav.pipe(takeUntilDestroyed()).subscribe((url) => this.updateNav(url))
-    this.layout.breadcrumbIcon.pipe(takeUntilDestroyed()).subscribe((icon) => {
-      this.breadcrumbIcon = icon
+    effect(() => this.updateNav(this.layout.breadcrumbNav()))
+    effect(() => {
+      this.layout.breadcrumbIcon()
       this.scheduleOverflowMeasure()
     })
     afterNextRender(() => {
-      const content = this.breadcrumbContent?.nativeElement
-      const measure = this.breadcrumbMeasure?.nativeElement
+      const content = this.breadcrumbContent()?.nativeElement
+      const measure = this.breadcrumbMeasure()?.nativeElement
       if (!content || !measure) return
 
       this.scheduleOverflowMeasure()
@@ -57,7 +54,7 @@ export class BreadcrumbComponent implements OnDestroy {
 
   private updateNav(url: BreadCrumbUrl) {
     const urlTabs = url.url.split('/').slice(1)
-    this.levels = []
+    const levels: BreadcrumbLevel[] = []
     if (urlTabs[0]) {
       let link = `/${urlTabs.splice(0, url.splicing ?? 1).join('/')}`
       for (const [index, item] of urlTabs.filter((item) => item !== '').entries()) {
@@ -74,9 +71,10 @@ export class BreadcrumbComponent implements OnDestroy {
         } else if (url.translating) {
           sanitizedItem = this.layout.translateString(sanitizedItem)
         }
-        this.levels.push({ link: index === 0 && url.firstLink ? url.firstLink : link, title: sanitizedItem })
+        levels.push({ link: index === 0 && url.firstLink ? url.firstLink : link, title: sanitizedItem })
       }
     }
+    this.levels.set(levels)
     this.scheduleOverflowMeasure()
   }
 
@@ -136,14 +134,14 @@ export class BreadcrumbComponent implements OnDestroy {
   protected onPathMenuKeydown(event: KeyboardEvent, dropdown: BsDropdownDirective) {
     if (event.key === 'Tab') {
       dropdown.hide()
-      this.pathToggle?.nativeElement.focus()
+      this.pathToggle()?.nativeElement.focus()
       return
     }
     if (event.key === 'Escape') {
       event.preventDefault()
       event.stopPropagation()
       dropdown.hide()
-      this.pathToggle?.nativeElement.focus()
+      this.pathToggle()?.nativeElement.focus()
       return
     }
     if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
@@ -173,7 +171,7 @@ export class BreadcrumbComponent implements OnDestroy {
   }
 
   private scheduleOverflowMeasure() {
-    if (!this.breadcrumbContent?.nativeElement || !this.breadcrumbMeasure?.nativeElement) return
+    if (!this.breadcrumbContent()?.nativeElement || !this.breadcrumbMeasure()?.nativeElement) return
     // Coalesce consecutive resize and content updates into a single post-layout measurement.
     if (this.resizeFrame !== null) cancelAnimationFrame(this.resizeFrame)
     this.resizeFrame = requestAnimationFrame(() => {
@@ -183,12 +181,11 @@ export class BreadcrumbComponent implements OnDestroy {
   }
 
   private measureOverflow() {
-    const content = this.breadcrumbContent.nativeElement
+    const content = this.breadcrumbContent().nativeElement
     // Allow one pixel for fractional layout rounding to prevent compact-mode flicker.
-    const isOverflowing = this.levels.length > 1 && this.breadcrumbMeasure.nativeElement.scrollWidth > content.clientWidth + 1
+    const isOverflowing = this.levels().length > 1 && this.breadcrumbMeasure().nativeElement.scrollWidth > content.clientWidth + 1
 
-    if (isOverflowing === this.isOverflowing) return
-    this.isOverflowing = isOverflowing
-    this.cdr.detectChanges()
+    if (isOverflowing === this.isOverflowing()) return
+    this.isOverflowing.set(isOverflowing)
   }
 }

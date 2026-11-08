@@ -1,9 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common'
-import { Component, ElementRef, EventEmitter, forwardRef, inject, Input, OnDestroy, OnInit, Output, TemplateRef } from '@angular/core'
+import { Component, effect, ElementRef, forwardRef, inject, input, linkedSignal, OnInit, output, signal, TemplateRef } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms'
 import type { LucideIcon } from '@lucide/angular'
 import { LucideCircleQuestionMark, LucideDynamicIcon, LucideX } from '@lucide/angular'
-import { Subscription } from 'rxjs'
+import { Subject } from 'rxjs'
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
 import { OffClickDirective } from '../../directives/off-click.directive'
 import { HighlightPipe } from '../../pipes/highlight.pipe'
@@ -22,35 +23,41 @@ import { SelectItem } from './select.model'
     }
   ]
 })
-export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor {
+export class SelectComponent implements OnInit, ControlValueAccessor {
   public element: ElementRef = inject(ElementRef)
-  @Input({ required: true }) searchFunction: (search: string) => any
-  @Input() customTemplateOptions: TemplateRef<any>
-  @Input() customTemplateSelect: TemplateRef<any>
-  @Input() itemIcon: LucideIcon = LucideCircleQuestionMark
-  @Input() allowClear = true
-  @Input() placeholder = ''
-  @Input() idField = 'id'
-  @Input() nameField = 'name'
-  @Input() descriptionField = 'description'
-  @Output() data = new EventEmitter<any>()
-  @Output() selected = new EventEmitter<any>()
-  @Output() removed = new EventEmitter<any>()
-  @Output() typed = new EventEmitter<any>()
-  @Output() opened = new EventEmitter<any>()
+  readonly searchFunction = input.required<(search: string) => any>()
+  readonly customTemplateOptions = input<TemplateRef<any> | null>(null)
+  readonly customTemplateSelect = input<TemplateRef<any> | null>(null)
+  readonly itemIcon = input<LucideIcon>(LucideCircleQuestionMark)
+  readonly allowClear = input(true)
+  readonly disabled = input(false)
+  readonly active = input<any>(null)
+  readonly placeholder = input('')
+  readonly idField = input('id')
+  readonly nameField = input('name')
+  readonly descriptionField = input('description')
+  readonly data = output<any>()
+  readonly selected = output<any>()
+  readonly removed = output<any>()
+  readonly typed = output<any>()
+  readonly opened = output<any>()
   protected xMarkIcon = LucideX
-  public options: SelectItem[] = []
+  readonly options = signal<SelectItem[]>([])
   public itemObjects: SelectItem[] = []
-  public activeOption: SelectItem
-  public inputMode = false
-  public inputValue = ''
+  readonly activeOption = signal<SelectItem>(undefined)
+  readonly inputMode = signal(false)
+  readonly inputValue = signal('')
   protected onChange: any = Function.prototype
   protected onTouched: any = Function.prototype
-  private subscription: Subscription
+  private readonly typedSearch = new Subject<string>()
   private behavior: GenericBehavior
 
   public constructor() {
     this.clickedOutside = this.clickedOutside.bind(this)
+    this.typedSearch.pipe(debounceTime(200), distinctUntilChanged(), takeUntilDestroyed()).subscribe((search: string) => this.doSearch(search))
+    effect(() => {
+      if (this.disabled()) this.hideOptions()
+    })
   }
 
   private _items: any[] = []
@@ -62,7 +69,7 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
       return
     }
     this._items = value.filter((item: any) => {
-      if (typeof item === 'string' || (typeof item === 'object' && item && item[this.nameField] && item[this.idField])) {
+      if (typeof item === 'string' || (typeof item === 'object' && item && item[this.nameField()] && item[this.idField()])) {
         return item
       }
     })
@@ -71,58 +78,32 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
       typeof item === 'string'
         ? new SelectItem(item)
         : new SelectItem({
-            id: item[this.idField],
-            name: item[this.nameField],
-            description: item[this.descriptionField]
+            id: item[this.idField()],
+            name: item[this.nameField()],
+            description: item[this.descriptionField()]
           })
     )
   }
 
-  private _optionsOpened = false
+  readonly optionsOpened = signal(false)
 
-  get optionsOpened(): boolean {
-    return this._optionsOpened
+  protected readonly activeState = linkedSignal<any>(() =>
+    this.createActiveState(this.active(), this.idField(), this.nameField(), this.descriptionField())
+  )
+
+  private setActive(selectedItem: any, idField: string, nameField: string, descriptionField: string) {
+    this.activeState.set(this.createActiveState(selectedItem, idField, nameField, descriptionField))
   }
 
-  set optionsOpened(value: boolean) {
-    this._optionsOpened = value
-    this.opened.emit(value)
-  }
-
-  private _disabled = false
-
-  public get disabled(): boolean {
-    return this._disabled
-  }
-
-  @Input()
-  public set disabled(value: boolean) {
-    this._disabled = value
-    if (this._disabled === true) {
-      this.hideOptions()
-    }
-  }
-
-  private _active: SelectItem | any = null
-
-  public get active(): SelectItem | any {
-    return this._active
-  }
-
-  @Input()
-  public set active(selectedItem: any) {
-    if (!selectedItem) {
-      this._active = null
-    } else {
-      this._active =
-        typeof selectedItem === 'string'
-          ? selectedItem
-          : new SelectItem({
-              id: selectedItem[this.idField],
-              name: selectedItem[this.nameField],
-              description: selectedItem[this.descriptionField]
-            })
-    }
+  private createActiveState(selectedItem: any, idField: string, nameField: string, descriptionField: string): any {
+    if (!selectedItem) return null
+    return typeof selectedItem === 'string'
+      ? selectedItem
+      : new SelectItem({
+          id: selectedItem[idField],
+          name: selectedItem[nameField],
+          description: selectedItem[descriptionField]
+        })
   }
 
   public inputEvent(e: any, isUpMode = false) {
@@ -138,8 +119,8 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
     if (!isUpMode && e.keyCode === 8) {
       const el: any = this.element.nativeElement.querySelector('div.ui-select-container > input')
       if (!el.value || el.value.length <= 0) {
-        if (this.active) {
-          this.remove(this.active)
+        if (this.activeState()) {
+          this.remove(this.activeState())
         }
         e.preventDefault()
       }
@@ -152,8 +133,8 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
     }
     // del
     if (!isUpMode && e.keyCode === 46) {
-      if (this.active) {
-        this.remove(this.active)
+      if (this.activeState()) {
+        this.remove(this.activeState())
       }
       e.preventDefault()
     }
@@ -183,7 +164,7 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
     }
     // enter
     if (!isUpMode && e.keyCode === 13) {
-      if (!this.active || this.active.id !== this.activeOption.id) {
+      if (!this.activeState() || this.activeState().id !== this.activeOption().id) {
         this.selectActiveMatch()
         this.behavior.next()
       }
@@ -193,55 +174,48 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
 
     const target = e.target || e.srcElement
     if (target) {
-      this.inputValue = target.value
-      this.doEvent('typed', this.inputValue || ' ')
+      this.inputValue.set(target.value)
+      this.doEvent('typed', this.inputValue() || ' ')
     } else {
       this.open()
     }
   }
 
   ngOnInit() {
-    this.subscription = this.typed
-      .asObservable()
-      .pipe(debounceTime(200), distinctUntilChanged())
-      .subscribe((search: string) => this.doSearch(search))
     this.behavior = new GenericBehavior(this)
     this.doEvent('typed', ' ')
   }
 
-  ngOnDestroy() {
-    this.subscription.unsubscribe()
-  }
-
   remove(item: SelectItem) {
-    if (this._disabled === true) {
+    if (this.disabled() === true) {
       return
     }
-    this.active = null
-    this.data.next(this.active)
+    this.setActive(null, this.idField(), this.nameField(), this.descriptionField())
+    this.data.emit(this.activeState())
     this.doEvent('removed', item)
-    this.inputValue = ''
+    this.inputValue.set('')
     this.doEvent('typed', ' ')
   }
 
   doEvent(type: 'typed' | 'removed' | 'selected', value: any) {
     if (this[type] && value) {
-      this[type].next(value)
+      this[type].emit(value)
+      if (type === 'typed') this.typedSearch.next(value)
     }
     this.onTouched()
     if (type === 'selected' || type === 'removed') {
-      this.onChange(this.active)
+      this.onChange(this.activeState())
     }
   }
 
   clickedOutside() {
-    this.inputMode = false
-    this.optionsOpened = false
+    this.inputMode.set(false)
+    this.setOptionsOpened(false)
   }
 
   writeValue(val: any) {
-    this.active = val
-    this.data.emit(this.active)
+    this.setActive(val, this.idField(), this.nameField(), this.descriptionField())
+    this.data.emit(this.activeState())
   }
 
   registerOnChange(fn: (_: any) => any) {
@@ -253,18 +227,18 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
   }
 
   matchClick(_e: any) {
-    if (this._disabled === true) {
+    if (this.disabled() === true) {
       return
     }
-    this.inputMode = !this.inputMode
-    if (this.inputMode === true) {
+    this.inputMode.update((inputMode) => !inputMode)
+    if (this.inputMode()) {
       this.focusToInput()
       this.open()
     }
   }
 
   mainClick(event: any) {
-    if (this.inputMode === true || this._disabled === true) {
+    if (this.inputMode() === true || this.disabled() === true) {
       return
     }
     if (event.keyCode === 46) {
@@ -281,7 +255,7 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
       event.preventDefault()
       return
     }
-    this.inputMode = true
+    this.inputMode.set(true)
     const value = String.fromCharCode(96 <= event.keyCode && event.keyCode <= 105 ? event.keyCode - 48 : event.keyCode).toLowerCase()
     this.focusToInput(value)
     this.open()
@@ -291,11 +265,11 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
   }
 
   selectActive(value: SelectItem) {
-    this.activeOption = value
+    this.activeOption.set(value)
   }
 
   isActive(value: SelectItem): boolean {
-    return this.activeOption.id === value.id
+    return this.activeOption().id === value.id
   }
 
   removeClick(value: SelectItem, event: any) {
@@ -318,11 +292,11 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
       e.stopPropagation()
       e.preventDefault()
     }
-    if (this.options.length <= 0) {
+    if (this.options().length <= 0) {
       return
     }
-    this.active = value
-    this.data.next(this.active)
+    this.setActive(value, this.idField(), this.nameField(), this.descriptionField())
+    this.data.emit(this.activeState())
     this.doEvent('selected', value)
     this.hideOptions()
     this.focusToInput(value.name)
@@ -330,7 +304,7 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
   }
 
   private doSearch(search: string) {
-    this.searchFunction(search).subscribe({
+    this.searchFunction()(search).subscribe({
       next: (items: any[]) => {
         this.items = items
       },
@@ -338,25 +312,32 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
         console.error(e)
         this.items = []
       },
-      complete: () => this.behavior.filter()
+      complete: () => {
+        this.behavior.filter()
+      }
     })
   }
 
   private open() {
-    this.options = this.itemObjects
-    if (this.options.length > 0) {
+    this.options.set(this.itemObjects)
+    if (this.options().length > 0) {
       this.behavior.first()
     }
-    this.optionsOpened = true
+    this.setOptionsOpened(true)
   }
 
   private hideOptions() {
-    this.inputMode = false
-    this.optionsOpened = false
+    this.inputMode.set(false)
+    this.setOptionsOpened(false)
   }
 
   private selectActiveMatch() {
-    this.selectMatch(this.activeOption)
+    this.selectMatch(this.activeOption())
+  }
+
+  private setOptionsOpened(value: boolean) {
+    this.optionsOpened.set(value)
+    this.opened.emit(value)
   }
 }
 
@@ -368,24 +349,27 @@ export class GenericBehavior {
   }
 
   first() {
-    this.actor.activeOption = this.actor.options[0]
+    this.actor.activeOption.set(this.actor.options()[0])
     this.ensureHighlightVisible()
   }
 
   last() {
-    this.actor.activeOption = this.actor.options[this.actor.options.length - 1]
+    const options = this.actor.options()
+    this.actor.activeOption.set(options[options.length - 1])
     this.ensureHighlightVisible()
   }
 
   prev() {
-    const index = this.actor.options.indexOf(this.actor.activeOption)
-    this.actor.activeOption = this.actor.options[index - 1 < 0 ? this.actor.options.length - 1 : index - 1]
+    const options = this.actor.options()
+    const index = options.indexOf(this.actor.activeOption())
+    this.actor.activeOption.set(options[index - 1 < 0 ? options.length - 1 : index - 1])
     this.ensureHighlightVisible()
   }
 
   next() {
-    const index = this.actor.options.indexOf(this.actor.activeOption)
-    this.actor.activeOption = this.actor.options[index + 1 > this.actor.options.length - 1 ? 0 : index + 1]
+    const options = this.actor.options()
+    const index = options.indexOf(this.actor.activeOption())
+    this.actor.activeOption.set(options[index + 1 > options.length - 1 ? 0 : index + 1])
     this.ensureHighlightVisible()
   }
 
@@ -416,17 +400,17 @@ export class GenericBehavior {
   }
 
   filter() {
-    this.actor.options = [...this.actor.itemObjects]
-    if (this.actor.options.length > 0) {
-      this.actor.activeOption = this.actor.options[0]
+    this.actor.options.set([...this.actor.itemObjects])
+    if (this.actor.options().length > 0) {
+      this.actor.activeOption.set(this.actor.options()[0])
       this.ensureHighlightVisible()
     }
   }
 
   private getActiveIndex(optionsMap: Map<string, number> = void 0): number {
-    let ai = this.actor.options.indexOf(this.actor.activeOption)
+    let ai = this.actor.options().indexOf(this.actor.activeOption())
     if (ai < 0 && optionsMap !== void 0) {
-      ai = optionsMap.get(this.actor.activeOption.id)
+      ai = optionsMap.get(this.actor.activeOption().id)
     }
     return ai
   }

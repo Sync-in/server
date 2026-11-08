@@ -4,15 +4,15 @@
      role="toolbar">
   <button (click)="open()"
           [attr.aria-label]="'Open' | translate:locale.language"
-          [disabled]="!selected || selected.isDisabled"
+          [disabled]="!selected() || selected()?.isDisabled"
           class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
           type="button">
-    <svg [lucideIcon]="selected?.isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>
+    <svg [lucideIcon]="selected()?.isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>
     <span class="app-top-menu-tool-bar__label" l10nTranslate>Open</span>
   </button>
   <button (click)="goTo()"
           [attr.aria-label]="'Go to' | translate:locale.language"
-          [disabled]="!selected || selected.isDisabled"
+          [disabled]="!selected() || selected()?.isDisabled"
           class="btn btn-default app-top-menu-tool-bar__action--quiet"
           type="button">
     <svg [lucideIcon]="icons.LucideMapPin"></svg>
@@ -20,7 +20,7 @@
   </button>
   <button (click)="removeFavorite()"
           [attr.aria-label]="'Remove from favorites' | translate:locale.language"
-          [disabled]="!selected"
+          [disabled]="!selected()"
           class="btn btn-default app-top-menu-tool-bar__action--quiet"
           type="button">
     <svg [lucideIcon]="icons.REMOVE_FAVORITE"></svg>
@@ -31,34 +31,35 @@
           class="d-none d-md-block btn btn-default"
           [tooltip]="'Refresh' | translate:locale.language"
           type="button">
-    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
+    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading() ? 'icon-spin' : ''"></svg>
   </button>
   <div class="d-flex align-items-center ms-auto">
-    <app-navigation-view (switchView)="galleryMode = $event"></app-navigation-view>
+    <app-navigation-view (switchView)="galleryMode.set($event)"></app-navigation-view>
   </div>
 </div>
 <!--End Top Menu-->
-@if (galleryMode?.enabled) {
+@let gallery = galleryMode();
+@if (gallery?.enabled) {
   <!--Start Gallery Content-->
-  <div [style.--gallery-card-size]="galleryMode.dimensions + 'px'"
-       [style.--gallery-badge-size]="galleryMode.badgeSize + 'px'"
-       [style.--gallery-image-size]="galleryMode.image + 'px'"
-       [style.--gallery-text-size]="galleryMode.textSize + 'px'"
+  <div [style.--gallery-card-size]="gallery.dimensions + 'px'"
+       [style.--gallery-badge-size]="gallery.badgeSize + 'px'"
+       [style.--gallery-image-size]="gallery.image + 'px'"
+       [style.--gallery-text-size]="gallery.textSize + 'px'"
        class="app-gallery">
     <app-virtual-scroll (contextmenu)="onContextMenu($event)"
-                        [childHeight]="galleryMode.dimensions"
-                        [childWidth]="galleryMode.dimensions"
-                        [items]="favorites | searchFilter:navbarSearch.viewFilter()"
+                        [childHeight]="gallery.dimensions"
+                        [childWidth]="gallery.dimensions"
+                        [items]="favorites() | searchFilter:navbarSearch.viewFilter()"
                         [galleryMode]="true"
                         [resizeOffset]="115">
       <div *ngTemplateOutlet="CommonMessages"></div>
       <div class="row g-0" tabindex="-1">
-        @for (f of scrollView?.viewPortItems; track f.fileId) {
+        @for (f of scrollView()?.viewPortItems(); track f.fileId) {
           <div (click)="onSelect(f)"
                (contextmenu)="onTargetContextMenu($event, f)"
                (appTap)="onFavoriteActivate(f)"
                [class.disabled]="f.isDisabled"
-               [class.selected]="f.fileId === selected?.fileId"
+               [class.selected]="f.fileId === selected()?.fileId"
                class="card">
             <div [attr.rowIndex]="$index" class="card-body">
               <img [src]="f.mimeUrl"
@@ -72,7 +73,7 @@
                 </span>
               }
               <span class="label-bottom-right">
-                @let maxBadges = galleryMode.maxBadges || 0;
+                @let maxBadges = gallery.maxBadges || 0;
                 @let hiddenBadges = f.nbBadges - maxBadges;
                 @for (badge of f.galleryBadges; track badge; let i = $index) {
                   @if (i < maxBadges) {
@@ -179,16 +180,16 @@
   </table>
   <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                       [bufferAmount]="5"
-                      [items]="favorites | searchFilter:navbarSearch.viewFilter()">
+                      [items]="favorites() | searchFilter:navbarSearch.viewFilter()">
     <div *ngTemplateOutlet="CommonMessages"></div>
     <table class="app-table">
       <tbody tabindex="-1">
-        @for (f of scrollView?.viewPortItems; track f.fileId) {
+        @for (f of scrollView()?.viewPortItems(); track f.fileId) {
           <tr (click)="onSelect(f)"
               (contextmenu)="onTargetContextMenu($event, f)"
               (appTap)="onFavoriteActivate(f)"
               [class.disabled]="f.isDisabled"
-              [class.selected]="f.fileId === selected?.fileId">
+              [class.selected]="f.fileId === selected()?.fileId">
             @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
               @if (th.value.show) {
                 <td [style.width.%]="th.value.width"
@@ -289,12 +290,12 @@
 }
 <!--Start Foot Content-->
 <div class="app-foot-menu">
-  <span class="mx-auto">{{ favorites.length }} {{ 'favorites' | translate:locale.language }}</span>
+  <span class="mx-auto">{{ favorites().length }} {{ 'favorites' | translate:locale.language }}</span>
 </div>
 <!--End Foot Content-->
 <!--Start Common Messages-->
 <ng-template #CommonMessages>
-  @if (!loading && !favorites.length) {
+  @if (!loading() && !favorites().length) {
     <div class="fs-base text-center text-gray fw-bold no-select p-4">
       <span l10nTranslate>No favorites</span>
     </div>
@@ -308,9 +309,9 @@
   </ng-template>
 </context-menu>
 <context-menu #TargetContextMenu>
-  @if (!selected?.isDisabled) {
+  @if (!selected()?.isDisabled) {
     <ng-template (execute)="open()" contextMenuItem>
-      <span l10nTranslate><svg [lucideIcon]="selected?.isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>Open</span>
+      <span l10nTranslate><svg [lucideIcon]="selected()?.isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>Open</span>
     </ng-template>
     <ng-template (execute)="goTo()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.LucideMapPin"></svg>Go to</span>

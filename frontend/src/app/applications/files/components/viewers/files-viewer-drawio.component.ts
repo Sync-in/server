@@ -1,5 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import { Component, ElementRef, HostListener, inject, input, OnInit, signal, viewChild } from '@angular/core'
+import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser'
 import type { DrawioSettingsDto } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.dtos'
 import { DRAWIO_IMPORT_EXTENSIONS, EMPTY_DRAWIO_XML } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.constants'
@@ -88,7 +89,7 @@ import type { DrawioEditorEvent, DrawioInitializationMode } from './interfaces/f
   `
 })
 export class FilesViewerDrawioComponent extends FilesViewerEditableBase implements OnInit {
-  directoryFiles = input.required<FileModel[]>()
+  readonly directoryFiles = input.required<FileModel[]>()
   protected readonly loading = signal(true)
   protected readonly loadFailed = signal(false)
   protected readonly iframeSrc = signal<SafeResourceUrl | null>(null)
@@ -231,7 +232,7 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
 
   private configureIframe() {
     const editorUrl = new URL(this.editorServerUrl)
-    editorUrl.searchParams.set('dark', this.currentTheme === USER_THEME.DARK ? '1' : '0')
+    editorUrl.searchParams.set('dark', this.currentTheme() === USER_THEME.DARK ? '1' : '0')
     editorUrl.searchParams.set('lang', this.locale.language)
     if (this.isReadonlyView() && this.initializationMode !== 'import') {
       editorUrl.searchParams.set('chrome', '0')
@@ -400,7 +401,9 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
       { keyboard: false }
     )
     this.saveAsModalRef = modalRef
-    const confirmSubscription = modalRef.content!.confirmSave.subscribe((baseName: string) => this.saveImportedFile(baseName))
+    const confirmSubscription = outputToObservable(modalRef.content!.confirmSave)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((baseName: string) => this.saveImportedFile(baseName))
     modalRef.onHidden?.pipe(take(1)).subscribe(() => {
       confirmSubscription.unsubscribe()
       if (this.saveAsModalRef !== modalRef) return

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
 import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
 import { LucideCopy, LucideDynamicIcon, LucideKeyRound, LucideLock } from '@lucide/angular'
 import { TWO_FA_CODE_LENGTH } from '@sync-in-server/backend/src/authentication/constants/auth'
@@ -19,10 +19,10 @@ export class UserAuth2faEnableDialogComponent {
   @Input({ required: true }) qrDataUrl!: string
   @Input({ required: true }) secret!: string
   @Output() isValid = new EventEmitter<boolean>()
-  protected wasEnabled = false
-  protected submitted = false
-  protected hasError: any = null
-  protected recoveryCodes: string[]
+  protected readonly wasEnabled = signal(false)
+  protected readonly submitted = signal(false)
+  protected readonly hasError = signal<any>(null)
+  protected readonly recoveryCodes = signal<string[]>([])
   protected readonly icons = { LucideKeyRound, LucideLock, LucideCopy }
   protected readonly twoFaCodelength = TWO_FA_CODE_LENGTH
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
@@ -41,21 +41,21 @@ export class UserAuth2faEnableDialogComponent {
   }
 
   onSubmit() {
-    this.submitted = true
+    this.submitted.set(true)
     this.userService.enable2Fa({ code: this.twoFaForm.value.totpCode, password: this.twoFaForm.value.password }).subscribe({
       next: (res: TwoFaEnableResult) => {
         if (res.success) {
-          this.wasEnabled = true
-          this.recoveryCodes = res.recoveryCodes
+          this.wasEnabled.set(true)
+          this.recoveryCodes.set(res.recoveryCodes)
           this.isValid.emit(true)
         } else {
-          this.hasError = 'Invalid code'
+          this.hasError.set('Invalid code')
         }
-        setTimeout(() => (this.submitted = false), 1000)
+        setTimeout(() => this.submitted.set(false), 1000)
       },
       error: (e) => {
-        this.hasError = e.error ? e.error.message : e
-        setTimeout(() => (this.submitted = false), 1000)
+        this.hasError.set(e.error ? e.error.message : e)
+        setTimeout(() => this.submitted.set(false), 1000)
       }
     })
   }
@@ -66,12 +66,12 @@ export class UserAuth2faEnableDialogComponent {
   }
 
   clipBoardRecoveryCodes() {
-    this.clipBoardService.copyFromContent(this.recoveryCodes.join('\n'))
+    this.clipBoardService.copyFromContent(this.recoveryCodes().join('\n'))
     this.layout.sendNotification('success', 'Two-Factor Authentication', 'Recovery codes copied')
   }
 
   downloadRecoveryCodes() {
-    const text = this.recoveryCodes.join('\n') // un code par ligne
+    const text = this.recoveryCodes().join('\n') // un code par ligne
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
     // create a temporary link
     const url = URL.createObjectURL(blob)

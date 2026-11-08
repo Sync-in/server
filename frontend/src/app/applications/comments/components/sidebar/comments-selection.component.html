@@ -16,9 +16,9 @@
     </button>
   </div>
 </div>
-@if (comments.length) {
+@if (comments().length) {
   <div class="fs-sm selection-panel" appAutoResize>
-    @for (comment of comments; track comment.id) {
+    @for (comment of comments(); track comment.id) {
       <div class="mb-1 app-small-card app-comment rounded">
         <div class="d-flex px-2 pt-2 pb-1">
           <app-user-avatar class="me-1" [user]="comment.author" [width]="24" [height]="24"></app-user-avatar>

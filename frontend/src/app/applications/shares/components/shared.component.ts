@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core'
+import { Component, inject, OnInit, signal, ViewChild, viewChild } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 import {
   LucideArrowDown,
@@ -61,14 +61,10 @@ import { ShareRepositoryComponent } from './utils/share-repository.component'
   templateUrl: 'shared.component.html'
 })
 export class SharedComponent implements OnInit {
-  @ViewChild(VirtualScrollComponent) scrollView: {
-    element: ElementRef
-    viewPortItems: ShareFileModel[]
-    scrollInto: (arg: ShareFileModel | number) => void
-  }
+  protected readonly scrollView = viewChild<VirtualScrollComponent<ShareFileModel>>(VirtualScrollComponent)
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
-  @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
-  @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  readonly mainContextMenu = viewChild.required<ContextMenuComponent<any>>('MainContextMenu')
+  readonly targetContextMenu = viewChild.required<ContextMenuComponent<any>>('TargetContextMenu')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly navbarSearch = inject(NavbarSearchService)
@@ -88,10 +84,7 @@ export class SharedComponent implements OnInit {
   }
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly TAB_MENU = TAB_MENU
-  protected loading = false
-  protected galleryMode: ViewMode
-  protected shares: ShareFileModel[] = []
-  protected selected: ShareFileModel = null
+  protected readonly galleryMode = signal<ViewMode>(undefined)
   // Sort
   protected tableHeaders: Record<'name' | 'from' | 'members' | 'info' | 'created', TableHeaderConfig> = {
     name: {
@@ -128,6 +121,9 @@ export class SharedComponent implements OnInit {
     }
   }
   private readonly activatedRoute = inject(ActivatedRoute)
+  protected readonly loading = signal(false)
+  protected readonly shares = signal<ShareFileModel[]>([])
+  protected readonly selected = signal<ShareFileModel>(null)
   private readonly store = inject(StoreService)
   private readonly sharesService = inject(SharesService)
   private focusOnSelect: string
@@ -146,11 +142,11 @@ export class SharedComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.galleryMode = this.btnNavigationView.currentView()
+    this.galleryMode.set(this.btnNavigationView.currentView())
   }
 
   loadShares() {
-    this.loading = true
+    this.loading.set(true)
     this.onSelect()
     this.sharesService.listShares().subscribe({
       next: (shares: ShareFile[]) => {
@@ -159,28 +155,28 @@ export class SharedComponent implements OnInit {
           false,
           shares.map((s: ShareFile) => new ShareFileModel(s))
         )
-        this.loading = false
+        this.loading.set(false)
         if (this.focusOnSelect) {
           this.focusOn(this.focusOnSelect)
         } else {
-          this.scrollView.scrollInto(-1)
+          this.scrollView()?.scrollInto(-1)
         }
       },
       error: (e: HttpErrorResponse) => {
-        this.shares = []
-        this.loading = false
+        this.shares.set([])
+        this.loading.set(false)
         this.layout.sendNotification('error', 'Shares', e.error.message)
       }
     })
   }
 
   sortBy(column: string, toUpdate = true, collection?: ShareFileModel[]) {
-    this.shares = this.sortTable.sortBy(column, toUpdate, collection || this.shares)
+    this.shares.set(this.sortTable.sortBy(column, toUpdate, collection || this.shares()))
   }
 
   onSelect(share: ShareFileModel = null) {
-    this.selected = share
-    this.store.shareSelection.set(this.selected)
+    this.selected.set(share)
+    this.store.shareSelection.set(this.selected())
   }
 
   onShareActivate(share: ShareFileModel) {
@@ -199,7 +195,7 @@ export class SharedComponent implements OnInit {
         }
       })
     } else {
-      this.sharesService.getShare(this.selected.id).subscribe({
+      this.sharesService.getShare(this.selected()!.id).subscribe({
         next: (share: ShareModel) => {
           const modalRef: BsModalRef<ShareDialogComponent> = this.layout.openDialog(ShareDialogComponent, 'lg', {
             initialState: { share: share } as ShareDialogComponent
@@ -207,11 +203,11 @@ export class SharedComponent implements OnInit {
           modalRef.content.shareChange.pipe(take(1)).subscribe((r: ['update' | 'delete' | 'add', ShareModel]) => {
             const [action, s] = r
             if (action === 'update') {
-              this.selected.name = s.name
-              this.selected.alias = s.alias
-              this.selected.description = s.description
-              this.selected.modifiedAt = s.modifiedAt
-              this.selected.enabled = s.enabled
+              this.selected()!.name = s.name
+              this.selected()!.alias = s.alias
+              this.selected()!.description = s.description
+              this.selected()!.modifiedAt = s.modifiedAt
+              this.selected()!.enabled = s.enabled
               const counts = { users: 0, groups: 0, links: s.links.length }
               for (const m of s.members) {
                 if (m.isUser) {
@@ -220,18 +216,19 @@ export class SharedComponent implements OnInit {
                   counts.groups++
                 }
               }
-              this.selected.counts = { ...this.selected.counts, ...counts }
+              this.selected()!.counts = { ...this.selected()!.counts, ...counts }
+              this.notifyShareMutation(this.selected()!)
             } else if (action === 'delete') {
               this.onSelect()
               this.sortBy(
                 this.sortTable.sortParam.column,
                 false,
-                this.shares.filter((share: ShareFileModel) => share.id !== s.id)
+                this.shares().filter((share: ShareFileModel) => share.id !== s.id)
               )
             }
           })
         },
-        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Edit share', this.selected.name, e)
+        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Edit share', this.selected()!.name, e)
       })
     }
   }
@@ -239,15 +236,25 @@ export class SharedComponent implements OnInit {
   openChildShareDialog(share?: ShareFileModel) {
     if (share) this.onSelect(share)
     const modalRef: BsModalRef<SharedChildrenDialogComponent> = this.layout.openDialog(SharedChildrenDialogComponent, null, {
-      initialState: { share: this.selected } as SharedChildrenDialogComponent
+      initialState: { share: this.selected() } as SharedChildrenDialogComponent
     })
-    modalRef.content.sharesCountEvent.subscribe((sharesCount: number) => (this.selected.counts.shares = sharesCount))
+    modalRef.content.sharesCountEvent.subscribe((sharesCount: number) => {
+      this.selected()!.counts.shares = sharesCount
+      this.notifyShareMutation(this.selected()!)
+    })
+  }
+
+  private notifyShareMutation(share: ShareFileModel) {
+    this.shares.update((shares) => [...shares])
+    if (this.selected() === share) {
+      this.store.shareSelection.set(share)
+    }
   }
 
   onContextMenu(ev: Event) {
     ev.preventDefault()
     ev.stopPropagation()
-    this.layout.openContextMenu(ev, this.mainContextMenu)
+    this.layout.openContextMenu(ev, this.mainContextMenu())
   }
 
   onTargetContextMenu(ev: Event, share: ShareFileModel) {
@@ -256,11 +263,11 @@ export class SharedComponent implements OnInit {
       ev.stopPropagation()
     }
     this.onSelect(share)
-    this.layout.openContextMenu(ev, this.targetContextMenu)
+    this.layout.openContextMenu(ev, this.targetContextMenu())
   }
 
   goTo(share?: ShareFileModel) {
-    share = share || this.selected
+    share = share || this.selected()
     this.sharesService.goTo(share).catch(console.error)
   }
 
@@ -269,10 +276,10 @@ export class SharedComponent implements OnInit {
   }
 
   private focusOn(select: string) {
-    const s = this.shares.find((share) => share.name === select)
-    if (s) {
-      setTimeout(() => this.scrollView.scrollInto(s), 100)
-      this.onSelect(s)
+    const share = this.shares().find((item) => item.name === select)
+    if (share) {
+      setTimeout(() => this.scrollView()?.scrollInto(share), 100)
+      this.onSelect(share)
     }
   }
 }

@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http'
-import { inject, Injectable } from '@angular/core'
+import { inject, Injectable, signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { API_SYNC_CLIENTS, SYNC_ROUTE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
 import {
@@ -21,6 +21,7 @@ import type { FileModel } from '../../files/models/file.model'
 import { SPACES_PATH, SPACES_TITLE } from '../../spaces/spaces.constants'
 import { CLIENT_SCHEDULER_STATE } from '../constants/client'
 import { SYNC_PATH_ACTION } from '../constants/path'
+import type { SyncWizardLocalPath, SyncWizardState } from '../interfaces/sync-wizard-state.interface'
 import { SyncClientModel } from '../models/sync-client.model'
 import { SyncPathModel } from '../models/sync-path.model'
 import { SyncWizardPath } from '../models/sync-wizard-path.model'
@@ -30,34 +31,14 @@ import { getServerPath } from '../sync.utils'
   providedIn: 'root'
 })
 export class SyncService {
-  // wizard
-  public wizard: {
-    localPath: {
-      name: string
-      path: string
-      mimeUrl: string
-      origin: string
-    }
-    remotePath: SyncWizardPath
-    settings: {
-      conflictMode: SYNC_PATH_CONFLICT_MODE
-      diffMode: SYNC_PATH_DIFF_MODE
-      enabled: boolean
-      ignoreDelete: boolean
-      mode: SYNC_PATH_MODE
-      name: string
-      scheduler: { unit: string; value: number }
-    }
-  }
+  private readonly wizardState = signal<SyncWizardState>(this.createWizardState())
+  readonly wizard = this.wizardState.asReadonly()
+
   private readonly router = inject(Router)
   private readonly http = inject(HttpClient)
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
   private readonly electron = inject(Electron)
-
-  constructor() {
-    this.resetWizard()
-  }
 
   showOpenDialog(properties: { properties: ELECTRON_DIALOG[]; defaultPath: string }) {
     return this.electron.invoke(EVENT.MISC.DIALOG_OPEN, properties)
@@ -162,21 +143,39 @@ export class SyncService {
   }
 
   addFileToRemotePath(f: FileModel) {
-    this.wizard.remotePath = new SyncWizardPath({
-      id: f.id,
-      name: f.name,
-      path: f.path,
-      isDir: f.isDir,
-      mime: f.mime,
-      mimeUrl: f.mimeUrl,
-      enabled: true,
-      isWriteable: true,
-      inShare: f.path.split('/')[0] === SPACES_PATH.SHARES
-    })
+    this.setWizardRemotePath(
+      new SyncWizardPath({
+        id: f.id,
+        name: f.name,
+        path: f.path,
+        isDir: f.isDir,
+        mime: f.mime,
+        mimeUrl: f.mimeUrl,
+        enabled: true,
+        isWriteable: true,
+        inShare: f.path.split('/')[0] === SPACES_PATH.SHARES
+      })
+    )
+  }
+
+  setWizardLocalPath(localPath: SyncWizardLocalPath | null) {
+    this.wizardState.update((wizard) => ({ ...wizard, localPath }))
+  }
+
+  updateWizardLocalPath(localPath: Partial<SyncWizardLocalPath>) {
+    this.wizardState.update((wizard) => (wizard.localPath ? { ...wizard, localPath: { ...wizard.localPath, ...localPath } } : wizard))
+  }
+
+  setWizardRemotePath(remotePath: SyncWizardPath | null) {
+    this.wizardState.update((wizard) => ({ ...wizard, remotePath }))
   }
 
   resetWizard() {
-    this.wizard = {
+    this.wizardState.set(this.createWizardState())
+  }
+
+  private createWizardState(): SyncWizardState {
+    return {
       localPath: null,
       remotePath: null,
       settings: {

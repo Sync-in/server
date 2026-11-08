@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core'
+import { Component, inject, signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { LucideCircleArrowLeft, LucideCircleCheck, LucideDynamicIcon } from '@lucide/angular'
 import { SYNC_PATH_CONFLICT_MODE, SYNC_PATH_MODE } from '@sync-in-server/backend/src/applications/sync/constants/sync'
@@ -22,25 +22,25 @@ export class SyncWizardSettingsComponent {
   protected readonly SYNC_PATH_CONFLICT_MODE = SYNC_PATH_CONFLICT_MODE
   protected readonly SYNC_PATH_MODE = SYNC_PATH_MODE
   protected readonly icons = { CLIENT: SYNC_ICON.CLIENT, SERVER: SYNC_ICON.SERVER, LucideCircleArrowLeft, LucideCircleCheck }
-  protected readonly translatedRemotePath = this.syncService.translateServerPath(this.syncService.wizard.remotePath.serverPath)
+  protected readonly translatedRemotePath = this.syncService.translateServerPath(this.syncService.wizard().remotePath.serverPath)
   protected syncPath: SyncPathModel
-  protected error: string = null
+  protected readonly error = signal<string | null>(null)
   private readonly router = inject(Router)
   private readonly layout = inject(LayoutService)
 
   constructor() {
     this.syncPath = new SyncPathModel({
       settings: {
-        name: this.syncService.wizard.localPath.name,
-        localPath: this.syncService.wizard.localPath.path,
-        remotePath: this.syncService.wizard.remotePath.serverPath,
-        enabled: this.syncService.wizard.settings.enabled,
-        mode: this.syncService.wizard.remotePath.isWriteable ? this.syncService.wizard.settings.mode : SYNC_PATH_MODE.DOWNLOAD,
-        ignoreDelete: this.syncService.wizard.settings.ignoreDelete,
-        conflictMode: this.syncService.wizard.settings.conflictMode,
-        diffMode: this.syncService.wizard.settings.diffMode,
-        scheduler: this.syncService.wizard.settings.scheduler,
-        permissions: this.syncService.wizard.remotePath.permissions
+        name: this.syncService.wizard().localPath.name,
+        localPath: this.syncService.wizard().localPath.path,
+        remotePath: this.syncService.wizard().remotePath.serverPath,
+        enabled: this.syncService.wizard().settings.enabled,
+        mode: this.syncService.wizard().remotePath.isWriteable ? this.syncService.wizard().settings.mode : SYNC_PATH_MODE.DOWNLOAD,
+        ignoreDelete: this.syncService.wizard().settings.ignoreDelete,
+        conflictMode: this.syncService.wizard().settings.conflictMode,
+        diffMode: this.syncService.wizard().settings.diffMode,
+        scheduler: this.syncService.wizard().settings.scheduler,
+        permissions: this.syncService.wizard().remotePath.permissions
       }
     } as SyncPathModel)
     this.layout.setBreadcrumbIcon(SYNC_ICON.WIZARD)
@@ -59,7 +59,7 @@ export class SyncWizardSettingsComponent {
   async onSubmit() {
     const r: SyncPathModel | string = await this.syncService.addPath(this.syncPath.settings)
     if (typeof r === 'string') {
-      this.error = r
+      this.error.set(r)
     } else {
       await this.syncService.refreshPaths()
       this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.PATHS], { state: { id: r.id, withSettings: false } }).catch(console.error)

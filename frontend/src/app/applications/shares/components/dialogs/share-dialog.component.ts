@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Injector, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Injector, Input, OnInit, Output, signal } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideLoader, LucidePlus, LucideSettings, LucideUserRoundKey, LucideUsersRound } from '@lucide/angular'
 import type { FileSpace } from '@sync-in-server/backend/src/applications/files/interfaces/file-space.interface'
@@ -76,18 +76,19 @@ export class ShareDialogComponent implements OnInit {
     LucideUsersRound,
     LucideSettings
   }
-  protected tabView: undefined | 'members' | 'links'
-  protected allowedPermissions: Partial<`${SPACE_OPERATION}`>[] = []
-  protected confirmDeletion = false
-  protected loading = false
-  protected submitted = false
+  protected readonly tabView = signal<undefined | 'members' | 'links'>(undefined)
+  protected readonly allowedPermissions = signal<Partial<`${SPACE_OPERATION}`>[]>([])
+  protected readonly confirmDeletion = signal(false)
+  protected readonly loading = signal(false)
+  protected readonly submitted = signal(false)
+  protected readonly viewShare = signal<ShareModel>(undefined, { equal: () => false })
   private readonly injector = inject(Injector)
   private memberSearchService!: Pick<UserService, 'searchMembers'> | Pick<AdminService, 'searchMembers'>
   private readonly store = inject(StoreService)
   private readonly sharesService = inject(SharesService)
   private readonly linksService = inject(LinksService)
   private readonly spacesService = inject(SpacesService)
-  protected readonly user: UserType = this.store.user.getValue()
+  protected readonly user: UserType = this.store.user()
 
   ngOnInit() {
     this.memberSearchService = this.fromAdmin ? this.injector.get(AdminService) : this.injector.get(UserService)
@@ -95,7 +96,7 @@ export class ShareDialogComponent implements OnInit {
       // new share
       ;[this.share, this.parentShareId] = this.sharesService.initShareFromFile(this.user, this.file, this.isSharesRepo, this.inSharesList)
     }
-    this.allowedPermissions = Object.keys(this.share.hPerms) as `${SPACE_OPERATION}`[]
+    this.setShare(this.share)
   }
 
   searchMembers(query: string): Observable<MemberModel[]> {
@@ -134,8 +135,7 @@ export class ShareDialogComponent implements OnInit {
       }
       const share = { ...this.share, file: f, externalPath: null }
       share.name = share.file.name
-      this.share = new ShareModel(share)
-      this.allowedPermissions = Object.keys(this.share.hPerms) as `${SPACE_OPERATION}`[]
+      this.setShare(new ShareModel(share))
     })
   }
 
@@ -145,17 +145,16 @@ export class ShareDialogComponent implements OnInit {
     })
     modalRef.content.submitEvent.pipe(take(1)).subscribe((file: ExternalFilePathEvent) => {
       const share = { ...this.share, file: null, externalPath: file.externalPath, name: file.externalPath.split('/').at(-1) }
-      this.share = new ShareModel(share)
-      this.allowedPermissions = Object.keys(this.share.hPerms) as `${SPACE_OPERATION}`[]
+      this.setShare(new ShareModel(share))
     })
   }
 
   openEditLinkDialog(member: MemberModel) {
-    this.linksService.editLinkDialog(member, this.share, LINK_TYPE.SHARE)
+    this.linksService.editLinkDialog(member, this.share, LINK_TYPE.SHARE, () => this.viewShare.set(this.share))
   }
 
   openCreateLinkDialog() {
-    this.linksService.createLinkDialog(this.share)
+    this.linksService.createLinkDialog(this.share, () => this.viewShare.set(this.share))
   }
 
   setShareStatus(status: boolean) {
@@ -172,13 +171,13 @@ export class ShareDialogComponent implements OnInit {
   }
 
   cantSubmit() {
-    return this.submitted || (!this.share.externalPath && !this.share.file)
+    return this.submitted() || (!this.share.externalPath && !this.share.file)
   }
 
   onSubmit() {
-    this.loading = true
-    this.submitted = true
-    if (this.confirmDeletion) {
+    this.loading.set(true)
+    this.submitted.set(true)
+    if (this.confirmDeletion()) {
       // delete
       const deleteShare: Observable<void> = this.parentShareId
         ? this.sharesService.deleteShareChild(this.parentShareId, this.share.id)
@@ -187,7 +186,7 @@ export class ShareDialogComponent implements OnInit {
           : this.sharesService.deleteShare(this.share.id)
       deleteShare.subscribe({
         next: () => {
-          this.loading = false
+          this.loading.set(false)
           this.shareChange.emit(['delete', this.share])
           this.layout.closeDialog()
         },
@@ -200,8 +199,8 @@ export class ShareDialogComponent implements OnInit {
       // create
       this.sharesService.createShare(this.share).subscribe({
         next: (share: ShareModel) => {
-          this.loading = false
-          this.share = share
+          this.loading.set(false)
+          this.setShare(share)
           this.shareChange.emit(['add', share])
           this.layout.closeDialog()
         },
@@ -219,8 +218,8 @@ export class ShareDialogComponent implements OnInit {
           : this.sharesService.updateShare(this.share)
       updateShare.subscribe({
         next: (share: ShareModel) => {
-          this.loading = false
-          this.share = share
+          this.loading.set(false)
+          this.setShare(share)
           this.shareChange.emit(['update', share])
           this.layout.closeDialog()
         },
@@ -233,16 +232,22 @@ export class ShareDialogComponent implements OnInit {
   }
 
   onCancel() {
-    if (this.confirmDeletion) {
-      this.confirmDeletion = false
+    if (this.confirmDeletion()) {
+      this.confirmDeletion.set(false)
     } else {
       this.layout.closeDialog()
     }
   }
 
   private onError() {
-    this.confirmDeletion = false
-    this.submitted = false
-    this.loading = false
+    this.confirmDeletion.set(false)
+    this.submitted.set(false)
+    this.loading.set(false)
+  }
+
+  private setShare(share: ShareModel) {
+    this.share = share
+    this.viewShare.set(share)
+    this.allowedPermissions.set(Object.keys(share.hPerms) as `${SPACE_OPERATION}`[])
   }
 }

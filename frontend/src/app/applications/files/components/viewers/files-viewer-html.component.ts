@@ -1,28 +1,30 @@
 import { HttpClient } from '@angular/common/http'
-import { Component, inject, input, OnInit } from '@angular/core'
-import { DomSanitizer } from '@angular/platform-browser'
+import { Component, inject, input, OnInit, signal } from '@angular/core'
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser'
 import { LayoutService } from '../../../../layout/layout.service'
 
 @Component({
   selector: 'app-files-viewer-html',
-  template: `@if (content) {
-    <iframe [src]="content" [style.height.px]="currentHeight()" class="app-viewer-iframe" sandbox></iframe>
+  template: `@if (content(); as resourceUrl) {
+    <iframe [src]="resourceUrl" [style.height.px]="currentHeight()" class="app-viewer-iframe" sandbox></iframe>
   }`
 })
 export class FilesViewerHtmlComponent implements OnInit {
-  fileUrl = input<string>()
-  currentHeight = input<number>()
-  protected content: any = null
+  readonly fileUrl = input<string>()
+  readonly currentHeight = input<number>()
+  protected readonly content = signal<SafeResourceUrl | null>(null)
   private readonly http = inject(HttpClient)
   private readonly sanitizer = inject(DomSanitizer)
   private readonly layout = inject(LayoutService)
 
   ngOnInit() {
     this.http.get(this.fileUrl(), { responseType: 'text' }).subscribe({
-      next: (data: string) => (this.content = this.sanitizer.bypassSecurityTrustResourceUrl(`data:text/html,${data}`)),
+      next: (data: string) => {
+        this.content.set(this.sanitizer.bypassSecurityTrustResourceUrl(`data:text/html,${data}`))
+      },
       error: (e) => {
-        this.content = this.sanitizer.bypassSecurityTrustResourceUrl(
-          `data:text/html,${this.layout.translateString('Unable to open document')} : ${e.statusText}`
+        this.content.set(
+          this.sanitizer.bypassSecurityTrustResourceUrl(`data:text/html,${this.layout.translateString('Unable to open document')} : ${e.statusText}`)
         )
       }
     })

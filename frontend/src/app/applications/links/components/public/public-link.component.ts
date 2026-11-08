@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core'
+import { Component, inject, signal } from '@angular/core'
 import { ActivatedRoute, Data, Params } from '@angular/router'
 import { LucideDynamicIcon, LucideEye, LucideHardDriveDownload, LucidePencil } from '@lucide/angular'
 import type { SpaceLink } from '@sync-in-server/backend/src/applications/links/interfaces/link-space.interface'
@@ -17,9 +17,9 @@ import { PublicLinkHeaderComponent } from './public-link-header.component'
 export class PublicLinkComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { SPACES: SPACES_ICON.SPACES, LucideEye, LucideHardDriveDownload, LucidePencil }
-  protected file: FileModel
-  protected fileCanBeModified: boolean
-  protected link: SpaceLink
+  protected readonly file = signal<FileModel>(undefined)
+  protected readonly fileCanBeModified = signal(false)
+  protected readonly link = signal<SpaceLink>(undefined)
   private readonly activatedRoute = inject(ActivatedRoute)
   private readonly linksService = inject(LinksService)
   private linkUUID: string
@@ -30,7 +30,7 @@ export class PublicLinkComponent {
   }
 
   openLink() {
-    this.linksService.linkAccessOrView(this.linkUUID, this.link, true)
+    this.linksService.linkAccessOrView(this.linkUUID, this.link(), true)
   }
 
   downloadLink() {
@@ -38,32 +38,34 @@ export class PublicLinkComponent {
   }
 
   followLink() {
-    this.linksService.linkAccessOrView(this.linkUUID, this.link)
+    this.linksService.linkAccessOrView(this.linkUUID, this.link())
   }
 
   fallBackMimeUrl() {
-    this.file.fallBackMimeUrl()
+    this.file().fallBackMimeUrl()
   }
 
   private setLink(link: SpaceLink) {
     if (!link.space) {
-      this.file = new FileModel(
-        {
-          id: -1,
-          name: link.share.name,
-          path: '',
-          isDir: link.share.isDir,
-          size: link.share.size,
-          mime: link.share.mime,
-          mtime: link.share.mtime,
-          root: { alias: link.share.alias }
-        } as FileModel,
-        SPACE_REPOSITORY.SHARES,
-        link.share.hasParent,
-        link.fileEditors
+      this.file.set(
+        new FileModel(
+          {
+            id: -1,
+            name: link.share.name,
+            path: '',
+            isDir: link.share.isDir,
+            size: link.share.size,
+            mime: link.share.mime,
+            mtime: link.share.mtime,
+            root: { alias: link.share.alias }
+          } as FileModel,
+          SPACE_REPOSITORY.SHARES,
+          link.share.hasParent,
+          link.fileEditors
+        )
       )
-      this.fileCanBeModified = link.share.permissions.indexOf(SPACE_OPERATION.MODIFY) > -1
+      this.fileCanBeModified.set(link.share.permissions.indexOf(SPACE_OPERATION.MODIFY) > -1)
     }
-    this.link = link
+    this.link.set(link)
   }
 }

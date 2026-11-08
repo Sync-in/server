@@ -1,13 +1,15 @@
 import { NgTemplateOutlet } from '@angular/common'
-import { Component, computed, HostListener, inject, Input, model, OnDestroy, OnInit, signal } from '@angular/core'
+import { Component, computed, HostListener, inject, Input, model, OnInit, output, signal } from '@angular/core'
+import { toSignal } from '@angular/core/rxjs-interop'
 import { LucideDynamicIcon, LucideEye, LucidePencil } from '@lucide/angular'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
 import { L10nTranslateDirective } from 'angular-l10n'
-import { Subscription } from 'rxjs'
+import { map } from 'rxjs'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
 import { SHORT_MIME } from '../../files.constants'
+import type { FileChangeHandler } from '../../interfaces/file-viewer.interface'
 import { FileModel } from '../../models/file.model'
 import { FilesViewerCollaboraOnlineComponent } from '../viewers/files-viewer-collabora-online.component'
 import { FilesViewerDrawioComponent } from '../viewers/files-viewer-drawio.component'
@@ -35,43 +37,62 @@ import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component
   ],
   templateUrl: 'files-viewer-dialog.component.html'
 })
-export class FilesViewerDialogComponent implements OnInit, OnDestroy {
+export class FilesViewerDialogComponent implements OnInit {
   @Input({ required: true }) currentFile: FileModel
   @Input({ required: true }) directoryFiles: FileModel[]
   @Input({ required: true }) mode: FILE_MODE
   @Input({ required: true }) isWriteable: boolean
   @Input({ required: true }) hookedShortMime: string
   @Input({ required: true }) editorProvider: FileEditorProviders
-  modalClosing = signal<boolean>(false)
-  protected activeViewer = signal<string>('')
-  protected editableViewerReady = signal(false)
-  protected isReadonly = model<boolean>(true)
-  protected currentHeight: number
+  @Input() fileChangeHandler?: FileChangeHandler
+  readonly fileChange = output<FileModel>()
+  protected readonly currentFileState = signal<FileModel | null>(null, { equal: () => false })
+  protected readonly directoryFilesState = signal<FileModel[]>([])
+  private readonly modeState = signal<FILE_MODE>(undefined)
+  protected readonly isWriteableState = signal(false)
+  protected readonly hookedShortMimeState = signal('')
+  protected readonly editorProviderState = signal<FileEditorProviders | null>(null)
+  readonly modalClosing = signal<boolean>(false)
+  protected readonly activeViewer = signal<string>('')
+  protected readonly editableViewerReady = signal(false)
+  protected readonly isReadonly = model<boolean>(true)
   protected readonly SHORT_MIME = SHORT_MIME
   protected readonly icons = { LucideEye, LucidePencil }
-  protected directoryImages = computed(() => this.directoryFiles.filter((file) => file.isImage))
-  protected canToggleViewer = false
+  protected readonly directoryImages = computed(() => this.directoryFilesState().filter((file) => file.isImage))
+  protected readonly canToggleViewer = computed(
+    () => this.isWriteableState() && !!this.currentFileState()?.isEditable && this.hookedShortMimeState() === SHORT_MIME.PDF
+  )
   protected readonly store = inject(StoreService)
-  private openedFile: { path: string; name: string; mimeUrl: string }
   private readonly layout = inject(LayoutService)
-  private readonly subscription: Subscription = this.layout.resizeEvent.subscribe(() => this.onResize())
+  protected readonly officeEditorName = computed(() => (this.store.server().files.editors.onlyoffice ? 'OnlyOffice' : 'Euro-Office'))
+  protected readonly toggleViewerText = computed(() =>
+    this.isReadonly()
+      ? this.layout.translateString('edit_in_office_editor', { editor: this.officeEditorName() })
+      : this.layout.translateString('View in PDF.js')
+  )
+  private openedFile: { path: string; name: string; mimeUrl: string }
   private readonly offsetTop = 42
+  protected readonly currentHeight = toSignal(this.layout.resizeEvent.pipe(map(() => window.innerHeight - this.offsetTop)), {
+    initialValue: window.innerHeight - this.offsetTop
+  })
 
   ngOnInit() {
-    this.canToggleViewer = this.isWriteable && !!this.currentFile?.isEditable && this.hookedShortMime === SHORT_MIME.PDF
-    this.activeViewer.set(this.hookedShortMime)
-    this.isReadonly.set(this.hookedShortMime === SHORT_MIME.PDF || this.mode === FILE_MODE.VIEW || !this.currentFile.isEditable)
+    this.currentFileState.set(this.currentFile)
+    this.directoryFilesState.set(this.directoryFiles)
+    this.modeState.set(this.mode)
+    this.isWriteableState.set(this.isWriteable)
+    this.hookedShortMimeState.set(this.hookedShortMime)
+    this.editorProviderState.set(this.editorProvider)
+    this.activeViewer.set(this.hookedShortMimeState())
+    this.isReadonly.set(this.hookedShortMimeState() === SHORT_MIME.PDF || this.modeState() === FILE_MODE.VIEW || !this.currentFile.isEditable)
     this.openedFile = { path: this.currentFile.path, name: this.currentFile.name, mimeUrl: this.currentFile.mimeUrl }
-    this.onResize()
-  }
-
-  ngOnDestroy() {
-    this.subscription.unsubscribe()
   }
 
   onClose() {
     const isEditableViewer =
-      this.hookedShortMime === SHORT_MIME.TEXT || this.hookedShortMime === SHORT_MIME.MARKDOWN || this.hookedShortMime === SHORT_MIME.DIAGRAM
+      this.hookedShortMimeState() === SHORT_MIME.TEXT ||
+      this.hookedShortMimeState() === SHORT_MIME.MARKDOWN ||
+      this.hookedShortMimeState() === SHORT_MIME.DIAGRAM
     if (isEditableViewer && this.editableViewerReady()) {
       // Prevent closing the modal without saving when using text-based editors
       this.modalClosing.set(true)
@@ -105,17 +126,9 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
     }
   }
 
-  protected get officeEditorName(): string {
-    return this.store.server().files.editors.onlyoffice ? 'OnlyOffice' : 'Euro-Office'
-  }
-
-  protected get toggleViewerText(): string {
-    return this.isReadonly()
-      ? this.layout.translateString('edit_in_office_editor', { editor: this.officeEditorName })
-      : this.layout.translateString('View in PDF.js')
-  }
-
-  private onResize() {
-    this.currentHeight = window.innerHeight - this.offsetTop
+  protected notifyFileChange(file: FileModel) {
+    this.currentFileState.set(file)
+    this.fileChange.emit(file)
+    this.fileChangeHandler?.(file)
   }
 }

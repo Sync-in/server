@@ -1,6 +1,6 @@
 <div class="profile-page" appAutoResize [resizeOffset]="45">
   <div class="container-fluid p-2">
-    @if (user) {
+    @if (user(); as user) {
       <div class="row g-3">
         <div class="col-12 col-lg-6 d-flex flex-column gap-3">
           <div class="card dialog-tab-card">
@@ -8,7 +8,7 @@
               <div class="user-header p-0">
                 <div class="d-flex flex-column justify-content-center">
                   <div class="avatar-xl">
-                    <img [src]="userAvatar" class="avatar-img profile-user-img" alt="">
+                    <img [src]="userAvatar()" class="avatar-img profile-user-img" alt="">
                     <span class="avatar-{{allOnlineStatus[user.onlineStatus]}}"></span>
                   </div>
                 </div>
@@ -20,7 +20,7 @@
                     {{ 'Member since' | translate:locale.language }} {{ user.createdAt | amTimeAgo:true }}
                   </div>
 
-                  <select [(ngModel)]="user.onlineStatus"
+                  <select [ngModel]="user.onlineStatus"
                           (ngModelChange)="setOnlineStatus($event)"
                           class="form-select my-auto mt-2">
                     @for (n of allOnlineStatus; track $index) {
@@ -117,31 +117,35 @@
               <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
                   <div class="text-muted text-uppercase text-nowrap fs-sm text-bold" l10nTranslate>Password</div>
-                  @if (newPassword) {
+                  @if (newPassword()) {
                     <div class="ms-auto d-flex justify-content-end">
-                      <app-password-strength-bar [passwordToCheck]="newPassword"></app-password-strength-bar>
+                      <app-password-strength-bar [passwordToCheck]="newPassword()"></app-password-strength-bar>
                     </div>
                   }
                 </div>
                 <div class="d-flex flex-column gap-2">
-                  @if (requiresCurrentPassword) {
+                  @if (requiresCurrentPassword()) {
                     <div class="row g-2 align-items-center">
                       <label class="form-label col-12 col-md-6 mb-0" for="currentPassword">{{ 'current password' | translate:locale.language | capitalize }}</label>
                       <div class="col-12 col-md-6">
-                        <app-input-password inputId="currentPassword" [(password)]="oldPassword"></app-input-password>
+                        <app-input-password inputId="currentPassword"
+                                            [password]="oldPassword()"
+                                            (passwordChange)="oldPassword.set($event)">
+                        </app-input-password>
                       </div>
                     </div>
                   }
 
                   <div class="row g-2 align-items-center">
                     <label class="form-label col-12 col-md-6 mb-0" for="newPassword">
-                      {{ (requiresCurrentPassword ? 'new password' : 'local password') | translate:locale.language | capitalize }}
+                      {{ (requiresCurrentPassword() ? 'new password' : 'local password') | translate:locale.language | capitalize }}
                     </label>
                     <div class="col-12 col-md-6">
                       <app-input-password inputId="newPassword"
-                                          [(password)]="newPassword"
-                                          [disabled]="requiresCurrentPassword && !oldPassword?.length"
-                                          [isRequired]="requiresCurrentPassword && !!oldPassword?.length"
+                                          [password]="newPassword()"
+                                          (passwordChange)="newPassword.set($event)"
+                                          [disabled]="requiresCurrentPassword() && !oldPassword().length"
+                                          [isRequired]="requiresCurrentPassword() && !!oldPassword().length"
                                           [passwordMinLength]="passwordMinLength"
                                           [showGenerator]="true">
                       </app-input-password>
@@ -150,7 +154,7 @@
 
                   <div class="row g-2">
                     <div class="col-12 col-md-6 offset-md-6">
-                      <button [disabled]="!newPassword || (requiresCurrentPassword && !oldPassword) || newPassword.length < passwordMinLength"
+                      <button [disabled]="!newPassword() || (requiresCurrentPassword() && !oldPassword()) || newPassword().length < passwordMinLength"
                               (click)="submitPassword()"
                               class="btn btn-primary text-nowrap"
                               type="button"

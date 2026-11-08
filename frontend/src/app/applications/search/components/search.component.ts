@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, effect, inject } from '@angular/core'
+import { Component, effect, inject, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, type ParamMap, Router } from '@angular/router'
 import { LucideDynamicIcon, LucideMapPin } from '@lucide/angular'
@@ -42,8 +42,8 @@ export class SearchComponent {
   protected readonly navbarSearch = inject(NavbarSearchService)
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { LucideMapPin }
-  protected errorMessage: string = null
-  protected selectedId: number = null
+  protected readonly errorMessage = signal<string | null>(null)
+  protected readonly selectedId = signal<number | null>(null)
   private readonly router = inject(Router)
   private readonly activatedRoute = inject(ActivatedRoute)
   private readonly layout = inject(LayoutService)
@@ -55,7 +55,7 @@ export class SearchComponent {
 
     effect(() => {
       this.navbarSearch.viewFilter()
-      this.selectedId = null
+      this.selectedId.set(null)
     })
 
     merge(
@@ -64,8 +64,8 @@ export class SearchComponent {
     )
       .pipe(
         tap(({ search }) => {
-          this.selectedId = null
-          this.errorMessage = null
+          this.selectedId.set(null)
+          this.errorMessage.set(null)
           this.updateBreadcrumb(search?.content)
           if (!search) {
             this.store.currentSearch.set({ content: '', fullText: false })
@@ -101,7 +101,7 @@ export class SearchComponent {
           this.store.currentSearch.set({ content: '', fullText: false })
         }
         this.store.filesSearch.set(files)
-        this.errorMessage = errorMessage
+        this.errorMessage.set(errorMessage)
       })
   }
 
@@ -123,7 +123,7 @@ export class SearchComponent {
   }
 
   protected onFileActivate(file: FileContentModel, index: number) {
-    this.selectedId = index
+    this.selectedId.set(index)
     this.open(file)
   }
 

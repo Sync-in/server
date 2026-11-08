@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, inject, signal, ViewChild, WritableSignal } from '@angular/core'
+import { Component, inject, signal, viewChild, WritableSignal } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { LucideCircleArrowLeft, LucideCircleArrowRight, LucideDynamicIcon, LucideFolderPlus } from '@lucide/angular'
@@ -24,15 +24,15 @@ import { isSameOrDescendantPath, isSynchronizable } from '../../sync.utils'
   templateUrl: 'sync-wizard-server.component.html'
 })
 export class SyncWizardServerComponent {
-  locale = inject<L10nLocale>(L10N_LOCALE)
-  @ViewChild(AutoResizeDirective, { static: true }) autoResize: AutoResizeDirective
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  readonly autoResize = viewChild.required(AutoResizeDirective)
   protected readonly icons = { LucideCircleArrowLeft, LucideCircleArrowRight, LucideFolderPlus }
-  protected infoMsg: string = null
-  protected newDirectoryName: string
-  protected selectedPath: SyncWizardPath
-  protected currentPath: string
-  protected currentShowedPath: string
-  protected canCreateDir = false
+  protected readonly infoMsg = signal<string | null>(null)
+  protected readonly newDirectoryName = signal('')
+  protected readonly selectedPath = signal<SyncWizardPath | null>(null)
+  protected readonly currentPath = signal('')
+  protected readonly currentShowedPath = signal('')
+  protected readonly canCreateDir = signal(false)
   private readonly router = inject(Router)
   private readonly store = inject(StoreService)
   private readonly userService = inject(UserService)
@@ -74,14 +74,14 @@ export class SyncWizardServerComponent {
         })
       : null
   ].filter(Boolean)
-  protected currentPaths: WritableSignal<SyncWizardPath[]> = signal([...this.rootPaths])
+  protected readonly currentPaths: WritableSignal<SyncWizardPath[]> = signal([...this.rootPaths])
 
   constructor() {
-    if (this.syncService.wizard.remotePath) {
-      this.browse(this.syncService.wizard.remotePath.path.split('/').slice(0, -1).join('/'), this.syncService.wizard.remotePath.name).catch(
+    if (this.syncService.wizard().remotePath) {
+      this.browse(this.syncService.wizard().remotePath.path.split('/').slice(0, -1).join('/'), this.syncService.wizard().remotePath.name).catch(
         (e: Error) => {
           console.error(e)
-          this.currentPath = ''
+          this.currentPath.set('')
           this.onBack()
         }
       )
@@ -96,30 +96,30 @@ export class SyncWizardServerComponent {
   }
 
   async browse(path: string, selectByName: string = null) {
-    this.currentPath = path || ''
-    this.setCurrentPaths((await this.filesService.getTreeNode(path)).map((f: FileTree) => new SyncWizardPath(f)))
+    this.currentPath.set(path || '')
+    this.setCurrentPaths((await this.filesService.getTreeNode(path)).map((file: FileTree) => new SyncWizardPath(file)))
     this.setCurrentShowedPath()
-    this.canCreateDir = this.currentPath.length ? isSynchronizable(`${this.currentPath}/canCreate`, true) : false
+    this.canCreateDir.set(this.currentPath().length ? isSynchronizable(`${this.currentPath()}/canCreate`, true) : false)
     if (selectByName) {
       const index = this.currentPaths().findIndex((p) => p.name === selectByName)
       if (index > -1) {
         this.onSelect(this.currentPaths()[index])
-        this.autoResize.scrollIntoView(Math.max(index, 1) * 30 - 30)
+        this.autoResize().scrollIntoView(Math.max(index, 1) * 30 - 30)
       }
     } else {
       this.onSelect()
-      this.autoResize.scrollTop()
+      this.autoResize().scrollTop()
     }
   }
 
   onBack() {
-    const segments = this.currentPath.split('/')
+    const segments = this.currentPath().split('/')
     if ((segments.length === 2 && segments[0] === SPACES_PATH.FILES && segments[1] === SPACES_PATH.PERSONAL) || segments.length <= 1) {
-      this.currentPath = ''
+      this.currentPath.set('')
       this.onSelect()
       this.initRootPaths()
       this.setCurrentShowedPath()
-      this.canCreateDir = false
+      this.canCreateDir.set(false)
     } else {
       const backRoute = segments.length === 2 && segments[0] === SPACES_PATH.FILES ? [SPACES_PATH.SPACES] : segments.slice(0, -1)
       this.browse(backRoute.join('/')).catch(console.error)
@@ -127,13 +127,13 @@ export class SyncWizardServerComponent {
   }
 
   addDirectory() {
-    const directoryName = this.newDirectoryName?.trim()
-    if (!this.canCreateDir || !directoryName) return
+    const directoryName = this.newDirectoryName().trim()
+    if (!this.canCreateDir() || !directoryName) return
 
-    this.filesService.make('directory', directoryName, this.currentPath, true).subscribe({
+    this.filesService.make('directory', directoryName, this.currentPath(), true).subscribe({
       next: () => {
-        this.browse(this.currentPath, directoryName)
-          .then(() => (this.newDirectoryName = ''))
+        this.browse(this.currentPath(), directoryName)
+          .then(() => this.newDirectoryName.set(''))
           .catch(console.error)
       },
       error: (e: HttpErrorResponse) => this.setInfoMsg(e.error.message)
@@ -173,8 +173,8 @@ export class SyncWizardServerComponent {
     this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_CLIENT]).catch(console.error)
   }
 
-  setServerPath(serverPath: SyncWizardPath) {
-    this.syncService.wizard.remotePath = serverPath
+  setServerPath(serverPath: SyncWizardPath | null) {
+    this.syncService.setWizardRemotePath(serverPath)
   }
 
   private setCurrentPaths(paths?: SyncWizardPath[]) {
@@ -193,18 +193,18 @@ export class SyncWizardServerComponent {
   }
 
   private setCurrentShowedPath() {
-    this.currentShowedPath = this.syncService.translateServerPath(this.currentPath)
+    this.currentShowedPath.set(this.syncService.translateServerPath(this.currentPath()))
   }
 
-  private selectPath(path: SyncWizardPath = null) {
-    this.selectedPath = path
+  private selectPath(path: SyncWizardPath | null = null) {
+    this.selectedPath.set(path)
     this.setServerPath(path)
   }
 
   private setInfoMsg(msg: string, timeout = false) {
-    this.infoMsg = msg
+    this.infoMsg.set(msg)
     if (timeout) {
-      setTimeout(() => (this.infoMsg = null), 6000)
+      setTimeout(() => this.infoMsg.set(null), 6000)
     }
   }
 }

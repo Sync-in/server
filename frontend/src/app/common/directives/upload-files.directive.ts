@@ -1,10 +1,10 @@
-import { Directive, ElementRef, EventEmitter, inject, Input, OnDestroy, OnInit, Output, Renderer2 } from '@angular/core'
+import { Directive, ElementRef, inject, input, OnDestroy, OnInit, output, Renderer2 } from '@angular/core'
 
 @Directive({ selector: '[appUploadFiles]', exportAs: 'appUploadFiles' })
 export class UploadFilesDirective implements OnInit, OnDestroy {
-  @Input() options: { isMultiple?: boolean; isDirectory?: boolean }
-  @Output() uploadFiles = new EventEmitter<{ files: File[]; isDirectory: boolean }>()
-  private elementRef = inject(ElementRef)
+  readonly options = input<{ isMultiple?: boolean; isDirectory?: boolean }>({})
+  readonly uploadFiles = output<{ files: File[]; isDirectory: boolean }>()
+  private readonly elementRef = inject(ElementRef)
   private readonly renderer = inject(Renderer2)
   private fileInput: HTMLInputElement | undefined
   private removeElementListener: (() => void) | undefined
@@ -21,17 +21,17 @@ export class UploadFilesDirective implements OnInit, OnDestroy {
       if (event.target !== this.fileInput) this.open()
     })
 
-    if (this.options?.isMultiple) {
+    if (this.options().isMultiple) {
       this.renderer.setAttribute(this.fileInput, 'multiple', 'multiple')
     }
-    if (this.options?.isDirectory) {
+    if (this.options().isDirectory) {
       this.renderer.setAttribute(this.fileInput, 'webkitdirectory', 'webkitdirectory')
     }
 
     this.removeInputListener = this.renderer.listen(this.fileInput, 'change', (event: Event) => {
       const input = event.target as HTMLInputElement
       if (input.files?.length) {
-        this.uploadFiles.next({ files: Array.from(input.files), isDirectory: this.options?.isDirectory || false })
+        this.uploadFiles.emit({ files: Array.from(input.files), isDirectory: this.options().isDirectory || false })
         input.value = ''
       }
     })

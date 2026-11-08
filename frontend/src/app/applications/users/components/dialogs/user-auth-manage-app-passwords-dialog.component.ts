@@ -1,5 +1,6 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
 import { LucideCopy, LucideDynamicIcon, LucideKeyRound } from '@lucide/angular'
 import { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
@@ -30,18 +31,20 @@ import { UserService } from '../../user.service'
   ],
   templateUrl: './user-auth-manage-app-passwords-dialog.component.html'
 })
-export class UserAuthManageAppPasswordsDialogComponent {
+export class UserAuthManageAppPasswordsDialogComponent implements OnInit {
   @Input({ required: true }) appPasswords: Omit<UserAppPassword, 'password'>[] = []
+  private readonly appPasswordsState = signal<Omit<UserAppPassword, 'password'>[]>([])
   @Output() nbAppPasswords = new EventEmitter<number>()
-  protected locale = inject<L10nLocale>(L10N_LOCALE)
-  protected availableApps: AUTH_SCOPE[] = Object.values(AUTH_SCOPE)
-  protected generatedPassword: UserAppPassword
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly availableApps: AUTH_SCOPE[] = Object.values(AUTH_SCOPE)
+  protected readonly passwords = this.appPasswordsState.asReadonly()
+  protected readonly generatedPassword = signal<UserAppPassword | null>(null)
   protected readonly minDate: Date = currentDate()
-  protected hasError: string
-  protected submitted = false
+  protected readonly hasError = signal<string | null>(null)
+  protected readonly submitted = signal(false)
   protected readonly icons = { LucideKeyRound, LucideCopy }
   private readonly fb = inject(UntypedFormBuilder)
-  protected appPasswordForm: FormGroup = this.fb.group({
+  protected readonly appPasswordForm: FormGroup = this.fb.group({
     name: this.fb.control('', [Validators.required]),
     app: this.fb.control(AUTH_SCOPE.WEBDAV, [Validators.required]),
     expiration: this.fb.control(null)
@@ -53,10 +56,14 @@ export class UserAuthManageAppPasswordsDialogComponent {
   constructor() {
     // set picker expiration to current date + 1 day
     this.minDate.setDate(this.minDate.getDate() + 1)
-    this.appPasswordForm.controls.name.valueChanges.pipe(filter(Boolean)).subscribe((value: string) => {
-      this.hasError = undefined
+    this.appPasswordForm.controls.name.valueChanges.pipe(filter(Boolean), takeUntilDestroyed()).subscribe((value: string) => {
+      this.hasError.set(null)
       this.appPasswordForm.controls.name.setValue(createLightSlug(value), { emitEvent: false })
     })
+  }
+
+  ngOnInit() {
+    this.appPasswordsState.set(this.appPasswords)
   }
 
   onClose() {
@@ -65,42 +72,39 @@ export class UserAuthManageAppPasswordsDialogComponent {
 
   async deleteAppPassword(passwordName: string) {
     const auth2FaHeaders: false | HttpHeaders = await this.userService.auth2FaVerifyDialog(false, true)
-    if (auth2FaHeaders === false) {
-      return
-    }
+    if (auth2FaHeaders === false) return
     this.userService.deleteAppPassword(passwordName, auth2FaHeaders).subscribe({
       next: () => {
-        this.appPasswords = this.appPasswords.filter((pwd) => pwd.name !== passwordName)
-        this.nbAppPasswords.emit(this.appPasswords.length)
+        this.appPasswordsState.update((passwords) => passwords.filter((password) => password.name !== passwordName))
+        this.nbAppPasswords.emit(this.appPasswordsState().length)
       },
       error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Application Passwords', 'Unable to revoke', e)
     })
   }
 
   async genAppPassword() {
-    for (const appPwd of this.appPasswords) {
+    for (const appPwd of this.appPasswordsState()) {
       if (appPwd.name === this.appPasswordForm.value.name) {
-        this.hasError = 'This name is already used'
+        this.hasError.set('This name is already used')
         return
       }
     }
     const auth2FaHeaders: false | HttpHeaders = await this.userService.auth2FaVerifyDialog(false, true)
-    if (auth2FaHeaders === false) {
-      return
-    }
+    if (auth2FaHeaders === false) return
     this.userService.generateAppPassword(this.appPasswordForm.value, auth2FaHeaders).subscribe({
       next: (appPassword: UserAppPassword) => {
         this.appPasswordForm.patchValue({ name: '', expiration: null })
-        this.appPasswords.unshift(appPassword)
-        this.generatedPassword = appPassword
-        this.nbAppPasswords.emit(this.appPasswords.length)
+        this.appPasswordsState().unshift(appPassword)
+        this.appPasswordsState.set([...this.appPasswordsState()])
+        this.generatedPassword.set(appPassword)
+        this.nbAppPasswords.emit(this.appPasswordsState().length)
       },
       error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Application Passwords', 'Unable to generate', e)
     })
   }
 
   clipBoardPassword() {
-    this.clipBoardService.copyFromContent(this.generatedPassword.password)
+    this.clipBoardService.copyFromContent(this.generatedPassword()!.password)
     this.layout.sendNotification('success', 'Generated password', 'Copied')
   }
 }

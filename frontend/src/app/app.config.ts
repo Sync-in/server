@@ -1,6 +1,6 @@
 import { HashLocationStrategy, LocationStrategy } from '@angular/common'
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withXsrfConfiguration } from '@angular/common/http'
-import { ApplicationConfig, importProvidersFrom, isDevMode, provideZoneChangeDetection } from '@angular/core'
+import { ApplicationConfig, importProvidersFrom, isDevMode } from '@angular/core'
 import { provideRouter } from '@angular/router'
 import { provideLucideConfig } from '@lucide/angular'
 import { CSRF_KEY } from '@sync-in-server/backend/src/authentication/constants/auth'
@@ -17,7 +17,6 @@ import { webSocketOptions } from './websocket/websocket.constants'
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideZoneChangeDetection({ eventCoalescing: true }),
     provideLucideConfig({ size: '1em', strokeWidth: 2.25 }),
     { provide: LocationStrategy, useClass: HashLocationStrategy },
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },

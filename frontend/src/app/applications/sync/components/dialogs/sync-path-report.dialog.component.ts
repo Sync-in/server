@@ -59,7 +59,7 @@ import { SYNC_ICON } from '../../sync.constants'
   styleUrl: './sync-path-report.dialog.component.scss'
 })
 export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
-  locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   @ViewChild(AutoResizeDirective, { static: true }) autoResizeDirective: AutoResizeDirective
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @Input() syncPath: SyncPathModel
@@ -97,13 +97,13 @@ export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
     }
   }
   protected readonly itemsPerPage = 500
-  protected currentPage = 1
-  protected running = false
-  protected hasNoChanges = false
-  protected transferSelected = null
-  protected showFiltered = false
-  protected count = { actions: 0, filtered: 0 }
-  protected transfers: WritableSignal<SyncTransferModel[]> = signal([])
+  protected readonly currentPage = signal(1)
+  protected readonly running = signal(false)
+  protected readonly hasNoChanges = signal(false)
+  protected readonly transferSelected = signal<SyncTransferModel | null>(null)
+  protected readonly showFiltered = signal(false)
+  protected readonly count = signal({ actions: 0, filtered: 0 })
+  protected readonly transfers: WritableSignal<SyncTransferModel[]> = signal([])
   private readonly layout = inject(LayoutService)
   private readonly electron = inject(Electron)
   private readonly store = inject(StoreService)
@@ -114,24 +114,24 @@ export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
     file: [{ prop: 'file', type: 'string' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
-  private subscriptions: Subscription[] = []
+  private readonly subscriptions: Subscription[] = []
 
   ngOnInit() {
     this.electron.ipcRenderer.on(EVENT.SYNC.REPORT_TRANSFER, (_ev, tr: SyncTransfer) => this.addTransfer(tr))
-    this.subscriptions.push(this.store.clientSyncIsReporting.subscribe((state: boolean) => this.manageState(state)))
+    this.subscriptions.push(this.store.clientSyncIsReporting.subscribe((state) => this.manageState(state)))
   }
 
   ngOnDestroy() {
-    for (const sub of this.subscriptions) {
-      sub.unsubscribe()
+    for (const subscription of this.subscriptions) {
+      subscription.unsubscribe()
     }
     this.electron.ipcRenderer.removeAllListeners(EVENT.SYNC.REPORT_TRANSFER)
   }
 
   manageReport(start = false) {
     if (start) {
-      this.hasNoChanges = false
-      this.count = { actions: 0, filtered: 0 }
+      this.hasNoChanges.set(false)
+      this.count.set({ actions: 0, filtered: 0 })
       this.transfers.set([])
     }
     this.syncService.doSync(start, [this.syncPath.id], true)
@@ -142,11 +142,11 @@ export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
   }
 
   onSelect(tr?: SyncTransferModel) {
-    this.transferSelected = tr || null
+    this.transferSelected.set(tr || null)
   }
 
   goToPath(local = true) {
-    this.syncService.goToPath(this.syncPath, local, this.transferSelected.file)
+    this.syncService.goToPath(this.syncPath, local, this.transferSelected()!.file)
   }
 
   pageChanged() {
@@ -155,7 +155,7 @@ export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
   }
 
   onClose() {
-    if (this.running) {
+    if (this.running()) {
       this.syncService.doSync(false, [this.syncPath.id], true)
     }
     this.layout.closeDialog(null, this.syncPath.id)
@@ -168,17 +168,17 @@ export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
   private addTransfer(tr: SyncTransfer) {
     const s = new SyncTransferModel(tr)
     if (s.isFiltered) {
-      this.count.filtered++
+      this.count.update((count) => ({ ...count, filtered: count.filtered + 1 }))
     } else {
-      this.count.actions++
+      this.count.update((count) => ({ ...count, actions: count.actions + 1 }))
     }
     this.transfers.update((transfers: SyncTransferModel[]) => [...transfers, s])
   }
 
   private manageState(state: boolean) {
-    if (this.running && state === false && this.transfers().length === 0) {
-      this.hasNoChanges = true
+    if (this.running() && state === false && this.transfers().length === 0) {
+      this.hasNoChanges.set(true)
     }
-    this.running = state
+    this.running.set(state)
   }
 }
