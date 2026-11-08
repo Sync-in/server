@@ -22,7 +22,6 @@
   },
   "dependencies": {
     "@acrodata/code-editor": "^0.6.1",
-    "@ali-hm/angular-tree-component": "^21.0.4",
     "@angular/cdk": "^21.2.14",
     "@angular/common": "^21.2.16",
     "@angular/compiler": "^21.2.16",

@@ -1,75 +1,3 @@
-@function hexToRGBString($hexColor) {
-  @return "rgb(#{red($hexColor)},#{green($hexColor)},#{blue($hexColor)})";
-}
-
-$tree-folder-icon: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>';
-$tree-layers-icon: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>';
-$tree-shares-icon: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>';
-$tree-caret-icon: '<path d="m9 18 6-6-6-6"/>';
-$tree-file-icon: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/>';
-
-@mixin lucide-content($color, $icon, $filled: false, $view-box: '0 0 24 24', $stroke-width: 2.25) {
-  $fill: 'none';
-
-  @if $filled {
-    $fill: hexToRGBString($color);
-  }
-
-  content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="#{$view-box}" fill="#{$fill}" stroke="#{hexToRGBString($color)}" stroke-width="#{$stroke-width}" stroke-linecap="round" stroke-linejoin="round">#{$icon}</svg>');
-}
-
-@mixin directory($color) {
-  @include lucide-content($color, $tree-folder-icon, $filled: true, $stroke-width: 2);
-  display: inline-block;
-  width: 25px;
-}
-
-@mixin caret($color) {
-  @include lucide-content($color, $tree-caret-icon, $view-box: '7 4 10 16');
-  display: inline-block;
-  width: 7px;
-  position: absolute;
-  left: 5px;
-  top: 7px;
-}
-
-@mixin tree-root-icon($color, $path) {
-  @include lucide-content($color, $path);
-  width: 16px;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-}
-
-@mixin tree-root($color, $path) {
-  .toggle-children-wrapper .toggle-children {
-    width: 26px;
-    height: 26px;
-    border-radius: 0.25rem;
-    background-color: $color;
-
-    &:before {
-      @include tree-root-icon($gray, $path);
-    }
-
-    &:after {
-      content: none;
-    }
-  }
-
-  &.active .toggle-children-wrapper .toggle-children:before,
-  .toggle-children-wrapper-expanded .toggle-children:before {
-    @include tree-root-icon(white, $path);
-  }
-}
-
-@mixin file($color) {
-  @include lucide-content($color, $tree-file-icon, $view-box: '2 2 20 20');
-  display: inline-block;
-  width: 23px;
-}
-
 .copy-move-location-icon {
   flex: 0 0 1.5rem;
   width: 1.5rem;
@@ -90,9 +18,13 @@ $tree-file-icon: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1
   display: grid !important;
   white-space: nowrap;
   margin-bottom: 15px;
-  font-size: 0.75rem;
+  font-size: $font-size-sm;
 
   .tree-node {
+    position: relative;
+  }
+
+  .tree-node-expander {
     position: relative;
   }
 
@@ -102,7 +34,7 @@ $tree-file-icon: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1
     align-items: center;
     justify-content: flex-start;
     padding: 4px;
-    height: 36px;
+    height: 38px;
     line-height: 0;
     width: 100%;
 
@@ -135,7 +67,7 @@ $tree-file-icon: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1
       box-shadow: none;
     }
 
-    tree-node-content {
+    .tree-node-content {
       display: flex;
       justify-content: center;
       position: relative;
@@ -146,99 +78,123 @@ $tree-file-icon: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1
     }
   }
 
-  .toggle-children {
-    background-image: none;
-  }
-
   .toggle-children-wrapper {
     padding-left: 10px;
   }
 
-  // folder with no children
-  .toggle-children-placeholder {
-    padding-left: 10px;
-
-    &:before {
-      @include directory($primary);
-    }
-  }
-
-  .toggle-children-wrapper-expanded .toggle-children {
-    transform: none;
+  .toggle-children {
     position: relative;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 26px;
+  }
 
-    &:before {
-      @include caret(white);
+  .tree-node-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 25px;
+    height: 25px;
+  }
+
+  .tree-node-icon-directory {
+    color: $primary;
+
+    > .lucide {
+      width: 27px;
+      height: 27px;
+      fill: currentColor;
+
+      > path {
+        fill: currentColor;
+      }
     }
+  }
 
-    &:after {
-      @include directory($primary);
+  .tree-node-icon-file {
+    color: $primary;
+
+    > .lucide {
+      width: 19px;
+      height: 19px;
+      fill: none;
     }
   }
 
-  .toggle-children-wrapper-collapsed .toggle-children {
-    position: relative;
-    display: inline-block;
-    transform: none;
-
-    &:before {
-      @include caret($gray);
-    }
-
-    &:after {
-      @include directory($primary);
-    }
+  .tree-node-caret {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: 0;
+    width: 18px;
+    height: 18px;
+    color: $gray;
+    transform: translateY(-50%);
+    transition: none;
   }
 
-  tree-node-expander.active .toggle-children-wrapper-collapsed .toggle-children:before {
-    @include caret(white);
+  .toggle-children-wrapper-expanded .tree-node-caret {
+    color: white;
   }
 
-  .tree-root-personal {
-    @include tree-root($primary, $tree-folder-icon);
+  .tree-node-expander.active .toggle-children-wrapper-collapsed .tree-node-caret {
+    color: white;
   }
 
-  .tree-root-spaces {
-    @include tree-root($primary, $tree-layers-icon);
+  .toggle-children-shared .tree-node-icon-directory {
+    color: $purple;
   }
 
+  .tree-root-personal,
+  .tree-root-spaces,
   .tree-root-shares {
-    @include tree-root($purple, $tree-shares-icon);
-  }
-
-  .toggle-children-shared {
-    .toggle-children-placeholder {
-      &:before {
-        @include directory($purple);
-      }
-    }
-
     .toggle-children {
-      &:after {
-        @include directory($purple);
+      width: 26px;
+      height: 26px;
+      border-radius: 0.25rem;
+    }
+
+    .tree-node-icon {
+      width: 16px;
+      height: 16px;
+      color: $gray;
+
+      > .lucide {
+        width: 18px;
+        height: 18px;
+        fill: none;
+
+        > path {
+          fill: none;
+        }
       }
+    }
+
+    &.active .tree-node-icon,
+    .toggle-children-wrapper-expanded .tree-node-icon {
+      color: white;
     }
   }
 
-  .toggle-children-file {
-    .toggle-children-placeholder {
-      &:before {
-        @include file($primary);
-      }
-    }
+  .tree-root-personal .toggle-children,
+  .tree-root-spaces .toggle-children {
+    background-color: $primary;
   }
 
-  .node-drop-slot {
-    cursor: default;
-    height: 0;
+  .tree-root-shares .toggle-children {
+    background-color: $purple;
   }
 
   .tree-node-loading {
     color: white;
     position: absolute;
-    top: 11px;
-    left: 12px;
+    z-index: 1;
+    top: 50%;
+    left: calc(50% + 5px);
+    transform: translate(-50%, -50%);
     margin: 0;
     line-height: 0;
     pointer-events: none;

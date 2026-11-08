@@ -130,32 +130,57 @@
   <hr class="mx-0 my-0">
 }
 <div appAutoResize [overFlowX]="'auto'" [resizeOffset]="treeResizeOffset()" [useMaxHeight]="false">
-  <tree-root #tree [nodes]="nodes()" [options]="options">
-    <ng-template #treeNodeWrapperTemplate let-index="index" let-node>
-      <div (click)="node.mouseAction('click', $event)"
-           (appTap)="node.mouseAction('dblClick', $event)"
-           [enableDoubleTap]="true"
-           [class.tree-selected]="node.isActive"
-           [class.tree-disabled]="!node.data.enabled"
-           [style.padding-left]="node.getNodePadding()"
-           class="node-wrapper">
-        <tree-node-expander [class.active]="node.isActive"
-                            [class.toggle-children-file]="!node.data.isDir"
-                            [class.toggle-children-shared]="node.data.inShare"
-                            [class.tree-root-personal]="node.data.id === 0"
-                            [class.tree-root-shares]="node.data.id === -2"
-                            [class.tree-root-spaces]="node.data.id === -1"
-                            [node]="node">
-        </tree-node-expander>
-        <div [class.node-content-wrapper-active]="node.isActive" class="node-content-wrapper">
-          <tree-node-content [index]="index" [node]="node"></tree-node-content>
+  <div class="angular-tree-component" role="tree">
+    @for (node of visibleNodes(); track node.data.path) {
+      <div class="tree-node" role="none">
+        <div #treeRow
+             (click)="onSelect(node)"
+             (appTap)="onOpen(node)"
+             (focus)="focusedNode.set(node)"
+             (keydown)="onTreeKeydown($event, node)"
+             [enableDoubleTap]="true"
+             [class.tree-selected]="activeNode() === node"
+             [class.tree-disabled]="!node.data.enabled"
+             [style.padding-left.px]="node.level * 10"
+             [tabindex]="focusedNode() === node ? 0 : -1"
+             [attr.aria-busy]="node.isLoading"
+             [attr.aria-disabled]="!node.data.enabled"
+             [attr.aria-expanded]="node.data.hasChildren ? node.isExpanded : null"
+             [attr.aria-level]="node.level + 1"
+             [attr.aria-selected]="activeNode() === node"
+             class="node-wrapper"
+             role="treeitem">
+          <span [class.active]="activeNode() === node"
+                [class.toggle-children-shared]="node.data.inShare"
+                [class.tree-root-personal]="node.data.id === 0"
+                [class.tree-root-shares]="node.data.id === -2"
+                [class.tree-root-spaces]="node.data.id === -1"
+                class="tree-node-expander">
+            <span [class.toggle-children-wrapper-expanded]="node.isExpanded"
+                  [class.toggle-children-wrapper-collapsed]="!node.isExpanded"
+                  class="toggle-children-wrapper">
+              <span class="toggle-children">
+                @if (node.data.hasChildren && !isTreeRoot(node)) {
+                  <svg [lucideIcon]="icons.LucideChevronRight" [strokeWidth]="2.25" class="tree-node-caret" aria-hidden="true"></svg>
+                }
+                <span [class.tree-node-icon-directory]="node.data.isDir"
+                      [class.tree-node-icon-file]="!node.data.isDir"
+                      class="tree-node-icon">
+                  <svg [lucideIcon]="getTreeNodeIcon(node)" aria-hidden="true"></svg>
+                </span>
+              </span>
+            </span>
+            @if (node.isLoading && node.isExpanded) {
+              <span class="tree-node-loading" aria-hidden="true">
+                <svg [lucideIcon]="icons.LucideLoader" class="text-bold icon-spin"></svg>
+              </span>
+            }
+          </span>
+          <div [class.node-content-wrapper-active]="activeNode() === node" class="node-content-wrapper">
+            <span class="tree-node-content"><span>{{ node.data.name }}</span></span>
+          </div>
         </div>
       </div>
-    </ng-template>
-    <ng-template #loadingTemplate>
-      <span>
-        <svg [lucideIcon]="icons.LucideLoader" class="text-bold icon-spin"></svg>
-      </span>
-    </ng-template>
-  </tree-root>
+    }
+  </div>
 </div>

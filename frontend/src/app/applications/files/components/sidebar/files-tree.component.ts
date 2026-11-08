@@ -1,4 +1,3 @@
-import { IActionMapping, ITreeOptions, TREE_ACTIONS, TreeComponent, TreeModel, TreeModule, TreeNode } from '@ali-hm/angular-tree-component'
 import { AsyncPipe } from '@angular/common'
 import {
   afterNextRender,
@@ -15,19 +14,23 @@ import {
   OnInit,
   output,
   signal,
-  viewChild
+  viewChild,
+  viewChildren
 } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import {
+  LucideChevronRight,
   LucideCopy,
   LucideDynamicIcon,
   LucideFile,
   LucideFiles,
   LucideFolder,
+  LucideLayers,
   LucideLoader,
   LucideMove,
   LucideRotateCw,
+  LucideShare2,
   LucideX
 } from '@lucide/angular'
 import { FILE_OPERATION, FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
@@ -48,17 +51,18 @@ import { resolveFileLocation } from '../utils/file-location.utils'
 import { mimeDirectory } from '../../files.constants'
 import type { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
+import type { FilesTreeNode } from './interfaces/files-tree-node.interface'
 import { FilesSummaryComponent } from '../utils/files-summary.component'
 
 @Component({
   selector: 'app-files-tree',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AsyncPipe, AutoResizeDirective, TreeModule, L10nTranslateDirective, LucideDynamicIcon, TapDirective, ToBytesPipe, FilesSummaryComponent],
+  imports: [AsyncPipe, AutoResizeDirective, L10nTranslateDirective, LucideDynamicIcon, TapDirective, ToBytesPipe, FilesSummaryComponent],
   templateUrl: 'files-tree.component.html'
 })
 export class FilesTreeComponent implements OnInit, AfterViewInit, OnDestroy {
-  private readonly tree = viewChild.required<TreeComponent>('tree')
   private readonly copyMovePanel = viewChild<ElementRef<HTMLElement>>('copyMovePanel')
+  private readonly treeRows = viewChildren<ElementRef<HTMLElement>>('treeRow')
   readonly selected = output<FileTree | null>()
   readonly showFiles = input(false)
   readonly allowShares = input(true)
@@ -78,26 +82,15 @@ export class FilesTreeComponent implements OnInit, AfterViewInit, OnDestroy {
     LucideFolder,
     LucideFile,
     LucideFiles,
+    LucideChevronRight,
+    LucideLayers,
+    LucideShare2,
     LucideLoader
   }
-  protected readonly options: ITreeOptions = {
-    actionMapping: {
-      mouse: {
-        click: (tree, node, $event) => this.onSelect(tree, node, $event),
-        dblClick: (_tree, node) => this.onOpen(node),
-        expanderClick: () => null
-      }
-    } as IActionMapping,
-    animateExpand: false,
-    levelPadding: 10,
-    useVirtualScroll: false,
-    nodeHeight: 36,
-    dropSlotHeight: 0,
-    allowDrag: false,
-    allowDrop: false,
-    getChildren: (node: TreeNode) => this.getTreeNode(node)
-  }
-  protected readonly nodes = signal<any[]>([])
+  protected readonly nodes = signal<FilesTreeNode[]>([])
+  protected readonly visibleNodes = computed(() => this.flattenNodes(this.nodes()))
+  protected readonly activeNode = signal<FilesTreeNode | null>(null)
+  protected readonly focusedNode = signal<FilesTreeNode | null>(null)
   protected readonly copyMoveOn = signal(false)
   protected readonly srcAllowed = signal(true)
   protected readonly dstAllowed = signal(true)
@@ -118,6 +111,7 @@ export class FilesTreeComponent implements OnInit, AfterViewInit, OnDestroy {
       displayRootName: this.getRepositoryRootName(selection)
     })
   })
+  private readonly expandedPaths = new Set<string>()
   private readonly subscriptions: Subscription[] = []
   private focusTimer: ReturnType<typeof setTimeout> | undefined
   private preventTimer: ReturnType<typeof setTimeout> | undefined
@@ -136,7 +130,7 @@ export class FilesTreeComponent implements OnInit, AfterViewInit, OnDestroy {
     })
   }
 
-  private setSelection(node: TreeNode | null) {
+  private setSelection(node: FilesTreeNode | null) {
     this.selectedNode.set(node)
     this.selected.emit(node && ![0, -1, -2].includes(node.data.id) ? node.data : null)
   }
@@ -174,20 +168,13 @@ export class FilesTreeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.subscriptions.forEach((s) => s.unsubscribe())
   }
 
-  onRefresh() {
-    const tree = this.tree().treeModel
-    const activeNodes: TreeNode[] = tree.activeNodes
-    const nodesToRefresh: TreeNode[] = activeNodes.length ? activeNodes : tree.roots
+  async onRefresh() {
+    const activeNode = this.activeNode()
+    const nodesToRefresh = activeNode ? [activeNode] : this.nodes()
     const selectedPath = this.selectedNode()?.data.path
-    Promise.allSettled(nodesToRefresh.map((node) => node.loadNodeChildren()))
-      .then((results) => {
-        for (const result of results) {
-          if (result.status === 'rejected') console.error(result.reason)
-        }
-        tree.update()
-        this.focusLastNode(selectedPath)
-      })
-      .catch(console.error)
+    const results = await Promise.allSettled(nodesToRefresh.map((node) => this.loadChildren(node, true)))
+    this.logRejected(results)
+    this.focusLastNode(selectedPath)
   }
 
   actionCancel() {
@@ -211,16 +198,26 @@ export class FilesTreeComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.filesService.getSizeLazy(file)
   }
 
-  private getRepositoryRootName(selection: TreeNode): string | undefined {
+  protected isTreeRoot(node: FilesTreeNode) {
+    return node.data.id === 0 || node.data.id === -1 || node.data.id === -2
+  }
+
+  protected getTreeNodeIcon(node: FilesTreeNode) {
+    if (node.data.id === -1) return this.icons.LucideLayers
+    if (node.data.id === -2) return this.icons.LucideShare2
+    return node.data.isDir ? this.icons.LucideFolder : this.icons.LucideFile
+  }
+
+  private getRepositoryRootName(selection: FilesTreeNode): string | undefined {
     let repositoryRoot = selection
     while (repositoryRoot.parent && ![0, -1, -2].includes(repositoryRoot.parent.data?.id)) repositoryRoot = repositoryRoot.parent
     return [-1, -2].includes(repositoryRoot.parent?.data?.id) ? repositoryRoot.data.name : undefined
   }
 
   private initRoot() {
-    this.nodes.set([])
+    const roots: FileTree[] = []
     if (this.user.userHavePermission(USER_PERMISSION.PERSONAL_SPACE)) {
-      const node: FileTree | TreeNode = {
+      roots.push({
         id: 0,
         name: this.layout.translateString(SPACES_TITLE.PERSONAL_SPACE),
         path: `${SPACES_PATH.FILES}/${SPACE_ALIAS.PERSONAL}`,
@@ -230,14 +227,11 @@ export class FilesTreeComponent implements OnInit, AfterViewInit, OnDestroy {
         quotaIsExceeded: this.store.user().quotaIsExceeded,
         enabled: true,
         permissions: SPACE_ALL_OPERATIONS,
-        children: null,
-        hasChildren: true,
-        isExpanded: false
-      }
-      this.checkToggleNodeAtStartup(node, true)
+        hasChildren: true
+      })
     }
     if (this.allowSpaces() && this.user.userHavePermission(USER_PERMISSION.SPACES)) {
-      const node: FileTree | TreeNode = {
+      roots.push({
         id: -1,
         name: this.layout.translateString(SPACES_TITLE.COLLABORATIVE_SPACES),
         path: SPACES_PATH.SPACES,
@@ -247,14 +241,11 @@ export class FilesTreeComponent implements OnInit, AfterViewInit, OnDestroy {
         hasChildren: true,
         quotaIsExceeded: false,
         enabled: true,
-        permissions: '',
-        children: null,
-        isExpanded: false
-      }
-      this.checkToggleNodeAtStartup(node)
+        permissions: ''
+      })
     }
     if (this.allowShares() && this.user.userHavePermission(USER_PERMISSION.SHARES)) {
-      const node: FileTree | TreeNode = {
+      roots.push({
         id: -2,
         name: this.layout.translateString(SPACES_TITLE.SHARES),
         path: SPACES_PATH.SHARES,
@@ -264,73 +255,128 @@ export class FilesTreeComponent implements OnInit, AfterViewInit, OnDestroy {
         hasChildren: true,
         quotaIsExceeded: false,
         enabled: true,
-        permissions: '',
-        children: null,
-        isExpanded: false
-      }
-      this.checkToggleNodeAtStartup(node)
-    }
-  }
-
-  private checkToggleNodeAtStartup(node: any, unshift = false) {
-    if (this.toggleNodesAtStartup()) {
-      this.getTreeNode(node).then((data) => {
-        node.children = data
-        this.addNode(node, unshift)
-        afterNextRender(
-          () => {
-            const tree = this.tree().treeModel
-            tree.update()
-            const treeNode = tree.getNodeById(node.id)
-            if (treeNode) this.toggleExpand(tree, treeNode, null)
-          },
-          { injector: this.injector }
-        )
+        permissions: ''
       })
-    } else {
-      this.addNode(node, unshift)
-      this.tree().treeModel.update()
     }
-  }
 
-  private addNode(node: any, unshift: boolean) {
-    this.nodes.update((nodes) => (unshift ? [node, ...nodes] : [...nodes, node]))
+    const nodes = roots.map((root) => this.createNode(root, null))
+    this.nodes.set(nodes)
+    this.focusedNode.set(nodes[0] || null)
+    if (this.toggleNodesAtStartup()) {
+      void Promise.allSettled(nodes.map((node) => this.toggleExpand(node))).then((results) => this.logRejected(results))
+    }
   }
 
   private focusLastNode(path = this.selectedNode()?.data.path) {
     if (!path) return
-    const tree = this.tree().treeModel
-    const selection = tree.getNodeBy((node: TreeNode) => node.data.path === path) || null
+    const selection = this.findNodeByPath(path)
+    const visibleNodes = this.visibleNodes()
+    let focusTarget = selection
+    while (focusTarget && !visibleNodes.includes(focusTarget)) focusTarget = focusTarget.parent
+    this.activeNode.set(selection)
+    if (focusTarget) this.focusNode(focusTarget, false)
+    else this.focusedNode.set(this.nodes()[0] || null)
     this.setSelection(selection)
-    if (selection) {
-      TREE_ACTIONS.ACTIVATE(tree, selection, null)
+  }
+
+  private createNode(data: FileTree, parent: FilesTreeNode | null): FilesTreeNode {
+    return {
+      data,
+      parent,
+      children: null,
+      level: parent ? parent.level + 1 : 0,
+      isExpanded: this.expandedPaths.has(data.path),
+      isLoading: false,
+      loadingPromise: null
     }
   }
 
-  private getTreeNode(node: any): Promise<any> {
-    return this.filesService.getTreeNode(node?.data?.path || node?.path || node, this.showFiles())
+  private flattenNodes(nodes: FilesTreeNode[]): FilesTreeNode[] {
+    const visibleNodes: FilesTreeNode[] = []
+    for (const node of nodes) {
+      visibleNodes.push(node)
+      if (node.isExpanded && node.children) visibleNodes.push(...this.flattenNodes(node.children))
+    }
+    return visibleNodes
   }
 
-  private collapseChildren(node: TreeNode, children: TreeNode[]) {
-    for (const child of children) {
-      // ignore auto collapse
-      // if ([0, -1, -2].indexOf(child.id) === -1 && child.id !== node.id)
-      if (child.id !== node.id) {
-        child.data.isExpanded = false
-        child.collapse()
+  private findNodeByPath(path: string, nodes = this.nodes()): FilesTreeNode | null {
+    for (const node of nodes) {
+      if (node.data.path === path) return node
+      if (node.children) {
+        const child = this.findNodeByPath(path, node.children)
+        if (child) return child
       }
     }
+    return null
   }
 
-  private toggleExpand(tree: TreeModel, node: TreeNode, event: any) {
-    TREE_ACTIONS.TOGGLE_EXPANDED(tree, node, event)
-    node.data.isExpanded = node.isExpanded
+  private loadChildren(node: FilesTreeNode, refresh = false): Promise<void> {
+    if (node.loadingPromise) return node.loadingPromise
+    if (!refresh && node.children !== null) return Promise.resolve()
+
+    node.isLoading = true
+    this.refreshTree()
+    node.loadingPromise = this.filesService
+      .getTreeNode(node.data.path, this.showFiles())
+      .then(async (children) => {
+        node.children = children.map((child) => this.createNode(child, node))
+        node.data.hasChildren = [0, -1, -2].includes(node.data.id) || node.children.length > 0
+        if (!node.data.hasChildren) {
+          node.isExpanded = false
+          this.expandedPaths.delete(node.data.path)
+        }
+        await this.restoreExpandedNodes(node.children)
+      })
+      .finally(() => {
+        node.isLoading = false
+        node.loadingPromise = null
+        this.refreshTree()
+      })
+    return node.loadingPromise
   }
 
-  private onOpen(node: TreeNode) {
+  private toggleExpand(node: FilesTreeNode): Promise<void> {
+    if (!node.data.hasChildren) return Promise.resolve()
+    node.isExpanded = !node.isExpanded
+    if (node.isExpanded) this.expandedPaths.add(node.data.path)
+    else this.expandedPaths.delete(node.data.path)
+    this.refreshTree()
+    return node.isExpanded ? this.loadChildren(node) : Promise.resolve()
+  }
+
+  private collapseSiblings(node: FilesTreeNode) {
+    const siblings = node.parent?.children || this.nodes()
+    for (const sibling of siblings) {
+      if (sibling !== node) {
+        sibling.isExpanded = false
+        this.expandedPaths.delete(sibling.data.path)
+      }
+    }
+    this.refreshTree()
+  }
+
+  private refreshTree() {
+    this.nodes.update((nodes) => [...nodes])
+  }
+
+  private async restoreExpandedNodes(nodes: FilesTreeNode[]): Promise<void> {
+    const results = await Promise.allSettled(nodes.filter((node) => node.data.hasChildren && node.isExpanded).map((node) => this.loadChildren(node)))
+    this.logRejected(results)
+  }
+
+  private logRejected(results: PromiseSettledResult<void>[]) {
+    for (const result of results) {
+      if (result.status === 'rejected') console.error(result.reason)
+    }
+  }
+
+  protected onOpen(node: FilesTreeNode) {
     if (!this.copyMoveOn() && this.enableNavigateTo() && node.data.enabled) {
       clearTimeout(this.preventTimer)
       this.preventTimer = undefined
+      this.activeNode.set(node)
+      this.focusNode(node)
       this.setSelection(node)
       const urlSegments = node.data.path.split('/')
       if (urlSegments[0] !== SPACES_PATH.SPACES) {
@@ -340,25 +386,79 @@ export class FilesTreeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private onSelect(tree: TreeModel, node: TreeNode, event: any) {
+  protected onSelect(node: FilesTreeNode) {
     if (!node.data.enabled) {
       this.layout.sendNotification('warning', node.data.name, `${node.data.inShare ? 'Share' : 'Space'} is disabled`)
       return
     }
-    TREE_ACTIONS.ACTIVATE(tree, node, event)
+    this.activeNode.set(node)
+    this.focusNode(node)
     clearTimeout(this.preventTimer)
     this.preventTimer = setTimeout(() => {
-      this.checkAllowed(node)
-      this.setSelection(node)
-      if (node.hasChildren) {
-        this.collapseChildren(node, node.parent.children)
-        this.toggleExpand(tree, node, event)
-      }
+      this.selectNode(node)
       this.preventTimer = undefined
     }, 200)
   }
 
-  private checkAllowed(node: TreeNode | null) {
+  protected onTreeKeydown(event: KeyboardEvent, node: FilesTreeNode) {
+    const visibleNodes = this.visibleNodes()
+    const index = visibleNodes.indexOf(node)
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault()
+        if (visibleNodes[index + 1]) this.focusNode(visibleNodes[index + 1])
+        break
+      case 'ArrowUp':
+        event.preventDefault()
+        if (visibleNodes[index - 1]) this.focusNode(visibleNodes[index - 1])
+        break
+      case 'ArrowRight':
+        event.preventDefault()
+        if (!node.data.hasChildren) return
+        if (!node.isExpanded) this.toggleExpand(node).catch(console.error)
+        else if (node.children?.length) this.focusNode(node.children[0])
+        break
+      case 'ArrowLeft':
+        event.preventDefault()
+        if (node.isExpanded) this.toggleExpand(node).catch(console.error)
+        else if (node.parent) this.focusNode(node.parent)
+        break
+      case 'Enter':
+      case ' ':
+        event.preventDefault()
+        if (!node.data.enabled) {
+          this.layout.sendNotification('warning', node.data.name, `${node.data.inShare ? 'Share' : 'Space'} is disabled`)
+          return
+        }
+        this.activeNode.set(node)
+        this.selectNode(node)
+        break
+    }
+  }
+
+  private selectNode(node: FilesTreeNode) {
+    this.checkAllowed(node)
+    this.setSelection(node)
+    if (node.data.hasChildren) {
+      this.collapseSiblings(node)
+      this.toggleExpand(node).catch(console.error)
+    }
+  }
+
+  private focusNode(node: FilesTreeNode, focus = true) {
+    this.focusedNode.set(node)
+    afterNextRender(
+      () => {
+        const index = this.visibleNodes().indexOf(node)
+        const element = this.treeRows()[index]?.nativeElement
+        if (focus) element?.focus()
+        element?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+      },
+      { injector: this.injector }
+    )
+  }
+
+  private checkAllowed(node: FilesTreeNode | null) {
     if (!this.copyMoveOn()) return
     if (this.store.filesSelection().length) {
       for (const f of this.store.filesSelection()) {
@@ -400,7 +500,7 @@ export class FilesTreeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private onCopyMove() {
-    this.onRefresh()
+    void this.onRefresh()
     this.copyMoveOn.set(true)
     this.checkAllowed(this.selectedNode())
   }

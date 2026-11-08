@@ -1,4 +1,3 @@
-import type { TreeNode } from '@ali-hm/angular-tree-component'
 import { HttpClient, HttpErrorResponse, HttpParams, HttpResponse } from '@angular/common/http'
 import { inject, Injectable, signal } from '@angular/core'
 import { TAR_EXTENSION, TAR_GZ_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
@@ -71,6 +70,7 @@ import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
 import { UserService } from '../../users/user.service'
+import type { FilesTreeNode } from '../components/sidebar/interfaces/files-tree-node.interface'
 import { FilesLockDialogComponent } from '../components/dialogs/files-lock-dialog.component'
 import { FilesOverwriteDialogComponent } from '../components/dialogs/files-overwrite-dialog.component'
 import type { FilesViewerDialogComponent as FilesViewerDialogComponentState } from '../components/dialogs/files-viewer-dialog.component'
@@ -90,7 +90,7 @@ import { FilesTasksService } from './files-tasks.service'
 @Injectable({ providedIn: 'root' })
 export class FilesService {
   // Tree section
-  public readonly treeNodeSelected = signal<TreeNode | null>(null)
+  public readonly treeNodeSelected = signal<FilesTreeNode | null>(null)
   private readonly treeCopyMoveRequested = new BehaviorSubject(false)
   public readonly treeCopyMoveOn = this.treeCopyMoveRequested.pipe(filter(Boolean))
   // Selection section
