@@ -1,4 +1,27 @@
 
+## [2.6.3](https://github.com/Sync-in/server/compare/v2.6.2...v2.6.3) (2026-11-09)
+
+### Features
+
+* **backend:files:** expose file properties by space path ([1386ae9](https://github.com/Sync-in/server/commit/1386ae97f12495372d0a18787fd2f32191e57f87))
+* **backend:links:** make password sharing by email configurable ([#329](https://github.com/Sync-in/server/issues/329)) ([5c8467c](https://github.com/Sync-in/server/commit/5c8467c5c3ea5e69e8351384224d041005253777))
+* **files:** support opening favorite files and folders ([757c3b9](https://github.com/Sync-in/server/commit/757c3b997d7e656528020db45eefcf06e5d056ac))
+* **frontend:search:** add open and go-to actions to results ([e12f9bf](https://github.com/Sync-in/server/commit/e12f9bfdc42b63229a9c8039b04898d85de00d8a))
+* **frontend:spaces:** support opening files from deep links ([#330](https://github.com/Sync-in/server/issues/330)) ([26ba072](https://github.com/Sync-in/server/commit/26ba07250d5c7c2448a317dfa41845231ceec983))
+* **i18n:** expand multilingual support with 40 new locales ([#327](https://github.com/Sync-in/server/issues/327)) ([79072a7](https://github.com/Sync-in/server/commit/79072a76860160c220c73da79ac24c433a77ce15))
+
+### Bug Fixes
+
+* **backend:auth:** enforce authentication state on WebSocket messages ([80a50bf](https://github.com/Sync-in/server/commit/80a50bf5ff5f2794620e06da23e92a0654be90d5))
+* **backend:database:** bound optimistic availability probes ([f2af848](https://github.com/Sync-in/server/commit/f2af8482cb95dcffa1d57f9edbdc39aff3469fa2))
+* **backend:files:** preserve download status and avoid duplicate 404 logs ([650b34b](https://github.com/Sync-in/server/commit/650b34bb4c2ad266d6ea2b5bcbb96d68ba45aaef))
+* **backend:files:** sanitize send file errors ([c4badf0](https://github.com/Sync-in/server/commit/c4badf0fb7e7748e61d1ea95a52d8f6e8de6608f))
+* **backend:websocket:** disconnect authenticated sockets when their token expires ([#324](https://github.com/Sync-in/server/issues/324)) ([cc07254](https://github.com/Sync-in/server/commit/cc072548f01b97a0ba73bd7abe7502703ad27dc6))
+* **files:** preserve root metadata when opening Markdown links ([45421fb](https://github.com/Sync-in/server/commit/45421fb3d6140df95c4b8c17c047c46a5e20c4f1))
+* **frontend:assets:** normalize MIME icon spacing ([a2d3db6](https://github.com/Sync-in/server/commit/a2d3db60fef1e90712f0e461e6d1ce7bc517b7d7))
+* **frontend:** stabilize UI components and update editor dependencies ([0b337a4](https://github.com/Sync-in/server/commit/0b337a4509ba863f3925e45d55317d4ba9fb517f))
+* **i18n:** translate sync scheduler units ([#328](https://github.com/Sync-in/server/issues/328)) ([4254475](https://github.com/Sync-in/server/commit/42544755acd43b70a507ae53609aa09daab1a42a))
+
 ## [2.6.2](https://github.com/Sync-in/server/compare/v2.6.1...v2.6.2) (2026-10-31)
 
 ### Features
