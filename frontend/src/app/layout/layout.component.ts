@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DOCUMENT, effect, HostListener, inject, OnInit, Renderer2 } from '@angular/core'
+import { Component, DOCUMENT, effect, HostListener, inject, OnInit, Renderer2 } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { NavigationStart, Router, RouterOutlet } from '@angular/router'
 import { filter } from 'rxjs'
@@ -10,7 +10,6 @@ import { SideBarRightComponent } from './sidebar/sidebar.right.component'
 
 @Component({
   selector: 'app-layout',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'layout.component.html',
   imports: [RouterOutlet, NavBarComponent, SideBarLeftComponent, SideBarRightComponent]
 })

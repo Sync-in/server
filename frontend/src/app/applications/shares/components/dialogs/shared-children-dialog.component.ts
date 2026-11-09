@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
 import { LucideDynamicIcon } from '@lucide/angular'
 import type { ShareChild } from '@sync-in-server/backend/src/applications/shares/models/share-child.model'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -25,7 +25,6 @@ import { ShareDialogComponent } from './share-dialog.component'
 
 @Component({
   selector: 'app-shared-children-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'shared-children-dialog.component.html',
   imports: [AutoResizeDirective, NgTemplateOutlet, L10nTranslateDirective, LucideDynamicIcon, TapDirective, UserAvatarComponent],
   styleUrls: ['shared-children-dialog.component.scss']

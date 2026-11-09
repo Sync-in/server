@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core'
+import { Component, effect, inject, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, type ParamMap, Router } from '@angular/router'
 import { LucideDynamicIcon, LucideMapPin } from '@lucide/angular'
@@ -25,7 +25,6 @@ import { SEARCH_ICON, SEARCH_PATH, SEARCH_QUERY_PARAM, SEARCH_TITLE } from '../s
 
 @Component({
   selector: 'app-files-search',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AutoResizeDirective,
     SearchFilterPipe,

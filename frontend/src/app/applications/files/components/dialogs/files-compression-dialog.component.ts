@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject, Input, OnInit, Output, signal } from '@angular/core'
+import { Component, EventEmitter, HostListener, inject, Input, OnInit, Output, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideFileArchive } from '@lucide/angular'
 import { TAR_EXTENSION, TAR_GZ_EXTENSION, ZIP_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
@@ -11,8 +11,7 @@ import { FilesService } from '../../services/files.service'
 @Component({
   selector: 'app-files-compression-dialog',
   templateUrl: 'files-compression-dialog.component.html',
-  imports: [LucideDynamicIcon, FormsModule, AutofocusDirective, L10nTranslateDirective, L10nTranslatePipe],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  imports: [LucideDynamicIcon, FormsModule, AutofocusDirective, L10nTranslateDirective, L10nTranslatePipe]
 })
 export class FilesCompressionDialogComponent implements OnInit {
   @Input() archiveProps: CompressFileDto = {

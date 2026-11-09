@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, Signal } from '@angular/core'
+import { Component, computed, inject, input, Signal } from '@angular/core'
 import { LucideDynamicIcon } from '@lucide/angular'
 import { SPACE_ROLE } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
@@ -19,7 +19,6 @@ import { SpaceUserAnchorsDialogComponent } from '../dialogs/space-user-anchors-d
 
 @Component({
   selector: 'app-space-selection',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'space-selection.component.html',
   imports: [
     AutoResizeDirective,

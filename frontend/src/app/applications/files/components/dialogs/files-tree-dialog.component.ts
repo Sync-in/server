@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
+import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideFile, LucideFolderClosed } from '@lucide/angular'
 import { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
@@ -13,7 +13,6 @@ export type { FileTreeEvent } from '../../interfaces/files-dialog.interface'
 
 @Component({
   selector: 'app-files-tree-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [L10nTranslateDirective, FilesTreeComponent, LucideDynamicIcon, PathSlice],
   templateUrl: 'files-tree-dialog.component.html'
 })

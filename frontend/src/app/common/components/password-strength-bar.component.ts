@@ -1,8 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core'
+import { Component, computed, input } from '@angular/core'
 
 @Component({
   selector: 'app-password-strength-bar',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [
     `
       ul#strengthBar {

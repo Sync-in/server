@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
+import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideUserRoundPlus } from '@lucide/angular'
 import { GROUP_TYPE } from '@sync-in-server/backend/src/applications/users/constants/group'
 import { USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -14,7 +14,6 @@ import { UserSearchComponent } from '../utils/user-search.component'
 
 @Component({
   selector: 'app-user-group-add-users-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective, UserSearchComponent],
   templateUrl: 'user-group-add-users-dialog.component.html'
 })

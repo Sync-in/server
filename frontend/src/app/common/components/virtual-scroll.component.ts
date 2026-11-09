@@ -1,7 +1,6 @@
 import {
   afterNextRender,
   AfterViewInit,
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   inject,
@@ -19,7 +18,6 @@ import { LayoutService } from '../../layout/layout.service'
 
 @Component({
   selector: 'app-virtual-scroll',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.virtual-scroll-border-top]': '!galleryMode()'
   },

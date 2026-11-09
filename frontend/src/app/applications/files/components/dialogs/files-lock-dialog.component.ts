@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, computed, HostListener, inject, Input, OnInit, signal } from '@angular/core'
+import { Component, computed, HostListener, inject, Input, OnInit, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideLock, LucideLockOpen } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
 import { firstValueFrom } from 'rxjs'
@@ -13,7 +13,6 @@ import { FileLockFormatPipe } from '../utils/file-lock.utils'
 
 @Component({
   selector: 'app-files-lock-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective, FileLockFormatPipe],
   templateUrl: 'files-lock-dialog.component.html'
 })

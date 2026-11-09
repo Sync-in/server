@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, computed, inject, input, model, OnDestroy, OnInit, output, signal } from '@angular/core'
+import { Component, computed, inject, input, model, OnDestroy, OnInit, output, signal } from '@angular/core'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { EURO_OFFICE_APP_LOCK, ONLY_OFFICE_APP_LOCK } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
 import type { OnlyOfficeReqDto } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.dtos'
@@ -14,7 +14,6 @@ import { OnlyOfficeComponent } from './utils/only-office.component'
 
 @Component({
   selector: 'app-files-viewer-only-office',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [OnlyOfficeComponent],
   styles: [
     `

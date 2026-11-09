@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core'
+import { Component, computed, inject, signal, viewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, Router } from '@angular/router'
 import {
@@ -46,7 +46,6 @@ import { SpaceUserAnchorsDialogComponent } from './dialogs/space-user-anchors-di
 
 @Component({
   selector: 'app-spaces',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     KeyValuePipe,
     L10nTranslateDirective,

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, Signal, signal } from '@angular/core'
+import { Component, computed, inject, input, Signal, signal } from '@angular/core'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BadgePermissionsComponent } from '../../../../common/components/badge-permissions.component'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
@@ -9,7 +9,6 @@ import { ShareLinkModel } from '../../models/share-link.model'
 
 @Component({
   selector: 'app-link-selection',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AutoResizeDirective, L10nTranslateDirective, L10nTranslatePipe, TimeDateFormatPipe, ShareRepositoryComponent, BadgePermissionsComponent],
   templateUrl: 'link-selection.component.html',
   styles: ['.card {width: 100%; background: transparent; border: none}']

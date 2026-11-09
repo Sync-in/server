@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, input, viewChild } from '@angular/core'
+import { Component, computed, ElementRef, inject, input, viewChild } from '@angular/core'
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser'
 import { assetsUrl } from '../../files.constants'
 import { FileModel } from '../../models/file.model'
 
 @Component({
   selector: 'app-files-viewer-pdf',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: ` <iframe #pdfIframe [src]="url()" class="app-viewer-iframe" [style.height.px]="currentHeight()" (load)="onViewerLoaded()"></iframe> `
 })
 export class FilesViewerPdfComponent {

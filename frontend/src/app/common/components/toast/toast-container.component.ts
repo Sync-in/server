@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core'
+import { Component, inject } from '@angular/core'
 import type { LucideIcon } from '@lucide/angular'
 import { LucideCircleCheck, LucideCircleX, LucideDynamicIcon, LucideInfo, LucideTriangleExclamationPoint, LucideX } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
@@ -7,7 +7,6 @@ import { ToastService } from './toast.service'
 
 @Component({
   selector: 'app-toast-container',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslatePipe],
   templateUrl: 'toast-container.component.html'
 })

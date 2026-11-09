@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, Signal } from '@angular/core'
+import { Component, computed, inject, Signal } from '@angular/core'
 import { LucideDynamicIcon, LucideX } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { FilesSelectionComponent } from '../../../applications/files/components/sidebar/files-selection.component'
@@ -13,7 +13,6 @@ import { StoreService } from '../../../store/store.service'
 
 @Component({
   selector: 'app-selection',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FilesSelectionComponent,
     ShareSelectionComponent,

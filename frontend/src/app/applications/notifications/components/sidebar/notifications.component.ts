@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { AfterViewInit, ChangeDetectionStrategy, Component, effect, ElementRef, inject, viewChildren } from '@angular/core'
+import { AfterViewInit, Component, effect, ElementRef, inject, viewChildren } from '@angular/core'
 import { Router } from '@angular/router'
 import { LucideCheck, LucideDynamicIcon, LucideInfo, LucideSearch, LucideTrash, LucideX } from '@lucide/angular'
 import { NOTIFICATION_APP } from '@sync-in-server/backend/src/applications/notifications/constants/notifications'
@@ -15,7 +15,6 @@ import { NotificationsService } from '../../notifications.service'
 
 @Component({
   selector: 'app-notifications',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [L10nTranslateDirective, AutoResizeDirective, LucideDynamicIcon, TimeAgoPipe, UserAvatarComponent],
   templateUrl: 'notifications.component.html'
 })

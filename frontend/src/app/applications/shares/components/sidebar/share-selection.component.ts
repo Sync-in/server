@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, Signal } from '@angular/core'
+import { Component, computed, inject, input, Signal } from '@angular/core'
 import { LucideDynamicIcon, LucideMessageSquareMore } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BadgeMembersComponent } from '../../../../common/components/badge-members.component'
@@ -14,7 +14,6 @@ import { SharedChildrenDialogComponent } from '../dialogs/shared-children-dialog
 import { ShareRepositoryComponent } from '../utils/share-repository.component'
 
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-share-selection',
   templateUrl: 'share-selection.component.html',
   imports: [

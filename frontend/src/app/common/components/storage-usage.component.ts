@@ -1,10 +1,9 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, input, signal } from '@angular/core'
+import { afterNextRender, Component, DestroyRef, ElementRef, inject, input, signal } from '@angular/core'
 import { ProgressbarComponent } from 'ngx-bootstrap/progressbar'
 import { ToBytesPipe } from '../pipes/to-bytes.pipe'
 
 @Component({
   selector: 'app-storage-usage',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ProgressbarComponent, ToBytesPipe],
   template: `@if (storageQuota() && storageQuota() > 0) {
       <progressbar

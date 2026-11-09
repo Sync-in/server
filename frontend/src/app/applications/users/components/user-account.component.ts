@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core'
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { LucideCopy, LucideDynamicIcon, LucideKeyRound } from '@lucide/angular'
@@ -30,7 +30,6 @@ import { UserAuthManageAppPasswordsDialogComponent } from './dialogs/user-auth-m
 
 @Component({
   selector: 'app-user-account',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AutoResizeDirective,
     FormsModule,

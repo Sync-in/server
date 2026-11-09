@@ -1,6 +1,6 @@
 import { AsyncPipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core'
+import { Component, computed, inject, input, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { LucideDynamicIcon, LucideLoader, LucideLock, LucideLockOpen, LucideMessageSquareMore, LucideX } from '@lucide/angular'
@@ -30,7 +30,6 @@ import { FilesSummaryComponent } from '../utils/files-summary.component'
 
 @Component({
   selector: 'app-files-selection',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'files-selection.component.html',
   imports: [
     AutoResizeDirective,

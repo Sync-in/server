@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core'
+import { Component, inject, signal, viewChild } from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import {
   LucideArrowDown,
@@ -47,7 +47,6 @@ import { AdminGroupEditUserDialogComponent } from './dialogs/admin-group-edit-us
 
 @Component({
   selector: 'app-admin-groups',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ContextMenuModule,
     LucideDynamicIcon,

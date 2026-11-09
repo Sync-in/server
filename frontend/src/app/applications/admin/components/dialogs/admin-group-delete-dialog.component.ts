@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
+import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideTrash, LucideUserMinus } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
@@ -11,7 +11,6 @@ import { AdminService } from '../../admin.service'
 
 @Component({
   selector: 'app-admin-group-delete-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective, CapitalizePipe],
   templateUrl: 'admin-group-delete-dialog.component.html'
 })

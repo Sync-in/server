@@ -1,16 +1,4 @@
-import {
-  afterNextRender,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  type ElementRef,
-  inject,
-  input,
-  model,
-  signal,
-  viewChild
-} from '@angular/core'
+import { afterNextRender, Component, computed, DestroyRef, type ElementRef, inject, input, model, signal, viewChild } from '@angular/core'
 import {
   LucideChevronLeft,
   LucideChevronRight,
@@ -35,8 +23,7 @@ import type { FileModel } from '../../models/file.model'
   selector: 'app-files-viewer-image',
   imports: [TooltipModule, LucideDynamicIcon, L10nTranslatePipe],
   styleUrl: 'files-viewer-image.component.scss',
-  templateUrl: 'files-viewer-image.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  templateUrl: 'files-viewer-image.component.html'
 })
 export class FilesViewerImageComponent {
   readonly file = model.required<FileModel>()

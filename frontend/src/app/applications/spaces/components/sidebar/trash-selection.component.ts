@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, InputSignal } from '@angular/core'
+import { Component, inject, input, InputSignal } from '@angular/core'
 import { LucideDynamicIcon } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
@@ -9,7 +9,6 @@ import { SPACES_ICON } from '../../spaces.constants'
 
 @Component({
   selector: 'app-trash-selection',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'trash-selection.component.html',
   imports: [AutoResizeDirective, LucideDynamicIcon, L10nTranslateDirective, TimeDateFormatPipe, L10nTranslatePipe],
   styles: ['.card {width: 100%; background: transparent; border: none}']

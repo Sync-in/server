@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common'
-import { ChangeDetectionStrategy, Component, computed, HostListener, inject, Input, model, OnInit, output, signal } from '@angular/core'
+import { Component, computed, HostListener, inject, Input, model, OnInit, output, signal } from '@angular/core'
 import { toSignal } from '@angular/core/rxjs-interop'
 import { LucideDynamicIcon, LucideEye, LucidePencil } from '@lucide/angular'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
@@ -22,7 +22,6 @@ import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component
 
 @Component({
   selector: 'app-files-viewer-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     NgTemplateOutlet,
     FilesViewerPdfComponent,

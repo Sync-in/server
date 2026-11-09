@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, ElementRef, HostListener, inject, input, OnInit, signal, viewChild } from '@angular/core'
+import { Component, ElementRef, HostListener, inject, input, OnInit, signal, viewChild } from '@angular/core'
 import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser'
 import type { DrawioSettingsDto } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.dtos'
@@ -21,7 +21,6 @@ import type { DrawioEditorEvent, DrawioInitializationMode } from './interfaces/f
 
 @Component({
   selector: 'app-files-viewer-drawio',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [L10nTranslateDirective, FilesViewerUnsavedChangesComponent],
   styles: [
     `

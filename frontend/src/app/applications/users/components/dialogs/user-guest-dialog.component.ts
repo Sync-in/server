@@ -1,6 +1,6 @@
 import { TitleCasePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
 import { LucideDynamicIcon, LucideLoader, LucidePencil, LucidePlus, LucideShieldHalf, LucideUserRoundCog, LucideUsersRound } from '@lucide/angular'
 import { USER_LOGIN_VALIDATION, USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -24,7 +24,6 @@ import { UserSearchComponent } from '../utils/user-search.component'
 
 @Component({
   selector: 'app-user-guest-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LucideDynamicIcon,
     L10nTranslateDirective,

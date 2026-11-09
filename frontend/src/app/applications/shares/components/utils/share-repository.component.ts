@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core'
+import { Component, computed, inject, input } from '@angular/core'
 import type { LucideIcon } from '@lucide/angular'
 import { LucideCircleQuestionMark, LucideDynamicIcon } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
@@ -17,7 +17,6 @@ interface ShareRepository {
 
 @Component({
   selector: 'app-share-repository',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [L10nTranslatePipe, LucideDynamicIcon],
   template: `
     @let view = galleryMode();

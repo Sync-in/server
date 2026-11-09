@@ -96,7 +96,7 @@ export class FilesUploadService {
   private uploadFiles(url: string, form: FormData, overwrite: boolean) {
     return this.http.request(overwrite ? 'put' : 'post', url, {
       body: form,
-      reportProgress: true,
+      reportUploadProgress: true,
       observe: 'events'
     })
   }

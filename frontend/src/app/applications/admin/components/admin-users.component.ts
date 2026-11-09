@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core'
+import { Component, computed, inject, signal, viewChild } from '@angular/core'
 import { ActivatedRoute, Data, Router } from '@angular/router'
 import {
   LucideArrowDown,
@@ -41,7 +41,6 @@ import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
 
 @Component({
   selector: 'app-admin-users',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LucideDynamicIcon,
     L10nTranslatePipe,

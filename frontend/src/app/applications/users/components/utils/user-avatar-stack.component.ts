@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core'
+import { Component, input } from '@angular/core'
 import { AvailableBSPositions } from 'ngx-bootstrap/positioning'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { OwnerType } from '../../interfaces/owner.interface'
@@ -8,7 +8,6 @@ import { UserAvatarTooltipComponent } from './user-avatar-tooltip.component'
 
 @Component({
   selector: 'app-user-avatar-stack',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TooltipModule, UserAvatarComponent, UserAvatarTooltipComponent],
   styles: [
     `

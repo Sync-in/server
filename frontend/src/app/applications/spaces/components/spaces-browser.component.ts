@@ -1,6 +1,6 @@
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, inject, OnDestroy, OnInit, Renderer2, signal, viewChild } from '@angular/core'
+import { AfterViewInit, Component, ElementRef, inject, OnDestroy, OnInit, Renderer2, signal, viewChild } from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import {
   LucideAnchor,
@@ -116,7 +116,6 @@ const keyboardNavigationKeys: ReadonlySet<string> = new Set<KeyboardNavigationKe
     TapDirective,
     FileLockFormatPipe
   ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'spaces-browser.component.html',
   styleUrl: 'spaces-browser.component.scss'
 })

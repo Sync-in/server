@@ -1,5 +1,5 @@
 import { Location, NgTemplateOutlet } from '@angular/common'
-import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core'
+import { Component, effect, inject, signal, untracked } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ResolveEnd, Router, RouterLink } from '@angular/router'
 import { LucideChevronLeft, LucideChevronRight, LucideDynamicIcon, LucideLogOut, LucideVenetianMask } from '@lucide/angular'
@@ -26,7 +26,6 @@ import { NavbarSearchService } from '../navbar/services/navbar-search.service'
 
 @Component({
   selector: 'app-sidebar-left',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'sidebar.left.component.html',
   imports: [RouterLink, LucideDynamicIcon, L10nTranslateDirective, NgTemplateOutlet]
 })

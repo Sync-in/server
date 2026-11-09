@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core'
+import { Component, inject } from '@angular/core'
 import { USER_ONLINE_STATUS_LIST } from '../../applications/users/user.constants'
 import { StoreService } from '../../store/store.service'
 import { BreadcrumbComponent } from '../breadcrumb/breadcrumb.component'
@@ -9,7 +9,6 @@ import { NavbarSearchService } from './services/navbar-search.service'
 
 @Component({
   selector: 'app-navbar',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'navbar.component.html',
   imports: [BreadcrumbComponent, NavbarSearchComponent]
 })

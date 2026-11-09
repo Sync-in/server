@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnDestroy, signal } from '@angular/core'
+import { Component, inject, OnDestroy, signal } from '@angular/core'
 import { toSignal } from '@angular/core/rxjs-interop'
 import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
@@ -19,7 +19,6 @@ import { getAuthRetryAfter } from './auth.utils'
 
 @Component({
   selector: 'app-auth',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'auth.component.html',
   imports: [AutofocusDirective, ReactiveFormsModule, LucideDynamicIcon, L10nTranslateDirective, L10nTranslatePipe]
 })

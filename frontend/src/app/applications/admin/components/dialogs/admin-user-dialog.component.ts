@@ -1,6 +1,6 @@
 import { TitleCasePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
 import {
   LucideDynamicIcon,
@@ -44,7 +44,6 @@ import { AdminUserDeleteDialogComponent } from './admin-user-delete-dialog.compo
 
 @Component({
   selector: 'app-admin-user-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LucideDynamicIcon,
     L10nTranslateDirective,

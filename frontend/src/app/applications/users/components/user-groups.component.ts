@@ -1,6 +1,6 @@
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core'
+import { Component, computed, inject, signal, viewChild } from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import {
   LucideArrowDown,
@@ -46,7 +46,6 @@ import { UserPersonalGroupLeaveDialogComponent } from './dialogs/user-personal-g
 
 @Component({
   selector: 'app-user-groups',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ContextMenuModule,
     LucideDynamicIcon,

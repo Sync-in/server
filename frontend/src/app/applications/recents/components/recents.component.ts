@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common'
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core'
+import { Component, computed, inject, signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { LucideDynamicIcon, LucideFileText, LucideMessageSquareMore } from '@lucide/angular'
 import { L10N_LOCALE, L10nDatePipe, type L10nLocale, L10nTranslateDirective } from 'angular-l10n'
@@ -19,7 +19,6 @@ import { RECENTS_ICON, RECENTS_PATH, RECENTS_TITLE } from '../recents.constants'
 
 @Component({
   selector: 'app-recents',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AutoResizeDirective,
     DatePipe,

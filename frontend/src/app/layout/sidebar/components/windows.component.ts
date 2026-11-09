@@ -1,5 +1,5 @@
 import { NgOptimizedImage } from '@angular/common'
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core'
+import { Component, effect, inject } from '@angular/core'
 import { LucideDynamicIcon, LucideX } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { AutoResizeDirective } from '../../../common/directives/auto-resize.directive'
@@ -8,7 +8,6 @@ import { LayoutService } from '../../layout.service'
 
 @Component({
   selector: 'app-windows',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AutoResizeDirective, LucideDynamicIcon, L10nTranslateDirective, NgOptimizedImage],
   templateUrl: 'windows.component.html'
 })

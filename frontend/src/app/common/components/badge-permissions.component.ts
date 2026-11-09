@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core'
+import { Component, computed, inject, input } from '@angular/core'
 import { LucideDynamicIcon } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AvailableBSPositions } from 'ngx-bootstrap/positioning'
@@ -12,7 +12,6 @@ interface FilePermissionEntry {
 
 @Component({
   selector: 'app-badge-permissions',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TooltipModule, L10nTranslateDirective, LucideDynamicIcon, L10nTranslatePipe],
   template: `
     @if (replaceEmptyPermissions() && !permissionEntries().length) {

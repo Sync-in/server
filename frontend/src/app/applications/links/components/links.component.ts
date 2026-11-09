@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core'
+import { Component, inject, signal, viewChild } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 import {
   LucideArrowDown,
@@ -44,7 +44,6 @@ import { LinkDialogComponent } from './dialogs/link-dialog.component'
 
 @Component({
   selector: 'app-shared-links',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ContextMenuModule,
     LucideDynamicIcon,

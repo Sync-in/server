@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output, signal } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideLoader, LucidePencil, LucideSettings } from '@lucide/angular'
 import { MEMBER_TYPE } from '@sync-in-server/backend/src/applications/users/constants/member'
@@ -15,7 +15,6 @@ import { UserService } from '../../user.service'
 
 @Component({
   selector: 'app-user-group-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, FormsModule, LucideDynamicIcon, L10nTranslateDirective, AutofocusDirective, TimeDateFormatPipe],
   templateUrl: 'user-group-dialog.component.html'
 })

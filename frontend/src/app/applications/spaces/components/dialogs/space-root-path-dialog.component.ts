@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject, Input, OnInit, Output, signal } from '@angular/core'
+import { Component, EventEmitter, HostListener, inject, Input, OnInit, Output, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideFolderClosed } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -14,7 +14,6 @@ export interface ExternalFilePathEvent {
 
 @Component({
   selector: 'app-space-root-path-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective, L10nTranslatePipe, FormsModule, AutofocusDirective],
   templateUrl: 'space-root-path-dialog.component.html'
 })

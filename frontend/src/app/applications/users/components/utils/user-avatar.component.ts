@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core'
+import { Component, computed, input } from '@angular/core'
 import { LucideDynamicIcon, LucideLightbulb, LucideUserRoundKey, LucideUsersRound } from '@lucide/angular'
 import { AvailableBSPositions } from 'ngx-bootstrap/positioning'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
@@ -8,7 +8,6 @@ import { UserAvatarTooltipComponent } from './user-avatar-tooltip.component'
 
 @Component({
   selector: 'app-user-avatar',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TooltipModule, LucideDynamicIcon, UserAvatarTooltipComponent],
   template: `
     @if (userHasAvatar()) {

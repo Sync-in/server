@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject, Input, Output, signal } from '@angular/core'
+import { Component, EventEmitter, HostListener, inject, Input, Output, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideLoader, LucideTrash } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { PlatformIconComponent } from '../../../../common/components/platform-icon.component'
@@ -9,7 +9,6 @@ import { SyncService } from '../../services/sync.service'
 
 @Component({
   selector: 'app-sync-client-delete-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, PlatformIconComponent, L10nTranslateDirective],
   templateUrl: './sync-client-delete.dialog.component.html'
 })

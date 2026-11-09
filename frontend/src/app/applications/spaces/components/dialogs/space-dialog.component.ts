@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, EventEmitter, inject, Injector, Input, OnInit, Output, signal } from '@angular/core'
+import { Component, EventEmitter, inject, Injector, Input, OnInit, Output, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import {
   LucideAnchor,
@@ -46,7 +46,6 @@ import { AdminService } from '../../../admin/admin.service'
 
 @Component({
   selector: 'app-space-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     L10nTranslateDirective,
     TimeAgoPipe,

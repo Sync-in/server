@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core'
+import { Component, inject, input } from '@angular/core'
 import { SYNC_PATH_SCHEDULER_UNIT } from '@sync-in-server/backend/src/applications/sync/constants/sync'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { StoreService } from '../../../../store/store.service'
@@ -7,7 +7,6 @@ import { SyncPathModel } from '../../models/sync-path.model'
 
 @Component({
   selector: 'app-sync-path-scheduler',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [L10nTranslateDirective],
   template: `<span
     class="{{

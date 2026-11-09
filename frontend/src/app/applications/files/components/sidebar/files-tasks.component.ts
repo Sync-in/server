@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core'
+import { Component, computed, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import type { LucideIcon } from '@lucide/angular'
 import {
@@ -37,7 +37,6 @@ import { TimeAgoPipe } from '../../../../common/pipes/time-ago.pipe'
 @Component({
   selector: 'app-files-tasks',
   imports: [LucideDynamicIcon, L10nTranslatePipe, AutoResizeDirective, TooltipModule, ProgressbarComponent, ToBytesPipe, TimeAgoPipe],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'files-tasks.component.html'
 })
 export class FilesTasksComponent {

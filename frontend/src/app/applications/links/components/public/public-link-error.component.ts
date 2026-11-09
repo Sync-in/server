@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core'
+import { Component, inject, signal } from '@angular/core'
 import { ActivatedRoute, Params } from '@angular/router'
 import { LucideCircleExclamationPoint, LucideDynamicIcon } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -7,7 +7,6 @@ import { PublicLinkHeaderComponent } from './public-link-header.component'
 
 @Component({
   selector: 'app-public-link-error',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [L10nTranslateDirective, LucideDynamicIcon, PublicLinkHeaderComponent],
   templateUrl: 'public-link-error.component.html'
 })

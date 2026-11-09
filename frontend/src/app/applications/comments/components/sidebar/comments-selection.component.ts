@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core'
+import { Component, computed, inject, signal } from '@angular/core'
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop'
 import { LucideDynamicIcon, LucideSquarePen } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -17,7 +17,6 @@ import { CommentsService } from '../../services/comments.service'
 
 @Component({
   selector: 'app-comments-selection',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AutofocusDirective,
     L10nTranslateDirective,

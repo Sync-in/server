@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core'
+import { Component, computed, input } from '@angular/core'
 import { pathSlice } from '../../../../common/utils/functions'
 import { ShareLinkModel } from '../../../links/models/share-link.model'
 import { ShareModel } from '../../models/share.model'
 
 @Component({
   selector: 'app-share-file-name',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [],
   template: ` <div class="d-flex align-items-center">
     <img [src]="share().mimeUrl" draggable="false" height="30" width="30" alt="" (error)="share().fallBackMimeUrl()" />

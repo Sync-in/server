@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, inject, Input, OnInit, output, signal } from '@angular/core'
+import { Component, inject, Input, OnInit, output, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideKeyRound, LucideUserRoundPen } from '@lucide/angular'
 import { USER_GROUP_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -11,7 +11,6 @@ import { AdminGroupModel } from '../../models/admin-group.model'
 
 @Component({
   selector: 'app-admin-group-edit-user-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective, FormsModule],
   templateUrl: 'admin-group-edit-user-dialog.component.html'
 })

@@ -1,14 +1,4 @@
-import {
-  afterRenderEffect,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  CUSTOM_ELEMENTS_SCHEMA,
-  ElementRef,
-  inject,
-  input,
-  viewChild
-} from '@angular/core'
+import { afterRenderEffect, Component, computed, CUSTOM_ELEMENTS_SCHEMA, ElementRef, inject, input, viewChild } from '@angular/core'
 import { toSignal } from '@angular/core/rxjs-interop'
 import { L10nTranslationService } from 'angular-l10n'
 import { map } from 'rxjs'
@@ -21,7 +11,6 @@ import { FileModel } from '../../models/file.model'
 
 @Component({
   selector: 'app-files-viewer-media',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   styles: [
     `

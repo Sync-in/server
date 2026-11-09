@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core'
+import { Component, input } from '@angular/core'
 import { LucideArrowUpDown, LucideDynamicIcon } from '@lucide/angular'
 import { SYNC_PATH_MODE } from '@sync-in-server/backend/src/applications/sync/constants/sync'
 import { SYNC_TRANSFER_SIDE, SYNC_TRANSFER_SIDE_CLASS, SYNC_TRANSFER_SIDE_ICON } from '../../constants/transfer'
 
 @Component({
   selector: 'app-sync-path-direction-icon',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon],
   template: `
     <span class="d-flex justify-content-center">

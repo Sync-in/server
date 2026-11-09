@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core'
+import { Component, inject } from '@angular/core'
 import { LucideDynamicIcon, LucideHardDriveDownload, LucideTerminal } from '@lucide/angular'
 import { APP_STORE_PLATFORM } from '@sync-in-server/backend/src/applications/sync/constants/store'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -13,7 +13,6 @@ import { UserService } from '../user.service'
 
 @Component({
   selector: 'app-user-applications',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, PlatformIconComponent, L10nTranslateDirective, AutoResizeDirective, TimeDateFormatPipe],
   templateUrl: './user-applications.component.html',
   styleUrl: './user-applications.component.scss'

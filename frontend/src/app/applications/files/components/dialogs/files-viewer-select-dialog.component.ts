@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, Input, signal } from '@angular/core'
+import { Component, computed, inject, Input, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideArrowRight, LucideDynamicIcon, LucideFile, LucideFileText, LucideFileTypeCorner } from '@lucide/angular'
 import { COLLABORA_EDITOR } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
@@ -18,7 +18,6 @@ import { FileModel } from '../../models/file.model'
 
 @Component({
   selector: 'app-files-viewer-select-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective, FormsModule],
   templateUrl: 'files-viewer-select-dialog.component.html',
   styleUrls: ['./files-viewer-select-dialog.scss']

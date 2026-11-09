@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core'
+import { Component, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormControl, ReactiveFormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideFunnel, LucideX } from '@lucide/angular'
@@ -7,7 +7,6 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
 
 @Component({
   selector: 'app-input-filter',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, L10nTranslatePipe, LucideDynamicIcon],
   template: `
     <div class="filter-shell" [class.has-value]="!!search()">

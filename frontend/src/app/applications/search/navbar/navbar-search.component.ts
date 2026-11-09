@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core'
+import { Component, computed, effect, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormControl, ReactiveFormsModule } from '@angular/forms'
 import { NavigationStart, Router } from '@angular/router'
@@ -11,7 +11,6 @@ import { NavbarSearchService } from '../../../layout/navbar/services/navbar-sear
 
 @Component({
   selector: 'app-navbar-search',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, LucideDynamicIcon, L10nTranslatePipe, BsDropdownModule],
   templateUrl: 'navbar-search.component.html'
 })

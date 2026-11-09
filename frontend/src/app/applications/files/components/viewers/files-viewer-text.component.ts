@@ -1,5 +1,5 @@
 import { CodeEditor } from '@acrodata/code-editor'
-import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
+import { Component, HostListener, OnDestroy, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
 import { LanguageDescription } from '@codemirror/language'
@@ -25,7 +25,6 @@ import { FilesViewerUnsavedChangesComponent } from './components/files-viewer-un
 
 @Component({
   selector: 'app-files-viewer-text',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [
     CodeEditor,

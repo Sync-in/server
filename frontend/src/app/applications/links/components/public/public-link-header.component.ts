@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DOCUMENT, effect, inject, Renderer2 } from '@angular/core'
+import { Component, DOCUMENT, effect, inject, Renderer2 } from '@angular/core'
 import type { USER_THEME } from '@sync-in-server/backend/src/applications/users/constants/user-preferences'
 import { APP_URL } from '@sync-in-server/backend/src/common/shared'
 import { themeDark, themeLight } from '../../../../layout/layout.interfaces'
@@ -7,7 +7,6 @@ import { ThemeSwitchComponent } from '../../../../layout/theme-switch.component'
 
 @Component({
   selector: 'app-public-link-header',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ThemeSwitchComponent],
   templateUrl: 'public-link-header.component.html'
 })

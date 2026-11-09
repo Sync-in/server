@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core'
+import { Component, computed, input } from '@angular/core'
 
 // Brand SVG paths from Font Awesome Free 7.3.1 by Fonticons, Inc.
 // Icons licensed under CC BY 4.0: https://fontawesome.com/license/free
 @Component({
   selector: 'app-platform-icon',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './platform-icon.component.html',
   host: {
     class: 'platform-icon',

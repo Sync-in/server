@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core'
+import { Component, computed, inject, input } from '@angular/core'
 import type { LucideIcon } from '@lucide/angular'
 import { LucideDynamicIcon, LucideLink, LucideUserRound, LucideUsersRound } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
@@ -19,7 +19,6 @@ interface BadgeEntry {
 
 @Component({
   selector: 'app-badge-members',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, TooltipModule, L10nTranslatePipe],
   template: `
     @if (entries().length) {

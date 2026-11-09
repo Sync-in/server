@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, output } from '@angular/core'
+import { Component, inject, output } from '@angular/core'
 import { LucideDynamicIcon, LucideGrid2x2, LucideList } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
@@ -11,8 +11,7 @@ export type { ViewMode } from './interfaces/view-mode.interface'
   selector: 'app-navigation-view',
   templateUrl: 'navigation-view.component.html',
   styleUrls: ['navigation-view.component.scss'],
-  imports: [BsDropdownModule, LucideDynamicIcon, L10nTranslateDirective],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  imports: [BsDropdownModule, LucideDynamicIcon, L10nTranslateDirective]
 })
 export class NavigationViewComponent {
   readonly switchView = output<ViewMode>()

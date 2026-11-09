@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core'
+import { Component, computed, inject, input } from '@angular/core'
 import { toObservable, toSignal } from '@angular/core/rxjs-interop'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import { from } from 'rxjs'
@@ -10,7 +10,6 @@ import { FilesService } from '../../services/files.service'
 
 @Component({
   selector: 'app-files-summary',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [L10nTranslatePipe, ToBytesPipe],
   host: { class: 'd-block' },
   template: `

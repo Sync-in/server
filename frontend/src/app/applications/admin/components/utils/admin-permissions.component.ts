@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core'
+import { Component, inject, input, output } from '@angular/core'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
 
 @Component({
   selector: 'app-admin-permissions',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CapitalizePipe, L10nTranslateDirective, L10nTranslatePipe],
   template: ` <div class="d-flex flex-column col-12 pb-3">
     <label for="permissions" class="form-label" l10nTranslate>Permissions</label>

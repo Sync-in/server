@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, inject, Input, OnInit, output, signal } from '@angular/core'
+import { Component, inject, Input, OnInit, output, signal } from '@angular/core'
 import { LucideAnchor, LucideDynamicIcon, LucideLoader, LucidePlus } from '@lucide/angular'
 import type { SpaceRootProps } from '@sync-in-server/backend/src/applications/spaces/models/space-root-props.model'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -17,7 +17,6 @@ import { ExternalFilePathEvent } from './space-root-path-dialog.component'
 
 @Component({
   selector: 'app-space-user-anchors-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslateDirective, SpaceManageRootsComponent],
   templateUrl: 'space-user-anchors-dialog.component.html'
 })

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, ViewEncapsulation } from '@angular/core'
+import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core'
 import { LucideDynamicIcon, LucideLightbulb, LucideUserRoundKey, LucideUsersRound } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import { OwnerType } from '../../interfaces/owner.interface'
@@ -6,7 +6,6 @@ import { MemberModel } from '../../models/member.model'
 
 @Component({
   selector: 'app-user-avatar-tooltip',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [LucideDynamicIcon, L10nTranslatePipe],
   styles: [

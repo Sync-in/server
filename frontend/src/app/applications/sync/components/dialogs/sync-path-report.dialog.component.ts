@@ -1,17 +1,5 @@
 import { KeyValuePipe } from '@angular/common'
-import {
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  inject,
-  Input,
-  OnDestroy,
-  OnInit,
-  signal,
-  untracked,
-  viewChild,
-  WritableSignal
-} from '@angular/core'
+import { Component, effect, inject, Input, OnDestroy, OnInit, signal, untracked, viewChild, WritableSignal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import {
   LucideArrowDown,
@@ -49,7 +37,6 @@ import { SYNC_ICON } from '../../sync.constants'
 
 @Component({
   selector: 'app-sync-folder-report-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LucideDynamicIcon,
     L10nTranslateDirective,

@@ -1,5 +1,5 @@
 import { HashLocationStrategy, LocationStrategy } from '@angular/common'
-import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withXsrfConfiguration } from '@angular/common/http'
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withXhr, withXsrfConfiguration } from '@angular/common/http'
 import { ApplicationConfig, importProvidersFrom, isDevMode } from '@angular/core'
 import { provideRouter } from '@angular/router'
 import { provideLucideConfig } from '@lucide/angular'
@@ -20,7 +20,7 @@ export const appConfig: ApplicationConfig = {
     { provide: LocationStrategy, useClass: HashLocationStrategy },
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     provideRouter(routes),
-    provideHttpClient(withInterceptorsFromDi(), withXsrfConfiguration({ cookieName: CSRF_KEY, headerName: CSRF_KEY })),
+    provideHttpClient(withXhr(), withInterceptorsFromDi(), withXsrfConfiguration({ cookieName: CSRF_KEY, headerName: CSRF_KEY })),
     provideL10nTranslation(l10nConfig, {
       storage: TranslationStorage,
       translationLoader: TranslationLoader,

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core'
+import { Component, computed, inject, input, output } from '@angular/core'
 import { LucideDynamicIcon } from '@lucide/angular'
 import type { USER_THEME } from '@sync-in-server/backend/src/applications/users/constants/user-preferences'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
@@ -7,7 +7,6 @@ import { LayoutService } from './layout.service'
 
 @Component({
   selector: 'app-theme-switch',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon, L10nTranslatePipe],
   template: `
     <button

@@ -1,16 +1,5 @@
 import { CodeEditor } from '@acrodata/code-editor'
-import {
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  ElementRef,
-  HostListener,
-  OnDestroy,
-  OnInit,
-  signal,
-  viewChild,
-  ViewEncapsulation
-} from '@angular/core'
+import { Component, effect, ElementRef, HostListener, OnDestroy, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
 import { LanguageDescription } from '@codemirror/language'
@@ -83,7 +72,6 @@ const ExitInlineCodeOnEnter = Extension.create({
 
 @Component({
   selector: 'app-files-viewer-markdown',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [
     CodeEditor,
