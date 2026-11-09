@@ -14,6 +14,7 @@ import { quotaRegexp } from '../utils/regexp'
       <input
         id="quota"
         [ngModel]="quotaText()"
+        [ngModelOptions]="{ standalone: true }"
         (ngModelChange)="onQuotaInput($event)"
         (blur)="onQuotaBlur()"
         [placeholder]="'Unlimited' | translate: locale.language"

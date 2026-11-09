@@ -86,7 +86,7 @@ export class AdminGroupDialogComponent implements OnInit {
       search: query,
       onlyGroups: true,
       excludePersonalGroups: true,
-      ignoreGroupIds: [this.group.id, ...(this.groupForm.value.parent ? [this.groupForm.value.parent.id] : [])]
+      ignoreGroupIds: [this.group?.id, this.groupForm.value.parent?.id].filter((id): id is number => id !== null && id !== undefined)
     }
     return this.adminService.searchMembers(search)
   }

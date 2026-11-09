@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, inject, Input, OnInit, output, signal } from '@angular/core'
+import { Component, DestroyRef, inject, Input, OnInit, output, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideKeyRound, LucideUserRoundPen } from '@lucide/angular'
 import { USER_GROUP_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -23,6 +24,7 @@ export class UserPersonalGroupEditUserDialogComponent implements OnInit {
   protected readonly isManager = signal(false)
   protected readonly USER_GROUP_ROLE = USER_GROUP_ROLE
   protected readonly icons = { LucideUserRoundPen, LucideKeyRound }
+  private readonly destroyRef = inject(DestroyRef)
   private readonly userService = inject(UserService)
 
   ngOnInit() {
@@ -36,17 +38,20 @@ export class UserPersonalGroupEditUserDialogComponent implements OnInit {
       return
     }
     const role = this.isManager() ? USER_GROUP_ROLE.MANAGER : USER_GROUP_ROLE.MEMBER
-    this.userService.updateUserFromPersonalGroup(this.parentGroup.id, this.user.id, { role: role }).subscribe({
-      next: () => {
-        this.user.setGroupRole(role)
-        this.userChange.emit(this.user)
-        this.layout.sendNotification('success', 'Edit user', this.user.name)
-        this.layout.closeDialog()
-      },
-      error: (e: HttpErrorResponse) => {
-        this.submitted.set(false)
-        this.layout.sendNotification('error', 'Edit user', this.user.name, e)
-      }
-    })
+    this.userService
+      .updateUserFromPersonalGroup(this.parentGroup.id, this.user.id, { role: role })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.user.setGroupRole(role)
+          this.userChange.emit(this.user)
+          this.layout.sendNotification('success', 'Edit user', this.user.name)
+          this.layout.closeDialog()
+        },
+        error: (e: HttpErrorResponse) => {
+          this.submitted.set(false)
+          this.layout.sendNotification('error', 'Edit user', this.user.name, e)
+        }
+      })
   }
 }

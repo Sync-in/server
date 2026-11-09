@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import {
   Component,
   computed,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
@@ -15,6 +16,7 @@ import {
   untracked,
   viewChild
 } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { COLLABORA_APP_LOCK } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
 import type { CollaboraOnlineReqDto } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.dtos'
@@ -59,6 +61,7 @@ export class FilesViewerCollaboraOnlineComponent implements OnInit, OnDestroy {
   protected readonly frameName = computed(() => `collabora-frame-${this.file().id}`)
   protected readonly collaboraUiDefaults = signal('')
   private readonly http = inject(HttpClient)
+  private readonly destroyRef = inject(DestroyRef)
   private readonly filesService = inject(FilesService)
   private readonly layout = inject(LayoutService)
   private readonly renderer = inject(Renderer2)
@@ -101,50 +104,53 @@ export class FilesViewerCollaboraOnlineComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.http.get<CollaboraOnlineReqDto>(`${API_COLLABORA_ONLINE_SETTINGS}/${this.file().path}`).subscribe({
-      next: (data) => {
-        if (!data) {
-          this.layout.closeDialog()
-          this.layout.sendNotification('error', 'Unable to open document', 'Settings are missing')
-          return
-        }
-        let lockChanged = false
-        if (data.hasLock) {
-          if (!this.file().lock) {
-            this.file().createLock(data.hasLock)
-            lockChanged = true
-          } else if (!this.file().lock.isExclusive) {
-            // If a lock already exists and is exclusive, a notification was previously fired
-            this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(data.hasLock))
+    this.http
+      .get<CollaboraOnlineReqDto>(`${API_COLLABORA_ONLINE_SETTINGS}/${this.file().path}`)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          if (!data) {
+            this.layout.closeDialog()
+            this.layout.sendNotification('error', 'Unable to open document', 'Settings are missing')
+            return
           }
+          let lockChanged = false
+          if (data.hasLock) {
+            if (!this.file().lock) {
+              this.file().createLock(data.hasLock)
+              lockChanged = true
+            } else if (!this.file().lock.isExclusive) {
+              // If a lock already exists and is exclusive, a notification was previously fired
+              this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(data.hasLock))
+            }
+          }
+          this.isReadonly.set(data.mode === FILE_MODE.VIEW)
+          this.shouldReconcileMetadata = !this.isReadonly()
+          if (!this.isReadonly() && !this.file().lock) {
+            // Set lock on file
+            this.file().createLock({
+              owner: {
+                login: this.store.user().login,
+                fullName: this.store.user().fullName,
+                email: this.store.user().email
+              },
+              app: COLLABORA_APP_LOCK,
+              isExclusive: false
+            })
+            lockChanged = true
+          }
+          if (lockChanged) this.publishFile()
+          const documentServerUrl = new URL(data.documentServerUrl)
+          documentServerUrl.searchParams.set('lang', this.layout.getCurrentLanguage())
+          const theme = this.layout.getCurrentTheme()
+          this.collaboraUiDefaults.set(`UITheme=${theme};`)
+          this.documentServerUrl.set(documentServerUrl.toString())
+        },
+        error: (e: HttpErrorResponse) => {
+          this.layout.closeDialog()
+          this.layout.sendNotification('error', 'Unable to open document', e.error.message)
         }
-        this.isReadonly.set(data.mode === FILE_MODE.VIEW)
-        this.shouldReconcileMetadata = !this.isReadonly()
-        if (!this.isReadonly() && !this.file().lock) {
-          // Set lock on file
-          this.file().createLock({
-            owner: {
-              login: this.store.user().login,
-              fullName: this.store.user().fullName,
-              email: this.store.user().email
-            },
-            app: COLLABORA_APP_LOCK,
-            isExclusive: false
-          })
-          lockChanged = true
-        }
-        if (lockChanged) this.publishFile()
-        const documentServerUrl = new URL(data.documentServerUrl)
-        documentServerUrl.searchParams.set('lang', this.layout.getCurrentLanguage())
-        const theme = this.layout.getCurrentTheme()
-        this.collaboraUiDefaults.set(`UITheme=${theme};`)
-        this.documentServerUrl.set(documentServerUrl.toString())
-      },
-      error: (e: HttpErrorResponse) => {
-        this.layout.closeDialog()
-        this.layout.sendNotification('error', 'Unable to open document', e.error.message)
-      }
-    })
+      })
   }
 
   ngOnDestroy() {
@@ -154,7 +160,8 @@ export class FilesViewerCollaboraOnlineComponent implements OnInit, OnDestroy {
     if (!this.isReadonly() && this.file().lock && this.file().lock.owner.login === this.store.user().login) {
       // Remove lock
       this.file().removeLock()
-      this.publishFile()
+      this.file().updateNbBadges()
+      this.fileChangeHandler()?.(this.file())
     }
   }
 

@@ -1,5 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Component, computed, inject, input, model, OnDestroy, OnInit, output, signal } from '@angular/core'
+import { Component, computed, DestroyRef, inject, input, model, OnDestroy, OnInit, output, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { EURO_OFFICE_APP_LOCK, ONLY_OFFICE_APP_LOCK } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
 import type { OnlyOfficeReqDto } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.dtos'
@@ -46,6 +47,7 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
   protected readonly docId = computed(() => `viewer-doc-${this.file().id}`)
   protected readonly documentConfig = signal<OnlyOfficeReqDto | null>(null)
   private readonly http = inject(HttpClient)
+  private readonly destroyRef = inject(DestroyRef)
   private readonly filesService = inject(FilesService)
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
@@ -54,52 +56,55 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     const theme = this.layout.getCurrentTheme()
-    this.http.get<OnlyOfficeReqDto>(`${API_ONLY_OFFICE_SETTINGS}/${this.file().path}`, { params: { theme } }).subscribe({
-      next: (data) => {
-        if (!data) {
-          this.layout.closeDialog()
-          this.layout.sendNotification('error', 'Unable to open document', 'Settings are missing')
-          return
-        }
-        let lockChanged = false
-        if (data.hasLock) {
-          if (!this.file().lock) {
-            this.file().createLock(data.hasLock)
-            lockChanged = true
-          } else if (!this.file().lock.isExclusive) {
-            // If a lock already exists and is exclusive, a notification was previously fired
-            this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(data.hasLock))
+    this.http
+      .get<OnlyOfficeReqDto>(`${API_ONLY_OFFICE_SETTINGS}/${this.file().path}`, { params: { theme } })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          if (!data) {
+            this.layout.closeDialog()
+            this.layout.sendNotification('error', 'Unable to open document', 'Settings are missing')
+            return
           }
+          let lockChanged = false
+          if (data.hasLock) {
+            if (!this.file().lock) {
+              this.file().createLock(data.hasLock)
+              lockChanged = true
+            } else if (!this.file().lock.isExclusive) {
+              // If a lock already exists and is exclusive, a notification was previously fired
+              this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(data.hasLock))
+            }
+          }
+          this.isReadonly.set(data.config.editorConfig.mode === FILE_MODE.VIEW)
+          this.shouldReconcileMetadata = !this.isReadonly()
+          if (!this.isReadonly() && !this.file().lock) {
+            // Set lock on file
+            this.file().createLock({
+              owner: {
+                login: this.store.user().login,
+                fullName: this.store.user().fullName,
+                email: this.store.user().email
+              },
+              app: this.store.server().files.editors.onlyoffice ? ONLY_OFFICE_APP_LOCK : EURO_OFFICE_APP_LOCK,
+              isExclusive: false
+            })
+            lockChanged = true
+          }
+          if (lockChanged) this.publishFile()
+          data.config.editorConfig.lang = this.layout.getCurrentLanguage()
+          data.config.editorConfig.region = data.config.editorConfig.lang
+          this.documentConfig.set(data)
+        },
+        error: (e: HttpErrorResponse) => {
+          this.layout.closeDialog()
+          this.layout.sendNotification(
+            'error',
+            'Unable to open document',
+            e.status === 404 ? this.layout.translateString('office_editor_load_error', { editor: this.officeEditorName() }) : e.error.message
+          )
         }
-        this.isReadonly.set(data.config.editorConfig.mode === FILE_MODE.VIEW)
-        this.shouldReconcileMetadata = !this.isReadonly()
-        if (!this.isReadonly() && !this.file().lock) {
-          // Set lock on file
-          this.file().createLock({
-            owner: {
-              login: this.store.user().login,
-              fullName: this.store.user().fullName,
-              email: this.store.user().email
-            },
-            app: this.store.server().files.editors.onlyoffice ? ONLY_OFFICE_APP_LOCK : EURO_OFFICE_APP_LOCK,
-            isExclusive: false
-          })
-          lockChanged = true
-        }
-        if (lockChanged) this.publishFile()
-        data.config.editorConfig.lang = this.layout.getCurrentLanguage()
-        data.config.editorConfig.region = data.config.editorConfig.lang
-        this.documentConfig.set(data)
-      },
-      error: (e: HttpErrorResponse) => {
-        this.layout.closeDialog()
-        this.layout.sendNotification(
-          'error',
-          'Unable to open document',
-          e.status === 404 ? this.layout.translateString('office_editor_load_error', { editor: this.officeEditorName() }) : e.error.message
-        )
-      }
-    })
+      })
   }
 
   loadError(e: { title: string; titleArgs: { editor: string }; message: string }): void {
@@ -114,7 +119,8 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
     if (!this.isReadonly() && this.file().lock && this.file().lock.owner.login === this.store.user().login) {
       // Remove lock
       this.file().removeLock()
-      this.publishFile()
+      this.file().updateNbBadges()
+      this.fileChangeHandler()?.(this.file())
     }
   }
 

@@ -20,6 +20,7 @@ let nextInputPasswordId = 0
         [id]="inputId()"
         autocomplete="off"
         [ngModel]="passwordValue()"
+        [ngModelOptions]="{ standalone: true }"
         (ngModelChange)="passwordValue.set($event)"
         (keyup)="passwordChange.emit(Password.value)"
         [disabled]="disabled()"

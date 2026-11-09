@@ -26,11 +26,14 @@
   <div class="form-validation">
     <input
       #InputTypeHead
+      #typeaheadDirective="bs-typeahead"
+      (keydown.escape)="typeaheadDirective.isOpen ? $event.stopPropagation() : null"
       (typeaheadOnSelect)="onSelect($event)"
       (typeaheadLoading)="onLoading()"
       (typeaheadNoResults)="onNoResults()"
       (typeaheadOnPreview)="onPreview()"
       [ngModel]="selection()"
+      [ngModelOptions]="{ standalone: true }"
       (ngModelChange)="selection.set($event)"
       [placeholder]="placeHolder() | translate: locale.language"
       [typeaheadItemTemplate]="searchMembers"
@@ -87,6 +90,7 @@
               @for (p of member.hPerms| keyvalue: originalOrderKeyValue; track p.key) {
                 @if (!filterPermissions() || (filterPermissions() && allowedPermissions().indexOf($any(p.key))) > -1) {
                   <button [(ngModel)]="member.hPerms[p.key]"
+                          [ngModelOptions]="{ standalone: true }"
                           (ngModelChange)="onPermissionChange(member)"
                           btnCheckbox
                           [tooltip]="SPACES_PERMISSIONS_TEXT[p.key].text | translate:locale.language"

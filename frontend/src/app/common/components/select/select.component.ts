@@ -1,5 +1,18 @@
 import { NgTemplateOutlet } from '@angular/common'
-import { Component, effect, ElementRef, forwardRef, inject, input, linkedSignal, OnInit, output, signal, TemplateRef } from '@angular/core'
+import {
+  Component,
+  DestroyRef,
+  effect,
+  ElementRef,
+  forwardRef,
+  inject,
+  input,
+  linkedSignal,
+  OnInit,
+  output,
+  signal,
+  TemplateRef
+} from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms'
 import type { LucideIcon } from '@lucide/angular'
@@ -49,6 +62,7 @@ export class SelectComponent implements OnInit, ControlValueAccessor {
   readonly inputValue = signal('')
   protected onChange: any = Function.prototype
   protected onTouched: any = Function.prototype
+  private readonly destroyRef = inject(DestroyRef)
   private readonly typedSearch = new Subject<string>()
   private behavior: GenericBehavior
 
@@ -129,6 +143,7 @@ export class SelectComponent implements OnInit, ControlValueAccessor {
     if (!isUpMode && e.keyCode === 27) {
       this.hideOptions()
       e.preventDefault()
+      e.stopPropagation()
       return
     }
     // del
@@ -336,6 +351,7 @@ export class SelectComponent implements OnInit, ControlValueAccessor {
   }
 
   private setOptionsOpened(value: boolean) {
+    if (this.destroyRef.destroyed || this.optionsOpened() === value) return
     this.optionsOpened.set(value)
     this.opened.emit(value)
   }

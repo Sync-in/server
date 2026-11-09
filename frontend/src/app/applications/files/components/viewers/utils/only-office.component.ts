@@ -1,4 +1,4 @@
-import { Component, input, OnChanges, OnDestroy, OnInit, output, SimpleChanges } from '@angular/core'
+import { Component, DestroyRef, inject, input, OnChanges, OnDestroy, OnInit, output, SimpleChanges } from '@angular/core'
 import type { OnlyOfficeConfig } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.interface'
 import loadScript from './only-office.utils'
 
@@ -12,6 +12,7 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
   readonly documentServerUrl = input.required<string>()
   readonly config = input.required<OnlyOfficeConfig>()
   readonly loadError = output<{ title: string; titleArgs: { editor: string }; message: string }>()
+  private readonly destroyRef = inject(DestroyRef)
   private isFirstOnChanges = true
 
   ngOnInit(): void {
@@ -53,6 +54,7 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private onLoad = () => {
+    if (this.destroyRef.destroyed) return
     try {
       if (!window.DocsAPI) {
         this.onError(-3)
@@ -78,6 +80,7 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private onError(errorCode: number) {
+    if (this.destroyRef.destroyed) return
     const error = {
       title: 'office_editor_unknown_error',
       titleArgs: { editor: this.editorName() },

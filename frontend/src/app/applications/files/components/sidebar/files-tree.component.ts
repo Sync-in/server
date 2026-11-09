@@ -4,6 +4,7 @@ import {
   AfterViewInit,
   Component,
   computed,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
@@ -70,6 +71,7 @@ export class FilesTreeComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly sideBarHeader = input(true)
   readonly resizeOffset = input(defaultResizeOffset)
   readonly toggleNodesAtStartup = input(false)
+  private readonly destroyRef = inject(DestroyRef)
   private readonly filesService = inject(FilesService)
   protected readonly store = inject(StoreService)
   protected readonly icons = {
@@ -171,6 +173,7 @@ export class FilesTreeComponent implements OnInit, AfterViewInit, OnDestroy {
     const nodesToRefresh = activeNode ? [activeNode] : this.nodes()
     const selectedPath = this.selectedNode()?.data.path
     const results = await Promise.allSettled(nodesToRefresh.map((node) => this.loadChildren(node, true)))
+    if (this.destroyRef.destroyed) return
     this.logRejected(results)
     this.focusLastNode(selectedPath)
   }

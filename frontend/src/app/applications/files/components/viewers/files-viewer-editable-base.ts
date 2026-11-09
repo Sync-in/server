@@ -15,6 +15,7 @@ import {
   untracked,
   viewChildren
 } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { CACHE_LOCK_FILE_TTL } from '@sync-in-server/backend/src/applications/files/constants/cache'
 import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import { L10N_LOCALE, L10nLocale } from 'angular-l10n'
@@ -22,6 +23,7 @@ import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { catchError, EMPTY, exhaustMap, filter, firstValueFrom, Subscription, tap, timer } from 'rxjs'
 import { LayoutService } from '../../../../layout/layout.service'
 import { MAX_CLIENT_EDITOR_FILE_SIZE } from '../../files.constants'
+import type { FileChangeHandler } from '../../interfaces/file-viewer.interface'
 import { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
 import { FilesUploadService } from '../../services/files-upload.service'
@@ -35,6 +37,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   readonly currentHeight = input.required<number>()
   readonly file = input.required<FileModel>()
   readonly fileChange = output<FileModel>()
+  readonly fileChangeHandler = input<FileChangeHandler | undefined>()
   readonly isWriteable = input.required<boolean>()
   readonly isReadonly = model.required<boolean>()
   readonly modalClosing = input.required<boolean>()
@@ -193,25 +196,33 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
     if (!this.isReadonly()) {
       await this.lockFile()
     }
-    this.http.get(this.file().dataUrl, { responseType: 'text' }).subscribe({
-      next: (data: string) => this.onContentLoaded(data),
-      error: (e: HttpErrorResponse) => this.onContentLoadError(e)
-    })
+    if (this.isDestroyed) return
+    this.http
+      .get(this.file().dataUrl, { responseType: 'text' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data: string) => this.onContentLoaded(data),
+        error: (e: HttpErrorResponse) => this.onContentLoadError(e)
+      })
   }
 
   protected async lockFile(): Promise<boolean> {
     if (!this.isSupported() || !this.isWriteable()) return false
     try {
       const lock: FileLockProps = await firstValueFrom(this.filesService.lock(this.file()))
-      this.setFileLock(lock)
       if (this.isDestroyed) {
-        await this.unlockFile()
+        this.file().createLock(lock)
+        if (!(await this.unlockFile())) {
+          this.file().updateNbBadges()
+          this.publishFile()
+        }
         return false
       }
+      this.setFileLock(lock)
       this.startLockRefresh()
       return true
     } catch (e) {
-      this.lockError(e as HttpErrorResponse)
+      if (!this.isDestroyed) this.lockError(e as HttpErrorResponse)
       return false
     }
   }
@@ -316,6 +327,10 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   }
 
   private publishFile() {
+    if (this.isDestroyed) {
+      this.fileChangeHandler()?.(this.file())
+      return
+    }
     this.fileChange.emit(this.file())
   }
 }

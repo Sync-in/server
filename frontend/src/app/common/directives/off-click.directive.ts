@@ -1,4 +1,4 @@
-import { Directive, HostListener, input, OnDestroy, OnInit } from '@angular/core'
+import { DestroyRef, Directive, HostListener, inject, input, OnDestroy, OnInit } from '@angular/core'
 
 @Directive({
   // eslint-disable-next-line @angular-eslint/directive-selector
@@ -6,6 +6,9 @@ import { Directive, HostListener, input, OnDestroy, OnInit } from '@angular/core
 })
 export class OffClickDirective implements OnInit, OnDestroy {
   readonly offClickHandler = input.required<(event: MouseEvent) => void>({ alias: 'offClick' })
+  private readonly destroyRef = inject(DestroyRef)
+  private listenerTimer: ReturnType<typeof setTimeout> | undefined
+  private registeredHandler: ((event: MouseEvent) => void) | null = null
 
   @HostListener('click', ['$event'])
   onClick(event: MouseEvent) {
@@ -13,16 +16,20 @@ export class OffClickDirective implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    setTimeout(() => {
-      if (typeof document !== 'undefined') {
-        document.addEventListener('click', this.offClickHandler())
-      }
+    this.listenerTimer = setTimeout(() => {
+      this.listenerTimer = undefined
+      if (this.destroyRef.destroyed || typeof document === 'undefined') return
+      this.registeredHandler = this.offClickHandler()
+      document.addEventListener('click', this.registeredHandler)
     }, 0)
   }
 
   ngOnDestroy() {
-    if (typeof document !== 'undefined') {
-      document.removeEventListener('click', this.offClickHandler())
+    clearTimeout(this.listenerTimer)
+    this.listenerTimer = undefined
+    if (this.registeredHandler && typeof document !== 'undefined') {
+      document.removeEventListener('click', this.registeredHandler)
+      this.registeredHandler = null
     }
   }
 }

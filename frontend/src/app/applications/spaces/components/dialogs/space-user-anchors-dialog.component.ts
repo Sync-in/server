@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, inject, Input, OnInit, output, signal } from '@angular/core'
+import { Component, DestroyRef, inject, Input, OnInit, output, signal } from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { LucideAnchor, LucideDynamicIcon, LucideLoader, LucidePlus } from '@lucide/angular'
 import type { SpaceRootProps } from '@sync-in-server/backend/src/applications/spaces/models/space-root-props.model'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -31,20 +32,30 @@ export class SpaceUserAnchorsDialogComponent implements OnInit {
   protected readonly submitted = signal(false)
   protected readonly loading = signal(false)
   protected readonly roots = signal<SpaceRootModel[]>([])
+  private readonly destroyRef = inject(DestroyRef)
   private readonly spacesService = inject(SpacesService)
+  private initialRoots: SpaceRootModel[] = []
+  private rootsLoaded = false
 
   ngOnInit() {
+    this.initialRoots = [...this.space.roots]
+    this.destroyRef.onDestroy(() => {
+      if (!this.rootsLoaded) this.space.roots = this.initialRoots
+    })
     if (this.space?.roots.length) {
       // re-added after
       this.space.roots = []
     }
     this.roots.set(this.space.roots)
-    this.spacesService.getUserSpaceRoots(this.space.id).subscribe({
-      next: (roots: SpaceRootModel[]) => this.setSpaceRoots(roots),
-      error: (e: HttpErrorResponse) => {
-        this.layout.sendNotification('error', 'Manage my anchored files', e.error.message)
-      }
-    })
+    this.spacesService
+      .getUserSpaceRoots(this.space.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (roots: SpaceRootModel[]) => this.setSpaceRoots(roots),
+        error: (e: HttpErrorResponse) => {
+          this.layout.sendNotification('error', 'Manage my anchored files', e.error.message)
+        }
+      })
   }
 
   openSelectRootDialog() {
@@ -53,7 +64,9 @@ export class SpaceUserAnchorsDialogComponent implements OnInit {
         currentRoots: this.roots().filter((root: SpaceRootModel) => root.owner.id === this.user.id) as SpaceRootProps[]
       } as FilesTreeDialogComponent
     })
-    modalRef.content.submitEvent.pipe(take(1)).subscribe((file: FileTreeEvent) => this.addRootFileEvent.next(file))
+    modalRef.content.submitEvent
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe((file: FileTreeEvent) => this.addRootFileEvent.next(file))
   }
 
   onSubmit() {
@@ -73,6 +86,7 @@ export class SpaceUserAnchorsDialogComponent implements OnInit {
             }) as Partial<SpaceRootModel>
         )
       )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (roots: SpaceRootModel[]) => {
           this.setSpaceRoots(roots)
@@ -93,6 +107,7 @@ export class SpaceUserAnchorsDialogComponent implements OnInit {
     }
     this.space.counts.roots = this.space.roots.length
     this.roots.set([...this.space.roots])
+    this.rootsLoaded = true
     this.rootsChange.emit(this.space)
   }
 }
