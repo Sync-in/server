@@ -238,7 +238,11 @@ export class MysqlCacheAdapter implements Cache {
 
   private async useMysqlScheduler(): Promise<void> {
     try {
-      await this.db.execute(`SET GLOBAL event_scheduler = ON;`)
+      // SET GLOBAL requires SUPER, skip it when the scheduler is already enabled (only the EVENT privilege is needed then)
+      const [r] = (await this.db.execute(`SELECT @@GLOBAL.event_scheduler AS value;`)) as unknown as [{ value: string }[], unknown]
+      if (r[0]?.value !== 'ON') {
+        await this.db.execute(`SET GLOBAL event_scheduler = ON;`)
+      }
       await this.db.execute(`DROP EVENT IF EXISTS ${this.scheduledJobName};`)
       await this.db.execute(`CREATE EVENT IF NOT EXISTS ${this.scheduledJobName}
                              ON SCHEDULE EVERY ${this.scheduledJobInterval} MINUTE
@@ -253,7 +257,8 @@ export class MysqlCacheAdapter implements Cache {
       const errorSource = getErrorSource(e)
       this.logger.error(
         `MariaDB event scheduler configuration failed${errorSource ? ` on '${errorSource}'` : ''}: ${toErrorMessage(e)}. ` +
-          `Enable the scheduler with "SET GLOBAL event_scheduler = ON" as a MariaDB user with SUPER`
+          `Enable the scheduler with "event_scheduler = ON" in the [mysqld] section of the MariaDB configuration (or "SET GLOBAL event_scheduler = ON" as a user with SUPER) ` +
+          `and grant the EVENT privilege on the Sync-in database to its MariaDB user`
       )
       this.useInternalScheduler()
     }
