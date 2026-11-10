@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { and, between, eq, exists, inArray, notBetween, SQL, sql } from 'drizzle-orm'
+import type { MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { toErrorMessage } from '../../../common/errors.js'
 import { createCacheKeySlug, currentTimeStamp } from '../../../common/shared.js'
 import { configuration } from '../../../configuration/config.environment.js'
@@ -238,7 +239,11 @@ export class MysqlCacheAdapter implements Cache {
 
   private async useMysqlScheduler(): Promise<void> {
     try {
-      await this.db.execute(`SET GLOBAL event_scheduler = ON;`)
+      // SET GLOBAL requires SUPER, skip it when the scheduler is already enabled (only the EVENT privilege is needed then)
+      const [rows]: { value: string }[][] = (await this.db.execute(`SELECT @@GLOBAL.event_scheduler AS value;`)) as MySqlQueryResult
+      if (rows[0]?.value !== 'ON') {
+        await this.db.execute(`SET GLOBAL event_scheduler = ON;`)
+      }
       await this.db.execute(`DROP EVENT IF EXISTS ${this.scheduledJobName};`)
       await this.db.execute(`CREATE EVENT IF NOT EXISTS ${this.scheduledJobName}
                              ON SCHEDULE EVERY ${this.scheduledJobInterval} MINUTE
@@ -251,9 +256,10 @@ export class MysqlCacheAdapter implements Cache {
       this.logger.log(`Using MySQL scheduler`)
     } catch (e) {
       const errorSource = getErrorSource(e)
-      this.logger.error(
+      this.logger.warn(
         `MariaDB event scheduler configuration failed${errorSource ? ` on '${errorSource}'` : ''}: ${toErrorMessage(e)}. ` +
-          `Enable the scheduler with "SET GLOBAL event_scheduler = ON" as a MariaDB user with SUPER`
+          `Enable the scheduler with "event_scheduler = ON" in the [mysqld] section of the MariaDB configuration (or "SET GLOBAL event_scheduler = ON" as a user with SUPER) ` +
+          `and grant the EVENT privilege on the Sync-in database to its MariaDB user`
       )
       this.useInternalScheduler()
     }
