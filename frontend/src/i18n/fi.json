@@ -636,7 +636,7 @@
   "Loading...": "Ladataan...",
   "No results": "Ei tuloksia",
   "Download ARM64 version": "Lataa ARM64-versio",
-  "Download Apple Silicon ARM64 version": "Lataa Apple Silicon ARM64 -versio",
+  "Download Intel 64bit version": "Lataa Intel 64bit -versio",
   "Download tar.gz version": "Lataa tar.gz-versio",
   "Repository": "Tietovarasto",
   "public": "julkinen",

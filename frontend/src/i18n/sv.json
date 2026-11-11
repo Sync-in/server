@@ -636,7 +636,7 @@
   "Loading...": "Läser in...",
   "No results": "Inga resultat",
   "Download ARM64 version": "Ladda ned ARM64-versionen",
-  "Download Apple Silicon ARM64 version": "Ladda ned versionen för Apple Silicon ARM64",
+  "Download Intel 64bit version": "Ladda ned versionen för Intel 64bit",
   "Download tar.gz version": "Ladda ned tar.gz-versionen",
   "Repository": "Lagringsplats",
   "public": "offentlig",

@@ -636,7 +636,7 @@
   "Loading...": "Se încarcă...",
   "No results": "Niciun rezultat",
   "Download ARM64 version": "Descărcați versiunea ARM64",
-  "Download Apple Silicon ARM64 version": "Descărcați versiunea pentru Apple Silicon ARM64",
+  "Download Intel 64bit version": "Descărcați versiunea pentru Intel 64bit",
   "Download tar.gz version": "Descărcați versiunea tar.gz",
   "Repository": "Repozitoriu",
   "public": "public",

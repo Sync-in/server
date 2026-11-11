@@ -636,7 +636,7 @@
   "Loading...": "正在加载...",
   "No results": "无结果",
   "Download ARM64 version": "下载 ARM64 版本",
-  "Download Apple Silicon ARM64 version": "下载 Apple Silicon ARM64 版本",
+  "Download Intel 64bit version": "下载 Intel 64bit 版本",
   "Download tar.gz version": "下载 tar.gz 版本",
   "Repository": "仓库",
   "public": "公共",

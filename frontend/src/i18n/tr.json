@@ -636,7 +636,7 @@
   "Loading...": "Yükleniyor...",
   "No results": "Sonuç yok",
   "Download ARM64 version": "ARM64 sürümünü indir",
-  "Download Apple Silicon ARM64 version": "Apple Silicon ARM64 sürümünü indir",
+  "Download Intel 64bit version": "Intel 64bit sürümünü indir",
   "Download tar.gz version": "tar.gz sürümünü indir",
   "Repository": "Depo",
   "public": "genel",

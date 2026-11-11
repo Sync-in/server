@@ -636,7 +636,7 @@
   "Loading...": "Laadimine...",
   "No results": "Tulemusi pole",
   "Download ARM64 version": "Laadi alla ARM64 versioon",
-  "Download Apple Silicon ARM64 version": "Laadi alla Apple Silicon ARM64 versioon",
+  "Download Intel 64bit version": "Laadi alla Intel 64bit versioon",
   "Download tar.gz version": "Laadi alla tar.gz versioon",
   "Repository": "Hoidla",
   "public": "avalik",

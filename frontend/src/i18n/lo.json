@@ -636,7 +636,7 @@
   "Loading...": "ກຳລັງໂຫຼດ...",
   "No results": "ບໍ່ມີຜົນລັບ",
   "Download ARM64 version": "ດາວໂຫຼດເວີຊັນ ARM64",
-  "Download Apple Silicon ARM64 version": "ດາວໂຫຼດເວີຊັນ Apple Silicon ARM64",
+  "Download Intel 64bit version": "ດາວໂຫຼດເວີຊັນ Intel 64bit",
   "Download tar.gz version": "ດາວໂຫຼດເວີຊັນ tar.gz",
   "Repository": "ຄັງຂໍ້ມູນ",
   "public": "ສາທາລະນະ",

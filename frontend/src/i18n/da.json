@@ -636,7 +636,7 @@
   "Loading...": "Indlæser...",
   "No results": "Ingen resultater",
   "Download ARM64 version": "Download ARM64-versionen",
-  "Download Apple Silicon ARM64 version": "Download Apple Silicon ARM64-versionen",
+  "Download Intel 64bit version": "Download Intel 64bit-versionen",
   "Download tar.gz version": "Download tar.gz-versionen",
   "Repository": "Filarkiv",
   "public": "offentlig",

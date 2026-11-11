@@ -636,7 +636,7 @@
   "Loading...": "Φόρτωση...",
   "No results": "Δεν υπάρχουν αποτελέσματα",
   "Download ARM64 version": "Λήψη έκδοσης ARM64",
-  "Download Apple Silicon ARM64 version": "Λήψη έκδοσης Apple Silicon ARM64",
+  "Download Intel 64bit version": "Λήψη έκδοσης Intel 64bit",
   "Download tar.gz version": "λήψη έκδοσης tar.gz",
   "Repository": "Αποθετήριο",
   "public": "δημόσιο",

@@ -636,7 +636,7 @@
   "Loading...": "Nalaganje ...",
   "No results": "Ni rezultatov",
   "Download ARM64 version": "Prenesi različico ARM64",
-  "Download Apple Silicon ARM64 version": "Prenesi različico za Apple Silicon ARM64",
+  "Download Intel 64bit version": "Prenesi različico za Intel 64bit",
   "Download tar.gz version": "Prenesi različico tar.gz",
   "Repository": "Repozitorij",
   "public": "javno",

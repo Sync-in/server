@@ -636,7 +636,7 @@
   "Loading...": "Hleð inn...",
   "No results": "Engar niðurstöður",
   "Download ARM64 version": "Sækja ARM64-útgáfu",
-  "Download Apple Silicon ARM64 version": "Sækja Apple Silicon ARM64-útgáfu",
+  "Download Intel 64bit version": "Sækja Intel 64bit-útgáfu",
   "Download tar.gz version": "Sækja tar.gz-útgáfu",
   "Repository": "Gagnageymsla",
   "public": "opinbert",

@@ -636,7 +636,7 @@
   "Loading...": "Betöltés...",
   "No results": "Nincs találat",
   "Download ARM64 version": "ARM64-verzió letöltése",
-  "Download Apple Silicon ARM64 version": "Apple Silicon ARM64-verzió letöltése",
+  "Download Intel 64bit version": "Intel 64bit-verzió letöltése",
   "Download tar.gz version": "tar.gz-verzió letöltése",
   "Repository": "Adattár",
   "public": "nyilvános",

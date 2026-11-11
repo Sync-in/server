@@ -636,7 +636,7 @@
   "Loading...": "Се вчитува...",
   "No results": "Нема резултати",
   "Download ARM64 version": "Преземете ја верзијата ARM64",
-  "Download Apple Silicon ARM64 version": "Преземете ја верзијата Apple Silicon ARM64",
+  "Download Intel 64bit version": "Преземете ја верзијата Intel 64bit",
   "Download tar.gz version": "Преземете ја верзијата tar.gz",
   "Repository": "Репозиториум",
   "public": "јавно",

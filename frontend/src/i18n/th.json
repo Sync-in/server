@@ -636,7 +636,7 @@
   "Loading...": "กำลังโหลด...",
   "No results": "ไม่พบผลลัพธ์",
   "Download ARM64 version": "ดาวน์โหลดเวอร์ชัน ARM64",
-  "Download Apple Silicon ARM64 version": "ดาวน์โหลดเวอร์ชัน Apple Silicon ARM64",
+  "Download Intel 64bit version": "ดาวน์โหลดเวอร์ชัน Intel 64bit",
   "Download tar.gz version": "ดาวน์โหลดเวอร์ชัน tar.gz",
   "Repository": "ที่เก็บข้อมูล",
   "public": "สาธารณะ",

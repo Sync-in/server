@@ -636,7 +636,7 @@
   "Loading...": "Načítání...",
   "No results": "Žádné výsledky",
   "Download ARM64 version": "Stáhnout verzi ARM64",
-  "Download Apple Silicon ARM64 version": "Stáhnout verzi pro Apple Silicon ARM64",
+  "Download Intel 64bit version": "Stáhnout verzi pro Intel 64bit",
   "Download tar.gz version": "Stáhnout verzi tar.gz",
   "Repository": "Repozitář",
   "public": "veřejný",

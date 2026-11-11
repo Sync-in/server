@@ -636,7 +636,7 @@
   "Loading...": "Načítava sa...",
   "No results": "Žiadne výsledky",
   "Download ARM64 version": "Stiahnuť verziu ARM64",
-  "Download Apple Silicon ARM64 version": "Stiahnuť verziu pre Apple Silicon ARM64",
+  "Download Intel 64bit version": "Stiahnuť verziu pre Intel 64bit",
   "Download tar.gz version": "Stiahnuť verziu tar.gz",
   "Repository": "Úložisko",
   "public": "verejné",

@@ -40,7 +40,7 @@
                     <h1 class="app-download-card-title">Command Line</h1>
                   }
                 }
-                <a (click)="download(app)" class="btn btn-primary app-download-card-btn">
+                <a (click)="download(app, app === APP_STORE_OS.MAC)" class="btn btn-primary app-download-card-btn">
                   <svg [lucideIcon]="icons.LucideHardDriveDownload"></svg>
                   <span l10nTranslate>Download</span>
                 </a>
@@ -56,9 +56,9 @@
                   } @else {
                     <div class="app-download-card-meta text-muted">
                       <span l10nTranslate>System requirements</span>
-                      <span>:&nbsp;{{ app === APP_STORE_OS.MAC ? 'Intel 64bit' : '64bit' }}</span>
+                      <span>:&nbsp;{{ app === APP_STORE_OS.MAC ? 'Apple Silicon ARM64' : '64bit' }}</span>
                     </div>
-                    <a role="button" (click)="download(app, true)" class="app-download-card-link" l10nTranslate>{{ app === APP_STORE_OS.MAC ? 'Download Apple Silicon ARM64 version' : 'Download ARM64 version' }}</a>
+                    <a role="button" (click)="download(app, app !== APP_STORE_OS.MAC)" class="app-download-card-link" l10nTranslate>{{ app === APP_STORE_OS.MAC ? 'Download Intel 64bit version' : 'Download ARM64 version' }}</a>
                   }
                 </div>
               </div>

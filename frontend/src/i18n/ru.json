@@ -636,7 +636,7 @@
   "Loading...": "Загрузка...",
   "No results": "Нет результатов",
   "Download ARM64 version": "Скачать версию для ARM64",
-  "Download Apple Silicon ARM64 version": "Скачать версию для Apple Silicon ARM64",
+  "Download Intel 64bit version": "Скачать версию для Intel 64bit",
   "Download tar.gz version": "Скачать версию tar.gz",
   "Repository": "Репозиторий",
   "public": "публичный",
