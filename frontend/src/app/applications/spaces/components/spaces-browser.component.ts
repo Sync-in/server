@@ -1,7 +1,7 @@
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { AfterViewInit, Component, ElementRef, inject, OnDestroy, OnInit, Renderer2, signal, viewChild } from '@angular/core'
-import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
+import { ActivatedRoute, Data, Router, RouterLink, UrlSegment } from '@angular/router'
 import {
   LucideAnchor,
   LucideArchiveArrowUp,
@@ -99,6 +99,7 @@ const keyboardNavigationKeys: ReadonlySet<string> = new Set<KeyboardNavigationKe
   imports: [
     L10nTranslatePipe,
     L10nTranslateDirective,
+    RouterLink,
     LucideDynamicIcon,
     TooltipModule,
     BsDropdownModule,
@@ -256,8 +257,10 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   private baseRepoUrl: string
   private currentRoute: string
   protected readonly isPersonalSpace = signal(false)
+  protected readonly hasParentFolder = signal(false)
   // Others
   private subscriptions: Subscription[] = []
+  private filesRequest?: Subscription
   private focusOnSelect: string
   private openOnSelect: string
   private openAfterReload: string
@@ -322,12 +325,14 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   ngOnDestroy() {
+    this.filesRequest?.unsubscribe()
     this.destroyEventHandlers()
     this.resetFilesSelection()
     this.subscriptions.forEach((s) => s.unsubscribe())
   }
 
   loadFiles(focusView = false) {
+    this.filesRequest?.unsubscribe()
     // Preserve the initial focus to avoid stealing it if the user interacts while files are loading.
     const focusOrigin = focusView ? document.activeElement : null
     this.loading.set(true)
@@ -336,7 +341,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.serviceError.set(false)
     this.navbarSearch.clearViewFilter()
     this.resetFilesSelection()
-    this.spacesBrowser.loadFiles().subscribe({
+    this.filesRequest = this.spacesBrowser.loadFiles().subscribe({
       next: (spacesFiles: SpaceFiles) => {
         this.spacePermissions.set(spacesFiles.permissions)
         this.canManageFavorite.set(!this.store.user()?.isLink && !this.isTrashRepo())
@@ -370,6 +375,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         }
       },
       error: (e: HttpErrorResponse) => {
+        this.loading.set(false)
         this.openAfterReload = null
         this.files.set([])
         this.updateFilesStats(this.files())
@@ -377,9 +383,10 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
           this.forbiddenResource.set(e.status === 403)
           this.locationNotFound.set(e.status === 404)
           this.serviceError.set(e.status === 0)
-          this.layout.sendNotification('error', 'Files', e.error?.message || this.serviceErrorMsg)
+          if (e.status !== 404) {
+            this.layout.sendNotification('error', 'Files', e.error?.message || this.serviceErrorMsg)
+          }
         }
-        this.loading.set(false)
       }
     })
   }
@@ -705,6 +712,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private setSpace(route: { repository: SPACE_REPOSITORY; routes: UrlSegment[] }) {
+    this.hasParentFolder.set(route.routes.length > 1)
     this.currentRoute = this.filesService.currentRoute = `${route.repository}${pathFromRoutes(route.routes)}`
     this.setQueryParams(this.activatedRoute.snapshot.queryParamMap.get('select'), this.activatedRoute.snapshot.queryParamMap.get('open'))
     this.baseRepoUrl = `${route.repository}${route.routes.length ? `/${route.routes[0].path}` : ''}`

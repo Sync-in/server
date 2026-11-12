@@ -634,7 +634,12 @@
     </div>
   } @else if (locationNotFound()) {
     <div class="fs-sm text-center text-danger text-bold no-select p-4">
-      <span l10nTranslate>Location not found</span>
+      @if (hasParentFolder()) {
+        <p role="status" l10nTranslate>Folder not found</p>
+        <a class="btn btn-sm btn-outline-secondary" routerLink=".." l10nTranslate>Go to parent folder</a>
+      } @else {
+        <span role="status" l10nTranslate>Location not found</span>
+      }
     </div>
   } @else if (serviceError()) {
     <div class="fs-sm text-center text-danger text-bold no-select p-4">
