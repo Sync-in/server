@@ -18,6 +18,32 @@ describe('user schemas', () => {
     expect(updateUserSchema.parse({})).toEqual({})
   })
 
+  it('normalizes a zero storage quota to null', () => {
+    const user = createUserSchema.parse({
+      login: 'user',
+      email: 'user@example.test',
+      password: 'password',
+      firstName: 'User',
+      storageQuota: 0
+    })
+
+    expect(user.storageQuota).toBeNull()
+    expect(updateUserSchema.parse({ storageQuota: 0 })).toEqual({ storageQuota: null })
+  })
+
+  it('rejects a negative storage quota', () => {
+    expect(
+      createUserSchema.safeParse({
+        login: 'user',
+        email: 'user@example.test',
+        password: 'password',
+        firstName: 'User',
+        storageQuota: -1
+      }).success
+    ).toBe(false)
+    expect(updateUserSchema.safeParse({ storageQuota: -1 }).success).toBe(false)
+  })
+
   it('accepts an omitted active state but rejects null', () => {
     const input = {
       login: 'user',

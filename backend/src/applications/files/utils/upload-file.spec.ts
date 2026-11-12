@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common'
 import { FILE_ERROR } from '../constants/errors.js'
 import { FileError } from '../models/file-error.js'
-import { parseContentLength, parseContentRange, UploadStreamLimiter } from './upload-file.js'
+import { createUploadStreamLimiter, parseContentLength, parseContentRange, UploadStreamLimiter } from './upload-file.js'
 
 describe(UploadStreamLimiter.name, () => {
   it('short-circuits a known file size above maxUploadSize', () => {
@@ -42,6 +42,12 @@ describe(UploadStreamLimiter.name, () => {
     const secondFile = limiter.createFileLimiter()
     expect(() => secondFile.consume(3)).not.toThrow()
     expect(() => secondFile.consume(1)).toThrow(new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED))
+  })
+
+  it.each([0, null])('treats a storage quota of %s as unlimited', (storageQuota) => {
+    const fileLimiter = createUploadStreamLimiter({ storageQuota, storageUsage: 10 }, 5).createFileLimiter()
+
+    expect(() => fileLimiter.consume(1)).not.toThrow()
   })
 
   it('rejects a final size below the current range offset', () => {

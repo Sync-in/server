@@ -73,16 +73,11 @@ async function parseArgs(): Promise<InitUser> {
     console.warn(`Unknown role '${raw.role}', defaulting to 'user'.`)
   }
 
-  const storageQuota = (() => {
-    const v = raw['storage-quota']
-    const n = Number(v)
-    if (v && Number.isInteger(n) && n >= 0) {
-      return n
-    }
-    return null
-  })()
-  if (raw['storage-quota'] && storageQuota === null) {
-    console.warn(`Invalid storage-quota '${raw['storage-quota']}', ignoring.`)
+  const rawStorageQuota = raw['storage-quota']
+  const parsedStorageQuota = Number(rawStorageQuota)
+  const storageQuota = rawStorageQuota && Number.isInteger(parsedStorageQuota) && parsedStorageQuota > 0 ? parsedStorageQuota : null
+  if (rawStorageQuota && storageQuota === null && parsedStorageQuota !== 0) {
+    console.warn(`Invalid storage-quota '${rawStorageQuota}', ignoring.`)
   }
 
   let permissions = raw.permissions || ''

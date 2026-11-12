@@ -1829,10 +1829,10 @@ describe(FilesManager.name, () => {
       expect(tarUtils.createTar).toHaveBeenCalledWith(archivePath, dto.files, false, undefined, undefined, 60)
     })
 
-    it('should create a compressed ZIP archive', async () => {
+    it('should create a compressed ZIP archive with a zero quota treated as unlimited', async () => {
       const archivePath = '/data/users/john/tmp/~tmp-compress-task-export-archive.zip'
       vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(archivePath)
-      const space = makeSpace({ realPath: '/data/users/john/files/source.txt', task: compressionTask() })
+      const space = makeSpace({ realPath: '/data/users/john/files/source.txt', task: compressionTask(), storageQuota: 0, storageUsage: 40 })
       const dto = {
         name: 'archive.zip',
         extension: 'zip',
@@ -1876,8 +1876,8 @@ describe(FilesManager.name, () => {
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
     })
 
-    it('should extract tar formats via extractTar', async () => {
-      const space = makeSpace({ realPath: '/data/users/john/files/archive.tar.gz' })
+    it('should extract tar formats with a zero quota treated as unlimited', async () => {
+      const space = makeSpace({ realPath: '/data/users/john/files/archive.tar.gz', storageQuota: 0, storageUsage: 40 })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
       vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)

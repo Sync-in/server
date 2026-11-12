@@ -31,6 +31,7 @@ describe(SpaceEnv.name, () => {
       expect(createSpace({ storageUsage: 10, storageQuota: 10 }).quotaIsExceeded).toBe(true)
       expect(createSpace({ storageUsage: 9, storageQuota: 10 }).quotaIsExceeded).toBe(false)
       expect(createSpace({ storageUsage: 10, storageQuota: null }).quotaIsExceeded).toBe(false)
+      expect(createSpace({ storageUsage: 10, storageQuota: 0 }).quotaIsExceeded).toBe(false)
     })
   })
 
@@ -95,6 +96,7 @@ describe(SpaceEnv.name, () => {
       expect(limitedSpace.willExceedQuota(2)).toBe(false)
       expect(limitedSpace.willExceedQuota(3)).toBe(true)
       expect(createSpace({ storageUsage: 8, storageQuota: null }).willExceedQuota(Number.MAX_SAFE_INTEGER)).toBe(false)
+      expect(createSpace({ storageUsage: 8, storageQuota: 0 }).willExceedQuota(Number.MAX_SAFE_INTEGER)).toBe(false)
     })
   })
 

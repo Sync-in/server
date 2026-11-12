@@ -176,7 +176,7 @@ export class UserModel implements Omit<User, 'password' | 'permissions'> {
   }
 
   get quotaIsExceeded(): boolean {
-    return this.storageQuota !== null && this.storageUsage! >= this.storageQuota
+    return !!this.storageQuota && this.storageUsage! >= this.storageQuota
   }
 
   get twoFaEnabled(): boolean {

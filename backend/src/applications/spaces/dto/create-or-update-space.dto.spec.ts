@@ -16,6 +16,14 @@ describe('createOrUpdateSpaceSchema', () => {
     expect(createOrUpdateSpaceSchema.parse({ name: 'space', alias: null, managers: [manager] }).alias).toBe('')
   })
 
+  it('normalizes a zero storage quota to null', () => {
+    expect(createOrUpdateSpaceSchema.parse({ name: 'space', storageQuota: 0, managers: [manager] }).storageQuota).toBeNull()
+  })
+
+  it('rejects a negative storage quota', () => {
+    expect(createOrUpdateSpaceSchema.safeParse({ name: 'space', storageQuota: -1, managers: [manager] }).success).toBe(false)
+  })
+
   it('accepts large space, member and link ids and storage quotas', () => {
     const member = { id: largeInteger, type: MEMBER_TYPE.USER, linkId: largeInteger }
     const result = createOrUpdateSpaceSchema.parse({

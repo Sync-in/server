@@ -50,7 +50,7 @@ export class FilesQuotaManager {
     if (quota) {
       space.storageUsage = quota.storageUsage
       space.storageQuota = quota.storageQuota
-      space.quotaIsExceeded = quota.storageQuota !== null && quota.storageUsage >= quota.storageQuota
+      space.quotaIsExceeded = !!quota.storageQuota && quota.storageUsage >= quota.storageQuota
     } else {
       this.logger.verbose({ tag: this.setQuotaExceeded.name, msg: `quota not found for space : *${space.alias}* (${space.id})` })
     }

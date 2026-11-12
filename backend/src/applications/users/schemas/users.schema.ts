@@ -19,9 +19,8 @@ import { UserSecrets } from '../interfaces/user-secrets.interface.js'
     2: absent
     3: offline
   storageQuota:
-    0 : no storage
-    null : unlimited
-    other: limited to value
+    0 or null: unlimited
+    positive value: limited to value
 */
 
 export const users = mysqlTable(

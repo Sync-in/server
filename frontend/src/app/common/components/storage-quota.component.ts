@@ -18,7 +18,8 @@ import { quotaRegexp } from '../utils/regexp'
         (ngModelChange)="onQuotaInput($event)"
         (blur)="onQuotaBlur()"
         [placeholder]="'Unlimited' | translate: locale.language"
-        class="form-control{{ invalid() ? 'is-invalid' : '' }}"
+        class="form-control"
+        [class.is-invalid]="invalid()"
         [class.w-100]="fullWidth()"
         [style.max-width.%]="displayMaxWidth()"
         placement="top"
@@ -40,8 +41,8 @@ export class StorageQuotaComponent implements OnInit {
 
   ngOnInit() {
     const quota = this.quota()
-    if (quota !== null && quota !== undefined) {
-      this.quotaText.set(quota === 0 ? '0' : convertBytesToText(quota))
+    if (quota) {
+      this.quotaText.set(convertBytesToText(quota))
     }
   }
 
@@ -55,14 +56,21 @@ export class StorageQuotaComponent implements OnInit {
     const t = this.quotaText()
     if (t) {
       if (t === '0') {
-        this.quota.set(0)
+        this.quotaText.set('')
+        this.quota.set(null)
         return
       }
       const b = quotaRegexp.exec(t)
       if (b) {
+        const quota = convertTextToBytes(parseInt(b[1], 10), b[2])
+        if (quota === 0) {
+          this.quotaText.set('')
+          this.quota.set(null)
+          return
+        }
         const pretty = `${b[1]} ${b[2].toUpperCase()}`
         this.quotaText.set(pretty)
-        this.quota.set(convertTextToBytes(parseInt(b[1], 10), b[2]))
+        this.quota.set(quota)
         return
       }
     }

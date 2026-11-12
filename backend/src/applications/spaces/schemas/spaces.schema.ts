@@ -7,9 +7,8 @@ import { SPACE_PERMS_SEP } from '../constants/spaces.js'
   alias: used to navigate over api & webdav, must be unique
   name: set by user and showed on web
   storageQuota:
-    0 : no storage
-    null : unlimited
-    other: limited to value
+    0 or null: unlimited
+    positive value: limited to value
 */
 
 export const spaces = mysqlTable(

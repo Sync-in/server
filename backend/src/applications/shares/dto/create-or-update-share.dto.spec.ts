@@ -12,6 +12,14 @@ describe('createOrUpdateShareSchema', () => {
     expect(createOrUpdateShareSchema.parse({ name: 'share', alias: null }).alias).toBe('')
   })
 
+  it('normalizes a zero storage quota to null', () => {
+    expect(createOrUpdateShareSchema.parse({ name: 'share', storageQuota: 0 }).storageQuota).toBeNull()
+  })
+
+  it('rejects a negative storage quota', () => {
+    expect(createOrUpdateShareSchema.safeParse({ name: 'share', storageQuota: -1 }).success).toBe(false)
+  })
+
   it('accepts a child share without a file owner id', () => {
     const file = { id: 42, path: 'folder' }
     const input = { name: 'child', parent: { alias: 'parent' }, file }

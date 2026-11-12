@@ -105,6 +105,17 @@ describe(FilesQuotaManager.name, () => {
     expect(space.quotaIsExceeded).toBe(true)
   })
 
+  it.each([0, null])('should treat a cached quota of %s as unlimited', async (storageQuota) => {
+    const user = { id: 3 } as any
+    const space = { id: 10, alias: 'project', inSharesList: false, inPersonalSpace: false, inSharesRepository: false } as any
+    spacesQueries.cache.get.mockResolvedValueOnce({ storageUsage: 12, storageQuota })
+
+    await service.setQuotaExceeded(user, space)
+
+    expect(space.storageQuota).toBe(storageQuota)
+    expect(space.quotaIsExceeded).toBe(false)
+  })
+
   it('should compute personal quota when cache is missing', async () => {
     const user = { id: 7 } as any
     const space = { id: 0, alias: 'personal', inSharesList: false, inPersonalSpace: true, inSharesRepository: false } as any

@@ -69,8 +69,8 @@ export class UploadStreamLimiter {
 }
 
 export function createUploadStreamLimiter(space: UploadQuotaSnapshot | undefined, maxFileSize: number): UploadStreamLimiter {
-  // A null quota means unlimited storage; a negative remainder is clamped so every positive write is rejected.
-  const quotaRemaining = space?.storageQuota == null ? undefined : Math.max(0, space.storageQuota - (space.storageUsage ?? 0))
+  // A null or zero quota means unlimited storage; a negative remainder is clamped so every positive write is rejected.
+  const quotaRemaining = space?.storageQuota ? Math.max(0, space.storageQuota - (space.storageUsage ?? 0)) : undefined
   return new UploadStreamLimiter(maxFileSize, quotaRemaining)
 }
 
