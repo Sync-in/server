@@ -21,8 +21,7 @@ export const lo = {
   'no longer share with you': 'ບໍ່ໄດ້ແບ່ງປັນກັບທ່ານອີກຕໍ່ໄປ',
   'You now have access to the share': 'ຕອນນີ້ທ່ານສາມາດເຂົ້າເຖິງການແບ່ງປັນໄດ້ແລ້ວ',
   'You no longer have access to the share': 'ທ່ານບໍ່ສາມາດເຂົ້າເຖິງການແບ່ງປັນໄດ້ອີກຕໍ່ໄປ',
-  'You are no longer a member of the parent share, your child share has been deleted':
-    'ທ່ານບໍ່ແມ່ນສະມາຊິກຂອງການແບ່ງປັນຫຼັກອີກຕໍ່ໄປ ການແບ່ງປັນຍ່ອຍຂອງທ່ານຈຶ່ງຖືກລຶບແລ້ວ',
+  'You are no longer a member of the parent share, your child share has been deleted': 'ທ່ານບໍ່ແມ່ນສະມາຊິກຂອງການແບ່ງປັນຫຼັກອີກຕໍ່ໄປ ການແບ່ງປັນຍ່ອຍຂອງທ່ານຈຶ່ງຖືກລຶບແລ້ວ',
   'Access your shares from': 'ເຂົ້າເຖິງການແບ່ງປັນຂອງທ່ານໄດ້ຈາກ:',
   'Access password': 'ລະຫັດຜ່ານສຳລັບການເຂົ້າເຖິງ',
   Sync: 'ການຊິງຂໍ້ມູນ',
@@ -43,7 +42,6 @@ export const lo = {
   'Address IP': 'ທີ່ຢູ່ IP',
   Browser: 'ບຣາວເຊີ',
   'New Version Available': 'ມີເວີຊັນໃໝ່',
-  'You receive this notification because you are the administrator of this server.':
-    'ທ່ານໄດ້ຮັບການແຈ້ງເຕືອນນີ້ເນື່ອງຈາກທ່ານເປັນຜູ້ຄຸ້ມຄອງເຊີບເວີນີ້.',
+  'You receive this notification because you are the administrator of this server.': 'ທ່ານໄດ້ຮັບການແຈ້ງເຕືອນນີ້ເນື່ອງຈາກທ່ານເປັນຜູ້ຄຸ້ມຄອງເຊີບເວີນີ້.',
   'A new update is available': 'ມີການອັບເດດໃໝ່'
 } as const

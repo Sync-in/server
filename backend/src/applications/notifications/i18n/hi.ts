@@ -21,8 +21,7 @@ export const hi = {
   'no longer share with you': 'अब आपके साथ साझा नहीं किया',
   'You now have access to the share': 'अब आपको साझा सामग्री तक पहुंच प्राप्त है',
   'You no longer have access to the share': 'अब आपको साझा सामग्री तक पहुंच नहीं है',
-  'You are no longer a member of the parent share, your child share has been deleted':
-    'आप अब पैरेंट शेयर के सदस्य नहीं हैं; आपका चाइल्ड शेयर हटा दिया गया है',
+  'You are no longer a member of the parent share, your child share has been deleted': 'आप अब पैरेंट शेयर के सदस्य नहीं हैं; आपका चाइल्ड शेयर हटा दिया गया है',
   'Access your shares from': 'अपने शेयर यहाँ से एक्सेस करें',
   'Access password': 'एक्सेस पासवर्ड',
   Sync: 'सिंक',
@@ -43,7 +42,6 @@ export const hi = {
   'Address IP': 'IP पता',
   Browser: 'ब्राउज़र',
   'New Version Available': 'नया संस्करण उपलब्ध है',
-  'You receive this notification because you are the administrator of this server.':
-    'आपको यह सूचना इसलिए मिली है क्योंकि आप इस सर्वर के व्यवस्थापक हैं।',
+  'You receive this notification because you are the administrator of this server.': 'आपको यह सूचना इसलिए मिली है क्योंकि आप इस सर्वर के व्यवस्थापक हैं।',
   'A new update is available': 'एक नया अपडेट उपलब्ध है'
 } as const

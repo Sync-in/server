@@ -21,8 +21,7 @@ export const th = {
   'no longer share with you': 'ไม่ได้แชร์กับคุณอีกต่อไป',
   'You now have access to the share': 'ขณะนี้คุณเข้าถึงการแชร์ได้แล้ว',
   'You no longer have access to the share': 'คุณไม่สามารถเข้าถึงการแชร์ได้อีกต่อไป',
-  'You are no longer a member of the parent share, your child share has been deleted':
-    'คุณไม่ได้เป็นสมาชิกของการแชร์หลักอีกต่อไป การแชร์ย่อยของคุณจึงถูกลบแล้ว',
+  'You are no longer a member of the parent share, your child share has been deleted': 'คุณไม่ได้เป็นสมาชิกของการแชร์หลักอีกต่อไป การแชร์ย่อยของคุณจึงถูกลบแล้ว',
   'Access your shares from': 'เข้าถึงการแชร์ของคุณได้จาก',
   'Access password': 'รหัสผ่านสำหรับเข้าถึง',
   Sync: 'การซิงค์',
@@ -43,7 +42,6 @@ export const th = {
   'Address IP': 'ที่อยู่ IP',
   Browser: 'เบราว์เซอร์',
   'New Version Available': 'มีเวอร์ชันใหม่พร้อมใช้งาน',
-  'You receive this notification because you are the administrator of this server.':
-    'คุณได้รับการแจ้งเตือนนี้เนื่องจากคุณเป็นผู้ดูแลระบบของเซิร์ฟเวอร์นี้',
+  'You receive this notification because you are the administrator of this server.': 'คุณได้รับการแจ้งเตือนนี้เนื่องจากคุณเป็นผู้ดูแลระบบของเซิร์ฟเวอร์นี้',
   'A new update is available': 'มีอัปเดตใหม่พร้อมใช้งาน'
 } as const

@@ -43,7 +43,6 @@ export const ta = {
   'Address IP': 'IP முகவரி',
   Browser: 'உலாவி',
   'New Version Available': 'புதிய பதிப்பு கிடைக்கிறது',
-  'You receive this notification because you are the administrator of this server.':
-    'நீங்கள் இந்தச் சேவையகத்தின் நிர்வாகி என்பதால் இந்த அறிவிப்பைப் பெறுகிறீர்கள்.',
+  'You receive this notification because you are the administrator of this server.': 'நீங்கள் இந்தச் சேவையகத்தின் நிர்வாகி என்பதால் இந்த அறிவிப்பைப் பெறுகிறீர்கள்.',
   'A new update is available': 'புதிய புதுப்பிப்பு கிடைக்கிறது'
 } as const
