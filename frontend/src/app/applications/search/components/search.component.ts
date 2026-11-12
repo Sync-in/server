@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, effect, inject, signal } from '@angular/core'
+import { afterNextRender, Component, effect, ElementRef, inject, OnDestroy, signal, viewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, type ParamMap, Router } from '@angular/router'
 import { LucideDynamicIcon, LucideMapPin } from '@lucide/angular'
@@ -37,13 +37,14 @@ import { SEARCH_ICON, SEARCH_PATH, SEARCH_QUERY_PARAM, SEARCH_TITLE } from '../s
   ],
   templateUrl: './search.component.html'
 })
-export class SearchComponent {
+export class SearchComponent implements OnDestroy {
   protected readonly store = inject(StoreService)
   protected readonly navbarSearch = inject(NavbarSearchService)
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { LucideMapPin }
   protected readonly errorMessage = signal<string | null>(null)
-  protected readonly selectedId = signal<number | null>(null)
+  protected readonly selectedIndex = this.store.filesSearchSelectedIndex
+  private readonly resultsList = viewChild<ElementRef<HTMLElement>>('resultsList')
   private readonly router = inject(Router)
   private readonly activatedRoute = inject(ActivatedRoute)
   private readonly layout = inject(LayoutService)
@@ -53,9 +54,21 @@ export class SearchComponent {
     this.layout.setBreadcrumbIcon(SEARCH_ICON)
     this.updateBreadcrumb()
 
+    afterNextRender(() => {
+      const resultsList = this.resultsList()
+      if (resultsList) resultsList.nativeElement.scrollTop = this.store.filesSearchScrollTop()
+    })
+
+    let searchRouteActive = false
+    let viewFilter = ''
     effect(() => {
-      this.navbarSearch.viewFilter()
-      this.selectedId.set(null)
+      const nextSearchRouteActive = this.navbarSearch.searchRouteActive()
+      const nextViewFilter = this.navbarSearch.viewFilter()
+      if (searchRouteActive && nextSearchRouteActive && viewFilter !== nextViewFilter) {
+        this.resetViewState()
+      }
+      searchRouteActive = nextSearchRouteActive
+      viewFilter = nextViewFilter
     })
 
     merge(
@@ -64,7 +77,6 @@ export class SearchComponent {
     )
       .pipe(
         tap(({ search }) => {
-          this.selectedId.set(null)
           this.errorMessage.set(null)
           this.updateBreadcrumb(search?.content)
           if (!search) {
@@ -73,7 +85,10 @@ export class SearchComponent {
           }
         }),
         switchMap(({ search, reuseCache }) => {
-          if (!search) return of({ files: [] as FileContentModel[], errorMessage: null, cachedSearch: null })
+          if (!search) {
+            this.resetViewState()
+            return of({ files: [] as FileContentModel[], errorMessage: null, cachedSearch: null })
+          }
 
           const request: SearchFilesDto = {
             content: search.content,
@@ -83,6 +98,7 @@ export class SearchComponent {
             return of({ files: this.store.filesSearch(), errorMessage: null, cachedSearch: request })
           }
 
+          this.resetViewState()
           this.navbarSearch.setLoading(true)
           return this.filesService.search(request).pipe(
             map((files) => ({ files, errorMessage: null, cachedSearch: request })),
@@ -105,7 +121,12 @@ export class SearchComponent {
       })
   }
 
-  protected goTo(file: FileContentModel) {
+  ngOnDestroy() {
+    if (this.navbarSearch.viewFilter()) this.resetViewState()
+  }
+
+  protected goTo(file: FileContentModel, index: number) {
+    this.selectedIndex.set(index)
     this.router.navigate([SPACES_PATH.SPACES, ...file.path.split('/')], { queryParams: { select: file.name } }).catch(console.error)
   }
 
@@ -123,8 +144,15 @@ export class SearchComponent {
   }
 
   protected onFileActivate(file: FileContentModel, index: number) {
-    this.selectedId.set(index)
+    this.selectedIndex.set(index)
     this.open(file)
+  }
+
+  private resetViewState() {
+    this.selectedIndex.set(null)
+    this.store.filesSearchScrollTop.set(0)
+    const resultsList = this.resultsList()
+    if (resultsList) resultsList.nativeElement.scrollTop = 0
   }
 
   private searchFromParams(params: ParamMap): NavbarGlobalSearch | null {

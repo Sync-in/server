@@ -49,6 +49,8 @@ export class StoreService {
   // Search
   public readonly currentSearch: WritableSignal<SearchFilesDto> = signal<SearchFilesDto>({ content: '', fullText: false })
   public readonly filesSearch: WritableSignal<FileContentModel[]> = signal<FileContentModel[]>([])
+  public readonly filesSearchScrollTop: WritableSignal<number> = signal<number>(0)
+  public readonly filesSearchSelectedIndex: WritableSignal<number | null> = signal<number | null>(null)
   // Comments
   public readonly commentsRecents: WritableSignal<CommentRecentModel[]> = signal<CommentRecentModel[]>([])
   // Websocket
@@ -86,6 +88,8 @@ export class StoreService {
     this.filesRecents.set([])
     this.currentSearch.set({ content: '', fullText: false })
     this.filesSearch.set([])
+    this.filesSearchScrollTop.set(0)
+    this.filesSearchSelectedIndex.set(null)
     this.commentsRecents.set([])
     // Websocket
     this.onlineUsers.set([])

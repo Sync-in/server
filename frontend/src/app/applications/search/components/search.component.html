@@ -1,4 +1,6 @@
-<div appAutoResize
+<div #resultsList
+     (scroll)="store.filesSearchScrollTop.set(resultsList.scrollTop)"
+     appAutoResize
      [resizeOffset]="45"
      class="app-search-results-list"
      role="list">
@@ -7,7 +9,7 @@
   }
   @for (file of store.filesSearch() | searchFilter:navbarSearch.viewFilter(); track $index) {
     <article
-      [class.selected]="$index === selectedId()"
+      [class.selected]="$index === selectedIndex()"
       class="app-search-result-item"
       role="listitem">
       <div
@@ -27,7 +29,7 @@
         </div>
       </div>
       <button
-        (click)="goTo(file)"
+        (click)="goTo(file, $index)"
         [attr.aria-label]="('Go to' | translate:locale.language) + ' ' + file.name"
         [tooltip]="'Go to' | translate:locale.language"
         class="btn btn-default app-search-result-go-to"
@@ -35,7 +37,7 @@
         <svg [lucideIcon]="icons.LucideMapPin" aria-hidden="true"></svg>
       </button>
       @if (file.matches?.length) {
-        <div (pointerdown)="selectedId.set($index)" class="app-search-result-matches" data-app-tap-ignore>
+        <div (pointerdown)="selectedIndex.set($index)" class="app-search-result-matches" data-app-tap-ignore>
           @for (match of file.matches; track $index) {
             <p class="app-search-result-match" [innerHTML]="match"></p>
           }
