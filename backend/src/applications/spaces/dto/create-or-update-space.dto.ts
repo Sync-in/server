@@ -42,7 +42,11 @@ export const createOrUpdateSpaceSchema = z.object({
   alias: nullableSanitizedSpaceNameSchema.optional(),
   description: z.string().nullish(),
   enabled: z.boolean().nullish(),
-  storageQuota: integerNumberSchema.nullish().default(null),
+  storageQuota: integerNumberSchema
+    .min(0)
+    .nullish()
+    .transform((value) => (value === 0 ? null : value))
+    .default(null),
   storageIndexing: z.boolean().nullish(),
   roots: z.array(spaceRootSchema).nullish(),
   // contains managers (users)

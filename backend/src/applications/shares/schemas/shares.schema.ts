@@ -35,9 +35,8 @@ import { users } from '../../users/schemas/users.schema.js'
     - if the share has an external path: file.shareExternalId must match with the first parent share
 
   storageQuota:
-    0 : no storage
-    null : unlimited
-    other: limited to value
+    0 or null: unlimited
+    positive value: limited to value
 
   Storage properties are only used for shares that have an external path.
 */

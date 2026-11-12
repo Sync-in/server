@@ -19,7 +19,10 @@ export const optionalUserSchema = z.object({
   language: z.string().nullish(),
   notification: z.enum(USER_NOTIFICATION).nullish(),
   permissions: z.string().nullish(),
-  storageQuota: integerNumberSchema.nullish(),
+  storageQuota: integerNumberSchema
+    .min(0)
+    .nullish()
+    .overwrite((value) => (value === 0 ? null : value)),
   // for users and guests
   groups: z.array(integerNumberSchema).nullish(),
   // for guests

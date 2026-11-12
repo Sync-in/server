@@ -17,6 +17,12 @@ describe(UserModel.name, () => {
     expect(customizedUser.preferences.singleClickNavigation).toBe(true)
   })
 
+  it('treats a zero or null storage quota as unlimited', () => {
+    expect(new UserModel({ id: 1, login: 'alice', role: USER_ROLE.USER, storageUsage: 10, storageQuota: 10 }).quotaIsExceeded).toBe(true)
+    expect(new UserModel({ id: 1, login: 'alice', role: USER_ROLE.USER, storageUsage: 10, storageQuota: 0 }).quotaIsExceeded).toBe(false)
+    expect(new UserModel({ id: 1, login: 'alice', role: USER_ROLE.USER, storageUsage: 10, storageQuota: null }).quotaIsExceeded).toBe(false)
+  })
+
   it('serializes only public user properties', () => {
     const user = new UserModel(
       {

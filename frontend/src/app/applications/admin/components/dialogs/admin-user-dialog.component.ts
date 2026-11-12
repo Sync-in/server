@@ -162,7 +162,9 @@ export class AdminUserDialogComponent implements OnInit {
   updateQuota(quota: number) {
     this.userForm.controls.storageQuota.setValue(quota)
     this.userForm.controls.storageQuota.markAsDirty()
-    this.user.storageQuota = quota
+    if (this.user) {
+      this.user.storageQuota = quota
+    }
   }
 
   toggleAccountSetting(controlName: 'isActive' | 'isAdmin') {

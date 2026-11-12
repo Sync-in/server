@@ -721,7 +721,7 @@ export class FilesManager {
     // do
     try {
       await makeDir(temporaryRoot, true)
-      const maxArchiveSize = space.storageQuota === null ? undefined : Math.max(0, space.storageQuota - space.storageUsage)
+      const maxArchiveSize = space.storageQuota ? Math.max(0, space.storageQuota - space.storageUsage) : undefined
       const entries = dto.files.map((entry) => ({ ...entry, path: entry.path! }))
       const onProgress = isTaskContext ? this.filesTasksTransfer.createByteProgressHandler(space) : undefined
       if (dto.extension === ZIP_EXTENSION) {
@@ -775,7 +775,7 @@ export class FilesManager {
       const onEntry = isTaskContext ? this.filesTasksTransfer.createExtractionProgressHandler(space) : undefined
       if (isTaskContext) FileTaskEvent.emit('startWatch', space, dstPath)
       // do
-      const maxExtractedSize = space.storageQuota === null ? undefined : Math.max(0, space.storageQuota - space.storageUsage)
+      const maxExtractedSize = space.storageQuota ? Math.max(0, space.storageQuota - space.storageUsage) : undefined
       if (extension === '.zip') {
         await extractZip(space.realPath, tmpPath, maxExtractedSize, signal, onEntry)
       } else {

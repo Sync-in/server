@@ -90,7 +90,11 @@ const createOrUpdateShareBaseSchema = z.object({
   description: z.string().nullish(),
   externalPath: z.string().nullish().default(null),
   enabled: z.boolean().nullish(),
-  storageQuota: integerNumberSchema.nullish().default(null),
+  storageQuota: integerNumberSchema
+    .min(0)
+    .nullish()
+    .transform((value) => (value === 0 ? null : value))
+    .default(null),
   storageIndexing: z.boolean().nullish(),
   parent: shareParentSchema.nullish(),
   // Validation is conditional to preserve the former ValidateIf semantics.

@@ -73,7 +73,7 @@ export class SpaceEnv implements Pick<Space, 'id' | 'alias' | 'name' | 'enabled'
       /* The root is a resource located inside the space but not anchored, this is why we set the id to 0 and the permissions are inherited */
       this.root = { id: 0, alias: rootAlias as string, name: rootAlias as string, permissions: this.permissions }
     }
-    this.quotaIsExceeded = this.storageQuota !== null && this.storageUsage >= this.storageQuota
+    this.quotaIsExceeded = !!this.storageQuota && this.storageUsage >= this.storageQuota
   }
 
   setup(
