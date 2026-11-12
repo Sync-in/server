@@ -126,12 +126,16 @@ export class VirtualScrollComponent<T> implements AfterViewInit, OnChanges, OnDe
   }
 
   ngOnChanges(changes: SimpleChanges) {
+    const items = changes['items']
     this.previousStart = undefined
     this.previousEnd = undefined
+    if (items?.currentValue.length === 0) {
+      this.viewPortItemsState.set([])
+      this.topPadding.set(0)
+    }
     if (this.galleryMode()) {
       this.startupLoop = true
     } else {
-      const items = (changes as any).items || undefined
       if (items && (items.previousValue === undefined || items.previousValue.length === 0)) {
         this.startupLoop = true
       }
