@@ -211,7 +211,7 @@ export class FilesManager {
       }
       if (fileLock) {
         try {
-          await this.filesLockManager.removeLock(fileLock.key)
+          await this.filesLockManager.removeLock(space.dbFile, fileLock)
         } catch (e) {
           this.logger.warn({ tag: this.saveStream.name, msg: `Failed to remove lock ${fileLock.key}: ${toErrorMessage(e)}` })
         }
@@ -347,7 +347,7 @@ export class FilesManager {
           }
           if (!patchMethod && created) {
             // Remove the file lock only if it has not been refreshed
-            await this.filesLockManager.removeLock(fileLock.key)
+            await this.filesLockManager.removeLock(dbFile, fileLock)
           }
         }
         if (patchMethod) {
@@ -573,6 +573,7 @@ export class FilesManager {
       userId: user.id,
       lockTokens: dav?.lockTokens
     })
+    const locksForRemoval = await this.filesLockManager.getLocksForRemoval(user, space.dbFile, isDir)
     // file system deletion
     let forceDeleteInDB = false
     let sourceCleanupError: SourceCleanupError | undefined
@@ -625,14 +626,13 @@ export class FilesManager {
         throw new FileError(HttpStatus.INTERNAL_SERVER_ERROR, 'Unsupported trash target mode')
       }
     }
-    // remove locks, these locks have already been checked in the `checkConflicts` function
-    if (isDir) {
-      this.filesLockManager
-        .removeChildLocks(user, space.dbFile)
-        .catch((e: Error) => this.logger.error({ tag: this.delete.name, msg: toErrorMessage(e) }))
-    }
-    for (const lock of await this.filesLockManager.getLocksByPath(space.dbFile)) {
-      this.filesLockManager.removeLock(lock.key).catch((e: Error) => this.logger.error({ tag: this.delete.name, msg: toErrorMessage(e) }))
+    // Only remove the lock incarnations captured before the filesystem mutation.
+    try {
+      if (!(await this.filesLockManager.removeLocks(space.dbFile, locksForRemoval))) {
+        this.logger.warn({ tag: this.delete.name, msg: `Some locks changed while deleting ${space.dbFile.path}` })
+      }
+    } catch (e) {
+      this.logger.error({ tag: this.delete.name, msg: toErrorMessage(e) })
     }
     // Keep the database aligned with the completed filesystem operation before reporting a residual source.
     if (trashDbFile) {
@@ -680,7 +680,7 @@ export class FilesManager {
       throw e
     } finally {
       // release lock
-      await this.filesLockManager.removeLock(fileLock.key)
+      await this.filesLockManager.removeLock(dbFile, fileLock)
     }
     FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: dstPath })
   }
@@ -739,7 +739,7 @@ export class FilesManager {
       throw e
     } finally {
       if (fileLock) {
-        await this.filesLockManager.removeLock(fileLock.key)
+        await this.filesLockManager.removeLock(space.dbFile, fileLock)
       }
     }
     if (dto.compressInDirectory) {
@@ -792,7 +792,7 @@ export class FilesManager {
       )
       throw e
     } finally {
-      if (fileLock) await this.filesLockManager.removeLock(fileLock.key)
+      if (fileLock) await this.filesLockManager.removeLock(space.dbFile, fileLock)
     }
     // emit file event
     FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: dstPath })
@@ -837,8 +837,9 @@ export class FilesManager {
     }
     for (const lock of fileLocks) {
       if ((forceAsFileOwner && space.dbFile?.ownerId === user.id) || lock.owner.id === user.id) {
-        // Refresh if more than half of the TTL has passed
-        await this.filesLockManager.removeLock(lock.key)
+        if (!(await this.filesLockManager.removeLock(space.dbFile, lock))) {
+          throw new LockConflict(lock, 'Conflicting lock')
+        }
       } else {
         throw new LockConflict(lock, 'Conflicting lock')
       }

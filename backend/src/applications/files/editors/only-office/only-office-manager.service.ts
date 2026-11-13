@@ -308,7 +308,7 @@ export class OnlyOfficeManager {
   private async removeFileLock(userId: number, space: SpaceEnv): Promise<void> {
     for (const lock of await this.filesLockManager.getLocksByPath(space.dbFile)) {
       if (lock.owner.id === userId) {
-        await this.filesLockManager.removeLock(lock.key)
+        await this.filesLockManager.removeLock(space.dbFile, lock)
       }
     }
   }

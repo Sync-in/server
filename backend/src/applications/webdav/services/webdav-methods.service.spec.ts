@@ -123,13 +123,13 @@ describe('WebDAVMethods', () => {
     filesLockManager = {
       create: vi.fn(),
       isLockedWithToken: vi.fn(),
-      removeLock: vi.fn(),
+      removeLock: vi.fn().mockResolvedValue(true),
       browseLocks: vi.fn(),
       browseParentChildLocks: vi.fn(),
       checkConflicts: vi.fn(),
       getLocksByPath: vi.fn(),
       getLockByToken: vi.fn(),
-      refreshLockTimeout: vi.fn(),
+      refreshLockTimeout: vi.fn().mockResolvedValue(true),
       genDAVToken: vi.fn().mockReturnValue('opaquelocktoken:new-token')
     } as any
 
@@ -265,7 +265,7 @@ describe('WebDAVMethods', () => {
 
         const result = await service.lock(req, res)
 
-        expect(lockRefreshSpy).toHaveBeenCalledWith(req, res, req.space.dbFile.path)
+        expect(lockRefreshSpy).toHaveBeenCalledWith(req, res, req.space.dbFile)
         expect(result).toBe('refresh-ok')
       })
     })
@@ -400,7 +400,7 @@ describe('WebDAVMethods', () => {
 
         await service.unlock(req, res)
 
-        expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-key-123')
+        expect(filesLockManager.removeLock).toHaveBeenCalledWith(req.space.dbFile, expect.objectContaining({ key: 'lock-key-123' }))
         expect(res.statusCode).toBe(HttpStatus.NO_CONTENT)
       })
     })
@@ -425,7 +425,22 @@ describe('WebDAVMethods', () => {
 
         await service.unlock(req, res)
 
-        expect(filesLockManager.isLockedWithToken).toHaveBeenCalledWith(req.dav.lock.token, req.space.dbFile.path)
+        expect(filesLockManager.isLockedWithToken).toHaveBeenCalledWith(req.dav.lock.token, req.space.dbFile)
+        expect(res.statusCode).toBe(HttpStatus.CONFLICT)
+      })
+
+      it('should return 409 when the lock handle becomes stale before deletion', async () => {
+        vi.mocked(isPathExists).mockResolvedValue(true)
+        filesLockManager.isLockedWithToken.mockResolvedValue({
+          owner: { id: 1, login: 'test-user' },
+          key: 'stale-lock-key'
+        } as any)
+        filesLockManager.removeLock.mockResolvedValue(false)
+        const req = createBaseRequest()
+        const res = createMockResponse()
+
+        await service.unlock(req, res)
+
         expect(res.statusCode).toBe(HttpStatus.CONFLICT)
       })
 
@@ -1884,7 +1899,7 @@ describe('WebDAVMethods', () => {
         })
         const res = createMockResponse()
 
-        await (service as any).lockRefresh(req, res, 'file.txt')
+        await (service as any).lockRefresh(req, res, req.space.dbFile)
 
         expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST)
         expect(res.body).toContain('Expected a lock token')
@@ -1900,7 +1915,7 @@ describe('WebDAVMethods', () => {
         })
         const res = createMockResponse()
 
-        await (service as any).lockRefresh(req, res, 'file.txt')
+        await (service as any).lockRefresh(req, res, req.space.dbFile)
 
         expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST)
         expect(res.body).toContain('Expected a lock token')
@@ -1919,7 +1934,7 @@ describe('WebDAVMethods', () => {
           throw new Error('No token found')
         })
 
-        await (service as any).lockRefresh(req, res, 'file.txt')
+        await (service as any).lockRefresh(req, res, req.space.dbFile)
 
         expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST)
         expect(res.body).toContain('Unable to extract token')
@@ -1939,9 +1954,9 @@ describe('WebDAVMethods', () => {
         vi.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:missing')
         filesLockManager.isLockedWithToken.mockResolvedValue(null)
 
-        await (service as any).lockRefresh(req, res, 'file.txt')
+        await (service as any).lockRefresh(req, res, req.space.dbFile)
 
-        expect(filesLockManager.isLockedWithToken).toHaveBeenCalledWith('opaquelocktoken:missing', 'file.txt')
+        expect(filesLockManager.isLockedWithToken).toHaveBeenCalledWith('opaquelocktoken:missing', req.space.dbFile)
         expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
       })
 
@@ -1960,7 +1975,7 @@ describe('WebDAVMethods', () => {
           owner: { id: 999, login: 'other-user' }
         } as any)
 
-        await (service as any).lockRefresh(req, res, 'file.txt')
+        await (service as any).lockRefresh(req, res, req.space.dbFile)
 
         expect(res.statusCode).toBe(HttpStatus.FORBIDDEN)
         expect(res.body).toBe('Lock token does not match owner')
@@ -1985,9 +2000,9 @@ describe('WebDAVMethods', () => {
         vi.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:abc')
         filesLockManager.isLockedWithToken.mockResolvedValue(mockLock as any)
 
-        await (service as any).lockRefresh(req, res, 'file.txt')
+        await (service as any).lockRefresh(req, res, req.space.dbFile)
 
-        expect(filesLockManager.refreshLockTimeout).toHaveBeenCalledWith(mockLock, 180)
+        expect(filesLockManager.refreshLockTimeout).toHaveBeenCalledWith(req.space.dbFile, mockLock, 180)
         expect(res.statusCode).toBe(HttpStatus.OK)
         expect(res.contentType).toContain('application/xml')
         expect(typeof res.body).toBe('string')
@@ -2010,9 +2025,27 @@ describe('WebDAVMethods', () => {
         vi.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:abc')
         filesLockManager.isLockedWithToken.mockResolvedValue(mockLock as any)
 
-        await (service as any).lockRefresh(req, res, 'file.txt')
+        await (service as any).lockRefresh(req, res, req.space.dbFile)
 
-        expect(filesLockManager.refreshLockTimeout).toHaveBeenCalledWith(mockLock, undefined)
+        expect(filesLockManager.refreshLockTimeout).toHaveBeenCalledWith(req.space.dbFile, mockLock, undefined)
+      })
+
+      it('should return 412 when the lock handle becomes stale before refresh', async () => {
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            body: undefined,
+            ifHeaders: [{ token: { value: 'opaquelocktoken:abc', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+        vi.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:abc')
+        filesLockManager.isLockedWithToken.mockResolvedValue({ owner: { id: 1, login: 'test-user' } } as any)
+        filesLockManager.refreshLockTimeout.mockResolvedValue(false)
+
+        await (service as any).lockRefresh(req, res, req.space.dbFile)
+
+        expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
       })
     })
   })

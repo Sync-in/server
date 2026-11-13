@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { LoggerModule } from 'nestjs-pino'
+import { randomUUID } from 'node:crypto'
 import { setTimeout } from 'node:timers/promises'
 import { AvailabilityModule } from '../availability/availability.module.js'
 import { DatabaseModule } from '../database/database.module.js'
@@ -10,6 +11,7 @@ import { Cache } from './cache.service.js'
 describe(Cache.name, () => {
   let module: TestingModule
   let cache: Cache
+  const revisionTestPrefix = `cache-revision-e2e-${randomUUID()}`
 
   beforeAll(async () => {
     module = await Test.createTestingModule({
@@ -18,7 +20,7 @@ describe(Cache.name, () => {
 
     module.useLogger(['fatal'])
     cache = module.get<Cache>(Cache)
-    cache.onModuleInit()
+    await cache.onModuleInit()
   })
 
   afterAll(async () => {
@@ -120,6 +122,289 @@ describe(Cache.name, () => {
     expect(await cache.set('persistent', 'value', 0)).toBe(true)
     expect(await cache.get('persistent')).toBe('value')
     await cache.del('persistent')
+  })
+
+  it('should allow exactly one concurrent revision initialization', async () => {
+    const revisionKey = `${revisionTestPrefix}:concurrent:revision`
+    const lockKey = `${revisionTestPrefix}:concurrent:lock`
+    const keys = [revisionKey, `${revisionKey}|index`, lockKey]
+    await cache.mdel(keys)
+
+    try {
+      const results = await Promise.all([
+        cache.commitRevision({
+          revisionKey,
+          expectedRevision: null,
+          mutations: [{ type: 'set', key: lockKey, value: 'first', ttl: 0, expect: 'absent' }]
+        }),
+        cache.commitRevision({
+          revisionKey,
+          expectedRevision: null,
+          mutations: [{ type: 'set', key: lockKey, value: 'second', ttl: 0, expect: 'absent' }]
+        })
+      ])
+
+      expect(results.filter(Boolean)).toHaveLength(1)
+      expect(results).toEqual(expect.arrayContaining([true, false]))
+      expect(['first', 'second']).toContain(await cache.get(lockKey))
+    } finally {
+      await cache.mdel(keys)
+    }
+  })
+
+  it('should reject a stale revision without applying mutations', async () => {
+    const revisionKey = `${revisionTestPrefix}:stale:revision`
+    const existingKey = `${revisionTestPrefix}:stale:existing`
+    const newKey = `${revisionTestPrefix}:stale:new`
+    const keys = [revisionKey, `${revisionKey}|index`, existingKey, newKey]
+    await cache.mdel(keys)
+
+    try {
+      expect(
+        await cache.commitRevision({
+          revisionKey,
+          expectedRevision: null,
+          mutations: [{ type: 'set', key: existingKey, value: 'original', ttl: 0, expect: 'absent' }]
+        })
+      ).toBe(true)
+      const revision = await cache.get(revisionKey)
+
+      expect(
+        await cache.commitRevision({
+          revisionKey,
+          expectedRevision: 'stale-revision',
+          mutations: [
+            { type: 'set', key: existingKey, value: 'changed', ttl: 0, expect: 'present' },
+            { type: 'set', key: newKey, value: 'created', ttl: 0, expect: 'absent' }
+          ]
+        })
+      ).toBe(false)
+      expect(await cache.get(existingKey)).toBe('original')
+      expect(await cache.get(newKey)).toBeUndefined()
+      expect(await cache.get(revisionKey)).toBe(revision)
+    } finally {
+      await cache.mdel(keys)
+    }
+  })
+
+  it('should read the revision and matching values from one coherent snapshot', async () => {
+    const revisionKey = `${revisionTestPrefix}:snapshot:revision`
+    const firstLockKey = `${revisionTestPrefix}:snapshot:lock:first`
+    const secondLockKey = `${revisionTestPrefix}:snapshot:lock:second`
+    const unrelatedKey = `${revisionTestPrefix}:snapshot:other`
+    const keys = [revisionKey, `${revisionKey}|index`, firstLockKey, secondLockKey, unrelatedKey]
+    await cache.mdel(keys)
+
+    try {
+      expect(
+        await cache.commitRevision({
+          revisionKey,
+          expectedRevision: null,
+          mutations: [
+            { type: 'set', key: firstLockKey, value: { lockId: 'first' }, ttl: 0, expect: 'absent' },
+            { type: 'set', key: secondLockKey, value: { lockId: 'second' }, ttl: 0, expect: 'absent' }
+          ]
+        })
+      ).toBe(true)
+      await cache.set(unrelatedKey, 'unrelated', 0)
+
+      const snapshot = await cache.readRevisionSnapshot({ revisionKey, pattern: `${revisionTestPrefix}:snapshot:lock:*` })
+      expect(snapshot.revision).toBe(await cache.get(revisionKey))
+      expect(snapshot.entries).toHaveLength(2)
+      expect(snapshot.entries).toEqual(
+        expect.arrayContaining([
+          { key: firstLockKey, value: { lockId: 'first' } },
+          { key: secondLockKey, value: { lockId: 'second' } }
+        ])
+      )
+    } finally {
+      await cache.mdel(keys)
+    }
+  })
+
+  it('should mutate a known lock and rotate its revision without a prior snapshot', async () => {
+    const revisionKey = `${revisionTestPrefix}:known:revision`
+    const lockKey = `${revisionTestPrefix}:known:lock`
+    const keys = [revisionKey, `${revisionKey}|index`, lockKey]
+    const initialLock = { lockId: 'known-lock', state: 'initial' }
+    const refreshedLock = { ...initialLock, state: 'refreshed' }
+    await cache.mdel(keys)
+
+    try {
+      expect(
+        await cache.commitRevision({
+          revisionKey,
+          expectedRevision: null,
+          mutations: [{ type: 'set', key: lockKey, value: initialLock, ttl: 0, expect: 'absent' }]
+        })
+      ).toBe(true)
+      const firstRevision = await cache.get(revisionKey)
+
+      expect(
+        await cache.mutateRevision({
+          revisionKey,
+          mutations: [{ type: 'set', key: lockKey, value: refreshedLock, ttl: 0, expect: 'present', expectedLockId: initialLock.lockId }]
+        })
+      ).toBe(true)
+      const secondRevision = await cache.get(revisionKey)
+      expect(secondRevision).not.toBe(firstRevision)
+      expect(await cache.get(lockKey)).toEqual(refreshedLock)
+
+      expect(
+        await cache.mutateRevision({
+          revisionKey,
+          mutations: [{ type: 'delete', key: lockKey, expect: 'present', expectedLockId: 'stale-lock' }]
+        })
+      ).toBe(false)
+      expect(await cache.get(revisionKey)).toBe(secondRevision)
+      expect(await cache.get(lockKey)).toEqual(refreshedLock)
+    } finally {
+      await cache.mdel(keys)
+    }
+  })
+
+  it('should leave the whole revision batch unchanged when one precondition is invalid', async () => {
+    const revisionKey = `${revisionTestPrefix}:precondition:revision`
+    const existingKey = `${revisionTestPrefix}:precondition:a-existing`
+    const missingKey = `${revisionTestPrefix}:precondition:z-missing`
+    const keys = [revisionKey, `${revisionKey}|index`, existingKey, missingKey]
+    await cache.mdel(keys)
+
+    try {
+      expect(
+        await cache.commitRevision({
+          revisionKey,
+          expectedRevision: null,
+          mutations: [{ type: 'set', key: existingKey, value: 'original', ttl: 0, expect: 'absent' }]
+        })
+      ).toBe(true)
+      const revision = await cache.get(revisionKey)
+
+      expect(
+        await cache.commitRevision({
+          revisionKey,
+          expectedRevision: revision,
+          mutations: [
+            { type: 'set', key: existingKey, value: 'changed', ttl: 0, expect: 'present' },
+            { type: 'set', key: missingKey, value: 'created', ttl: 0, expect: 'present' }
+          ]
+        })
+      ).toBe(false)
+      expect(await cache.get(existingKey)).toBe('original')
+      expect(await cache.get(missingKey)).toBeUndefined()
+      expect(await cache.get(revisionKey)).toBe(revision)
+    } finally {
+      await cache.mdel(keys)
+    }
+  })
+
+  it('should protect a new lock incarnation with expectedLockId', async () => {
+    const revisionKey = `${revisionTestPrefix}:lock-id:revision`
+    const lockKey = `${revisionTestPrefix}:lock-id:lock`
+    const keys = [revisionKey, `${revisionKey}|index`, lockKey]
+    const oldLock = { lockId: 'old-lock', owner: 'first' }
+    const newLock = { lockId: 'new-lock', owner: 'second' }
+    await cache.mdel(keys)
+
+    try {
+      expect(
+        await cache.commitRevision({
+          revisionKey,
+          expectedRevision: null,
+          mutations: [{ type: 'set', key: lockKey, value: oldLock, ttl: 0, expect: 'absent' }]
+        })
+      ).toBe(true)
+      const firstRevision = await cache.get(revisionKey)
+      expect(
+        await cache.commitRevision({
+          revisionKey,
+          expectedRevision: firstRevision,
+          mutations: [
+            {
+              type: 'set',
+              key: lockKey,
+              value: newLock,
+              ttl: 0,
+              expect: 'present',
+              expectedLockId: oldLock.lockId
+            }
+          ]
+        })
+      ).toBe(true)
+      const secondRevision = await cache.get(revisionKey)
+
+      expect(
+        await cache.commitRevision({
+          revisionKey,
+          expectedRevision: secondRevision,
+          mutations: [{ type: 'delete', key: lockKey, expect: 'present', expectedLockId: oldLock.lockId }]
+        })
+      ).toBe(false)
+      expect(await cache.get(lockKey)).toEqual(newLock)
+      expect(await cache.get(revisionKey)).toBe(secondRevision)
+    } finally {
+      await cache.mdel(keys)
+    }
+  })
+
+  it('should keep the revision sidecar readable and persistent after deleting a value', async () => {
+    const revisionKey = `${revisionTestPrefix}:delete:revision`
+    const lockKey = `${revisionTestPrefix}:delete:lock`
+    const keys = [revisionKey, `${revisionKey}|index`, lockKey]
+    const lock = { lockId: 'deleted-lock' }
+    await cache.mdel(keys)
+
+    try {
+      expect(
+        await cache.commitRevision({
+          revisionKey,
+          expectedRevision: null,
+          mutations: [{ type: 'set', key: lockKey, value: lock, ttl: 1, expect: 'absent' }]
+        })
+      ).toBe(true)
+      const firstRevision = await cache.get(revisionKey)
+      expect(
+        await cache.commitRevision({
+          revisionKey,
+          expectedRevision: firstRevision,
+          mutations: [{ type: 'delete', key: lockKey, expect: 'present', expectedLockId: lock.lockId }]
+        })
+      ).toBe(true)
+      const secondRevision = await cache.get(revisionKey)
+
+      expect(await cache.get(lockKey)).toBeUndefined()
+      expect(secondRevision).toEqual(expect.any(String))
+      expect(secondRevision).not.toBe(firstRevision)
+      await setTimeout(1_100)
+      expect(await cache.get(revisionKey)).toBe(secondRevision)
+    } finally {
+      await cache.mdel(keys)
+    }
+  })
+
+  it('should expire a finite namespace index with its last lock', async () => {
+    const revisionKey = `${revisionTestPrefix}:expiration:revision`
+    const lockKey = `${revisionTestPrefix}:expiration:lock`
+    const keys = [revisionKey, `${revisionKey}|index`, lockKey]
+    await cache.mdel(keys)
+
+    try {
+      expect(
+        await cache.commitRevision({
+          revisionKey,
+          expectedRevision: null,
+          mutations: [{ type: 'set', key: lockKey, value: { lockId: 'expiring-lock' }, ttl: 1, expect: 'absent' }]
+        })
+      ).toBe(true)
+
+      // MySQL rounds cache expirations up to whole seconds, so a one-second TTL can remain visible for almost two seconds.
+      await setTimeout(2_100)
+      expect(await cache.get(lockKey)).toBeUndefined()
+      expect(await cache.has(`${revisionKey}|index`)).toBe(false)
+      expect(await cache.get(revisionKey)).toEqual(expect.any(String))
+    } finally {
+      await cache.mdel(keys)
+    }
   })
 
   it('should create a slug key from parameters', () => {

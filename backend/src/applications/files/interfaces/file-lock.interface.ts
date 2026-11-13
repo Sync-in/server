@@ -17,6 +17,7 @@ export interface FileLockOptions {
 }
 
 export interface FileLock {
+  lockId: string
   owner: Owner
   dbFilePath: string
   key: string

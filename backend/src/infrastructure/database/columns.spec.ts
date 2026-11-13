@@ -59,7 +59,7 @@ describe('metadata schema collations', () => {
     expect(cache.value.getSQLType()).toBe('json')
   })
 
-  it('enforces full cache-key uniqueness and uses a non-unique prefix index', () => {
+  it('enforces cache-key uniqueness and uses a non-unique prefix index', () => {
     const { indexes } = getTableConfig(cache)
     const uniqueKey = indexes.find((entry) => entry.config.name === 'cache_key_unique')
     const prefixKey = indexes.find((entry) => entry.config.name === 'cache_key_prefix_idx')

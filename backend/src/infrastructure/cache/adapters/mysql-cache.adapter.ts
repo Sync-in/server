@@ -1,6 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { and, between, eq, exists, inArray, notBetween, SQL, sql } from 'drizzle-orm'
+import { and, between, eq, inArray, ne, notBetween, SQL, sql } from 'drizzle-orm'
+import { unionAll } from 'drizzle-orm/mysql-core'
 import type { MySqlQueryResult } from 'drizzle-orm/mysql2'
+import { randomUUID } from 'node:crypto'
 import { toErrorMessage } from '../../../common/errors.js'
 import { createCacheKeySlug, currentTimeStamp } from '../../../common/shared.js'
 import { configuration } from '../../../configuration/config.environment.js'
@@ -8,18 +10,27 @@ import { INFRASTRUCTURE_DEPENDENCY } from '../../availability/availability.const
 import { Availability } from '../../availability/availability.service.js'
 import { DB_TOKEN_PROVIDER } from '../../database/constants.js'
 import { type DBSchema } from '../../database/interfaces/database.interface.js'
-import { dbCheckAffectedRows, dbParseJson } from '../../database/utils.js'
+import { dbCheckAffectedRows, dbParseJson, getMysqlError } from '../../database/utils.js'
 import { SchedulerManager } from '../../scheduler/scheduler-manager.service.js'
 import type { CacheRateLimitResult, CacheRateLimitState } from '../interfaces/cache-rate-limit.interface.js'
-import type { MysqlCache } from '../schemas/mysql-cache.interface.js'
+import {
+  type CacheRevisionCommit,
+  type CacheRevisionMutation,
+  type CacheRevisionMutationCommit,
+  type CacheRevisionSnapshot,
+  type CacheRevisionSnapshotCommand
+} from '../interfaces/cache-revision.interface.js'
 import { cache } from '../schemas/mysql-cache.schema.js'
-import { Cache } from '../cache.service.js'
+import { Cache, validateCacheRevisionCommand } from '../cache.service.js'
 
 function getErrorSource(error: unknown): string | undefined {
   if (error === null || typeof error !== 'object') return undefined
   if ('sql' in error && typeof error.sql === 'string') return error.sql
   return 'code' in error && typeof error.code === 'string' ? error.code : undefined
 }
+
+const CACHE_REVISION_CONFLICT = new Error('cache revision conflict')
+type CacheTransaction = Parameters<Parameters<DBSchema['transaction']>[0]>[0]
 
 @Injectable()
 export class MysqlCacheAdapter implements Cache {
@@ -31,6 +42,8 @@ export class MysqlCacheAdapter implements Cache {
   infiniteExpiration = -1
   private readonly scheduledJobName = 'cache_expired_keys' as const
   private readonly scheduledJobInterval = 5 // minutes
+  private readonly retryableRevisionErrorCode = 'ER_LOCK_DEADLOCK'
+  private readonly revisionDeadlockRetries = 1
   private readonly logger = new Logger(Cache.name.toUpperCase())
   private internalSchedulerRegistered = false
   private unsubscribeAvailability?: () => void
@@ -73,18 +86,12 @@ export class MysqlCacheAdapter implements Cache {
   }
 
   async has(key: string): Promise<boolean> {
-    const [r] = await this.db
+    const [entry] = await this.db
       .select({ key: cache.key })
       .from(cache)
-      .where(
-        exists(
-          this.db
-            .select({ key: cache.key })
-            .from(cache)
-            .where(and(eq(cache.key, key), this.whereNotExpired()))
-        )
-      )
-    return !!r
+      .where(and(eq(cache.key, key), this.whereNotExpired()))
+      .limit(1)
+    return entry !== undefined
   }
 
   async get(key: string): Promise<any> {
@@ -93,7 +100,7 @@ export class MysqlCacheAdapter implements Cache {
       .from(cache)
       .where(and(eq(cache.key, key), this.whereNotExpired()))
       .limit(1)
-    return v ? v.value : v
+    return v?.value
   }
 
   async mget(keys: string[]): Promise<any[]> {
@@ -121,12 +128,12 @@ export class MysqlCacheAdapter implements Cache {
        */
       const [result]: any = await this.db
         .insert(cache)
-        .values({ key, value: initialValue, expiration: exp } satisfies MysqlCache)
+        .values({ key, value: initialValue, expiration: exp })
         .onDuplicateKeyUpdate({
           set: {
             value: sql`LAST_INSERT_ID(${value})`,
             expiration: exp
-          } as Partial<MysqlCache>
+          }
         })
       return result.affectedRows === 1 && Number(result.insertId) === 0 ? initialValue : Number(result.insertId)
     } catch (e) {
@@ -140,7 +147,7 @@ export class MysqlCacheAdapter implements Cache {
       // The no-op upsert creates or locks the row, serializing concurrent workers from the first request.
       await tx
         .insert(cache)
-        .values({ key, value: null, expiration: this.infiniteExpiration } satisfies MysqlCache)
+        .values({ key, value: null, expiration: this.infiniteExpiration })
         .onDuplicateKeyUpdate({ set: { key: sql`${cache.key}` } })
 
       const [entry] = await tx
@@ -179,18 +186,132 @@ export class MysqlCacheAdapter implements Cache {
     })
   }
 
+  async readRevisionSnapshot(command: CacheRevisionSnapshotCommand): Promise<CacheRevisionSnapshot> {
+    // Both branches share the same statement-level InnoDB read view.
+    const rows: { key: string; value: unknown }[] = await unionAll(
+      this.db
+        .select({ key: cache.key, value: cache.value })
+        .from(cache)
+        .where(and(eq(cache.key, command.revisionKey), this.whereNotExpired())),
+      this.db
+        .select({ key: cache.key, value: cache.value })
+        .from(cache)
+        .where(
+          and(ne(cache.key, command.revisionKey), sql`${cache.key} LIKE ${this.toLikePattern(command.pattern)} ESCAPE '='`, this.whereNotExpired())
+        )
+    )
+    const revisionEntry = rows.find(({ key }) => key === command.revisionKey)
+    let revision: string | null = null
+    if (revisionEntry !== undefined) {
+      const parsedRevision = this.parseRevision(revisionEntry.value)
+      if (typeof parsedRevision !== 'string') {
+        throw new Error(`Invalid cache revision for ${command.revisionKey}`)
+      }
+      revision = parsedRevision
+    }
+    return { revision, entries: rows.filter(({ key }) => key !== command.revisionKey) }
+  }
+
+  async commitRevision(command: CacheRevisionCommit): Promise<boolean> {
+    return this.commitRevisionMutations(command, command.expectedRevision)
+  }
+
+  async mutateRevision(command: CacheRevisionMutationCommit): Promise<boolean> {
+    return this.commitRevisionMutations(command)
+  }
+
+  private async commitRevisionMutations(command: CacheRevisionMutationCommit, expectedRevision?: string | null): Promise<boolean> {
+    validateCacheRevisionCommand(command, this.defaultTTL)
+    const mutations = [...command.mutations].sort((first, second) => (first.key < second.key ? -1 : first.key > second.key ? 1 : 0))
+
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await this.db.transaction(async (tx) => {
+          // Rotate the namespace first. The write is the mutex and is rolled back with every failed precondition.
+          await this.rotateRevision(tx, command.revisionKey, expectedRevision)
+
+          if (expectedRevision === undefined && mutations.length === 1 && mutations[0].expect === 'present') {
+            // The conditional UPDATE/DELETE validates the known lock incarnation without a preceding SELECT FOR UPDATE.
+            await this.applyKnownMutation(tx, mutations[0])
+            return
+          }
+
+          const entries = mutations.length
+            ? await tx
+                .select({
+                  key: cache.key,
+                  value: cache.value,
+                  expiration: cache.expiration,
+                  now: this.databaseTime().mapWith(Number)
+                })
+                .from(cache)
+                .where(
+                  inArray(
+                    cache.key,
+                    mutations.map(({ key }) => key)
+                  )
+                )
+                .orderBy(cache.key)
+                .for('update')
+            : []
+          const entriesByKey = new Map(entries.map((entry) => [entry.key, entry]))
+
+          // Validate the complete locked snapshot before mutating any lock row.
+          for (const mutation of mutations) {
+            const entry = entriesByKey.get(mutation.key)
+            const isPresent = entry !== undefined && (entry.expiration === this.infiniteExpiration || entry.expiration > entry.now)
+            if ((mutation.expect === 'present') !== isPresent) throw CACHE_REVISION_CONFLICT
+            if (mutation.expectedLockId !== undefined) {
+              const value = dbParseJson(entry?.value)
+              if (value === null || typeof value !== 'object' || value.lockId !== mutation.expectedLockId) {
+                throw CACHE_REVISION_CONFLICT
+              }
+            }
+          }
+
+          const deleteKeys = mutations.filter((mutation) => mutation.type === 'delete').map(({ key }) => key)
+          if (deleteKeys.length) await tx.delete(cache).where(inArray(cache.key, deleteKeys))
+
+          const setMutations = mutations.filter((mutation): mutation is Extract<CacheRevisionMutation, { type: 'set' }> => mutation.type === 'set')
+          if (setMutations.length) {
+            await tx
+              .insert(cache)
+              .values(
+                setMutations.map(({ key, value, ttl }) => ({
+                  key,
+                  value: this.serialize(value),
+                  expiration: this.getDatabaseTTL(ttl)
+                }))
+              )
+              .onDuplicateKeyUpdate({
+                set: {
+                  value: sql.raw('VALUES(`value`)'),
+                  expiration: sql.raw('VALUES(`expiration`)')
+                }
+              })
+          }
+        })
+        return true
+      } catch (error) {
+        if (error === CACHE_REVISION_CONFLICT) return false
+        if (getMysqlError(error)?.code === this.retryableRevisionErrorCode && attempt < this.revisionDeadlockRetries) continue
+        throw error
+      }
+    }
+  }
+
   async set(key: string, data: unknown, ttl?: number): Promise<boolean> {
     data = this.serialize(data)
     const exp = this.getTTL(ttl)
     try {
       await this.db
         .insert(cache)
-        .values({ key: key, value: data, expiration: exp } as MysqlCache)
+        .values({ key, value: data, expiration: exp })
         .onDuplicateKeyUpdate({
           set: {
             value: data,
             expiration: exp
-          } as Partial<MysqlCache>
+          }
         })
       return true
     } catch (e) {
@@ -213,9 +334,11 @@ export class MysqlCacheAdapter implements Cache {
     return createCacheKeySlug(args)
   }
 
-  private readonly whereNotExpired: () => SQL = () => notBetween(cache.expiration, 0, currentTimeStamp())
+  private readonly databaseTime: () => SQL<number> = () => sql<number>`UNIX_TIMESTAMP(CURRENT_TIMESTAMP(3))`
 
-  private readonly whereExpired: () => SQL = () => between(cache.expiration, 0, currentTimeStamp())
+  private readonly whereNotExpired: () => SQL = () => notBetween(cache.expiration, 0, this.databaseTime())
+
+  private readonly whereExpired: () => SQL = () => between(cache.expiration, 0, this.databaseTime())
 
   private getTTL(ttl?: number): number {
     /* ttl (seconds):
@@ -225,12 +348,71 @@ export class MysqlCacheAdapter implements Cache {
     return ttl ? currentTimeStamp() + ttl : ttl === 0 ? this.infiniteExpiration : currentTimeStamp() + this.defaultTTL
   }
 
-  private serialize(data: any) {
-    if (data === undefined) {
-      // undefined values are not handled by JSON serialization
-      return null
+  private getDatabaseTTL(ttl?: number): number | SQL {
+    if (ttl === 0) return this.infiniteExpiration
+    return sql`CEIL(UNIX_TIMESTAMP(CURRENT_TIMESTAMP(3)) + ${ttl ?? this.defaultTTL})`
+  }
+
+  private async rotateRevision(tx: CacheTransaction, revisionKey: string, expectedRevision?: string | null): Promise<void> {
+    const revision = randomUUID()
+    if (expectedRevision === undefined) {
+      await tx
+        .insert(cache)
+        .values({ key: revisionKey, value: revision, expiration: this.infiniteExpiration })
+        .onDuplicateKeyUpdate({ set: { value: revision, expiration: this.infiniteExpiration } })
+      return
     }
-    return data
+    if (expectedRevision === null) {
+      try {
+        await tx.insert(cache).values({ key: revisionKey, value: revision, expiration: this.infiniteExpiration })
+      } catch (error) {
+        if (getMysqlError(error)?.code === 'ER_DUP_ENTRY') throw CACHE_REVISION_CONFLICT
+        throw error
+      }
+      return
+    }
+
+    const [result] = await tx
+      .update(cache)
+      .set({ value: revision, expiration: this.infiniteExpiration })
+      .where(and(eq(cache.key, revisionKey), eq(cache.value, expectedRevision)))
+    if (result.affectedRows !== 1) throw CACHE_REVISION_CONFLICT
+  }
+
+  private async applyKnownMutation(tx: CacheTransaction, mutation: CacheRevisionMutation): Promise<void> {
+    const condition = and(
+      eq(cache.key, mutation.key),
+      this.whereNotExpired(),
+      mutation.expectedLockId === undefined ? undefined : sql`JSON_UNQUOTE(JSON_EXTRACT(${cache.value}, '$.lockId')) = ${mutation.expectedLockId}`
+    )
+    if (mutation.type === 'delete') {
+      const [result] = await tx.delete(cache).where(condition)
+      if (result.affectedRows !== 1) throw CACHE_REVISION_CONFLICT
+      return
+    }
+
+    const [result] = await tx
+      .update(cache)
+      .set({ value: this.serialize(mutation.value), expiration: this.getDatabaseTTL(mutation.ttl) })
+      .where(condition)
+    if (result.affectedRows === 1) return
+
+    // An UPDATE that writes identical JSON and the same second-level TTL reports zero changed rows.
+    const [unchangedEntry] = await tx.select({ key: cache.key }).from(cache).where(condition).limit(1)
+    if (unchangedEntry === undefined) throw CACHE_REVISION_CONFLICT
+  }
+
+  private parseRevision(value: unknown): unknown {
+    if (typeof value !== 'string') return value
+    try {
+      return JSON.parse(value)
+    } catch {
+      return value
+    }
+  }
+
+  private serialize(data: any) {
+    return data ?? null
   }
 
   private toLikePattern(pattern: string): string {

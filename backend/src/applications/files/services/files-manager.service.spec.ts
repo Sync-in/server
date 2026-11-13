@@ -49,8 +49,9 @@ describe(FilesManager.name, () => {
     removeLock: Mock
     createOrRefresh: Mock
     getLocksByPath: Mock
+    getLocksForRemoval: Mock
+    removeLocks: Mock
     convertLockToFileLockProps: Mock
-    removeChildLocks: Mock
   }
 
   const user = { id: 7, login: 'john', tmpPath: '/data/users/john/tmp', preferences: { showHiddenFiles: false } } as any
@@ -160,8 +161,9 @@ describe(FilesManager.name, () => {
       removeLock: vi.fn().mockResolvedValue(true),
       createOrRefresh: vi.fn().mockResolvedValue([false, { key: 'lock-2' }]),
       getLocksByPath: vi.fn().mockResolvedValue([]),
-      convertLockToFileLockProps: vi.fn().mockReturnValue({ owner: { id: 7, login: 'john' }, app: 'Sync-in', isExclusive: true }),
-      removeChildLocks: vi.fn().mockResolvedValue(undefined)
+      getLocksForRemoval: vi.fn().mockResolvedValue([]),
+      removeLocks: vi.fn().mockResolvedValue(true),
+      convertLockToFileLockProps: vi.fn().mockReturnValue({ owner: { id: 7, login: 'john' }, app: 'Sync-in', isExclusive: true })
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -264,7 +266,7 @@ describe(FilesManager.name, () => {
       )
       expect(filesUtils.touchFile).toHaveBeenCalledExactlyOnceWith(tmpPath, 1710000000)
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpPath, space.realPath, true)
-      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith(space.dbFile, expect.objectContaining({ key: 'lock-1' }))
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: space.realPath })
     })
 
@@ -293,7 +295,7 @@ describe(FilesManager.name, () => {
         new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED)
       )
 
-      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith(space.dbFile, expect.objectContaining({ key: 'lock-1' }))
     })
 
     it('should short-circuit a known body above the remaining quota', async () => {
@@ -592,7 +594,10 @@ describe(FilesManager.name, () => {
         file,
         expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
       )
-      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-created')
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith(
+        expect.objectContaining({ path: 'folder/file.txt' }),
+        expect.objectContaining({ key: 'lock-created' })
+      )
       expect(emitSpy).toHaveBeenCalledWith('event', expect.objectContaining({ action: ACTION.ADD, rPath: dstFile }))
     })
 
@@ -1377,6 +1382,19 @@ describe(FilesManager.name, () => {
       expect(filesUtils.removeFiles).not.toHaveBeenCalled()
     })
 
+    it('should abort before filesystem deletion when the lock batch cannot be captured', async () => {
+      const space = makeTrashSpace({ realPath: '/data/users/john/trash/locked-directory' })
+      const error = new RangeError('Too many locks')
+      vi.mocked(filesUtils.isPathExists).mockResolvedValue(true)
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValue(true)
+      filesLockManager.getLocksForRemoval.mockRejectedValueOnce(error)
+
+      await expect(service.delete(user, space)).rejects.toBe(error)
+
+      expect(filesUtils.removeFiles).not.toHaveBeenCalled()
+      expect(filesLockManager.removeLocks).not.toHaveBeenCalled()
+    })
+
     it('should reject copying or moving the trash root', async () => {
       const trashRoot = makeTrashSpace({
         url: 'trash/personal',
@@ -1405,14 +1423,18 @@ describe(FilesManager.name, () => {
       })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
       vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(true)
-      filesLockManager.getLocksByPath.mockResolvedValueOnce([{ key: 'lk-1' }])
+      const capturedLock = { key: 'lk-1' }
+      filesLockManager.getLocksForRemoval.mockResolvedValueOnce([capturedLock])
       const emitSpy = vi.spyOn(FileEvent, 'emit')
 
       await service.delete(user, space)
 
       expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/trash/old.txt')
-      expect(filesLockManager.removeChildLocks).toHaveBeenCalledWith(user, space.dbFile)
-      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lk-1')
+      expect(filesLockManager.getLocksForRemoval).toHaveBeenCalledWith(user, space.dbFile, true)
+      expect(filesLockManager.getLocksForRemoval.mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(filesUtils.removeFiles).mock.invocationCallOrder[0]
+      )
+      expect(filesLockManager.removeLocks).toHaveBeenCalledWith(space.dbFile, [capturedLock])
       expect(filesQueries.deleteFiles).toHaveBeenCalledWith(space.dbFile, true, false)
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.DELETE_PERMANENTLY, rPath: '/data/users/john/trash/old.txt' })
     })
@@ -1591,7 +1613,7 @@ describe(FilesManager.name, () => {
         expect.any(String),
         DEPTH.RESOURCE
       )
-      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith(space.dbFile, expect.objectContaining({ key: 'lock-1' }))
       expect(fileEmitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/download.txt' })
     })
 
@@ -1612,7 +1634,7 @@ describe(FilesManager.name, () => {
       expect(http.axiosRef).toHaveBeenCalledTimes(1)
       expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
       expect(filesUtils.removeFiles).toHaveBeenCalledWith(tmpPath)
-      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith(space.dbFile, expect.objectContaining({ key: 'lock-1' }))
     })
 
     it('should cleanup partial file and skip ADD event when download write fails', async () => {
@@ -1636,7 +1658,7 @@ describe(FilesManager.name, () => {
 
       expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-download-direct-id-download.txt`)
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
-      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith(space.dbFile, expect.objectContaining({ key: 'lock-1' }))
       expect(fileEmitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/download.txt' })
     })
 
@@ -1660,7 +1682,7 @@ describe(FilesManager.name, () => {
       await expect(service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })).rejects.toBe(error)
 
       expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-download-direct-id-download.txt`)
-      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith(space.dbFile, expect.objectContaining({ key: 'lock-1' }))
       expect(fileEmitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/download.txt' })
     })
   })
@@ -1873,7 +1895,7 @@ describe(FilesManager.name, () => {
       expect(unzipSpy).toHaveBeenCalledWith('/data/users/john/files/archive.zip', extractionPath, undefined, undefined, expect.any(Function))
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(extractionPath, '/data/users/john/files/archive')
       expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, '/data/users/john/files/archive')
-      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith(space.dbFile, expect.objectContaining({ key: 'lock-1' }))
     })
 
     it('should extract tar formats with a zero quota treated as unlimited', async () => {
@@ -1927,7 +1949,7 @@ describe(FilesManager.name, () => {
 
       expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
       expect(filesUtils.removeFiles).not.toHaveBeenCalledWith('/data/users/john/files/archive')
-      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith(space.dbFile, expect.objectContaining({ key: 'lock-1' }))
       expect(emitSpy).not.toHaveBeenCalledWith('event', {
         user,
         space,
@@ -1949,7 +1971,7 @@ describe(FilesManager.name, () => {
 
       expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
       expect(filesUtils.removeFiles).not.toHaveBeenCalledWith('/data/users/john/files/archive')
-      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith(space.dbFile, expect.objectContaining({ key: 'lock-1' }))
     })
 
     it('should keep an existing destination when publishing extraction', async () => {
@@ -2005,13 +2027,18 @@ describe(FilesManager.name, () => {
       await expect(service.lock(user, space)).rejects.toEqual(new FileError(HttpStatus.BAD_REQUEST, 'Lock refresh must specify an existing resource'))
     })
 
-    it('unlock should remove owned lock and reject foreign lock', async () => {
+    it('unlock should remove owned locks and reject stale or foreign locks', async () => {
       const space = makeSpace()
       vi.mocked(filesUtils.isPathExists).mockResolvedValue(true)
       filesLockManager.getLocksByPath.mockResolvedValueOnce([{ key: 'l1', owner: { id: 7 } }])
 
       await service.unlock(user, space)
-      expect(filesLockManager.removeLock).toHaveBeenCalledWith('l1')
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith(space.dbFile, expect.objectContaining({ key: 'l1' }))
+
+      const staleLock = { key: 'stale', owner: { id: 7 } }
+      filesLockManager.getLocksByPath.mockResolvedValueOnce([staleLock])
+      filesLockManager.removeLock.mockResolvedValueOnce(false)
+      await expect(service.unlock(user, space)).rejects.toEqual(new LockConflict(staleLock as any, 'Conflicting lock'))
 
       filesLockManager.getLocksByPath.mockResolvedValueOnce([{ key: 'l2', owner: { id: 99, login: 'alice' } }])
       await expect(service.unlock(user, space)).rejects.toEqual(

@@ -170,9 +170,11 @@ export class CollaboraOnlineManager {
     switch (lockAction) {
       case COLLABORA_LOCK_ACTION.LOCK: {
         const reqLockToken = this.lockTokenFromHeaders(req)
-        const currentLock = await this.filesLockManager.isLockedWithToken(reqLockToken, req.space.dbFile.path)
+        const currentLock = await this.filesLockManager.isLockedWithToken(reqLockToken, req.space.dbFile)
         if (currentLock) {
-          await this.filesLockManager.refreshLockTimeout(currentLock, this.expiration)
+          if (!(await this.filesLockManager.refreshLockTimeout(req.space.dbFile, currentLock, this.expiration))) {
+            throw new HttpException('Lock not found', HttpStatus.CONFLICT)
+          }
           break
         }
         const [ok, fileLock] = await this.filesLockManager.create(
@@ -195,10 +197,8 @@ export class CollaboraOnlineManager {
       }
       case COLLABORA_LOCK_ACTION.UNLOCK: {
         const reqLockToken = this.lockTokenFromHeaders(req)
-        const currentLock = await this.filesLockManager.isLockedWithToken(reqLockToken, req.space.dbFile.path)
-        if (currentLock) {
-          await this.filesLockManager.removeLock(currentLock.key)
-        } else {
+        const currentLock = await this.filesLockManager.isLockedWithToken(reqLockToken, req.space.dbFile)
+        if (!currentLock || !(await this.filesLockManager.removeLock(req.space.dbFile, currentLock))) {
           throw new HttpException('Lock not found', HttpStatus.CONFLICT)
         }
         break
@@ -212,10 +212,8 @@ export class CollaboraOnlineManager {
       }
       case COLLABORA_LOCK_ACTION.REFRESH_LOCK: {
         const reqLockToken = this.lockTokenFromHeaders(req)
-        const currentLock = await this.filesLockManager.isLockedWithToken(reqLockToken, req.space.dbFile.path)
-        if (currentLock) {
-          await this.filesLockManager.refreshLockTimeout(currentLock, this.expiration)
-        } else {
+        const currentLock = await this.filesLockManager.isLockedWithToken(reqLockToken, req.space.dbFile)
+        if (!currentLock || !(await this.filesLockManager.refreshLockTimeout(req.space.dbFile, currentLock, this.expiration))) {
           throw new HttpException('Lock not found', HttpStatus.CONFLICT)
         }
         break

@@ -3,6 +3,7 @@ import { type FastifyReply } from 'fastify'
 import { toErrorMessage } from '../../../common/errors.js'
 import { currentTimeStamp, encodeUrl } from '../../../common/shared.js'
 import { HTTP_METHOD, HTTP_VERSION } from '../../applications.constants.js'
+import type { FileDBProps } from '../../files/interfaces/file-db-props.interface.js'
 import { FileLock, FileLockOptions } from '../../files/interfaces/file-lock.interface.js'
 import { FileError } from '../../files/models/file-error.js'
 import { LockConflict } from '../../files/models/file-lock-error.js'
@@ -82,7 +83,7 @@ export class WebDAVMethods {
         this.logger.warn({ tag: this.lock.name, msg: 'Lock refresh must specify an existing resource' })
         return res.status(HttpStatus.BAD_REQUEST).send('Lock refresh must specify an existing resource')
       }
-      return this.lockRefresh(req, res, req.space.dbFile.path)
+      return this.lockRefresh(req, res, req.space.dbFile)
     }
     if (!rExists) {
       if (!haveSpaceEnvPermissions(req.space, SPACE_OPERATION.ADD)) {
@@ -136,7 +137,7 @@ export class WebDAVMethods {
       return res.status(HttpStatus.NOT_FOUND).send(req.dav.url)
     }
 
-    const lock = await this.filesLockManager.isLockedWithToken(req.dav.lock!.token!, req.space.dbFile.path)
+    const lock = await this.filesLockManager.isLockedWithToken(req.dav.lock!.token!, req.space.dbFile)
     if (!lock) {
       this.logger.warn({ tag: this.unlock.name, msg: `Lock token does not exist or not match URL : ${req.dav.lock!.token}` })
       return DAV_ERROR_RES(HttpStatus.CONFLICT, PRECONDITION.LOCK_TOKEN_MISMATCH, res)
@@ -145,7 +146,9 @@ export class WebDAVMethods {
       return res.status(HttpStatus.FORBIDDEN).send('Token was created by another user')
     }
 
-    await this.filesLockManager.removeLock(lock.key)
+    if (!(await this.filesLockManager.removeLock(req.space.dbFile, lock))) {
+      return DAV_ERROR_RES(HttpStatus.CONFLICT, PRECONDITION.LOCK_TOKEN_MISMATCH, res)
+    }
     return res.status(HttpStatus.NO_CONTENT).send()
   }
 
@@ -449,7 +452,7 @@ export class WebDAVMethods {
       }
 
       if (condition.token) {
-        const token = await this.filesLockManager.getLockByToken(condition.token.value)
+        const token = await this.filesLockManager.getLockByToken(condition.token.value, dbFileFromSpace(req.user.id, lastSpaceEnv))
         const match = token && lastPath!.startsWith(token.options?.lockRoot as string)
         if (condition.token.mustMatch !== match) {
           if (!token) {
@@ -486,7 +489,7 @@ export class WebDAVMethods {
     return atLeastOneOk
   }
 
-  private async lockRefresh(req: FastifyDAVSpaceRequest, res: FastifyReply, dbFilePath: string) {
+  private async lockRefresh(req: FastifyDAVSpaceRequest, res: FastifyReply, dbFile: FileDBProps) {
     if (req.dav?.ifHeaders?.length !== 1) {
       this.logger.warn({ tag: this.lockRefresh.name, msg: 'Expected a lock token (only one lock may be refreshed at a time)' })
       return res.status(HttpStatus.BAD_REQUEST).send('Expected a lock token (only one lock may be refreshed at a time)')
@@ -500,7 +503,7 @@ export class WebDAVMethods {
       return res.status(HttpStatus.BAD_REQUEST).send('Unable to extract token')
     }
 
-    const lock = await this.filesLockManager.isLockedWithToken(token, dbFilePath)
+    const lock = await this.filesLockManager.isLockedWithToken(token, dbFile)
     if (!lock) {
       this.logger.warn({ tag: this.lockRefresh.name, msg: `Lock token does not exist or not match URL : ${token}` })
       return DAV_ERROR_RES(HttpStatus.PRECONDITION_FAILED, PRECONDITION.LOCK_TOKEN_MISMATCH, res)
@@ -510,7 +513,9 @@ export class WebDAVMethods {
       return res.status(HttpStatus.FORBIDDEN).send('Lock token does not match owner')
     }
 
-    await this.filesLockManager.refreshLockTimeout(lock, req.dav.lock!.timeout!)
+    if (!(await this.filesLockManager.refreshLockTimeout(dbFile, lock, req.dav.lock!.timeout!))) {
+      return DAV_ERROR_RES(HttpStatus.PRECONDITION_FAILED, PRECONDITION.LOCK_TOKEN_MISMATCH, res)
+    }
     const lockProp = LOCK_PROP([lock])
     return res.type(XML_CONTENT_TYPE).status(HttpStatus.OK).send(xmlBuild(lockProp))
   }

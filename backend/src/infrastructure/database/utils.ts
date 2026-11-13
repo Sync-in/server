@@ -67,6 +67,25 @@ export function dbParseJson(value: unknown): any {
   return typeof value === 'string' ? JSON.parse(value) : value
 }
 
+export function getMysqlError(error: unknown) {
+  // Drizzle wraps mysql2 failures in nested causes; preserve the first actual server error without depending on wrapper messages.
+  const visited = new Set<object>()
+  let current = error
+  while (current !== null && typeof current === 'object' && !visited.has(current)) {
+    visited.add(current)
+    if ('code' in current && typeof current.code === 'string') {
+      const errno = 'errno' in current && typeof current.errno === 'number' ? current.errno : undefined
+      const sqlState = 'sqlState' in current && typeof current.sqlState === 'string' ? current.sqlState : undefined
+      const sqlMessage = 'sqlMessage' in current && typeof current.sqlMessage === 'string' ? current.sqlMessage : undefined
+      if (current.code.startsWith('ER_') || errno !== undefined || sqlState !== undefined || sqlMessage !== undefined) {
+        return { code: current.code, errno, sqlState, sqlMessage }
+      }
+    }
+    current = 'cause' in current ? current.cause : undefined
+  }
+  return undefined
+}
+
 export function concatDistinctObjectsInArray(mustBeNotNull: SQLWrapper, object: Record<string, SQLWrapper | Record<string, SQLWrapper>>): SQL<any> {
   /* Concat json objects in array (only one nesting level is supported) */
   const expr: SQL<any> = sql`IFNULL(CONCAT('[', GROUP_CONCAT(DISTINCT IF(${mustBeNotNull} IS NULL, NULL, JSON_OBJECT(`

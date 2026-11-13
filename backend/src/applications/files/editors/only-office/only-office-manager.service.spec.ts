@@ -263,7 +263,7 @@ describe(OnlyOfficeManager.name, () => {
     const mockDocumentUrl = 'http://localhost:3000/onlyoffice/document.docx?md5=abc123&expires=1739400549&shardkey=-33120641&filename=document.docx'
 
     beforeEach(() => {
-      filesLockManager.removeLock.mockResolvedValue(undefined as never)
+      filesLockManager.removeLock.mockResolvedValue(true)
       filesLockManager.getLocksByPath.mockResolvedValue([])
       filesLockManager.isPathLocked.mockResolvedValue(false)
       cache.del.mockResolvedValue(true)
@@ -355,6 +355,17 @@ describe(OnlyOfficeManager.name, () => {
       expect(result).toEqual({ error: 0 })
     })
 
+    it('should keep the document key while an exact file lock remains', async () => {
+      jwtService.verifyAsync.mockResolvedValue({ status: 4, actions: [] })
+      filesLockManager.isPathLocked.mockResolvedValue(true)
+
+      const result = await service.callBack(mockUser, mockSpaceEnv, mockToken)
+
+      expect(result).toEqual({ error: 0 })
+      expect(filesLockManager.isPathLocked).toHaveBeenCalledWith(mockSpaceEnv.dbFile)
+      expect(cache.del).not.toHaveBeenCalled()
+    })
+
     it('should handle status 6 (force save)', async () => {
       await expectSuccessfulSaveCallback(mockDocumentUrl, { status: 6 })
     })
@@ -399,7 +410,7 @@ describe(OnlyOfficeManager.name, () => {
       const result = await service.callBack(mockUser, mockSpaceEnv, mockToken)
 
       expect(result).toEqual({ error: 0 })
-      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-key')
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith(mockSpaceEnv.dbFile, expect.objectContaining({ key: 'lock-key' }))
     })
 
     it('should return error when callback fails', async () => {
