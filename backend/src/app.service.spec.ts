@@ -14,11 +14,12 @@ vi.mock('@socket.io/cluster-adapter', () => ({
 }))
 
 describe(AppService.name, () => {
+  Logger.overrideLogger(['fatal'])
+
   let appService: AppService
 
   beforeAll(async () => {
     appService = new AppService()
-    Logger.overrideLogger(['fatal'])
   })
 
   it('should be defined', () => {

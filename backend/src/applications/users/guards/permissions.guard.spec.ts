@@ -8,6 +8,8 @@ import { generateUserTest } from '../utils/test.js'
 import { UserPermissionsGuard } from './permissions.guard.js'
 
 describe(UserPermissionsGuard.name, () => {
+  Logger.overrideLogger(['fatal'])
+
   let reflector: Reflector
   let permissionsGuard: UserPermissionsGuard
   let userTest: UserModel
@@ -17,7 +19,6 @@ describe(UserPermissionsGuard.name, () => {
     reflector = new Reflector()
     permissionsGuard = new UserPermissionsGuard(reflector)
     userTest = new UserModel(generateUserTest())
-    Logger.overrideLogger(['fatal'])
   })
 
   it('should be defined', () => {
