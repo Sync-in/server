@@ -25,6 +25,7 @@ import { filesFavorites } from '../../files/schemas/files-favorites.schema.js'
 import { childPathMatch, filePathSQL, files, replacePathPrefix } from '../../files/schemas/files.schema.js'
 import { links } from '../../links/schemas/links.schema.js'
 import type { SpaceBrowseDetails } from '../../spaces/interfaces/space-files.interface.js'
+import type { SpaceBrowserRootFile } from '../../spaces/interfaces/space-browser-root-file.interface.js'
 import { SpaceEnv } from '../../spaces/models/space-env.model.js'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema.js'
 import { spaceGroupConcatPermissions, spaces } from '../../spaces/schemas/spaces.schema.js'
@@ -652,7 +653,7 @@ export class SharesQueries {
     return r
   }
 
-  async shareRootFiles(user: UserModel, details: SpaceBrowseDetails): Promise<FileProps[]> {
+  async shareRootFiles(user: UserModel, details: SpaceBrowseDetails): Promise<SpaceBrowserRootFile[]> {
     if (!this.shareRootFilesQuery) {
       const shareSpaceRoot: any = alias(spacesRoots, 'shareSpaceRoot')
       const originOwner: any = alias(users, 'originOwner')
@@ -668,9 +669,10 @@ export class SharesQueries {
         mime: files.mime,
         originOwnerId: sql`${originOwner.id}`.as('originOwnerId'),
         originOwnerLogin: sql`${originOwner.login}`.as('originOwnerLogin'),
-        originSpaceId: sql`${spaces.id}`.as('originSpaceId'),
+        originSpaceId: sql`IF (${files.id} IS NULL, ${shareSpaceRoot.spaceId}, ${spaces.id})`.as('originSpaceId'),
         originSpaceAlias: sql`${spaces.alias}`.as('originSpaceAlias'),
-        originSpaceExternalRootId: sql`${files.spaceExternalRootId}`.as('originSpaceExternalRootId'),
+        originSpaceExternalRootId: sql`IF (${files.id} IS NULL,
+                                          ${shareSpaceRoot.id}, ${files.spaceExternalRootId})`.as('originSpaceExternalRootId'),
         originSpaceRootExternalPath: sql`IF (${spacesRoots.externalPath} IS NULL,
                                              ${shareSpaceRoot.externalPath}, ${spacesRoots.externalPath})`.as('originSpaceRootExternalPath'),
         rootId: sql`${shares.id}`.as('rootId'),
@@ -800,8 +802,14 @@ export class SharesQueries {
           clientName: unionAlias.syncPathClientName
         })}, '[]')`.mapWith(dbParseJson),
         hasComments: sql<boolean>`IF (${sql.placeholder('withDetails')}, ${fileHasCommentsSubquerySQL(unionAlias.id)}, 0)`.mapWith(Boolean),
-        isFavorite: isNotNull(filesFavorites.fileId).mapWith(Boolean)
-      } satisfies Partial<Record<keyof FileProps, any>>
+        isFavorite: isNotNull(filesFavorites.fileId).mapWith(Boolean),
+        dbFile: {
+          ownerId: sql`${unionAlias.originOwnerId}`.as('dbOwnerId'),
+          spaceId: sql`${unionAlias.originSpaceId}`.as('dbSpaceId'),
+          spaceExternalRootId: sql`${unionAlias.originSpaceExternalRootId}`.as('dbSpaceExternalRootId'),
+          shareExternalId: sql`${externalRootScope.storageShareId}`.as('dbShareExternalId')
+        }
+      } satisfies Partial<Record<keyof FileProps | 'dbFile', any>>
       this.shareRootFilesQuery = this.db
         .select(select)
         .from(unionAlias)
@@ -815,23 +823,28 @@ export class SharesQueries {
         )
         .leftJoin(externalRootScope.table, eq(externalRootScope.targetShareId, unionAlias.rootId))
         // Non-external shares do not need this scope. An external share must
-        // resolve one: otherwise omit it so `updateRootFile()` cannot mistake
-        // the share-record owner for the owner of its external storage.
+        // resolve one: otherwise omit it before building its lock target.
         .where(or(isNull(unionAlias.rootExternalPath), isNotNull(externalRootScope.storageShareId)))
         .groupBy(unionAlias.rootId)
         .prepare()
     }
-    const fps: FileProps[] = await this.shareRootFilesQuery.execute({
+    const roots = await this.shareRootFilesQuery.execute({
       userId: user.id,
       isAdmin: +user.isAdmin,
       withDetails: +!!details,
       withFavorites: +(details?.favorites ?? false),
       withSyncs: +(details?.syncs ?? false)
     })
-    for (const f of fps) {
-      f.root!.permissions = uniquePermissions(f.root!.permissions!)
-    }
-    return fps
+    return roots.map(({ dbFile, ...file }: any) => {
+      file.root.permissions = uniquePermissions(file.root.permissions)
+      return {
+        file,
+        dbFile:
+          dbFile?.ownerId != null || dbFile?.spaceId != null || dbFile?.shareExternalId != null
+            ? { ...dbFile, path: file.path || '.', inTrash: Boolean(file.inTrash) }
+            : null
+      }
+    })
   }
 
   @CacheDecorator()

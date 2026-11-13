@@ -8,8 +8,10 @@ import { DatabaseModule } from '../../../infrastructure/database/database.module
 import type { DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
 import { dbGetInsertedId } from '../../../infrastructure/database/utils.js'
 import { files } from '../../files/schemas/files.schema.js'
+import type { FilesQueries } from '../../files/services/files-queries.service.js'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema.js'
 import { spaces } from '../../spaces/schemas/spaces.schema.js'
+import { SpacesQueries } from '../../spaces/services/spaces-queries.service.js'
 import type { UserModel } from '../../users/models/user.model.js'
 import { users } from '../../users/schemas/users.schema.js'
 import { sharesMembers } from '../schemas/shares-members.schema.js'
@@ -20,6 +22,7 @@ describe('Shares queries (e2e)', () => {
   let module: TestingModule
   let db: DBSchema
   let sharesQueries: SharesQueries
+  let spacesQueries: SpacesQueries
   let actorId: number
   let ownerId: number
   let externalRootId: number
@@ -27,6 +30,7 @@ describe('Shares queries (e2e)', () => {
   let grandchildId: number
   let internalRootId: number
   let pathSpaceId: number
+  let externalSpaceRootId: number
   let spaceFileShareId: number
   let movedSpaceFileShareId: number
   let parentFileShareId: number
@@ -42,6 +46,7 @@ describe('Shares queries (e2e)', () => {
     unauthorizedChild: `e2e-ext-unauthorized-${suffix}`,
     internalRoot: `e2e-internal-root-${suffix}`,
     malformedChild: `e2e-ext-malformed-${suffix}`,
+    externalSpaceRoot: `e2e-space-root-${suffix}`,
     spaceFile: `e2e-space-file-${suffix}`,
     parentFile: `e2e-parent-file-${suffix}`,
     childFile: `e2e-child-file-${suffix}`,
@@ -65,6 +70,7 @@ describe('Shares queries (e2e)', () => {
     module.useLogger(['fatal'])
     db = await module.resolve<DBSchema>(DB_TOKEN_PROVIDER)
     sharesQueries = new SharesQueries(db, noCache)
+    spacesQueries = new SpacesQueries(db, noCache, {} as FilesQueries)
 
     actorId = dbGetInsertedId(
       await db.insert(users).values({
@@ -139,6 +145,19 @@ describe('Shares queries (e2e)', () => {
     const pathSpaceRootId = dbGetInsertedId(
       await db.insert(spacesRoots).values({ spaceId: pathSpaceId, fileId: pathRootFileId, alias: 'anchor', name: 'Anchor' })
     )
+    externalSpaceRootId = dbGetInsertedId(
+      await db.insert(spacesRoots).values({ spaceId: pathSpaceId, alias: 'external', name: 'External', externalPath: `${externalPath}/space-root` })
+    )
+    const externalSpaceRootShareId = dbGetInsertedId(
+      await db.insert(shares).values({
+        ownerId,
+        spaceId: pathSpaceId,
+        spaceRootId: externalSpaceRootId,
+        alias: aliases.externalSpaceRoot,
+        name: 'External space root share'
+      })
+    )
+    await db.insert(sharesMembers).values({ shareId: externalSpaceRootShareId, userId: actorId, permissions: 'a:d:m' })
     spaceFileShareId = dbGetInsertedId(
       await db.insert(shares).values({
         ownerId,
@@ -250,11 +269,54 @@ describe('Shares queries (e2e)', () => {
 
   it('uses the same external root scope without replacing each listed share permissions', async () => {
     const roots = await sharesQueries.shareRootFiles({ id: actorId, isAdmin: false } as UserModel, null)
-    const child = roots.find((root) => root.root!.alias === aliases.child)
-    const grandchild = roots.find((root) => root.root!.alias === aliases.grandchild)
+    const child = roots.find(({ file }) => file.root!.alias === aliases.child)
+    const grandchild = roots.find(({ file }) => file.root!.alias === aliases.grandchild)
 
-    expect(child).toMatchObject({ origin: { shareExternalId: externalRootId }, root: { permissions: 'd:m' } })
-    expect(grandchild).toMatchObject({ origin: { shareExternalId: externalRootId }, root: { permissions: 'm' } })
+    expect(child).toMatchObject({
+      file: { origin: { shareExternalId: externalRootId }, root: { permissions: 'd:m' } },
+      dbFile: { shareExternalId: externalRootId, path: '.', inTrash: false }
+    })
+    expect(grandchild).toMatchObject({
+      file: { origin: { shareExternalId: externalRootId }, root: { permissions: 'm' } },
+      dbFile: { shareExternalId: externalRootId, path: '.', inTrash: false }
+    })
+  })
+
+  it('projects the storage namespace of a shared external space root', async () => {
+    const roots = await sharesQueries.shareRootFiles({ id: actorId, isAdmin: false } as UserModel, null)
+    const externalSpaceRoot = roots.find(({ file }) => file.root!.alias === aliases.externalSpaceRoot)
+
+    expect(externalSpaceRoot).toMatchObject({
+      file: {
+        path: '',
+        origin: { ownerId: null, spaceId: pathSpaceId, spaceExternalRootId: externalSpaceRootId, shareExternalId: null }
+      },
+      dbFile: {
+        ownerId: null,
+        spaceId: pathSpaceId,
+        spaceExternalRootId: externalSpaceRootId,
+        shareExternalId: null,
+        path: '.',
+        inTrash: false
+      }
+    })
+  })
+
+  it('projects the lock target of an external space root without a file', async () => {
+    const roots = await spacesQueries.spaceRootFiles(actorId, pathSpaceId, null)
+    const externalSpaceRoot = roots.find(({ file }) => file.root!.id === externalSpaceRootId)
+
+    expect(externalSpaceRoot).toMatchObject({
+      file: { id: null, path: null, root: { id: externalSpaceRootId } },
+      dbFile: {
+        ownerId: null,
+        spaceId: pathSpaceId,
+        spaceExternalRootId: externalSpaceRootId,
+        shareExternalId: null,
+        path: '.',
+        inTrash: false
+      }
+    })
   })
 
   it('does not inherit access from an external parent without a child membership', async () => {
@@ -265,7 +327,7 @@ describe('Shares queries (e2e)', () => {
     await expect(sharesQueries.permissions(actorId, aliases.malformedChild)).resolves.toBeUndefined()
 
     const roots = await sharesQueries.shareRootFiles({ id: actorId, isAdmin: false } as UserModel, null)
-    expect(roots.some((root) => root.root!.alias === aliases.malformedChild)).toBe(false)
+    expect(roots.some(({ file }) => file.root!.alias === aliases.malformedChild)).toBe(false)
   })
 
   it('resolves file paths literally from space and parent-share roots', async () => {

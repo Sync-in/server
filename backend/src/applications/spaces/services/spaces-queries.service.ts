@@ -40,6 +40,7 @@ import { usersGroups } from '../../users/schemas/users-groups.schema.js'
 import { userFullNameSQL, users } from '../../users/schemas/users.schema.js'
 import { SPACE_ROLE } from '../constants/spaces.js'
 import type { SpaceMemberDto } from '../dto/create-or-update-space.dto.js'
+import type { SpaceBrowserRootFile } from '../interfaces/space-browser-root-file.interface.js'
 import type { SpaceMemberUpdate } from '../interfaces/space-diff.interface.js'
 import type { GetOrCreateSpaceFileOptions, SpaceBrowseDetails } from '../interfaces/space-files.interface.js'
 import { SpaceEnv } from '../models/space-env.model.js'
@@ -251,7 +252,7 @@ export class SpacesQueries {
     }
   }
 
-  async spaceRootFiles(userId: number, spaceId: number, details: SpaceBrowseDetails): Promise<FileProps[]> {
+  async spaceRootFiles(userId: number, spaceId: number, details: SpaceBrowseDetails): Promise<SpaceBrowserRootFile[]> {
     if (!this.spaceRootFilesQuery) {
       const select: any = {
         id: files.id,
@@ -282,8 +283,14 @@ export class SpacesQueries {
           clientName: sql`JSON_VALUE(${syncClients.info}, '$.node')`
         })}, '[]')`.mapWith(dbParseJson),
         hasComments: sql<boolean>`IF (${sql.placeholder('withDetails')}, ${fileHasCommentsSubquerySQL(files.id)}, 0)`.mapWith(Boolean),
-        isFavorite: isNotNull(filesFavorites.fileId).mapWith(Boolean)
-      } satisfies Partial<Record<keyof FileProps, any>>
+        isFavorite: isNotNull(filesFavorites.fileId).mapWith(Boolean),
+        dbFile: {
+          ownerId: sql`${files.ownerId}`.as('dbOwnerId'),
+          spaceId: sql`IF (${files.id} IS NULL, ${spacesRoots.spaceId}, ${files.spaceId})`.as('dbSpaceId'),
+          spaceExternalRootId: sql`IF (${files.id} IS NULL, ${spacesRoots.id}, ${files.spaceExternalRootId})`.as('dbSpaceExternalRootId'),
+          shareExternalId: sql`${files.shareExternalId}`.as('dbShareExternalId')
+        }
+      } satisfies Partial<Record<keyof FileProps | 'dbFile', any>>
       this.spaceRootFilesQuery = this.db
         .select(select)
         .from(spacesRoots)
@@ -318,13 +325,20 @@ export class SpacesQueries {
         .groupBy(files.id, spacesRoots.id)
         .prepare()
     }
-    return this.spaceRootFilesQuery.execute({
+    const roots = await this.spaceRootFilesQuery.execute({
       userId,
       spaceId,
       withDetails: +!!details,
       withFavorites: +(details?.favorites ?? false),
       withSyncs: +(details?.syncs ?? false)
     })
+    return roots.map(({ dbFile, ...file }: any) => ({
+      file,
+      dbFile:
+        dbFile?.ownerId != null || dbFile?.spaceId != null || dbFile?.shareExternalId != null
+          ? { ...dbFile, path: file.path || '.', inTrash: Boolean(file.inTrash) }
+          : null
+    }))
   }
 
   async getSpaceRoots(spaceId: number, userId?: number): Promise<SpaceRootProps[]> {

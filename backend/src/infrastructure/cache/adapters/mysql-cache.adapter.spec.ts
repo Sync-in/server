@@ -181,8 +181,25 @@ describe(MysqlCacheAdapter.name, () => {
 
     await expect(createAdapter(transaction).mutateRevision(command)).resolves.toBe(true)
     expect(transactionState.tx.select).not.toHaveBeenCalled()
-    expect(transactionState.onDuplicateKeyUpdate).toHaveBeenCalledOnce()
+    expect(transactionState.tx.update).toHaveBeenCalledOnce()
+    expect(transactionState.updateWhere).toHaveBeenCalledOnce()
+    expect(transactionState.tx.insert).not.toHaveBeenCalled()
     expect(transactionState.deleteWhere).toHaveBeenCalledOnce()
+  })
+
+  it('returns false without mutating when the revision sidecar is missing', async () => {
+    const transactionState = createTransaction([], 0)
+    const transaction = vi.fn(async (callback: (tx: any) => Promise<void>) => callback(transactionState.tx))
+
+    await expect(
+      createAdapter(transaction).mutateRevision({
+        revisionKey: 'locks:revision',
+        mutations: [{ type: 'delete', key: 'lock:a', expect: 'present', expectedLockId: 'incarnation-a' }]
+      })
+    ).resolves.toBe(false)
+    expect(transactionState.tx.update).toHaveBeenCalledOnce()
+    expect(transactionState.tx.delete).not.toHaveBeenCalled()
+    expect(transactionState.tx.insert).not.toHaveBeenCalled()
   })
 
   it('rolls back a direct mutation whose lock incarnation is stale', async () => {
@@ -195,17 +212,22 @@ describe(MysqlCacheAdapter.name, () => {
         mutations: [{ type: 'delete', key: 'lock:a', expect: 'present', expectedLockId: 'stale-incarnation' }]
       })
     ).resolves.toBe(false)
-    expect(transactionState.onDuplicateKeyUpdate).toHaveBeenCalledOnce()
+    expect(transactionState.tx.update).toHaveBeenCalledOnce()
+    expect(transactionState.tx.insert).not.toHaveBeenCalled()
   })
 
   it('retries a deadlock once', async () => {
     const deadlock = new Error('query failed', { cause: Object.assign(new Error('deadlock'), { code: 'ER_LOCK_DEADLOCK' }) })
     const transaction = vi.fn().mockRejectedValueOnce(deadlock).mockResolvedValueOnce(undefined)
+    const adapter = createAdapter(transaction)
+    const warn = vi.spyOn((adapter as any).logger, 'warn').mockImplementation(() => undefined)
 
-    await expect(createAdapter(transaction).commitRevision({ revisionKey: 'locks:revision', expectedRevision: null, mutations: [] })).resolves.toBe(
-      true
-    )
+    await expect(adapter.commitRevision({ revisionKey: 'locks:revision', expectedRevision: null, mutations: [] })).resolves.toBe(true)
     expect(transaction).toHaveBeenCalledTimes(2)
+    expect(warn).toHaveBeenCalledWith({
+      tag: 'commitRevisionMutations',
+      msg: 'Retrying locks:revision after a database deadlock'
+    })
   })
 
   it('propagates a deadlock after the single retry is exhausted', async () => {

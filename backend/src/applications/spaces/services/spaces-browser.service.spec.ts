@@ -19,6 +19,13 @@ import { SpacesQueries } from './spaces-queries.service.js'
 
 describe(SpacesBrowser.name, () => {
   let spacesBrowserService: SpacesBrowser
+  const directoryStats = {
+    ino: 1,
+    size: 0,
+    birthtime: new Date(0),
+    mtime: new Date(0),
+    isDirectory: () => true
+  } as any
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -114,6 +121,106 @@ describe(SpacesBrowser.name, () => {
     expect(parseDB).toHaveBeenCalledWith(user.id, space, details)
     expect(parseRootFiles).toHaveBeenCalledWith(user, space, details)
     expect(parseDB.mock.calls[0][2]).toBe(parseRootFiles.mock.calls[0][2])
+  })
+
+  it('keeps an external root without a lock target enabled', async () => {
+    vi.spyOn(fs, 'stat').mockResolvedValue(directoryStats)
+    const getLocksByPath = vi.spyOn((spacesBrowserService as any).filesLockManager, 'getLocksByPath')
+
+    const result = await (spacesBrowserService as any).updateRootFile(
+      {
+        file: {
+          id: null,
+          path: null,
+          root: {
+            id: 1,
+            alias: 'downloads',
+            name: 'Downloads',
+            externalPath: '/storage/downloads',
+            permissions: 'a:d:m',
+            owner: { id: null, login: null, email: null, fullName: null }
+          },
+          shares: [],
+          syncs: [],
+          hasComments: false,
+          isFavorite: false
+        },
+        dbFile: null
+      },
+      { syncs: false, favorites: false }
+    )
+
+    expect(getLocksByPath).not.toHaveBeenCalled()
+    expect(result).toMatchObject({
+      name: 'Downloads',
+      root: { id: 1, alias: 'downloads', enabled: true }
+    })
+  })
+
+  it('does not use a share owner as its file lock namespace', async () => {
+    vi.spyOn(fs, 'stat').mockResolvedValue(directoryStats)
+    const getLocksByPath = vi.spyOn((spacesBrowserService as any).filesLockManager, 'getLocksByPath')
+
+    await (spacesBrowserService as any).updateRootFile(
+      {
+        file: {
+          path: '',
+          origin: {
+            ownerId: null,
+            ownerLogin: null,
+            spaceId: null,
+            spaceAlias: null,
+            spaceExternalRootId: null,
+            spaceRootExternalPath: '/storage/downloads',
+            shareExternalId: null
+          },
+          root: {
+            id: 1,
+            alias: 'downloads',
+            name: 'Downloads',
+            permissions: 'a:d:m',
+            owner: { id: 42, login: 'share-owner', email: null, fullName: null }
+          }
+        },
+        dbFile: null
+      },
+      { syncs: false, favorites: false }
+    )
+
+    expect(getLocksByPath).not.toHaveBeenCalled()
+  })
+
+  it('uses the query-provided external space root lock target', async () => {
+    vi.spyOn(fs, 'stat').mockResolvedValue(directoryStats)
+    const getLocksByPath = vi.spyOn((spacesBrowserService as any).filesLockManager, 'getLocksByPath').mockResolvedValue([])
+
+    await (spacesBrowserService as any).updateRootFile(
+      {
+        file: {
+          path: '',
+          origin: {
+            ownerId: null,
+            ownerLogin: null,
+            spaceId: null,
+            spaceAlias: null,
+            spaceExternalRootId: null,
+            spaceRootExternalPath: '/storage/downloads',
+            shareExternalId: null
+          },
+          root: {
+            id: 1,
+            alias: 'downloads',
+            name: 'Downloads',
+            permissions: 'a:d:m',
+            owner: { id: 42, login: 'share-owner', email: null, fullName: null }
+          }
+        },
+        dbFile: { spaceId: 7, spaceExternalRootId: 11, path: '.', inTrash: false }
+      },
+      { syncs: false, favorites: false }
+    )
+
+    expect(getLocksByPath).toHaveBeenCalledWith({ spaceId: 7, spaceExternalRootId: 11, path: '.', inTrash: false })
   })
 
   it('always hides internal temporary entries from filesystem browsing', async () => {

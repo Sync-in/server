@@ -2,7 +2,6 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { toErrorMessage } from '../../../common/errors.js'
-import { FileDBProps } from '../../files/interfaces/file-db-props.interface.js'
 import { FileLock } from '../../files/interfaces/file-lock.interface.js'
 import { FileProps } from '../../files/interfaces/file-props.interface.js'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service.js'
@@ -12,6 +11,7 @@ import { FileError } from '../../files/models/file-error.js'
 import { dirName, fileName, getProps, isInternalTemporaryEntry } from '../../files/utils/files.js'
 import { SharesQueries } from '../../shares/services/shares-queries.service.js'
 import { UserModel } from '../../users/models/user.model.js'
+import type { SpaceBrowserRootFile } from '../interfaces/space-browser-root-file.interface.js'
 import { SpaceBrowseDetails, SpaceFiles } from '../interfaces/space-files.interface.js'
 import { SpaceEnv } from '../models/space-env.model.js'
 import { IsRealPathIsDirAndExists, realPathFromRootFile } from '../utils/paths.js'
@@ -76,10 +76,12 @@ export class SpacesBrowser {
   private async parseRootFiles(user: UserModel, space: SpaceEnv, details: SpaceBrowseDetails): Promise<FileProps[]> {
     if (space.inFilesRepository && space.id && !space.root!.alias) {
       // list roots in the space
-      return Promise.all((await this.spacesQueries.spaceRootFiles(user.id, space.id, details)).map((f) => this.updateRootFile(f, details)))
+      return Promise.all(
+        (await this.spacesQueries.spaceRootFiles(user.id, space.id, details)).map((rootFile) => this.updateRootFile(rootFile, details))
+      )
     } else if (space.inSharesList) {
       // list shares as roots
-      return Promise.all((await this.sharesQueries.shareRootFiles(user, details)).map((f) => this.updateRootFile(f, details)))
+      return Promise.all((await this.sharesQueries.shareRootFiles(user, details)).map((rootFile) => this.updateRootFile(rootFile, details)))
     }
     return []
   }
@@ -130,53 +132,40 @@ export class SpacesBrowser {
     }
   }
 
-  private async updateRootFile(f: FileProps, details: SpaceBrowseDetails): Promise<FileProps> {
-    const originalPath = f.path
+  private async updateRootFile({ file, dbFile }: SpaceBrowserRootFile, details: SpaceBrowseDetails): Promise<FileProps> {
     try {
-      const realPath = realPathFromRootFile(f)
-      const root = f.root
+      const realPath = realPathFromRootFile(file)
+      const root = file.root
       if (!realPath || !root?.name) {
         throw new Error('Root file path not found')
       }
-      f.path = root.name
-      const fileProps: FileProps = await getProps(realPath, f.path)
+      file.path = root.name
+      const fileProps: FileProps = await getProps(realPath, file.path)
       if (details) {
-        fileProps.shares = f.shares
-        fileProps.hasComments = f.hasComments
+        fileProps.shares = file.shares
+        fileProps.hasComments = file.hasComments
       }
       if (details?.favorites) {
-        fileProps.isFavorite = f.isFavorite
+        fileProps.isFavorite = file.isFavorite
       }
       if (details?.syncs) {
-        fileProps.syncs = f.syncs
+        fileProps.syncs = file.syncs
       }
-      if (details && (f.origin || root.owner)) {
-        // `f.origin` is used for shares
-        // `f.root.owner` is used for anchored files in spaces
-        // all other files are handled in the `enrichWithLocks` function
-        const dbFile: FileDBProps = {
-          ...(f.origin?.spaceId
-            ? { spaceId: f.origin.spaceId, ...(f.origin.spaceExternalRootId ? { spaceExternalRootId: f.origin.spaceExternalRootId } : {}) }
-            : f.origin?.shareExternalId
-              ? { shareExternalId: f.origin.shareExternalId }
-              : { ownerId: f.origin?.ownerId ?? root.owner.id }),
-          path: originalPath,
-          inTrash: f.inTrash ?? false
-        }
+      if (details && dbFile) {
         const locks = await this.filesLockManager.getLocksByPath(dbFile)
         if (locks.length > 0) {
           fileProps.lock = this.filesLockManager.convertLockToFileLockProps(locks[0])
         }
       }
-      // `owner.id` is only used for lock details
+      // The root owner id is internal metadata and is not exposed in browse results.
       delete root.owner.id
-      // check `f.id`; it can be null for external roots
-      if (f.id) {
+      // check `file.id`; it can be null for external roots
+      if (file.id) {
         // todo: check if a db file referenced under external roots have an id and correctly parsed here
         this.filesQueries
-          .compareAndUpdateFileProps(f, fileProps)
+          .compareAndUpdateFileProps(file, fileProps)
           .catch((e: Error) => this.logger.error({ tag: this.updateRootFile.name, msg: toErrorMessage(e) }))
-        fileProps.id = f.id
+        fileProps.id = file.id
       }
       fileProps.root = {
         id: root.id,
@@ -188,8 +177,8 @@ export class SpacesBrowser {
       }
       return fileProps
     } catch (e) {
-      this.logger.error({ tag: this.updateRootFile.name, msg: `${JSON.stringify(f)} - ${toErrorMessage(e)}` })
-      return { ...f, name: fileName(f.path), path: dirName(f.path), root: { ...f.root, enabled: false } } as FileProps
+      this.logger.error({ tag: this.updateRootFile.name, msg: `${JSON.stringify(file)} - ${toErrorMessage(e)}` })
+      return { ...file, name: fileName(file.path), path: dirName(file.path), root: { ...file.root, enabled: false } } as FileProps
     }
   }
 

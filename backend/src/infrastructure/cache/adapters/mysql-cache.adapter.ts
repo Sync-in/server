@@ -294,7 +294,10 @@ export class MysqlCacheAdapter implements Cache {
         return true
       } catch (error) {
         if (error === CACHE_REVISION_CONFLICT) return false
-        if (getMysqlError(error)?.code === this.retryableRevisionErrorCode && attempt < this.revisionDeadlockRetries) continue
+        if (getMysqlError(error)?.code === this.retryableRevisionErrorCode && attempt < this.revisionDeadlockRetries) {
+          this.logger.warn({ tag: this.commitRevisionMutations.name, msg: `Retrying ${command.revisionKey} after a database deadlock` })
+          continue
+        }
         throw error
       }
     }
@@ -355,13 +358,6 @@ export class MysqlCacheAdapter implements Cache {
 
   private async rotateRevision(tx: CacheTransaction, revisionKey: string, expectedRevision?: string | null): Promise<void> {
     const revision = randomUUID()
-    if (expectedRevision === undefined) {
-      await tx
-        .insert(cache)
-        .values({ key: revisionKey, value: revision, expiration: this.infiniteExpiration })
-        .onDuplicateKeyUpdate({ set: { value: revision, expiration: this.infiniteExpiration } })
-      return
-    }
     if (expectedRevision === null) {
       try {
         await tx.insert(cache).values({ key: revisionKey, value: revision, expiration: this.infiniteExpiration })
@@ -372,10 +368,9 @@ export class MysqlCacheAdapter implements Cache {
       return
     }
 
-    const [result] = await tx
-      .update(cache)
-      .set({ value: revision, expiration: this.infiniteExpiration })
-      .where(and(eq(cache.key, revisionKey), eq(cache.value, expectedRevision)))
+    // A known-lock mutation requires the permanent sidecar to exist; UPDATE avoids the insert path and its gap locks.
+    const condition = expectedRevision === undefined ? eq(cache.key, revisionKey) : and(eq(cache.key, revisionKey), eq(cache.value, expectedRevision))
+    const [result] = await tx.update(cache).set({ value: revision, expiration: this.infiniteExpiration }).where(condition)
     if (result.affectedRows !== 1) throw CACHE_REVISION_CONFLICT
   }
 
