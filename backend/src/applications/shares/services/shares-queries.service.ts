@@ -1,7 +1,7 @@
 import { toErrorMessage } from '../../../common/errors.js'
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { and, count, eq, inArray, isNotNull, isNull, ne, or, SQL, sql } from 'drizzle-orm'
-import { alias, MySqlSelectDynamic, type SelectedFields, union } from 'drizzle-orm/mysql-core'
+import { alias, MySqlSelectDynamic, type SelectedFields, union, unionAll } from 'drizzle-orm/mysql-core'
 import { MySql2PreparedQuery, MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { ACTION } from '../../../common/constants.js'
 import { type ConvertedDiffUpdate, uniquePermissions } from '../../../common/functions.js'
@@ -63,6 +63,7 @@ export class SharesQueries {
   private shareWithMembersQuery: MySql2PreparedQuery<any> | null = null
   private sharePermissionsQuery: MySql2PreparedQuery<any> | null = null
   private shareRootFilesQuery: MySql2PreparedQuery<any> | null = null
+  private shareRootFilesWithDetailsQuery: MySql2PreparedQuery<any> | null = null
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
@@ -654,10 +655,11 @@ export class SharesQueries {
   }
 
   async shareRootFiles(user: UserModel, details: SpaceBrowseDetails): Promise<SpaceBrowserRootFile[]> {
-    if (!this.shareRootFilesQuery) {
+    const withDetails = !!details
+    let query = withDetails ? this.shareRootFilesWithDetailsQuery : this.shareRootFilesQuery
+    if (!query) {
       const shareSpaceRoot: any = alias(spacesRoots, 'shareSpaceRoot')
       const originOwner: any = alias(users, 'originOwner')
-      const childShare: any = alias(shares, 'childShare')
       const selectUnion = {
         id: files.id,
         path: sql`IF (${files.id} IS NOT NULL, ${filePathSQL(files)}, '')`.as('path'),
@@ -686,13 +688,9 @@ export class SharesQueries {
         rootOwnerLogin: sql`${users.login}`.as('rootOwnerLogin'),
         rootOwnerEmail: sql`${users.email}`.as('rootOwnerEmail'),
         rootOwnerFullName: userFullNameSQL(users).as('rootOwnerFullName'),
-        childShareId: sql`${childShare.id}`.as('childShareId'),
-        childShareAlias: sql`${childShare.alias}`.as('childShareAlias'),
-        childShareName: sql`${childShare.name}`.as('childShareName'),
-        childShareType: sql`${childShare.type}`.as('childShareType'),
-        syncPathId: sql`${syncPaths.id}`.as('syncPathId'),
-        syncPathClientId: sql`${syncClients.id}`.as('syncPathClientId'),
-        syncPathClientName: sql`JSON_VALUE(${syncClients.info}, '$.node')`.as('syncPathClientName')
+        sourceFileId: sql`${shares.fileId}`.as('sourceFileId'),
+        sourceSpaceId: sql`${shares.spaceId}`.as('sourceSpaceId'),
+        sourceSpaceRootId: sql`${shares.spaceRootId}`.as('sourceSpaceRootId')
       } satisfies SelectedFields
       const filters: SQL[] = [or(isNull(shares.ownerId), ne(shares.ownerId, sql.placeholder('userId')))!]
       const externalShareFilters = [...filters, isNotNull(shares.externalPath)]
@@ -725,38 +723,10 @@ export class SharesQueries {
           )
           .leftJoin(spaces, and(isNull(shares.externalPath), isNotNull(files.spaceId), eq(spaces.id, files.spaceId)))
           .leftJoin(spacesRoots, and(isNull(shares.externalPath), eq(spacesRoots.id, files.spaceExternalRootId)))
-          .leftJoin(
-            childShare,
-            and(
-              eq(sql.placeholder('withDetails'), sql`1`),
-              eq(childShare.ownerId, sql.placeholder('userId')),
-              eq(childShare.parentId, shares.id),
-              or(
-                and(isNull(childShare.externalPath), isNotNull(childShare.fileId), eq(childShare.fileId, shares.fileId)),
-                and(
-                  isNull(childShare.externalPath),
-                  isNull(childShare.fileId),
-                  eq(childShare.spaceId, shares.spaceId),
-                  eq(childShare.spaceRootId, shares.spaceRootId)
-                ),
-                and(isNotNull(childShare.externalPath), isNull(childShare.fileId), eq(shares.externalPath, childShare.externalPath))
-              )
-            )
-          )
-          .leftJoin(syncClients, and(eq(sql.placeholder('withSyncs'), sql`1`), eq(syncClients.ownerId, sql.placeholder('userId'))))
-          .leftJoin(
-            syncPaths,
-            and(
-              eq(sql.placeholder('withSyncs'), sql`1`),
-              eq(syncPaths.clientId, syncClients.id),
-              isNull(syncPaths.fileId),
-              eq(syncPaths.shareId, shares.id)
-            )
-          )
           .leftJoin(users, eq(users.id, shares.ownerId))
           .leftJoin(originOwner, and(isNull(shares.externalPath), eq(originOwner.id, files.ownerId)))
       }
-      const unionAlias = union(fromUser, fromGroups, fromAdminShares).as('union_alias')
+      const unionAlias = unionAll(fromUser, fromGroups, fromAdminShares).as('union_alias')
       const select: any = {
         id: unionAlias.id,
         path: unionAlias.path,
@@ -790,19 +760,50 @@ export class SharesQueries {
             fullName: unionAlias.rootOwnerFullName
           } satisfies Owner
         },
-        shares: sql`IF (${sql.placeholder('withDetails')}, ${concatDistinctObjectsInArray(unionAlias.childShareId, {
-          id: unionAlias.childShareId,
-          alias: unionAlias.childShareAlias,
-          name: unionAlias.childShareName,
-          type: unionAlias.childShareType
-        })}, '[]')`.mapWith(dbParseJson),
-        syncs: sql`IF (${sql.placeholder('withSyncs')}, ${concatDistinctObjectsInArray(unionAlias.syncPathId, {
-          id: unionAlias.syncPathId,
-          clientId: unionAlias.syncPathClientId,
-          clientName: unionAlias.syncPathClientName
-        })}, '[]')`.mapWith(dbParseJson),
-        hasComments: sql<boolean>`IF (${sql.placeholder('withDetails')}, ${fileHasCommentsSubquerySQL(unionAlias.id)}, 0)`.mapWith(Boolean),
-        isFavorite: isNotNull(filesFavorites.fileId).mapWith(Boolean),
+        shares: withDetails
+          ? sql`(SELECT ${concatDistinctObjectsInArray(shares.id, {
+              id: shares.id,
+              alias: shares.alias,
+              name: shares.name,
+              type: shares.type
+            })}
+                 FROM ${shares}
+                 WHERE ${and(
+                   eq(shares.ownerId, sql.placeholder('userId')),
+                   eq(shares.parentId, unionAlias.rootId),
+                   or(
+                     and(isNull(shares.externalPath), isNotNull(shares.fileId), eq(shares.fileId, unionAlias.sourceFileId)),
+                     and(
+                       isNull(shares.externalPath),
+                       isNull(shares.fileId),
+                       eq(shares.spaceId, unionAlias.sourceSpaceId),
+                       eq(shares.spaceRootId, unionAlias.sourceSpaceRootId)
+                     ),
+                     and(isNotNull(shares.externalPath), isNull(shares.fileId), eq(shares.externalPath, unionAlias.rootExternalPath))
+                   )
+                 )})`.mapWith(dbParseJson)
+          : sql`JSON_ARRAY()`.mapWith(dbParseJson),
+        syncs: withDetails
+          ? sql`IF (${sql.placeholder('withSyncs')},
+                   (SELECT ${concatDistinctObjectsInArray(syncPaths.id, {
+                     id: syncPaths.id,
+                     clientId: syncClients.id,
+                     clientName: sql`JSON_VALUE(${syncClients.info}, '$.node')`
+                   })}
+                    FROM ${syncPaths}
+                    INNER JOIN ${syncClients}
+                      ON ${and(eq(syncPaths.clientId, syncClients.id), eq(syncClients.ownerId, sql.placeholder('userId')))}
+                    WHERE ${and(isNull(syncPaths.fileId), eq(syncPaths.shareId, unionAlias.rootId))}),
+                   JSON_ARRAY())`.mapWith(dbParseJson)
+          : sql`JSON_ARRAY()`.mapWith(dbParseJson),
+        hasComments: withDetails ? fileHasCommentsSubquerySQL(unionAlias.id).mapWith(Boolean) : sql<boolean>`0`.mapWith(Boolean),
+        isFavorite: withDetails
+          ? sql<boolean>`IF (${sql.placeholder('withFavorites')},
+                            EXISTS(SELECT 1
+                                   FROM ${filesFavorites}
+                                   WHERE ${and(eq(filesFavorites.userId, sql.placeholder('userId')), eq(filesFavorites.fileId, unionAlias.id))}),
+                            0)`.mapWith(Boolean)
+          : sql<boolean>`0`.mapWith(Boolean),
         dbFile: {
           ownerId: sql`${unionAlias.originOwnerId}`.as('dbOwnerId'),
           spaceId: sql`${unionAlias.originSpaceId}`.as('dbSpaceId'),
@@ -810,28 +811,24 @@ export class SharesQueries {
           shareExternalId: sql`${externalRootScope.storageShareId}`.as('dbShareExternalId')
         }
       } satisfies Partial<Record<keyof FileProps | 'dbFile', any>>
-      this.shareRootFilesQuery = this.db
+      query = this.db
         .select(select)
         .from(unionAlias)
-        .leftJoin(
-          filesFavorites,
-          and(
-            eq(sql.placeholder('withFavorites'), sql`1`),
-            eq(filesFavorites.userId, sql.placeholder('userId')),
-            eq(filesFavorites.fileId, unionAlias.id)
-          )
-        )
         .leftJoin(externalRootScope.table, eq(externalRootScope.targetShareId, unionAlias.rootId))
         // Non-external shares do not need this scope. An external share must
         // resolve one: otherwise omit it before building its lock target.
         .where(or(isNull(unionAlias.rootExternalPath), isNotNull(externalRootScope.storageShareId)))
         .groupBy(unionAlias.rootId)
         .prepare()
+      if (withDetails) {
+        this.shareRootFilesWithDetailsQuery = query
+      } else {
+        this.shareRootFilesQuery = query
+      }
     }
-    const roots = await this.shareRootFilesQuery.execute({
+    const roots = await query.execute({
       userId: user.id,
       isAdmin: +user.isAdmin,
-      withDetails: +!!details,
       withFavorites: +(details?.favorites ?? false),
       withSyncs: +(details?.syncs ?? false)
     })

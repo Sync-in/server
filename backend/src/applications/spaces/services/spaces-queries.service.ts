@@ -65,6 +65,7 @@ export class SpacesQueries {
   private spacesWithPermissionsQuery: MySql2PreparedQuery<any> | null = null
   private spaceFromIdWithPermissionsQuery: MySql2PreparedQuery<any> | null = null
   private spaceRootFilesQuery: MySql2PreparedQuery<any> | null = null
+  private spaceRootFilesWithDetailsQuery: MySql2PreparedQuery<any> | null = null
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
@@ -253,7 +254,9 @@ export class SpacesQueries {
   }
 
   async spaceRootFiles(userId: number, spaceId: number, details: SpaceBrowseDetails): Promise<SpaceBrowserRootFile[]> {
-    if (!this.spaceRootFilesQuery) {
+    const withDetails = !!details
+    let query = withDetails ? this.spaceRootFilesWithDetailsQuery : this.spaceRootFilesQuery
+    if (!query) {
       const select: any = {
         id: files.id,
         path: filePathSQL(files),
@@ -271,19 +274,46 @@ export class SpacesQueries {
           permissions: spacesRoots.permissions,
           owner: { id: users.id, login: users.login, email: users.email, fullName: userFullNameSQL(users) }
         },
-        shares: sql`IF (${sql.placeholder('withDetails')}, ${concatDistinctObjectsInArray(shares.id, {
-          id: shares.id,
-          alias: shares.alias,
-          name: shares.name,
-          type: shares.type
-        })}, '[]')`.mapWith(dbParseJson),
-        syncs: sql`IF (${sql.placeholder('withSyncs')}, ${concatDistinctObjectsInArray(syncPaths.id, {
-          id: syncPaths.id,
-          clientId: syncClients.id,
-          clientName: sql`JSON_VALUE(${syncClients.info}, '$.node')`
-        })}, '[]')`.mapWith(dbParseJson),
-        hasComments: sql<boolean>`IF (${sql.placeholder('withDetails')}, ${fileHasCommentsSubquerySQL(files.id)}, 0)`.mapWith(Boolean),
-        isFavorite: isNotNull(filesFavorites.fileId).mapWith(Boolean),
+        shares: withDetails
+          ? sql`(SELECT ${concatDistinctObjectsInArray(shares.id, {
+              id: shares.id,
+              alias: shares.alias,
+              name: shares.name,
+              type: shares.type
+            })}
+                 FROM ${shares}
+                 WHERE ${and(
+                   eq(shares.ownerId, sql.placeholder('userId')),
+                   isNull(shares.fileId),
+                   isNull(shares.parentId),
+                   eq(shares.spaceRootId, spacesRoots.id)
+                 )})`.mapWith(dbParseJson)
+          : sql`JSON_ARRAY()`.mapWith(dbParseJson),
+        syncs: withDetails
+          ? sql`IF (${sql.placeholder('withSyncs')},
+                   (SELECT ${concatDistinctObjectsInArray(syncPaths.id, {
+                     id: syncPaths.id,
+                     clientId: syncClients.id,
+                     clientName: sql`JSON_VALUE(${syncClients.info}, '$.node')`
+                   })}
+                    FROM ${syncPaths}
+                    INNER JOIN ${syncClients}
+                      ON ${and(eq(syncPaths.clientId, syncClients.id), eq(syncClients.ownerId, sql.placeholder('userId')))}
+                    WHERE ${and(
+                      isNull(syncPaths.fileId),
+                      eq(syncPaths.spaceId, sql.placeholder('spaceId')),
+                      eq(syncPaths.spaceRootId, spacesRoots.id)
+                    )}),
+                   JSON_ARRAY())`.mapWith(dbParseJson)
+          : sql`JSON_ARRAY()`.mapWith(dbParseJson),
+        hasComments: withDetails ? fileHasCommentsSubquerySQL(files.id).mapWith(Boolean) : sql<boolean>`0`.mapWith(Boolean),
+        isFavorite: withDetails
+          ? sql<boolean>`IF (${sql.placeholder('withFavorites')},
+                            EXISTS(SELECT 1
+                                   FROM ${filesFavorites}
+                                   WHERE ${and(eq(filesFavorites.userId, sql.placeholder('userId')), eq(filesFavorites.fileId, files.id))}),
+                            0)`.mapWith(Boolean)
+          : sql<boolean>`0`.mapWith(Boolean),
         dbFile: {
           ownerId: sql`${files.ownerId}`.as('dbOwnerId'),
           spaceId: sql`IF (${files.id} IS NULL, ${spacesRoots.spaceId}, ${files.spaceId})`.as('dbSpaceId'),
@@ -291,44 +321,22 @@ export class SpacesQueries {
           shareExternalId: sql`${files.shareExternalId}`.as('dbShareExternalId')
         }
       } satisfies Partial<Record<keyof FileProps | 'dbFile', any>>
-      this.spaceRootFilesQuery = this.db
+      query = this.db
         .select(select)
         .from(spacesRoots)
         .leftJoin(files, eq(files.id, spacesRoots.fileId))
         .leftJoin(users, eq(users.id, files.ownerId))
-        .leftJoin(
-          filesFavorites,
-          and(eq(sql.placeholder('withFavorites'), sql`1`), eq(filesFavorites.userId, sql.placeholder('userId')), eq(filesFavorites.fileId, files.id))
-        )
-        .leftJoin(
-          shares,
-          and(
-            eq(sql.placeholder('withDetails'), sql`1`),
-            eq(shares.ownerId, sql.placeholder('userId')),
-            isNull(shares.fileId),
-            isNull(shares.parentId),
-            eq(shares.spaceRootId, spacesRoots.id)
-          )
-        )
-        .leftJoin(syncClients, and(eq(sql.placeholder('withSyncs'), sql`1`), eq(syncClients.ownerId, sql.placeholder('userId'))))
-        .leftJoin(
-          syncPaths,
-          and(
-            eq(sql.placeholder('withSyncs'), sql`1`),
-            eq(syncPaths.clientId, syncClients.id),
-            eq(syncPaths.spaceId, sql.placeholder('spaceId')),
-            eq(syncPaths.spaceRootId, spacesRoots.id),
-            isNull(syncPaths.fileId)
-          )
-        )
         .where(eq(spacesRoots.spaceId, sql.placeholder('spaceId')))
-        .groupBy(files.id, spacesRoots.id)
         .prepare()
+      if (withDetails) {
+        this.spaceRootFilesWithDetailsQuery = query
+      } else {
+        this.spaceRootFilesQuery = query
+      }
     }
-    const roots = await this.spaceRootFilesQuery.execute({
+    const roots = await query.execute({
       userId,
       spaceId,
-      withDetails: +!!details,
       withFavorites: +(details?.favorites ?? false),
       withSyncs: +(details?.syncs ?? false)
     })
