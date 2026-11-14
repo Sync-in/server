@@ -1,6 +1,7 @@
 import { type DrizzleMySqlConfig, DrizzleMySqlModule } from '@knaadh/nestjs-drizzle-mysql2'
-import { BeforeApplicationShutdown, Global, Inject, Logger, Module, OnModuleInit } from '@nestjs/common'
+import { BeforeApplicationShutdown, Global, Inject, Logger, Module, OnModuleInit, Optional } from '@nestjs/common'
 import type { Connection, Pool, PoolConnection } from 'mysql2'
+import { PinoLogger } from 'nestjs-pino'
 import { setTimeout } from 'node:timers/promises'
 import { configuration } from '../../configuration/config.environment.js'
 import { INFRASTRUCTURE_CONNECTION_RETRY_DELAY, INFRASTRUCTURE_DEPENDENCY } from '../availability/availability.constants.js'
@@ -42,7 +43,8 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
-    private readonly availability: Availability
+    private readonly availability: Availability,
+    @Optional() private readonly pinoLogger?: PinoLogger
   ) {
     this.pool = this.db.$client
     this.availability.register(INFRASTRUCTURE_DEPENDENCY.DATABASE)
@@ -52,7 +54,15 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
     this.pool.on('connection', (conn: Connection) => {
       // this.logger.debug(`MySQL pool connection created (thread ID: ${conn.threadId})`)
       // conn.once('end', () => this.logger.debug(`MySQL pool connection removed (thread ID: ${conn.threadId})`))
-      conn.once('error', (error: unknown) => this.handleConnectionError(error))
+      conn.once('error', (error: unknown) => {
+        // A pooled connection can retain the context of the request that created it.
+        // Start recovery from the root logger to avoid leaking request metadata.
+        if (this.pinoLogger) {
+          this.pinoLogger.runInContext(() => this.handleConnectionError(error), { inherit: false })
+        } else {
+          this.handleConnectionError(error)
+        }
+      })
       for (const query of DB_SESSION_INIT_QUERIES) {
         conn.query(query)
       }

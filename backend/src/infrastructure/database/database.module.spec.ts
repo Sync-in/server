@@ -1,3 +1,4 @@
+import type { PinoLogger } from 'nestjs-pino'
 import type { Mock } from 'vitest'
 import { INFRASTRUCTURE_DEPENDENCY } from '../availability/availability.constants.js'
 import { Availability } from '../availability/availability.service.js'
@@ -9,6 +10,7 @@ describe(DatabaseModule.name, () => {
   let query: Mock<(sql: string) => Promise<unknown>>
   let destroy: ReturnType<typeof vi.fn>
   let end: ReturnType<typeof vi.fn>
+  let runInContext: Mock<(callback: () => void) => void>
   let availability: Availability
   let databaseModule: DatabaseModule
 
@@ -28,6 +30,7 @@ describe(DatabaseModule.name, () => {
     query = vi.fn<(sql: string) => Promise<unknown>>().mockResolvedValue([])
     destroy = vi.fn()
     end = vi.fn().mockResolvedValue(undefined)
+    runInContext = vi.fn((callback) => callback())
     const promisePool = { end }
     const poolConnection = {
       destroy,
@@ -47,7 +50,7 @@ describe(DatabaseModule.name, () => {
       promise: vi.fn(() => promisePool)
     }
     availability = new Availability()
-    databaseModule = new DatabaseModule({ $client: pool } as any, availability)
+    databaseModule = new DatabaseModule({ $client: pool } as any, availability, { runInContext } as unknown as PinoLogger)
     vi.spyOn(databaseModule['logger'], 'debug').mockImplementation(() => undefined)
     vi.spyOn(databaseModule['logger'], 'error').mockImplementation(() => undefined)
     vi.spyOn(databaseModule['logger'], 'log').mockImplementation(() => undefined)
@@ -89,6 +92,8 @@ describe(DatabaseModule.name, () => {
 
     expect(availability.isAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE)).toBe(true)
     expect(query).toHaveBeenCalledTimes(2)
+    expect(runInContext).toHaveBeenCalledTimes(2)
+    expect(runInContext).toHaveBeenCalledWith(expect.any(Function), { inherit: false })
     expect(databaseModule['recoveryPromise']).toBe(recoveryPromise)
 
     resolveRecovery([])
