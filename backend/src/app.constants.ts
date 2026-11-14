@@ -11,7 +11,8 @@ export const CONTENT_SECURITY_POLICY = (xOfficeServer: string | null, collaboraS
     // Angular's production CSS loader uses an inline script and an inline load handler.
     scriptSrc: ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'", xOfficeServer || ''],
     styleSrc: ["'self'", "'unsafe-inline'"],
-    imgSrc: ["'self'", 'data:'],
+    // PDF.js renders thumbnails and print images using blob URLs.
+    imgSrc: ["'self'", 'data:', 'blob:'],
     fontSrc: ["'self'"],
     frameSrc: ["'self'", 'blob:', xOfficeServer || '', collaboraServer || '', drawioServer || ''],
     frameAncestors: ["'self'"],
