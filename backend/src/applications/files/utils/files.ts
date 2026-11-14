@@ -256,7 +256,8 @@ export function touchFile(rPath: string, mtime?: number): Promise<void> {
   return fs.utimes(rPath, mtime, mtime)
 }
 
-const REFLINK_UNAVAILABLE_ERROR_CODES = new Set(['EAGAIN', 'EINVAL', 'ENOSYS', 'ENOTSUP', 'ENOTTY', 'EOPNOTSUPP', 'EXDEV'])
+// EPERM: some filesystems refuse FICLONE in restricted environments (e.g. ZFS inside an unprivileged LXC container) instead of reporting EOPNOTSUPP.
+const REFLINK_UNAVAILABLE_ERROR_CODES = new Set(['EAGAIN', 'EINVAL', 'ENOSYS', 'ENOTSUP', 'ENOTTY', 'EOPNOTSUPP', 'EPERM', 'EXDEV'])
 
 export async function tryReflink(srcPath: string, dstPath: string): Promise<boolean> {
   // A reflink is a copy-on-write clone that shares data blocks and allocates new ones only for modified regions.

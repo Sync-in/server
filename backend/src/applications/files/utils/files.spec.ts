@@ -16,6 +16,7 @@ import {
   temporaryFileName,
   temporaryFilePath,
   temporaryFilePrefix,
+  tryReflink,
   uniqueDatedFilePath,
   writeFromStream,
   writeFromStreamAndChecksum,
@@ -295,5 +296,30 @@ describe(temporaryFilePath.name, () => {
 
     expect(Buffer.byteLength(name)).toBeLessThanOrEqual(255)
     expect(name.endsWith('.gz')).toBe(true)
+  })
+})
+
+describe(tryReflink.name, () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('returns true when the reflink succeeds', async () => {
+    const copySpy = vi.spyOn(fs, 'copyFile').mockResolvedValueOnce(undefined)
+
+    await expect(tryReflink('/src', '/dst')).resolves.toBe(true)
+    expect(copySpy).toHaveBeenCalledWith('/src', '/dst', fs.constants.COPYFILE_FICLONE_FORCE)
+  })
+
+  it.each(['EOPNOTSUPP', 'EXDEV', 'EPERM'])('returns false on %s so the caller falls back to a regular copy', async (code) => {
+    vi.spyOn(fs, 'copyFile').mockRejectedValueOnce(Object.assign(new Error(code), { code }))
+
+    await expect(tryReflink('/src', '/dst')).resolves.toBe(false)
+  })
+
+  it('rethrows other errors', async () => {
+    vi.spyOn(fs, 'copyFile').mockRejectedValueOnce(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }))
+
+    await expect(tryReflink('/src', '/dst')).rejects.toMatchObject({ code: 'ENOENT' })
   })
 })
