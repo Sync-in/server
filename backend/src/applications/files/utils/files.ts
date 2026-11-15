@@ -10,7 +10,7 @@ import { Readable, Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { toErrorMessage } from '../../../common/errors.js'
 import { formatDateISOString } from '../../../common/functions.js'
-import { currentTimeStamp, isValidFileName, regExpPreventPathTraversal } from '../../../common/shared.js'
+import { currentTimeStamp, isValidFileName, regExpPreventPathTraversal, unicodeCaselessIdentity } from '../../../common/shared.js'
 import { DEFAULT_CHECKSUM_ALGORITHM, DEFAULT_HIGH_WATER_MARK, EXTRA_MIMES_TYPE, TEMPORARY_FILE_PREFIX, TEMPORARY_PATH } from '../constants/files.js'
 import { SYNC_TEMPORARY_FILE_PREFIX } from '../../sync/constants/sync.js'
 import type { FileDBProps } from '../interfaces/file-db-props.interface.js'
@@ -21,6 +21,10 @@ import { maxFileSizeExceededError } from './errors.js'
 
 export function sanitizePath(fPath: string): string {
   return path.normalize(fPath).replace(regExpPreventPathTraversal, '')
+}
+
+export function filePathIdentity(filePath: string): string {
+  return unicodeCaselessIdentity(filePath)
 }
 
 export function isPathInside(basePath: string, candidatePath: string, allowBasePath = false): boolean {

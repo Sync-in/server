@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { HTTP_VERSION } from '../../applications.constants.js'
-import { FileLock } from '../../files/interfaces/file-lock.interface.js'
+import type { FileLock } from '../../files/interfaces/file-lock.interface.js'
 import { FileError } from '../../files/models/file-error.js'
 import { LockConflict } from '../../files/models/file-lock-error.js'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service.js'
@@ -563,17 +563,23 @@ describe('WebDAVMethods', () => {
           yield { href: '/webdav/test/file.txt', name: 'file.txt' }
         } as any)
 
-        filesLockManager.browseLocks.mockResolvedValue({
-          'file.txt': {
+        filesLockManager.browseLocks.mockResolvedValue([
+          {
             owner: { fullName: 'LockOwner', email: 'lock-owner@sync-in.com' },
-            options: { lockRoot: '/webdav/test/file.txt' }
+            options: { lockRoot: '/webdav/test/file.txt', lockToken: 'opaquelocktoken:first' }
+          },
+          {
+            owner: { fullName: 'SecondOwner', email: 'second-owner@sync-in.com' },
+            options: { lockRoot: '/webdav/test/file.txt', lockToken: 'opaquelocktoken:second' }
           }
-        } as any)
+        ] as any)
 
         await service.propfind(req, res, SPACE_REPOSITORY.FILES)
 
         expect(filesLockManager.browseLocks).toHaveBeenCalledWith(req.space.dbFile)
         expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
+        expect(res.body).toContain('opaquelocktoken:first')
+        expect(res.body).toContain('opaquelocktoken:second')
       })
 
       it('should collect parent and child locks with depth infinity', async () => {
@@ -593,16 +599,67 @@ describe('WebDAVMethods', () => {
         } as any)
 
         filesLockManager.browseParentChildLocks.mockResolvedValue({
-          'file.txt': {
-            owner: { fullName: 'LockOwner', email: 'lock-owner@sync-in.com' },
-            options: { lockRoot: '/webdav/test/file.txt' }
-          }
+          root: [
+            {
+              owner: { fullName: 'LockOwner', email: 'lock-owner@sync-in.com' },
+              options: { lockRoot: '/webdav/test/file.txt' }
+            }
+          ],
+          children: {}
         } as any)
 
         await service.propfind(req, res, SPACE_REPOSITORY.FILES)
 
         expect(filesLockManager.browseParentChildLocks).toHaveBeenCalledWith(req.space.dbFile)
         expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
+      })
+
+      it('should keep collection and same-named child locks separate', async () => {
+        vi.mocked(isPathExists).mockResolvedValue(true)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            url: '/webdav/test/folder',
+            propfindMode: 'prop',
+            depth: DEPTH.MEMBERS,
+            body: { propfind: { prop: { [LOCK_DISCOVERY_PROP]: '' } } }
+          },
+          space: {
+            ...createBaseRequest().space,
+            dbFile: { path: 'folder', spaceId: 1, inTrash: false }
+          }
+        })
+        const res = createMockResponse()
+
+        webDAVSpaces.propfind.mockImplementation(async function* () {
+          yield { href: '/webdav/test/folder/', name: 'space-alias' }
+          yield { href: '/webdav/test/folder/folder', name: 'folder' }
+        } as any)
+        filesLockManager.browseParentChildLocks.mockResolvedValue({
+          root: [
+            {
+              owner: { fullName: 'LockOwner', email: 'lock-owner@sync-in.com' },
+              options: { lockRoot: '/webdav/test/folder', lockToken: 'opaquelocktoken:collection' }
+            }
+          ],
+          children: {
+            folder: [
+              {
+                owner: { fullName: 'ChildLockOwner', email: 'child-lock-owner@sync-in.com' },
+                options: { lockRoot: '/webdav/test/folder/folder', lockToken: 'opaquelocktoken:child' }
+              }
+            ]
+          }
+        } as any)
+
+        await service.propfind(req, res, SPACE_REPOSITORY.FILES)
+
+        const rootResponse = res.body.match(/<D:response><D:href>\/webdav\/test\/folder\/<\/D:href>[\s\S]*?<\/D:response>/)?.[0]
+        const childResponse = res.body.match(/<D:response><D:href>\/webdav\/test\/folder\/folder<\/D:href>[\s\S]*?<\/D:response>/)?.[0]
+        expect(rootResponse).toContain('opaquelocktoken:collection')
+        expect(rootResponse).not.toContain('opaquelocktoken:child')
+        expect(childResponse).toContain('opaquelocktoken:child')
+        expect(childResponse).not.toContain('opaquelocktoken:collection')
       })
 
       it('should not collect locks for PROPNAME mode', async () => {
@@ -1660,9 +1717,9 @@ describe('WebDAVMethods', () => {
     })
 
     describe('token condition', () => {
-      it('should return true when token exists and path matches lockroot', async () => {
+      it('should trust the exact-resource token lookup even when lockroot has an equivalent URL form', async () => {
         filesLockManager.getLockByToken.mockResolvedValue({
-          options: { lockRoot: '/webdav/test/file.txt' }
+          options: { lockRoot: '/webdav/test/file.txt/' }
         } as any)
         const req = createBaseRequest({
           dav: {
@@ -1677,15 +1734,29 @@ describe('WebDAVMethods', () => {
         expect(result).toBe(true)
       })
 
-      it('should return true when token exists and path is child of lockroot', async () => {
-        filesLockManager.getLockByToken.mockResolvedValue({
-          options: { lockRoot: '/webdav/test' }
-        } as any)
+      it('should return false with 412 when a parent collection token is absent from the exact resource', async () => {
+        filesLockManager.getLockByToken.mockResolvedValue(null)
         const req = createBaseRequest({
           dav: {
             ...createBaseRequest().dav,
             url: '/webdav/test/subfolder/file.txt',
             ifHeaders: [{ token: { value: 'opaquelocktoken:abc', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(false)
+        expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
+      })
+
+      it('should satisfy a negated token condition when the exact resource has no matching token', async () => {
+        filesLockManager.getLockByToken.mockResolvedValue(null)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ token: { value: 'opaquelocktoken:missing', mustMatch: false } }]
           }
         })
         const res = createMockResponse()
@@ -1711,25 +1782,6 @@ describe('WebDAVMethods', () => {
         expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
       })
 
-      it('should return false with 412 when token exists but path does not match lockroot', async () => {
-        filesLockManager.getLockByToken.mockResolvedValue({
-          options: { lockRoot: '/webdav/other/file.txt' }
-        } as any)
-        const req = createBaseRequest({
-          dav: {
-            ...createBaseRequest().dav,
-            url: '/webdav/test/file.txt',
-            ifHeaders: [{ token: { value: 'opaquelocktoken:abc', mustMatch: true } }]
-          }
-        })
-        const res = createMockResponse()
-
-        const result = await (service as any).evaluateIfHeaders(req, res)
-
-        expect(result).toBe(false)
-        expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
-      })
-
       it('should evaluate token condition with explicit path in if-header', async () => {
         const explicitSpace = {
           ...createBaseRequest().space,
@@ -1739,7 +1791,7 @@ describe('WebDAVMethods', () => {
         }
         webDAVSpaces.spaceEnv.mockResolvedValue(explicitSpace)
         filesLockManager.getLockByToken.mockResolvedValue({
-          options: { lockRoot: '/webdav/explicit' }
+          options: { lockRoot: '/webdav/explicit/path.txt' }
         } as any)
         const req = createBaseRequest({
           dav: {

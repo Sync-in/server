@@ -19,8 +19,9 @@ import { SpaceEnv } from '../../spaces/models/space-env.model.js'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
 import { temporaryRootFromSpace, trashRelativePathFromSpace, trashTargetFromSpace } from '../../spaces/utils/paths.js'
 import { canAccessToSpace, haveSpaceEnvPermissions } from '../../spaces/utils/permissions.js'
-import { UserModel } from '../../users/models/user.model.js'
-import { DEPTH, LOCK_DEPTH } from '../../webdav/constants/webdav.js'
+import type { UserModel } from '../../users/models/user.model.js'
+import type { LOCK_DEPTH } from '../../webdav/constants/webdav.js'
+import { DEPTH } from '../../webdav/constants/webdav.js'
 import { CACHE_LOCK_FILE_TTL } from '../constants/cache.js'
 import { TAR_EXTENSION, TAR_GZ_EXTENSION, ZIP_EXTENSION } from '../constants/compress.js'
 import { COMPRESSION_EXTENSION } from '../constants/files.js'
@@ -28,8 +29,8 @@ import { FILE_OPERATION } from '../constants/operations.js'
 import { SAMPLE_DOCUMENT_EXTENSIONS, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples.js'
 import type { CompressFileDto, DownloadFileDto } from '../dto/file-operations.dto.js'
 import type { DeleteFileOptions } from '../interfaces/delete-file.interface.js'
-import { FileDBProps } from '../interfaces/file-db-props.interface.js'
-import { FileLock } from '../interfaces/file-lock.interface.js'
+import type { FileDBProps } from '../interfaces/file-db-props.interface.js'
+import type { FileLock } from '../interfaces/file-lock.interface.js'
 import type { FileLockProps } from '../interfaces/file-props.interface.js'
 import type { FileThumbnail } from '../interfaces/file-thumbnail.interface.js'
 import { SaveStreamOptions } from '../interfaces/save-stream.interface.js'
@@ -43,6 +44,7 @@ import {
   dirName,
   dirSize,
   fileName,
+  filePathIdentity,
   fileSize,
   getMimeType,
   isInternalTemporaryEntry,
@@ -463,6 +465,10 @@ export class FilesManager {
     if (srcSpace.realPath === dstSpace.realPath) {
       throw new FileError(HttpStatus.FORBIDDEN, 'Cannot copy/move source onto itself')
     }
+    const isSameResourceMove =
+      isMove &&
+      filePathIdentity(srcSpace.realPath) === filePathIdentity(dstSpace.realPath) &&
+      this.filesLockManager.isSameLockResource(srcSpace.dbFile, dstSpace.dbFile)
     if (`${dstSpace.realPath}/`.startsWith(`${srcSpace.realPath}/`)) {
       throw new FileError(HttpStatus.FORBIDDEN, 'Cannot copy/move source below itself')
     }
@@ -481,7 +487,7 @@ export class FilesManager {
         dstSpace.url = '/space/sync-in/code.TS'
        The destination exists because it's the same file, bypass this
      */
-      if (!(isMove && srcSpace.realPath.toLowerCase() === dstSpace.realPath.toLowerCase())) {
+      if (!isSameResourceMove) {
         throw new FileError(dav ? HttpStatus.PRECONDITION_FAILED : HttpStatus.BAD_REQUEST, 'The destination already exists')
       }
     }
@@ -516,10 +522,20 @@ export class FilesManager {
     // check destination
     await this.filesLockManager.checkConflicts(dstSpace.dbFile, depth, { userId: user.id, lockTokens: dav?.lockTokens })
 
-    const deleteDestination = (): Promise<void> =>
-      srcSpace.inTrashRepository
-        ? this.delete(user, dstSpace, undefined, undefined, { protectedTrashPath: srcSpace.realPath })
-        : this.delete(user, dstSpace)
+    const sourceLockCleanup =
+      isMove && !isSameResourceMove
+        ? await this.filesLockManager.prepareCleanup(user, srcSpace.dbFile, {
+            includeExact: true,
+            includeDescendants: isDir
+          })
+        : undefined
+
+    const deleteDestination = (): Promise<void> => {
+      if (isSameResourceMove) return Promise.resolve()
+      const options: DeleteFileOptions = { preserveExactLocks: true }
+      if (srcSpace.inTrashRepository) options.protectedTrashPath = srcSpace.realPath
+      return this.delete(user, dstSpace, dav ? { lockTokens: dav.lockTokens } : undefined, undefined, options)
+    }
 
     // Task transfers defer overwrite handling until their staged content is ready to commit.
     if (!useTaskTransfer && overwrite && (await isPathExists(dstSpace.realPath))) {
@@ -538,6 +554,9 @@ export class FilesManager {
       if (srcSpace.realBasePath !== dstSpace.realBasePath) {
         FileEvent.emit('event', { user, space: srcSpace, action: ACTION.DELETE_PERMANENTLY, rPath: srcSpace.realPath })
         FileEvent.emit('event', { user, space: dstSpace, action: ACTION.ADD, rPath: dstSpace.realPath })
+      }
+      if (!sourceCleanupError) {
+        await sourceLockCleanup?.remove()
       }
       // A published cross-device destination is authoritative even if the obsolete source could not be removed.
       await this.filesQueries.moveFiles(srcSpace.dbFile, dstSpace.dbFile, isDir)
@@ -561,6 +580,10 @@ export class FilesManager {
 
   async delete(user: UserModel, space: SpaceEnv, dav?: { lockTokens: string[] }, signal?: AbortSignal, options?: DeleteFileOptions): Promise<void> {
     if (this.isTrashRepositoryRoot(space)) {
+      await this.filesLockManager.checkConflicts(space.dbFile, DEPTH.RESOURCE, {
+        userId: user.id,
+        lockTokens: dav?.lockTokens
+      })
       return this.emptyTrash(user, space, dav)
     }
     const isTaskContext = Boolean(space.task?.cacheKey)
@@ -569,11 +592,14 @@ export class FilesManager {
     }
     // check lock conflicts
     const isDir = await isPathIsDir(space.realPath)
-    await this.filesLockManager.checkConflicts(space.dbFile, isDir ? DEPTH.INFINITY : DEPTH.RESOURCE, {
+    await this.filesLockManager.checkConflicts(space.dbFile, DEPTH.RESOURCE, {
       userId: user.id,
       lockTokens: dav?.lockTokens
     })
-    const locksForRemoval = await this.filesLockManager.getLocksForRemoval(user, space.dbFile, isDir)
+    const lockCleanup = await this.filesLockManager.prepareCleanup(user, space.dbFile, {
+      includeExact: !options?.preserveExactLocks,
+      includeDescendants: isDir
+    })
     // file system deletion
     let forceDeleteInDB = false
     let sourceCleanupError: SourceCleanupError | undefined
@@ -627,13 +653,7 @@ export class FilesManager {
       }
     }
     // Only remove the lock incarnations captured before the filesystem mutation.
-    try {
-      if (!(await this.filesLockManager.removeLocks(space.dbFile, locksForRemoval))) {
-        this.logger.warn({ tag: this.delete.name, msg: `Some locks changed while deleting ${space.dbFile.path}` })
-      }
-    } catch (e) {
-      this.logger.error({ tag: this.delete.name, msg: toErrorMessage(e) })
-    }
+    await lockCleanup.remove()
     // Keep the database aligned with the completed filesystem operation before reporting a residual source.
     if (trashDbFile) {
       await this.filesQueries.moveFiles(space.dbFile, trashDbFile, isDir)
@@ -766,7 +786,7 @@ export class FilesManager {
       // create lock
       const dbFile = space.dbFile
       dbFile.path = path.join(dirName(dbFile.path), fileName(dstPath))
-      const [ok, lock] = await this.filesLockManager.create(user, dbFile, SERVER_NAME, DEPTH.INFINITY)
+      const [ok, lock] = await this.filesLockManager.create(user, dbFile, SERVER_NAME, DEPTH.RESOURCE)
       if (!ok) {
         throw new LockConflict(lock, 'Conflicting lock')
       }

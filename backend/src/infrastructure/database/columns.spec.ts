@@ -7,19 +7,24 @@ import { spacesRoots } from '../../applications/spaces/schemas/spaces-roots.sche
 import { spaces } from '../../applications/spaces/schemas/spaces.schema.js'
 import { cache } from '../cache/schemas/mysql-cache.schema.js'
 import { pathVarchar } from './columns.js'
-import { DB_CHARSET, DB_PATH_COLLATION } from './constants.js'
+import { DB_BINARY_COLLATION, DB_CHARSET, DB_PATH_COLLATION } from './constants.js'
 
 describe('pathVarchar', () => {
   const columns = mysqlTable('path_columns', {
     path: pathVarchar('path', { length: 4096 }).notNull(),
     name: pathVarchar('name', { length: 255 }).notNull(),
-    externalPath: pathVarchar('externalPath', { length: 4096 })
+    externalPath: pathVarchar('externalPath', { length: 4096 }),
+    binaryPath: pathVarchar('binaryPath', { length: 8192, collation: DB_BINARY_COLLATION }).notNull()
   })
 
   it('should include the character set and collation in the SQL type used by migrations', () => {
     expect(columns.path.getSQLType()).toBe(`varchar(4096) CHARACTER SET ${DB_CHARSET} COLLATE ${DB_PATH_COLLATION}`)
     expect(columns.name.getSQLType()).toBe(`varchar(255) CHARACTER SET ${DB_CHARSET} COLLATE ${DB_PATH_COLLATION}`)
     expect(columns.externalPath.getSQLType()).toBe(`varchar(4096) CHARACTER SET ${DB_CHARSET} COLLATE ${DB_PATH_COLLATION}`)
+  })
+
+  it('should support an explicit collation', () => {
+    expect(columns.binaryPath.getSQLType()).toBe(`varchar(8192) CHARACTER SET ${DB_CHARSET} COLLATE ${DB_BINARY_COLLATION}`)
   })
 
   it('should preserve explicit column nullability', () => {
@@ -36,7 +41,6 @@ describe('pathVarchar', () => {
 
 describe('metadata schema collations', () => {
   it.each([
-    { name: 'cache.key', column: cache.key, length: 8192 },
     { name: 'files.path', column: files.path, length: 4096 },
     { name: 'files.name', column: files.name, length: 255 },
     { name: 'files_recents.path', column: filesRecents.path, length: 4096 },
@@ -53,19 +57,26 @@ describe('metadata schema collations', () => {
     expect(column.getSQLType()).toBe(`varchar(${length}) CHARACTER SET ${DB_CHARSET} COLLATE ${DB_PATH_COLLATION}`)
   })
 
+  it('declares the binary collation on cache.key', () => {
+    expect(cache.key.getSQLType()).toBe(`varchar(8192) CHARACTER SET ${DB_CHARSET} COLLATE ${DB_BINARY_COLLATION}`)
+  })
+
   it('keeps long cache keys non-null without a primary key and preserves JSON values', () => {
     expect(cache.key.primary).toBe(false)
     expect(cache.key.notNull).toBe(true)
+    expect(cache.keyHash.getSQLType()).toBe('binary(32)')
+    expect(cache.keyHash.generated).toMatchObject({ type: 'always', mode: 'stored' })
     expect(cache.value.getSQLType()).toBe('json')
   })
 
-  it('enforces cache-key uniqueness and uses a non-unique prefix index', () => {
+  it('enforces cache-key hash uniqueness and uses a non-unique key prefix index', () => {
     const { indexes } = getTableConfig(cache)
-    const uniqueKey = indexes.find((entry) => entry.config.name === 'cache_key_unique')
+    const uniqueKeyHash = indexes.find((entry) => entry.config.name === 'cache_key_hash_unique')
     const prefixKey = indexes.find((entry) => entry.config.name === 'cache_key_prefix_idx')
 
-    expect(uniqueKey?.config.unique).toBe(true)
-    expect(uniqueKey?.config.columns).toEqual([cache.key])
+    expect(uniqueKeyHash?.config.unique).toBe(true)
+    expect(uniqueKeyHash?.config.columns).toEqual([cache.keyHash])
+    expect(indexes.some((entry) => entry.config.name === 'cache_key_unique')).toBe(false)
     expect(prefixKey?.config.unique).toBe(false)
     expect(prefixKey?.config.columns).toHaveLength(1)
     expect(new MySqlDialect().sqlToQuery(sql`${prefixKey?.config.columns[0]}`, 'indexes')).toMatchObject({

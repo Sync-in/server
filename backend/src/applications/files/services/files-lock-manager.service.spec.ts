@@ -1,28 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { currentTimeStamp } from '../../../common/shared.js'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
-import {
-  CACHE_REVISION_MAX_MUTATIONS,
-  type CacheRevisionCommit,
-  type CacheRevisionMutationCommit,
-  type CacheRevisionSnapshotCommand
-} from '../../../infrastructure/cache/interfaces/cache-revision.interface.js'
+import type { CacheCompareAndSwapCommand } from '../../../infrastructure/cache/interfaces/cache-compare-and-swap.interface.js'
 import { DEPTH, LOCK_SCOPE, WEBDAV_APP_LOCK } from '../../webdav/constants/webdav.js'
-import { CACHE_LOCK_NATIVE_SCOPE_SEGMENT, CACHE_LOCK_PREFIX, CACHE_LOCK_REVISION_PREFIX } from '../constants/cache.js'
+import { CACHE_LOCK_NATIVE_SCOPE_SEGMENT, CACHE_LOCK_PREFIX, CACHE_LOCK_STATE_MAX_LOCKS } from '../constants/cache.js'
 import type { FileDBProps } from '../interfaces/file-db-props.interface.js'
-import type { FileLock } from '../interfaces/file-lock.interface.js'
+import type { FileLock, FileLockState } from '../interfaces/file-lock.interface.js'
 import { LockConflict } from '../models/file-lock-error.js'
 import { FilesLockManager } from './files-lock-manager.service.js'
 import type { Mock } from 'vitest'
 
 describe(FilesLockManager.name, () => {
   let filesLockManager: FilesLockManager
-  let cacheStore: Map<string, any>
-  let revisionCounter: number
+  let cacheStore: Map<string, FileLockState>
   let cache: {
-    readRevisionSnapshot: Mock
-    commitRevision: Mock
-    mutateRevision: Mock
+    get: Mock
+    keys: Mock
+    mget: Mock
+    compareAndSwap: Mock
   }
 
   const dbFile = { path: 'docs/file.txt', ownerId: 10, inTrash: false } as FileDBProps
@@ -31,7 +26,7 @@ describe(FilesLockManager.name, () => {
     login: 'john',
     asOwner: () => ({ id: 10, login: 'john', email: 'john@sync-in.com', fullName: 'John' })
   } as any
-  const revisionKey = `${CACHE_LOCK_REVISION_PREFIX}|ownerId:10`
+  const stateKey = `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:${dbFile.path}`
 
   const createPatternRegex = (pattern: string): RegExp => {
     const escapedPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*')
@@ -42,46 +37,34 @@ describe(FilesLockManager.name, () => {
     lockId: 'lock-id-1',
     owner: user.asOwner(),
     dbFilePath: dbFile.path,
-    key: `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:${dbFile.path}|depth:0`,
+    key: `${stateKey}|depth:0`,
     app: WEBDAV_APP_LOCK,
     depth: DEPTH.RESOURCE,
     expiration: currentTimeStamp() + 300,
     ...overrides
   })
 
-  const applyMutations = (command: CacheRevisionMutationCommit): boolean => {
-    for (const mutation of command.mutations) {
-      const current = cacheStore.get(mutation.key)
-      if (mutation.expect === 'absent' ? current !== undefined : current === undefined) return false
-      if (mutation.expectedLockId && current?.lockId !== mutation.expectedLockId) return false
-    }
-    for (const mutation of command.mutations) {
-      if (mutation.type === 'set') cacheStore.set(mutation.key, mutation.value)
-      else cacheStore.delete(mutation.key)
-    }
-    cacheStore.set(command.revisionKey, `revision-${++revisionCounter}`)
+  const setState = (key: string, locks: FileLock[], version = 'version-1'): FileLockState => {
+    const state = { version, locks }
+    cacheStore.set(key, state)
+    return state
+  }
+
+  const compareAndSwap = async (command: CacheCompareAndSwapCommand): Promise<boolean> => {
+    const current = cacheStore.get(command.key)
+    if ((current?.version ?? null) !== command.expectedVersion) return false
+    if (command.value === undefined) cacheStore.delete(command.key)
+    else cacheStore.set(command.key, command.value as FileLockState)
     return true
   }
 
-  const commitRevision = async (command: CacheRevisionCommit): Promise<boolean> => {
-    if ((cacheStore.get(command.revisionKey) ?? null) !== command.expectedRevision) return false
-    return applyMutations(command)
-  }
-
-  const mutateRevision = async (command: CacheRevisionMutationCommit): Promise<boolean> => applyMutations(command)
-
-  const readRevisionSnapshot = async (command: CacheRevisionSnapshotCommand) => ({
-    revision: cacheStore.get(command.revisionKey) ?? null,
-    entries: [...cacheStore.entries()].filter(([key]) => createPatternRegex(command.pattern).test(key)).map(([key, value]) => ({ key, value }))
-  })
-
   beforeEach(async () => {
-    revisionCounter = 0
-    cacheStore = new Map<string, any>()
+    cacheStore = new Map<string, FileLockState>()
     cache = {
-      readRevisionSnapshot: vi.fn(readRevisionSnapshot),
-      commitRevision: vi.fn(commitRevision),
-      mutateRevision: vi.fn(mutateRevision)
+      get: vi.fn(async (key: string) => cacheStore.get(key)),
+      keys: vi.fn(async (pattern: string) => [...cacheStore.keys()].filter((key) => createPatternRegex(pattern).test(key))),
+      mget: vi.fn(async (keys: string[]) => keys.map((key) => cacheStore.get(key))),
+      compareAndSwap: vi.fn(compareAndSwap)
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [FilesLockManager, { provide: Cache, useValue: cache }]
@@ -100,7 +83,7 @@ describe(FilesLockManager.name, () => {
     expect(filesLockManager).toBeDefined()
   })
 
-  it('should atomically create a lock and its namespace revision', async () => {
+  it('should atomically create one exact-resource state', async () => {
     const [created, lock] = await filesLockManager.create(
       user,
       dbFile,
@@ -112,345 +95,430 @@ describe(FilesLockManager.name, () => {
 
     expect(created).toBe(true)
     expect(lock.lockId).toEqual(expect.any(String))
-    expect(cacheStore.get(lock.key)).toEqual(lock)
-    expect(cacheStore.get(revisionKey)).toBe('revision-1')
-    expect(cache.commitRevision).toHaveBeenCalledWith({
-      revisionKey,
-      expectedRevision: null,
-      mutations: [{ type: 'set', key: lock.key, value: lock, ttl: 100, expect: 'absent' }]
+    expect(lock.key).toBe(`${stateKey}|depth:0|token:opaquelocktoken:t1`)
+    expect(cacheStore.get(stateKey)).toEqual({ version: expect.any(String), locks: [lock] })
+    expect(cache.compareAndSwap).toHaveBeenCalledWith({
+      key: stateKey,
+      expectedVersion: null,
+      value: { version: expect.any(String), locks: [lock] },
+      ttl: expect.any(Number)
     })
+    expect(cache.compareAndSwap.mock.calls[0][0].ttl).toBeGreaterThanOrEqual(100)
   })
 
-  it('should share one revision while isolating native and external-root scopes', async () => {
+  it('should isolate exact states by storage scope and path', async () => {
     const baseFile = { path: 'same/file.txt', spaceId: 1, inTrash: false } as FileDBProps
     const externalFile = { path: 'same/file.txt', spaceId: 1, spaceExternalRootId: 2, inTrash: false } as FileDBProps
-    const spaceRevisionKey = `${CACHE_LOCK_REVISION_PREFIX}|spaceId:1`
+    const externalStateKey = `${CACHE_LOCK_PREFIX}|spaceId:1|spaceExternalRootId:2|path:same/file.txt`
+    const baseStateKey = `${CACHE_LOCK_PREFIX}|spaceId:1|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:same/file.txt`
 
-    const [, externalLock] = await filesLockManager.create(user, externalFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)
-    const [, baseLock] = await filesLockManager.create(user, baseFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)
+    await filesLockManager.create(user, externalFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)
+    await filesLockManager.create(user, baseFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)
 
-    expect(externalLock.key).toBe(`${CACHE_LOCK_PREFIX}|spaceId:1|spaceExternalRootId:2|path:same/file.txt|depth:0`)
-    expect(baseLock.key).toBe(`${CACHE_LOCK_PREFIX}|spaceId:1|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:same/file.txt|depth:0`)
-    expect(cache.commitRevision.mock.calls.map(([command]) => command.revisionKey)).toEqual([spaceRevisionKey, spaceRevisionKey])
-    expect(cache.commitRevision.mock.calls[1][0].expectedRevision).toBe('revision-1')
-    expect(cache.readRevisionSnapshot).toHaveBeenNthCalledWith(1, {
-      revisionKey: spaceRevisionKey,
-      pattern: `${CACHE_LOCK_PREFIX}|spaceId:1|spaceExternalRootId:2|*`
-    })
-    expect(cache.readRevisionSnapshot).toHaveBeenNthCalledWith(2, {
-      revisionKey: spaceRevisionKey,
-      pattern: `${CACHE_LOCK_PREFIX}|spaceId:1|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|*`
-    })
+    expect(cacheStore.has(externalStateKey)).toBe(true)
+    expect(cacheStore.has(baseStateKey)).toBe(true)
+    expect(cache.compareAndSwap.mock.calls.map(([command]) => command.key)).toEqual([externalStateKey, baseStateKey])
   })
 
-  it('should validate and return an existing conflict without committing', async () => {
+  it('should compare the complete lock resource identity', () => {
+    expect(filesLockManager.isSameLockResource(dbFile, { ...dbFile, path: 'DOCS/FILE.TXT', inTrash: true })).toBe(true)
+    expect(filesLockManager.isSameLockResource(dbFile, { ...dbFile, ownerId: 11 })).toBe(false)
+    expect(filesLockManager.isSameLockResource(dbFile, { ...dbFile, spaceExternalRootId: 2 })).toBe(false)
+  })
+
+  it('should coordinate ASCII case and canonical Unicode path variants in one state', async () => {
+    const firstFile = { ...dbFile, path: 'Docs/Caf\u00e9.txt' }
+    const equivalentFile = { ...dbFile, path: 'docs/cafe\u0301.txt' }
+    const distinctFile = { ...dbFile, path: 'docs/cafe.txt' }
+    const canonicalStateKey = `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs/caf\u00e9.txt`
+    const distinctStateKey = `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs/cafe.txt`
+
+    const [created, lock] = await filesLockManager.create(user, firstFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)
+
+    expect(created).toBe(true)
+    await expect(filesLockManager.create(user, equivalentFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)).resolves.toEqual([false, lock])
+    await expect(filesLockManager.browseLocks(equivalentFile)).resolves.toEqual([lock])
+    await expect(filesLockManager.create(user, distinctFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)).resolves.toEqual([true, expect.any(Object)])
+    expect(cacheStore.has(canonicalStateKey)).toBe(true)
+    expect(cacheStore.has(distinctStateKey)).toBe(true)
+    expect(cacheStore.size).toBe(2)
+  })
+
+  it('should coordinate Unicode-caseless path variants in one state', async () => {
+    const firstFile = { ...dbFile, path: 'docs/οσ.txt' }
+    const equivalentFile = { ...dbFile, path: 'docs/ος.txt' }
+    const canonicalStateKey = `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs/οσ.txt`
+
+    const [created, lock] = await filesLockManager.create(user, firstFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)
+
+    expect(created).toBe(true)
+    await expect(filesLockManager.create(user, equivalentFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)).resolves.toEqual([false, lock])
+    await expect(filesLockManager.browseLocks(equivalentFile)).resolves.toEqual([lock])
+    expect(cacheStore.has(canonicalStateKey)).toBe(true)
+    expect(cacheStore.size).toBe(1)
+  })
+
+  it('should refresh and remove a lock through an equivalent path identity', async () => {
+    const firstFile = { ...dbFile, path: 'Docs/Caf\u00e9.txt' }
+    const equivalentFile = { ...dbFile, path: 'docs/cafe\u0301.txt' }
+    const canonicalStateKey = `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs/caf\u00e9.txt`
+    const [, lock] = await filesLockManager.create(user, firstFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)
+
+    await expect(filesLockManager.refreshLockTimeout(equivalentFile, lock, 120)).resolves.toBe(true)
+    await expect(filesLockManager.removeLock(equivalentFile, lock)).resolves.toBe(true)
+    expect(cacheStore.has(canonicalStateKey)).toBe(false)
+  })
+
+  it('should preserve the existing active and trash lock namespace', async () => {
+    const lock = makeLock()
+    setState(stateKey, [lock])
+
+    await expect(filesLockManager.getLocksByPath({ ...dbFile, inTrash: true })).resolves.toEqual([lock])
+    expect(cache.get).toHaveBeenCalledWith(stateKey)
+  })
+
+  it('should return an exact conflict without writing the state', async () => {
     const conflictLock = makeLock({ owner: { ...user.asOwner(), id: 99, login: 'other' } })
-    cacheStore.set(conflictLock.key, conflictLock)
+    setState(stateKey, [conflictLock])
 
-    const [created, lock] = await filesLockManager.create(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)
-
-    expect(created).toBe(false)
-    expect(lock).toBe(conflictLock)
-    expect(cache.commitRevision).not.toHaveBeenCalled()
+    await expect(filesLockManager.create(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)).resolves.toEqual([false, conflictLock])
+    expect(cache.compareAndSwap).not.toHaveBeenCalled()
   })
 
-  it('should retry a stale CAS from a fresh snapshot', async () => {
-    cache.commitRevision.mockResolvedValueOnce(false).mockImplementation(commitRevision)
+  it('should retry a stale compare-and-swap from a fresh state', async () => {
+    cache.compareAndSwap.mockResolvedValueOnce(false).mockImplementation(compareAndSwap)
 
     const [created, lock] = await filesLockManager.create(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE, null, 60)
 
     expect(created).toBe(true)
-    expect(cache.commitRevision).toHaveBeenCalledTimes(2)
-    expect(cacheStore.get(lock.key)).toEqual(lock)
+    expect(cache.compareAndSwap).toHaveBeenCalledTimes(2)
+    expect(cacheStore.get(stateKey)?.locks).toEqual([lock])
   })
 
-  it('should atomically refresh every owned lock on the path', async () => {
-    const first = makeLock({ expiration: currentTimeStamp() + 10 })
-    const second = makeLock({
-      lockId: 'lock-id-2',
-      key: `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:${dbFile.path}|depth:0|token:t2`,
-      expiration: currentTimeStamp() + 10
-    })
-    cacheStore.set(first.key, first)
-    cacheStore.set(second.key, second)
+  it('should keep compatible shared locks with distinct tokens as independent members', async () => {
+    const firstOptions = { lockRoot: '/webdav/docs/file.txt', lockToken: 'token-1', lockScope: LOCK_SCOPE.SHARED }
+    const secondOptions = { lockRoot: '/webdav/docs/file.txt', lockToken: 'token-2', lockScope: LOCK_SCOPE.SHARED }
+    const [, first] = await filesLockManager.create(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE, firstOptions, 30)
+    const [, second] = await filesLockManager.create(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE, secondOptions, 120)
 
-    const [created, lock] = await filesLockManager.createOrRefresh(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE, 300)
+    expect(cacheStore.get(stateKey)?.locks).toEqual([first, second])
+    expect(cache.compareAndSwap.mock.calls.at(-1)?.[0].ttl).toBeGreaterThanOrEqual(120)
 
-    expect(created).toBe(false)
-    expect(lock.lockId).not.toBe(first.lockId)
-    expect(cacheStore.get(first.key).lockId).toBe(lock.lockId)
-    expect(cacheStore.get(second.key).lockId).not.toBe(second.lockId)
-    expect(cache.commitRevision).toHaveBeenCalledWith(
-      expect.objectContaining({
-        mutations: expect.arrayContaining([
-          expect.objectContaining({ key: first.key, expect: 'present', expectedLockId: first.lockId }),
-          expect.objectContaining({ key: second.key, expect: 'present', expectedLockId: second.lockId })
-        ])
+    const [, refreshed] = await filesLockManager.create(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE, firstOptions, 60)
+    const locks = cacheStore.get(stateKey)?.locks ?? []
+    expect(refreshed.lockId).not.toBe(first.lockId)
+    expect(locks.find((lock) => lock.key === second.key)?.lockId).toBe(second.lockId)
+  })
+
+  it('should reuse a tokenless shared lock instead of creating an independent member', async () => {
+    const otherUser = {
+      id: 11,
+      login: 'alice',
+      asOwner: () => ({ id: 11, login: 'alice', email: 'alice@sync-in.com', fullName: 'Alice' })
+    } as any
+    const options = { lockRoot: null, lockToken: null, lockScope: LOCK_SCOPE.SHARED }
+    const [, first] = await filesLockManager.create(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE, options, 30)
+
+    const [succeeded, reused] = await filesLockManager.create(otherUser, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE, options, 120)
+
+    expect(succeeded).toBe(true)
+    expect(reused.lockId).not.toBe(first.lockId)
+    expect(reused.owner).toEqual(user.asOwner())
+    expect(cacheStore.get(stateKey)?.locks).toEqual([reused])
+  })
+
+  it('should bound the number of logical locks stored in one state', async () => {
+    const locks = Array.from({ length: CACHE_LOCK_STATE_MAX_LOCKS }, (_, index) =>
+      makeLock({
+        lockId: `lock-id-${index}`,
+        key: `${stateKey}|depth:0|token:${index}`,
+        options: { lockRoot: '/webdav/docs/file.txt', lockToken: `token-${index}`, lockScope: LOCK_SCOPE.SHARED }
       })
     )
+    setState(stateKey, locks)
+
+    await expect(
+      filesLockManager.create(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE, {
+        lockRoot: '/webdav/docs/file.txt',
+        lockToken: 'token-overflow',
+        lockScope: LOCK_SCOPE.SHARED
+      })
+    ).rejects.toThrow(`Cannot store more than ${CACHE_LOCK_STATE_MAX_LOCKS} locks for ${dbFile.path}`)
+    expect(cache.compareAndSwap).not.toHaveBeenCalled()
   })
 
-  it('should reject createOrRefresh when another owner holds the path', async () => {
+  it('should preserve createOrRefresh reuse and fence every refreshed member', async () => {
+    const first = makeLock({ expiration: currentTimeStamp() + 10 })
+    const second = makeLock({ lockId: 'lock-id-2', key: `${stateKey}|depth:0|token:t2`, expiration: currentTimeStamp() + 10 })
+    const staleFirst = { ...first }
+    setState(stateKey, [first, second])
+
+    const [created, refreshed] = await filesLockManager.createOrRefresh(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE, 300)
+
+    expect(created).toBe(false)
+    expect(refreshed.lockId).not.toBe(first.lockId)
+    expect(cacheStore.get(stateKey)?.locks.every((lock) => ![first.lockId, second.lockId].includes(lock.lockId))).toBe(true)
+    await expect(filesLockManager.removeLock(dbFile, staleFirst)).resolves.toBe(false)
+  })
+
+  it('should reject createOrRefresh when another owner holds the exact resource', async () => {
     const conflictLock = makeLock({ owner: { ...user.asOwner(), id: 42, login: 'alice' } })
-    cacheStore.set(conflictLock.key, conflictLock)
+    setState(stateKey, [conflictLock])
 
     await expect(filesLockManager.createOrRefresh(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)).rejects.toEqual(
       new LockConflict(conflictLock, 'Conflicting lock')
     )
-    expect(cache.commitRevision).not.toHaveBeenCalled()
+    expect(cache.compareAndSwap).not.toHaveBeenCalled()
   })
 
-  it('should fence a shared-lock refresh with the previous lockId', async () => {
-    const options = { lockRoot: '/webdav/docs/file.txt', lockToken: 'opaquelocktoken:shared', lockScope: LOCK_SCOPE.SHARED }
-    const existingLock = makeLock({
-      key: `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:${dbFile.path}|depth:0|token:${options.lockToken}`,
-      options
-    })
-    cacheStore.set(existingLock.key, existingLock)
-
-    const [created, refreshedLock] = await filesLockManager.create(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE, options, 300)
-
-    expect(created).toBe(true)
-    expect(refreshedLock.lockId).not.toBe(existingLock.lockId)
-    expect(cache.commitRevision).toHaveBeenCalledWith(
-      expect.objectContaining({
-        mutations: [expect.objectContaining({ value: refreshedLock, expectedLockId: existingLock.lockId })]
-      })
-    )
-  })
-
-  it('should fence every reuse of a fresh owned lock in createOrRefresh', async () => {
-    const lock = makeLock({ expiration: currentTimeStamp() + 300 })
-    const staleHandle = { ...lock }
-    cacheStore.set(lock.key, lock)
-
-    const [created, result] = await filesLockManager.createOrRefresh(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE, 300)
-
-    expect(created).toBe(false)
-    expect(result.lockId).not.toBe(staleHandle.lockId)
-    expect(cache.commitRevision).toHaveBeenCalledWith(
-      expect.objectContaining({
-        mutations: [expect.objectContaining({ value: result, expectedLockId: staleHandle.lockId })]
-      })
-    )
-    await expect(filesLockManager.removeLock(dbFile, staleHandle)).resolves.toBe(false)
-    expect(cacheStore.get(lock.key).lockId).toBe(result.lockId)
-  })
-
-  it('should let only one concurrent parent or child creation win across manager instances', async () => {
-    const otherManager = new FilesLockManager(cache as unknown as Cache)
+  it('should coordinate parent and child resources independently', async () => {
     const parentFile = { ...dbFile, path: 'docs' }
+    const parentStateKey = `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs`
     const [parent, child] = await Promise.all([
       filesLockManager.create(user, parentFile, WEBDAV_APP_LOCK, DEPTH.INFINITY),
-      otherManager.create(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)
+      filesLockManager.create(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)
     ])
 
-    expect([parent, child].filter(([created]) => created)).toHaveLength(1)
-    expect(parent[1].lockId).toBe(child[1].lockId)
+    expect(parent[0]).toBe(true)
+    expect(child[0]).toBe(true)
+    expect(cacheStore.has(parentStateKey)).toBe(true)
+    expect(cacheStore.has(stateKey)).toBe(true)
   })
 
-  it('should stop retrying stale revisions at the configured deadline', async () => {
-    ;(filesLockManager as any).revisionRetryTimeout = 1
-    cache.commitRevision.mockResolvedValue(false)
+  it('should stop retrying compare-and-swap misses at the deadline', async () => {
+    ;(filesLockManager as any).stateRetryTimeout = 1
+    cache.compareAndSwap.mockResolvedValue(false)
 
     await expect(filesLockManager.create(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)).rejects.toThrow('Unable to coordinate file lock operation')
-  })
-
-  it('should include time spent waiting in the namespace queue in the retry deadline', async () => {
-    vi.useFakeTimers()
-    try {
-      ;(filesLockManager as any).namespaceQueues.set(revisionKey, new Set())
-      vi.spyOn(performance, 'now').mockReturnValue(0)
-
-      const creation = filesLockManager.create(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)
-      const rejection = expect(creation).rejects.toThrow('Unable to coordinate file lock operation')
-      await vi.advanceTimersByTimeAsync(2_000)
-
-      await rejection
-      expect(cache.readRevisionSnapshot).not.toHaveBeenCalled()
-      expect((filesLockManager as any).namespaceQueues.get(revisionKey).size).toBe(0)
-    } finally {
-      ;(filesLockManager as any).releaseNamespace(revisionKey)
-      vi.useRealTimers()
-    }
-  })
-
-  it('should bound queue waiting for known-lock mutations', async () => {
-    const lock = makeLock()
-    ;(filesLockManager as any).namespaceQueues.set(revisionKey, new Set())
-    vi.spyOn(performance, 'now').mockReturnValueOnce(0).mockReturnValue(2_001)
-
-    const refresh = filesLockManager.refreshLockTimeout(dbFile, lock, 120)
-    ;(filesLockManager as any).releaseNamespace(revisionKey)
-
-    await expect(refresh).rejects.toThrow('Unable to coordinate file lock operation')
-    expect(cache.mutateRevision).not.toHaveBeenCalled()
   })
 
   it('should fence refresh and deletion with lockId', async () => {
     const currentLock = makeLock({ lockId: 'current-id' })
     const staleLock = { ...currentLock, lockId: 'stale-id' }
-    cacheStore.set(currentLock.key, currentLock)
+    setState(stateKey, [currentLock])
 
     await expect(filesLockManager.refreshLockTimeout(dbFile, staleLock, 120)).resolves.toBe(false)
     await expect(filesLockManager.removeLock(dbFile, staleLock)).resolves.toBe(false)
-    expect(cacheStore.get(currentLock.key)).toBe(currentLock)
-    expect(cache.commitRevision).not.toHaveBeenCalled()
+    expect(cacheStore.get(stateKey)?.locks).toEqual([currentLock])
 
     const handleBeforeRefresh = { ...currentLock }
     await expect(filesLockManager.refreshLockTimeout(dbFile, currentLock, 120)).resolves.toBe(true)
     expect(currentLock.lockId).not.toBe(handleBeforeRefresh.lockId)
     await expect(filesLockManager.removeLock(dbFile, handleBeforeRefresh)).resolves.toBe(false)
-    expect(cacheStore.get(currentLock.key).lockId).toBe(currentLock.lockId)
     await expect(filesLockManager.removeLock(dbFile, currentLock)).resolves.toBe(true)
-    expect(cacheStore.has(currentLock.key)).toBe(false)
+    expect(cacheStore.has(stateKey)).toBe(false)
   })
 
-  it('should refresh a captured lock without reading the namespace', async () => {
-    const lock = makeLock()
-    const expectedLockId = lock.lockId
-    cacheStore.set(lock.key, lock)
-
-    await expect(filesLockManager.refreshLockTimeout(dbFile, lock, 120)).resolves.toBe(true)
-
-    expect(cache.readRevisionSnapshot).not.toHaveBeenCalled()
-    expect(cache.mutateRevision).toHaveBeenCalledWith({
-      revisionKey,
-      mutations: [expect.objectContaining({ type: 'set', key: lock.key, expect: 'present', expectedLockId })]
-    })
-  })
-
-  it('should capture and delete owned exact and child locks in one revision batch', async () => {
-    const root = makeLock({
-      lockId: 'root-id',
-      key: `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs|depth:0`,
-      dbFilePath: 'docs'
-    })
-    const first = makeLock({
-      key: `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs/a.txt|depth:0`,
-      dbFilePath: 'docs/a.txt'
-    })
-    const second = makeLock({
-      lockId: 'lock-id-2',
-      key: `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs/b.txt|depth:0`,
-      dbFilePath: 'docs/b.txt'
-    })
-    cacheStore.set(root.key, root)
-    cacheStore.set(first.key, first)
-    cacheStore.set(second.key, second)
-
+  it('should prepare and remove exact and descendant locks by exact state', async () => {
     const parentFile = { ...dbFile, path: 'docs' }
-    const locks = await filesLockManager.getLocksForRemoval(user, parentFile, true)
-    expect(cache.readRevisionSnapshot).toHaveBeenCalledTimes(1)
-    await expect(filesLockManager.removeLocks(parentFile, locks)).resolves.toBe(true)
-
-    expect(cache.readRevisionSnapshot).toHaveBeenCalledTimes(1)
-    expect(cache.mutateRevision).toHaveBeenCalledTimes(1)
-    expect(cache.mutateRevision).toHaveBeenCalledWith({
-      revisionKey,
-      mutations: [
-        { type: 'delete', key: root.key, expect: 'present', expectedLockId: root.lockId },
-        { type: 'delete', key: first.key, expect: 'present', expectedLockId: first.lockId },
-        { type: 'delete', key: second.key, expect: 'present', expectedLockId: second.lockId }
-      ]
+    const parentStateKey = `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs`
+    const firstStateKey = `${parentStateKey}/caf\u00e9.txt`
+    const secondStateKey = `${parentStateKey}/b.txt`
+    const root = makeLock({ lockId: 'root-id', key: `${parentStateKey}|depth:0`, dbFilePath: 'docs' })
+    const first = makeLock({
+      key: `${firstStateKey}|depth:0|token:first`,
+      dbFilePath: 'Docs/Caf\u00e9.txt',
+      options: { lockRoot: '/webdav/docs/cafe', lockToken: 'first', lockScope: LOCK_SCOPE.SHARED }
     })
-    expect(cacheStore.has(root.key)).toBe(false)
-    expect(cacheStore.has(first.key)).toBe(false)
-    expect(cacheStore.has(second.key)).toBe(false)
+    const firstShared = makeLock({
+      lockId: 'first-shared-id',
+      key: `${firstStateKey}|depth:0|token:shared`,
+      dbFilePath: 'docs/cafe\u0301.txt',
+      options: { lockRoot: '/webdav/docs/cafe', lockToken: 'shared', lockScope: LOCK_SCOPE.SHARED }
+    })
+    const second = makeLock({ lockId: 'lock-id-2', key: `${secondStateKey}|depth:0`, dbFilePath: 'docs/b.txt' })
+    setState(parentStateKey, [root])
+    setState(firstStateKey, [first, firstShared])
+    setState(secondStateKey, [second])
+
+    const cleanup = await filesLockManager.prepareCleanup(user, parentFile, { includeExact: true, includeDescendants: true })
+
+    expect(cache.keys).toHaveBeenCalledWith(`${parentStateKey}/*`)
+    expect(cache.compareAndSwap).not.toHaveBeenCalled()
+
+    await cleanup.remove()
+
+    expect(cacheStore.has(parentStateKey)).toBe(false)
+    expect(cacheStore.has(firstStateKey)).toBe(false)
+    expect(cacheStore.has(secondStateKey)).toBe(false)
+    expect(cache.compareAndSwap.mock.calls.map(([command]) => command.key)).toEqual([parentStateKey, firstStateKey, secondStateKey])
   })
 
-  it('should reject a captured batch before deletion when one lock belongs to another owner', async () => {
-    const owned = makeLock({
-      key: `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs/a.txt|depth:0`,
-      dbFilePath: 'docs/a.txt'
-    })
-    const foreign = makeLock({
-      lockId: 'foreign-id',
-      key: `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs/b.txt|depth:0`,
+  it('should discover descendants through equivalent path identities', async () => {
+    const parentFile = { ...dbFile, path: 'D\u00f3cs' }
+    const parentStateKey = `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:d\u00f3cs`
+    const childStateKey = `${parentStateKey}/file.txt`
+    const child = makeLock({ key: `${childStateKey}|depth:0`, dbFilePath: 'DO\u0301CS/File.txt' })
+    setState(childStateKey, [child])
+
+    const cleanup = await filesLockManager.prepareCleanup(user, parentFile, { includeExact: false, includeDescendants: true })
+
+    expect(cache.keys).toHaveBeenCalledWith(`${parentStateKey}/*`)
+    await cleanup.remove()
+    expect(cacheStore.has(childStateKey)).toBe(false)
+  })
+
+  it('should preserve exact locks while cleaning descendants', async () => {
+    const parentFile = { ...dbFile, path: 'docs' }
+    const parentStateKey = `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs`
+    const childStateKey = `${parentStateKey}/file.txt`
+    const root = makeLock({ key: `${parentStateKey}|depth:0`, dbFilePath: 'docs' })
+    const child = makeLock({ key: `${childStateKey}|depth:0`, dbFilePath: 'docs/file.txt' })
+    setState(parentStateKey, [root])
+    setState(childStateKey, [child])
+
+    const cleanup = await filesLockManager.prepareCleanup(user, parentFile, { includeExact: false, includeDescendants: true })
+    await cleanup.remove()
+
+    expect(cacheStore.get(parentStateKey)?.locks).toEqual([root])
+    expect(cacheStore.has(childStateKey)).toBe(false)
+  })
+
+  it('should apply removal ownership only to the exact target', async () => {
+    const parentFile = { ...dbFile, path: 'docs' }
+    const parentStateKey = `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs`
+    const childStateKey = `${parentStateKey}/b.txt`
+    const foreignChild = makeLock({
+      lockId: 'foreign-child',
+      key: `${childStateKey}|depth:0`,
       dbFilePath: 'docs/b.txt',
       owner: { ...user.asOwner(), id: 42, login: 'alice' }
     })
-    cacheStore.set(owned.key, owned)
-    cacheStore.set(foreign.key, foreign)
+    setState(childStateKey, [foreignChild])
 
-    await expect(filesLockManager.getLocksForRemoval(user, { ...dbFile, path: 'docs' }, true)).rejects.toBeInstanceOf(LockConflict)
-    expect(cache.commitRevision).not.toHaveBeenCalled()
-    expect(cacheStore.has(owned.key)).toBe(true)
+    const cleanup = await filesLockManager.prepareCleanup(user, parentFile, { includeExact: true, includeDescendants: true })
+    await cleanup.remove()
+    expect(cacheStore.has(childStateKey)).toBe(false)
+
+    const foreignRoot = makeLock({
+      lockId: 'foreign-root',
+      key: `${parentStateKey}|depth:0`,
+      dbFilePath: 'docs',
+      owner: { ...user.asOwner(), id: 42, login: 'alice' }
+    })
+    setState(parentStateKey, [foreignRoot])
+    await expect(filesLockManager.prepareCleanup(user, parentFile, { includeExact: true, includeDescendants: true })).rejects.toBeInstanceOf(
+      LockConflict
+    )
   })
 
-  it('should leave replacement incarnations untouched while deleting the rest of a captured batch', async () => {
+  it('should reject handles from another exact resource', async () => {
+    const child = makeLock({ key: `${stateKey}/a.txt|depth:0`, dbFilePath: 'docs/a.txt' })
+
+    await expect(filesLockManager.removeLock({ ...dbFile, path: 'docs' }, child)).resolves.toBe(false)
+    await expect(filesLockManager.refreshLockTimeout(dbFile, child, 120)).resolves.toBe(false)
+    expect(cache.compareAndSwap).not.toHaveBeenCalled()
+  })
+
+  it('should remove matching captures and preserve replacement incarnations', async () => {
     const first = makeLock({
-      key: `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs/a.txt|depth:0`,
-      dbFilePath: 'docs/a.txt'
+      key: `${stateKey}|depth:0|token:t1`,
+      options: { lockRoot: null, lockToken: 't1', lockScope: LOCK_SCOPE.SHARED }
     })
     const second = makeLock({
       lockId: 'lock-id-2',
-      key: `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs/b.txt|depth:0`,
-      dbFilePath: 'docs/b.txt'
+      key: `${stateKey}|depth:0|token:t2`,
+      options: { lockRoot: null, lockToken: 't2', lockScope: LOCK_SCOPE.SHARED }
     })
-    cacheStore.set(first.key, first)
-    cacheStore.set(second.key, second)
-    const parentFile = { ...dbFile, path: 'docs' }
-    const capturedLocks = await filesLockManager.getLocksForRemoval(user, parentFile, true)
+    setState(stateKey, [first, second])
+    const cleanup = await filesLockManager.prepareCleanup(user, dbFile, { includeExact: true, includeDescendants: false })
     const replacement = { ...second, lockId: 'replacement-id' }
-    cacheStore.set(second.key, replacement)
+    setState(stateKey, [first, replacement], 'version-2')
 
-    await expect(filesLockManager.removeLocks(parentFile, capturedLocks)).resolves.toBe(false)
-
-    expect(cacheStore.has(first.key)).toBe(false)
-    expect(cacheStore.get(second.key)).toBe(replacement)
-    expect(cache.commitRevision).toHaveBeenCalledWith(
-      expect.objectContaining({ mutations: [{ type: 'delete', key: first.key, expect: 'present', expectedLockId: first.lockId }] })
-    )
+    await cleanup.remove()
+    expect(cacheStore.get(stateKey)?.locks).toEqual([replacement])
   })
 
-  it('should reject oversized removal batches before any commit', async () => {
-    for (let index = 0; index <= CACHE_REVISION_MAX_MUTATIONS; index++) {
-      const lock = makeLock({
-        lockId: `lock-id-${index}`,
-        key: `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs/${index}.txt|depth:0`,
-        dbFilePath: `docs/${index}.txt`
-      })
-      cacheStore.set(lock.key, lock)
-    }
+  it('should keep exact cleanup available when descendant capture fails', async () => {
+    const parentFile = { ...dbFile, path: 'docs' }
+    const parentStateKey = `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs`
+    const root = makeLock({ key: `${parentStateKey}|depth:0`, dbFilePath: 'docs' })
+    setState(parentStateKey, [root])
+    cache.keys.mockRejectedValueOnce(new Error('descendant scan failed'))
 
-    await expect(filesLockManager.getLocksForRemoval(user, { ...dbFile, path: 'docs' }, true)).rejects.toThrow(
-      `Cannot atomically remove more than ${CACHE_REVISION_MAX_MUTATIONS} file locks`
-    )
-    expect(cache.commitRevision).not.toHaveBeenCalled()
+    const cleanup = await filesLockManager.prepareCleanup(user, parentFile, { includeExact: true, includeDescendants: true })
+    await cleanup.remove()
+
+    expect(cacheStore.has(parentStateKey)).toBe(false)
   })
 
-  it('should resolve tokens only inside the requested namespace and applicable path', async () => {
+  it('should keep captured cleanup best effort when compare-and-swap fails', async () => {
+    const parentFile = { ...dbFile, path: 'docs' }
+    const parentStateKey = `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs`
+    const childStateKey = `${parentStateKey}/file.txt`
+    const child = makeLock({ key: `${childStateKey}|depth:0`, dbFilePath: 'docs/file.txt' })
+    setState(childStateKey, [child])
+    const cleanup = await filesLockManager.prepareCleanup(user, parentFile, { includeExact: false, includeDescendants: true })
+    cache.compareAndSwap.mockRejectedValueOnce(new Error('cleanup failed'))
+
+    await expect(cleanup.remove()).resolves.toBeUndefined()
+    expect(cacheStore.get(childStateKey)?.locks).toEqual([child])
+  })
+
+  it('should resolve tokens only on the exact requested path', async () => {
+    const parentStateKey = `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs`
     const lock = makeLock({
       dbFilePath: 'docs',
       depth: DEPTH.INFINITY,
-      key: `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs|depth:infinity|token:opaquelocktoken:t1`,
+      key: `${parentStateKey}|depth:infinity|token:opaquelocktoken:t1`,
       options: { lockRoot: '/webdav/docs', lockToken: 'opaquelocktoken:t1', lockScope: LOCK_SCOPE.EXCLUSIVE }
     })
-    cacheStore.set(lock.key, lock)
+    setState(parentStateKey, [lock])
 
-    await expect(filesLockManager.getLockByToken('opaquelocktoken:t1', { ...dbFile, path: 'docs/sub/file.txt' })).resolves.toBe(lock)
-    expect(cache.readRevisionSnapshot).toHaveBeenNthCalledWith(1, {
-      revisionKey,
-      pattern: `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|*|token:opaquelocktoken:t1`
-    })
-    await expect(filesLockManager.isLockedWithToken('opaquelocktoken:t1', { ...dbFile, path: 'other/path' })).resolves.toBeNull()
-    await expect(
-      filesLockManager.getLockByToken('opaquelocktoken:t1', { path: 'docs/sub/file.txt', ownerId: 11, inTrash: false })
-    ).resolves.toBeNull()
+    await expect(filesLockManager.getLockByToken('opaquelocktoken:t1', dbFile)).resolves.toBeNull()
+    await expect(filesLockManager.getLockByToken('opaquelocktoken:t1', { ...dbFile, path: 'docs' })).resolves.toBe(lock)
   })
 
-  it('should apply depth and ownership rules to a coherent conflict snapshot', async () => {
+  it('should ignore parent locks and enforce conflicts on the exact path', async () => {
+    const parentStateKey = `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs`
     const parentLock = makeLock({
       dbFilePath: 'docs',
       depth: DEPTH.INFINITY,
-      key: `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs|depth:infinity`,
+      key: `${parentStateKey}|depth:infinity`,
       owner: { ...user.asOwner(), id: 99, login: 'other' }
     })
-    cacheStore.set(parentLock.key, parentLock)
+    setState(parentStateKey, [parentLock])
 
+    await expect(filesLockManager.checkConflicts(dbFile, DEPTH.RESOURCE, { userId: user.id })).resolves.toBeUndefined()
+
+    const exactLock = makeLock({ owner: { ...user.asOwner(), id: 99, login: 'other' } })
+    setState(stateKey, [exactLock])
     await expect(filesLockManager.checkConflicts(dbFile, DEPTH.RESOURCE, { userId: user.id })).rejects.toEqual(
-      new LockConflict(parentLock, 'conflicting parent lock : docs/file.txt -> docs (other)')
+      new LockConflict(exactLock, 'conflicting lock : docs/file.txt (other)')
     )
+  })
+
+  it('should ignore expired members in reads and transitions', async () => {
+    const expired = makeLock({ lockId: 'expired', expiration: currentTimeStamp() - 1 })
+    const active = makeLock({ lockId: 'active', key: `${stateKey}|depth:0|token:active` })
+    setState(stateKey, [expired, active])
+
+    await expect(filesLockManager.getLocksByPath(dbFile)).resolves.toEqual([active])
+    await expect(filesLockManager.removeLock(dbFile, active)).resolves.toBe(true)
+    expect(cacheStore.has(stateKey)).toBe(false)
+  })
+
+  it('should browse direct children through non-decision state reads', async () => {
+    const parentFile = { ...dbFile, path: 'docs' }
+    const parentStateKey = `${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:docs`
+    const childStateKey = `${parentStateKey}/__proto__`
+    const sameNameChildStateKey = `${parentStateKey}/docs`
+    const grandChildStateKey = `${parentStateKey}/sub/b.txt`
+    const root = makeLock({ key: `${parentStateKey}|depth:0`, dbFilePath: 'docs' })
+    const sharedRoot = makeLock({ lockId: 'shared-root-id', key: `${parentStateKey}|depth:0|token:shared`, dbFilePath: 'docs' })
+    const child = makeLock({ lockId: 'child-id', key: `${childStateKey}|depth:0`, dbFilePath: 'docs/__proto__' })
+    const sameNameChild = makeLock({ lockId: 'same-name-child-id', key: `${sameNameChildStateKey}|depth:0`, dbFilePath: 'docs/docs' })
+    const grandChild = makeLock({ lockId: 'grand-child-id', key: `${grandChildStateKey}|depth:0`, dbFilePath: 'docs/sub/b.txt' })
+    setState(parentStateKey, [root, sharedRoot])
+    setState(childStateKey, [child])
+    setState(sameNameChildStateKey, [sameNameChild])
+    setState(grandChildStateKey, [grandChild])
+
+    const discovery = await filesLockManager.browseParentChildLocks(parentFile)
+    expect(Object.getPrototypeOf(discovery.children)).toBeNull()
+    expect(discovery.root).toEqual([root, sharedRoot])
+    expect(discovery.children.docs).toEqual([sameNameChild])
+    expect(discovery.children['__proto__']).toEqual([child])
+    expect(cache.keys).toHaveBeenCalledWith(`${CACHE_LOCK_PREFIX}|ownerId:10|${CACHE_LOCK_NATIVE_SCOPE_SEGMENT}|path:*`)
   })
 })

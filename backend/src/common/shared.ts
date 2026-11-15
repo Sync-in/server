@@ -39,6 +39,40 @@ export function currentDate(value?: string): Date {
   return new Date((value ? value : new Date().toISOString()).split('T')[0])
 }
 
+// Applies one locale-independent folding pass; some Unicode mappings need
+// another pass before their caseless form stabilizes.
+function unicodeCaseFoldPass(value: string): string {
+  let folded = ''
+  for (const character of value) {
+    // Default Unicode case folding keeps dotless i distinct from ASCII i.
+    folded += character === '\u0131' ? character : character.toUpperCase().toLowerCase()
+  }
+  return folded
+}
+
+// Produces a stable NFC identity for caseless equality while preserving accents
+// and compatibility distinctions such as circled numbers.
+export function unicodeCaselessIdentity(value: string): string {
+  let ascii = true
+  for (let i = 0; i < value.length; i++) {
+    if (value.charCodeAt(i) > 0x7f) {
+      ascii = false
+      break
+    }
+  }
+  if (ascii) return value.toLowerCase()
+
+  // NFD makes canonically equivalent inputs identical before folding; NFC keeps the resulting key compact.
+  let identity = value.normalize('NFD')
+  for (let pass = 0; pass < 3; pass++) {
+    // Some mappings need another pass, for example capital sharp S: ẞ -> ß -> ss.
+    const folded = unicodeCaseFoldPass(identity)
+    if (folded === identity) break
+    identity = folded
+  }
+  return identity.normalize('NFC')
+}
+
 export function createSlug(input: string, replaceCount = false): string {
   // Collapse runs of characters other than Unicode letters or numbers into one hyphen, then trim edge hyphens.
   // When replaceCount is true, also remove an existing trailing numeric suffix (e.g. -2).
@@ -62,10 +96,7 @@ export function createCacheKeySlug(args: unknown[]) {
     .map((arg) => {
       if (arg == null) return '~null'
       if (arg === '*') return '*'
-      return String(arg)
-        .toLowerCase()
-        .normalize('NFC')
-        .replace(/[%:~*"'\x60]/g, (character) => '%' + character.charCodeAt(0).toString(16).toUpperCase())
+      return unicodeCaselessIdentity(String(arg)).replace(/[%:~*"'\x60]/g, (character) => '%' + character.charCodeAt(0).toString(16).toUpperCase())
     })
     .join(':')
 }

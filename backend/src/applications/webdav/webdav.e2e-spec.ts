@@ -78,6 +78,74 @@ describe('WebDAV (e2e)', () => {
     expect(res.statusCode).toEqual(207)
   })
 
+  describe('collection locks without inheritance', () => {
+    const auth = 'Basic am86cGFzc3dvcmQ='
+    const collectionPath = `/webdav/personal/test-collection-lock-${randomUUID()}`
+    let lockToken: string | undefined
+
+    afterEach(async () => {
+      if (lockToken) {
+        await app.inject({
+          method: 'UNLOCK',
+          url: collectionPath,
+          headers: { authorization: auth, 'lock-token': lockToken }
+        } as any)
+        lockToken = undefined
+      }
+      await app.inject({ method: 'DELETE', url: collectionPath, headers: { authorization: auth } } as any)
+    })
+
+    it('persists a Depth infinity collection lock without blocking a child and requires its token to delete the collection', async () => {
+      const mkcolRes = await app.inject({ method: 'MKCOL', url: collectionPath, headers: { authorization: auth } } as any)
+      expect(mkcolRes.statusCode).toBe(201)
+
+      const lockRes = await app.inject({
+        method: 'LOCK',
+        url: collectionPath,
+        headers: {
+          authorization: auth,
+          'content-type': XML_CONTENT_TYPE,
+          depth: 'infinity',
+          timeout: 'Second-60'
+        },
+        body: '<lockinfo xmlns="DAV:"><lockscope><exclusive/></lockscope><locktype><write/></locktype><owner>e2e</owner></lockinfo>'
+      } as any)
+      expect(lockRes.statusCode).toBe(200)
+      const returnedLockToken = lockRes.headers['lock-token']
+      lockToken = Array.isArray(returnedLockToken) ? returnedLockToken[0] : returnedLockToken
+      expect(lockToken).toBeDefined()
+      if (!lockToken) throw new Error('LOCK response did not provide a lock token')
+
+      const lockDiscoveryRes = await app.inject({
+        method: 'PROPFIND',
+        url: collectionPath,
+        headers: { authorization: auth, 'content-type': XML_CONTENT_TYPE, depth: '0' },
+        body: '<propfind xmlns="DAV:"><prop><lockdiscovery/></prop></propfind>'
+      } as any)
+      expect(lockDiscoveryRes.statusCode).toBe(207)
+      expect(lockDiscoveryRes.body).toContain(lockToken.slice(1, -1))
+
+      const childPutRes = await app.inject({
+        method: 'PUT',
+        url: `${collectionPath}/child.txt`,
+        headers: { authorization: auth, 'content-type': 'text/plain' },
+        body: 'child'
+      } as any)
+      expect([201, 204]).toContain(childPutRes.statusCode)
+
+      const deleteWithoutTokenRes = await app.inject({ method: 'DELETE', url: collectionPath, headers: { authorization: auth } } as any)
+      expect(deleteWithoutTokenRes.statusCode).toBe(423)
+
+      const deleteWithTokenRes = await app.inject({
+        method: 'DELETE',
+        url: collectionPath,
+        headers: { authorization: auth, if: `(${lockToken})` }
+      } as any)
+      expect(deleteWithTokenRes.statusCode).toBe(204)
+      lockToken = undefined
+    })
+  })
+
   describe('PUT with non-XML Content-Types (stream preservation)', () => {
     const testFilePath = `/webdav/personal/test-content-type-${randomUUID()}.txt`
     const auth = 'Basic am86cGFzc3dvcmQ='

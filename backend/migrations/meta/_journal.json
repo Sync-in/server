@@ -50,6 +50,13 @@
       "when": 1792446477530,
       "tag": "0006_path_collate_accents",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1794734257838,
+      "tag": "0007_secret_prodigy",
+      "breakpoints": true
     }
   ]
 }

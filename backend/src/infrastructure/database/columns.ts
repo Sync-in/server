@@ -4,11 +4,11 @@ import { DB_CHARSET, DB_PATH_COLLATION } from './constants.js'
 export const pathVarchar = customType<{
   data: string
   driverData: string
-  config: { length: number }
+  config: { length: number; collation?: string }
   configRequired: true
 }>({
-  dataType({ length }) {
-    return `varchar(${length}) CHARACTER SET ${DB_CHARSET} COLLATE ${DB_PATH_COLLATION}`
+  dataType({ length, collation = DB_PATH_COLLATION }) {
+    return `varchar(${length}) CHARACTER SET ${DB_CHARSET} COLLATE ${collation}`
   }
 })
 

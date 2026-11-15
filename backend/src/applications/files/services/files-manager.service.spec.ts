@@ -13,6 +13,7 @@ import * as spacesPathUtils from '../../spaces/utils/paths.js'
 import * as spacesPermsUtils from '../../spaces/utils/permissions.js'
 import { DEPTH } from '../../webdav/constants/webdav.js'
 import { ACTION } from '../../../common/constants.js'
+import { SERVER_NAME } from '../../../common/shared.js'
 import { downloadFileSchema } from '../dto/file-operations.dto.js'
 import { FileEvent, FileTaskEvent } from '../events/file-events.js'
 import { FileError, SourceCleanupError } from '../models/file-error.js'
@@ -49,8 +50,8 @@ describe(FilesManager.name, () => {
     removeLock: Mock
     createOrRefresh: Mock
     getLocksByPath: Mock
-    getLocksForRemoval: Mock
-    removeLocks: Mock
+    isSameLockResource: Mock
+    prepareCleanup: Mock
     convertLockToFileLockProps: Mock
   }
 
@@ -86,6 +87,8 @@ describe(FilesManager.name, () => {
     setPathExists({ [srcPath]: true, [path.dirname(dstPath)]: true, [dstPath]: dstExists }, false)
     vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(false)
   }
+
+  const makeLockCleanup = () => ({ remove: vi.fn().mockResolvedValue(undefined) })
 
   const makeTrashSpace = (overrides: Record<string, any> = {}) =>
     makeSpace({
@@ -161,8 +164,8 @@ describe(FilesManager.name, () => {
       removeLock: vi.fn().mockResolvedValue(true),
       createOrRefresh: vi.fn().mockResolvedValue([false, { key: 'lock-2' }]),
       getLocksByPath: vi.fn().mockResolvedValue([]),
-      getLocksForRemoval: vi.fn().mockResolvedValue([]),
-      removeLocks: vi.fn().mockResolvedValue(true),
+      isSameLockResource: vi.fn().mockReturnValue(false),
+      prepareCleanup: vi.fn().mockImplementation(async () => makeLockCleanup()),
       convertLockToFileLockProps: vi.fn().mockReturnValue({ owner: { id: 7, login: 'john' }, app: 'Sync-in', isExclusive: true })
     }
 
@@ -1112,15 +1115,106 @@ describe(FilesManager.name, () => {
         false
       )
       vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(false)
+      const sourceLockCleanup = makeLockCleanup()
+      filesLockManager.prepareCleanup.mockResolvedValueOnce(sourceLockCleanup)
       const emitSpy = vi.spyOn(FileEvent, 'emit')
 
       await service.copyMove(user, src, dst, true)
 
+      expect(filesLockManager.prepareCleanup).toHaveBeenCalledWith(user, src.dbFile, {
+        includeExact: true,
+        includeDescendants: false
+      })
+      expect(filesLockManager.prepareCleanup.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(filesUtils.moveFiles).mock.invocationCallOrder[0])
       expect(filesUtils.moveFiles).toHaveBeenCalledWith('/src-base/src.txt', '/dst-base/dst.txt', false)
+      expect(sourceLockCleanup.remove).toHaveBeenCalledOnce()
+      expect(vi.mocked(filesUtils.moveFiles).mock.invocationCallOrder[0]).toBeLessThan(sourceLockCleanup.remove.mock.invocationCallOrder[0])
       expect(filesTasksTransfer.move).not.toHaveBeenCalled()
       expect(filesQueries.moveFiles).toHaveBeenCalledWith(src.dbFile, dst.dbFile, false)
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space: src, action: ACTION.DELETE_PERMANENTLY, rPath: '/src-base/src.txt' })
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space: dst, action: ACTION.ADD, rPath: '/dst-base/dst.txt' })
+    })
+
+    it('should clean exact and descendant source locks after moving a directory', async () => {
+      const src = makeSpace({
+        realPath: '/data/users/john/files/source',
+        dbFile: { ownerId: 7, path: 'source', inTrash: false }
+      })
+      const dst = makeSpace({
+        realPath: '/data/users/john/files/destination',
+        dbFile: { ownerId: 7, path: 'destination', inTrash: false }
+      })
+      const sourceLockCleanup = makeLockCleanup()
+      setPathExists(
+        {
+          [src.realPath]: true,
+          [path.dirname(dst.realPath)]: true,
+          [dst.realPath]: false
+        },
+        false
+      )
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(true)
+      filesLockManager.prepareCleanup.mockResolvedValueOnce(sourceLockCleanup)
+
+      await service.copyMove(user, src, dst, true)
+
+      expect(filesLockManager.prepareCleanup).toHaveBeenCalledWith(user, src.dbFile, {
+        includeExact: true,
+        includeDescendants: true
+      })
+      expect(filesLockManager.prepareCleanup.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(filesUtils.moveFiles).mock.invocationCallOrder[0])
+      expect(sourceLockCleanup.remove).toHaveBeenCalledOnce()
+    })
+
+    it('should preserve locks when moving only changes the resource path casing', async () => {
+      const src = makeSpace({
+        url: 'files/personal/code.ts',
+        realPath: '/data/users/john/files/code.ts',
+        dbFile: { ownerId: 7, path: 'code.ts', inTrash: false }
+      })
+      const dst = makeSpace({
+        url: 'files/personal/code.TS',
+        realPath: '/data/users/john/files/code.TS',
+        dbFile: { ownerId: 7, path: 'code.TS', inTrash: false }
+      })
+      prepareFileTransfer(src.realPath, dst.realPath, true)
+      filesLockManager.isSameLockResource.mockReturnValueOnce(true)
+      const deleteSpy = vi.spyOn(service, 'delete')
+
+      await service.copyMove(user, src, dst, true, true)
+
+      expect(filesLockManager.isSameLockResource).toHaveBeenCalledWith(src.dbFile, dst.dbFile)
+      expect(deleteSpy).not.toHaveBeenCalled()
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(src.realPath, dst.realPath, true)
+      expect(filesLockManager.prepareCleanup).not.toHaveBeenCalled()
+      expect(filesQueries.moveFiles).toHaveBeenCalledWith(src.dbFile, dst.dbFile, false)
+    })
+
+    it('should not preserve locks for caseless physical paths in different lock scopes', async () => {
+      const src = makeSpace({
+        url: 'files/personal/report.txt',
+        realPath: '/data/Roots/report.txt',
+        dbFile: { ownerId: 7, path: 'report.txt', inTrash: false }
+      })
+      const dst = makeSpace({
+        url: 'files/project/report.txt',
+        realPath: '/data/roots/report.txt',
+        dbFile: { ownerId: null, spaceId: 22, path: 'report.txt', inTrash: false }
+      })
+      const sourceLockCleanup = makeLockCleanup()
+      prepareFileTransfer(src.realPath, dst.realPath, true)
+      filesLockManager.prepareCleanup.mockResolvedValueOnce(sourceLockCleanup)
+      const deleteSpy = vi.spyOn(service, 'delete').mockResolvedValue(undefined)
+
+      await service.copyMove(user, src, dst, true, true)
+
+      expect(filesLockManager.isSameLockResource).toHaveBeenCalledWith(src.dbFile, dst.dbFile)
+      expect(filesLockManager.prepareCleanup).toHaveBeenCalledWith(user, src.dbFile, {
+        includeExact: true,
+        includeDescendants: false
+      })
+      expect(deleteSpy).toHaveBeenCalledWith(user, dst, undefined, undefined, { preserveExactLocks: true })
+      expect(sourceLockCleanup.remove).toHaveBeenCalledOnce()
     })
 
     it('should restore a space-trash entry into an external root with the destination db scope', async () => {
@@ -1224,13 +1318,20 @@ describe(FilesManager.name, () => {
       })
       const signal = new AbortController().signal
       const cleanupError = new SourceCleanupError(src.realPath, dst.realPath, { cause: new Error('cleanup failed') })
+      const sourceLockCleanup = makeLockCleanup()
       prepareFileTransfer(src.realPath, dst.realPath)
+      filesLockManager.prepareCleanup.mockResolvedValueOnce(sourceLockCleanup)
       filesTasksTransfer.move.mockResolvedValueOnce(cleanupError)
 
       await expect(service.copyMove(user, src, dst, true, false, false, undefined, signal)).rejects.toBe(cleanupError)
 
+      expect(filesLockManager.prepareCleanup).toHaveBeenCalledWith(user, src.dbFile, {
+        includeExact: true,
+        includeDescendants: false
+      })
       expect(filesTasksTransfer.move).toHaveBeenCalledWith(user, src, dst, false, false, signal, expect.any(Function))
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
+      expect(sourceLockCleanup.remove).not.toHaveBeenCalled()
       expect(filesQueries.moveFiles).toHaveBeenCalledWith(src.dbFile, dst.dbFile, false)
     })
 
@@ -1263,10 +1364,11 @@ describe(FilesManager.name, () => {
       })
       prepareFileTransfer(src.realPath, dst.realPath, true)
       const deleteSpy = vi.spyOn(service, 'delete').mockResolvedValueOnce(undefined)
+      const dav = { depth: DEPTH.RESOURCE as const, lockTokens: ['destination-token'] }
 
-      await service.copyMove(user, src, dst, false, true)
+      await service.copyMove(user, src, dst, false, true, false, dav)
 
-      expect(deleteSpy).toHaveBeenCalledWith(user, dst)
+      expect(deleteSpy).toHaveBeenCalledWith(user, dst, { lockTokens: dav.lockTokens }, undefined, { preserveExactLocks: true })
       expect(filesUtils.copyFiles).toHaveBeenCalledWith(src.realPath, dst.realPath, true, false)
       expect(filesTasksTransfer.copy).not.toHaveBeenCalled()
       expect(deleteSpy.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(filesUtils.copyFiles).mock.invocationCallOrder[0])
@@ -1285,11 +1387,12 @@ describe(FilesManager.name, () => {
       prepareFileTransfer(src.realPath, dst.realPath, true)
       const deleteSpy = vi.spyOn(service, 'delete').mockResolvedValueOnce(undefined)
       const signal = new AbortController().signal
+      const dav = { depth: DEPTH.RESOURCE as const, lockTokens: ['destination-token'] }
 
-      await service.copyMove(user, src, dst, false, true, false, undefined, signal)
+      await service.copyMove(user, src, dst, false, true, false, dav, signal)
 
       expect(filesTasksTransfer.copy).toHaveBeenCalledWith(user, src, dst, true, false, false, signal, expect.any(Function))
-      expect(deleteSpy).toHaveBeenCalledWith(user, dst)
+      expect(deleteSpy).toHaveBeenCalledWith(user, dst, { lockTokens: dav.lockTokens }, undefined, { preserveExactLocks: true })
       expect(src.task.props).toMatchObject({ progress: 40, size: 40, totalSize: 100 })
     })
   })
@@ -1356,10 +1459,34 @@ describe(FilesManager.name, () => {
 
       expect(filesUtils.removeFiles).toHaveBeenCalledWith(childSpace.realPath)
       expect(filesUtils.removeFiles).not.toHaveBeenCalledWith(trashRoot.realPath)
+      expect(filesLockManager.checkConflicts).toHaveBeenCalledWith(trashRoot.dbFile, DEPTH.RESOURCE, {
+        userId: user.id,
+        lockTokens: ['webdav-token']
+      })
       expect(filesLockManager.checkConflicts).toHaveBeenCalledWith(childSpace.dbFile, DEPTH.RESOURCE, {
         userId: user.id,
         lockTokens: ['webdav-token']
       })
+    })
+
+    it('should reject an exact trash-root lock before enumerating its children', async () => {
+      const trashRoot = makeTrashSpace({
+        url: 'trash/personal',
+        realPath: '/data/users/john/trash',
+        dbFile: { ...targetTrashDbScope, path: '.' },
+        paths: []
+      })
+      const lockError = new LockConflict({ dbFilePath: '.' } as any, 'Lock conflict')
+      const readdirSpy = vi.spyOn(fs, 'readdir')
+      filesLockManager.checkConflicts.mockRejectedValueOnce(lockError)
+
+      await expect(service.delete(user, trashRoot, { lockTokens: [] })).rejects.toBe(lockError)
+
+      expect(filesLockManager.checkConflicts).toHaveBeenCalledWith(trashRoot.dbFile, DEPTH.RESOURCE, {
+        userId: user.id,
+        lockTokens: []
+      })
+      expect(readdirSpy).not.toHaveBeenCalled()
     })
 
     it('should preserve WebDAV errors when emptying the trash synchronously', async () => {
@@ -1375,24 +1502,23 @@ describe(FilesManager.name, () => {
       vi.mocked(filesUtils.isPathExists).mockResolvedValue(true)
       vi.mocked(filesUtils.isPathIsDir).mockResolvedValue(true)
       spacesManager.spaceEnv.mockResolvedValueOnce(childSpace)
-      filesLockManager.checkConflicts.mockRejectedValueOnce(lockError)
+      filesLockManager.checkConflicts.mockResolvedValueOnce(undefined).mockRejectedValueOnce(lockError)
 
       await expect(service.delete(user, trashRoot, { lockTokens: [] })).rejects.toBe(lockError)
 
       expect(filesUtils.removeFiles).not.toHaveBeenCalled()
     })
 
-    it('should abort before filesystem deletion when the lock batch cannot be captured', async () => {
+    it('should abort before filesystem deletion when the exact locks cannot be captured', async () => {
       const space = makeTrashSpace({ realPath: '/data/users/john/trash/locked-directory' })
       const error = new RangeError('Too many locks')
       vi.mocked(filesUtils.isPathExists).mockResolvedValue(true)
       vi.mocked(filesUtils.isPathIsDir).mockResolvedValue(true)
-      filesLockManager.getLocksForRemoval.mockRejectedValueOnce(error)
+      filesLockManager.prepareCleanup.mockRejectedValueOnce(error)
 
       await expect(service.delete(user, space)).rejects.toBe(error)
 
       expect(filesUtils.removeFiles).not.toHaveBeenCalled()
-      expect(filesLockManager.removeLocks).not.toHaveBeenCalled()
     })
 
     it('should reject copying or moving the trash root', async () => {
@@ -1423,20 +1549,49 @@ describe(FilesManager.name, () => {
       })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
       vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(true)
-      const capturedLock = { key: 'lk-1' }
-      filesLockManager.getLocksForRemoval.mockResolvedValueOnce([capturedLock])
+      const lockCleanup = makeLockCleanup()
+      filesLockManager.prepareCleanup.mockResolvedValueOnce(lockCleanup)
       const emitSpy = vi.spyOn(FileEvent, 'emit')
 
       await service.delete(user, space)
 
       expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/trash/old.txt')
-      expect(filesLockManager.getLocksForRemoval).toHaveBeenCalledWith(user, space.dbFile, true)
-      expect(filesLockManager.getLocksForRemoval.mock.invocationCallOrder[0]).toBeLessThan(
-        vi.mocked(filesUtils.removeFiles).mock.invocationCallOrder[0]
-      )
-      expect(filesLockManager.removeLocks).toHaveBeenCalledWith(space.dbFile, [capturedLock])
+      expect(filesLockManager.checkConflicts).toHaveBeenCalledWith(space.dbFile, DEPTH.RESOURCE, {
+        userId: user.id,
+        lockTokens: undefined
+      })
+      expect(filesLockManager.prepareCleanup).toHaveBeenCalledWith(user, space.dbFile, {
+        includeExact: true,
+        includeDescendants: true
+      })
+      expect(filesLockManager.prepareCleanup.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(filesUtils.removeFiles).mock.invocationCallOrder[0])
+      expect(lockCleanup.remove).toHaveBeenCalledOnce()
+      expect(vi.mocked(filesUtils.removeFiles).mock.invocationCallOrder[0]).toBeLessThan(lockCleanup.remove.mock.invocationCallOrder[0])
       expect(filesQueries.deleteFiles).toHaveBeenCalledWith(space.dbFile, true, false)
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.DELETE_PERMANENTLY, rPath: '/data/users/john/trash/old.txt' })
+    })
+
+    it('should preserve exact locks while deleting an overwritten directory and clean its descendants', async () => {
+      const space = makeTrashSpace({
+        realPath: '/data/users/john/trash/folder',
+        dbFile: { ...targetTrashDbScope, path: 'folder' }
+      })
+      const lockCleanup = makeLockCleanup()
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(true)
+      filesLockManager.prepareCleanup.mockResolvedValueOnce(lockCleanup)
+
+      await service.delete(user, space, { lockTokens: ['destination-token'] }, undefined, { preserveExactLocks: true })
+
+      expect(filesLockManager.checkConflicts).toHaveBeenCalledWith(space.dbFile, DEPTH.RESOURCE, {
+        userId: user.id,
+        lockTokens: ['destination-token']
+      })
+      expect(filesLockManager.prepareCleanup).toHaveBeenCalledWith(user, space.dbFile, {
+        includeExact: false,
+        includeDescendants: true
+      })
+      expect(lockCleanup.remove).toHaveBeenCalledOnce()
     })
 
     it('should reject before deleting when the trash target is not available', async () => {
@@ -1891,6 +2046,7 @@ describe(FilesManager.name, () => {
         FILE_OPERATION.DECOMPRESS,
         'task-d'
       )
+      expect(filesLockManager.create).toHaveBeenCalledWith(user, space.dbFile, SERVER_NAME, DEPTH.RESOURCE)
       expect(filesTasksTransfer.createExtractionProgressHandler).toHaveBeenCalledWith(space)
       expect(unzipSpy).toHaveBeenCalledWith('/data/users/john/files/archive.zip', extractionPath, undefined, undefined, expect.any(Function))
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(extractionPath, '/data/users/john/files/archive')

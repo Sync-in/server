@@ -2,13 +2,12 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { toErrorMessage } from '../../../common/errors.js'
-import { FileLock } from '../../files/interfaces/file-lock.interface.js'
 import { FileProps } from '../../files/interfaces/file-props.interface.js'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service.js'
 import { FilesQueries } from '../../files/services/files-queries.service.js'
 import { FilesRecents } from '../../files/services/files-recents.service.js'
 import { FileError } from '../../files/models/file-error.js'
-import { dirName, fileName, getProps, isInternalTemporaryEntry } from '../../files/utils/files.js'
+import { dirName, fileName, filePathIdentity, getProps, isInternalTemporaryEntry } from '../../files/utils/files.js'
 import { SharesQueries } from '../../shares/services/shares-queries.service.js'
 import { UserModel } from '../../users/models/user.model.js'
 import type { SpaceBrowserRootFile } from '../interfaces/space-browser-root-file.interface.js'
@@ -287,10 +286,13 @@ export class SpacesBrowser {
     if (space.inSharesList) {
       return
     }
-    const locks: Record<string, FileLock> = await this.filesLockManager.browseParentChildLocks(space.dbFile, false)
-    if (!Object.keys(locks).length) return
-    for (const f of files.filter((f) => !f.root && !f.origin && f.name in locks)) {
-      f.lock = this.filesLockManager.convertLockToFileLockProps(locks[f.name])
+    const { children } = await this.filesLockManager.browseParentChildLocks(space.dbFile)
+    if (!Object.keys(children).length) return
+    for (const f of files) {
+      if (f.root || f.origin) continue
+      const nameIdentity = filePathIdentity(f.name)
+      if (!Object.hasOwn(children, nameIdentity)) continue
+      f.lock = this.filesLockManager.convertLockToFileLockProps(children[nameIdentity][0])
     }
   }
 }
