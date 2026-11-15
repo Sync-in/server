@@ -1,8 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { and, between, eq, inArray, ne, notBetween, SQL, sql } from 'drizzle-orm'
-import { unionAll } from 'drizzle-orm/mysql-core'
+import { and, between, inArray, notBetween, type SQL, sql } from 'drizzle-orm'
 import type { MySqlQueryResult } from 'drizzle-orm/mysql2'
-import { randomUUID } from 'node:crypto'
 import { toErrorMessage } from '../../../common/errors.js'
 import { createCacheKeySlug, currentTimeStamp } from '../../../common/shared.js'
 import { configuration } from '../../../configuration/config.environment.js'
@@ -13,24 +11,15 @@ import { type DBSchema } from '../../database/interfaces/database.interface.js'
 import { dbCheckAffectedRows, dbParseJson, getMysqlError } from '../../database/utils.js'
 import { SchedulerManager } from '../../scheduler/scheduler-manager.service.js'
 import type { CacheRateLimitResult, CacheRateLimitState } from '../interfaces/cache-rate-limit.interface.js'
-import {
-  type CacheRevisionCommit,
-  type CacheRevisionMutation,
-  type CacheRevisionMutationCommit,
-  type CacheRevisionSnapshot,
-  type CacheRevisionSnapshotCommand
-} from '../interfaces/cache-revision.interface.js'
+import type { CacheCompareAndSwapCommand } from '../interfaces/cache-compare-and-swap.interface.js'
 import { cache } from '../schemas/mysql-cache.schema.js'
-import { Cache, validateCacheRevisionCommand } from '../cache.service.js'
+import { Cache, validateCacheCompareAndSwapCommand } from '../cache.service.js'
 
 function getErrorSource(error: unknown): string | undefined {
   if (error === null || typeof error !== 'object') return undefined
   if ('sql' in error && typeof error.sql === 'string') return error.sql
   return 'code' in error && typeof error.code === 'string' ? error.code : undefined
 }
-
-const CACHE_REVISION_CONFLICT = new Error('cache revision conflict')
-type CacheTransaction = Parameters<Parameters<DBSchema['transaction']>[0]>[0]
 
 @Injectable()
 export class MysqlCacheAdapter implements Cache {
@@ -42,8 +31,8 @@ export class MysqlCacheAdapter implements Cache {
   infiniteExpiration = -1
   private readonly scheduledJobName = 'cache_expired_keys' as const
   private readonly scheduledJobInterval = 5 // minutes
-  private readonly retryableRevisionErrorCode = 'ER_LOCK_DEADLOCK'
-  private readonly revisionDeadlockRetries = 1
+  private readonly retryableCompareAndSwapErrorCode = 'ER_LOCK_DEADLOCK'
+  private readonly compareAndSwapDeadlockRetries = 1
   private readonly logger = new Logger(Cache.name.toUpperCase())
   private internalSchedulerRegistered = false
   private unsubscribeAvailability?: () => void
@@ -89,7 +78,7 @@ export class MysqlCacheAdapter implements Cache {
     const [entry] = await this.db
       .select({ key: cache.key })
       .from(cache)
-      .where(and(eq(cache.key, key), this.whereNotExpired()))
+      .where(and(this.whereKey(key), this.whereNotExpired()))
       .limit(1)
     return entry !== undefined
   }
@@ -98,7 +87,7 @@ export class MysqlCacheAdapter implements Cache {
     const [v]: { value: any }[] = await this.db
       .select({ value: cache.value })
       .from(cache)
-      .where(and(eq(cache.key, key), this.whereNotExpired()))
+      .where(and(this.whereKey(key), this.whereNotExpired()))
       .limit(1)
     return v?.value
   }
@@ -153,7 +142,7 @@ export class MysqlCacheAdapter implements Cache {
       const [entry] = await tx
         .select({ value: cache.value, now: sql<number>`UNIX_TIMESTAMP(CURRENT_TIMESTAMP(3)) * 1000`.mapWith(Number) })
         .from(cache)
-        .where(eq(cache.key, key))
+        .where(this.whereKey(key))
         .limit(1)
         .for('update')
       const now = entry.now
@@ -175,7 +164,7 @@ export class MysqlCacheAdapter implements Cache {
 
       // The cache table stores its physical expiration in seconds; throttler durations use milliseconds.
       const expiration = Math.ceil(Math.max(state.blockExpiresAt, ...state.hits) / 1000)
-      await tx.update(cache).set({ value: state, expiration }).where(eq(cache.key, key))
+      await tx.update(cache).set({ value: state, expiration }).where(this.whereKey(key))
 
       return {
         totalHits: state.hits.length,
@@ -186,116 +175,61 @@ export class MysqlCacheAdapter implements Cache {
     })
   }
 
-  async readRevisionSnapshot(command: CacheRevisionSnapshotCommand): Promise<CacheRevisionSnapshot> {
-    // Both branches share the same statement-level InnoDB read view.
-    const rows: { key: string; value: unknown }[] = await unionAll(
-      this.db
-        .select({ key: cache.key, value: cache.value })
-        .from(cache)
-        .where(and(eq(cache.key, command.revisionKey), this.whereNotExpired())),
-      this.db
-        .select({ key: cache.key, value: cache.value })
-        .from(cache)
-        .where(
-          and(ne(cache.key, command.revisionKey), sql`${cache.key} LIKE ${this.toLikePattern(command.pattern)} ESCAPE '='`, this.whereNotExpired())
-        )
-    )
-    const revisionEntry = rows.find(({ key }) => key === command.revisionKey)
-    let revision: string | null = null
-    if (revisionEntry !== undefined) {
-      const parsedRevision = this.parseRevision(revisionEntry.value)
-      if (typeof parsedRevision !== 'string') {
-        throw new Error(`Invalid cache revision for ${command.revisionKey}`)
-      }
-      revision = parsedRevision
-    }
-    return { revision, entries: rows.filter(({ key }) => key !== command.revisionKey) }
-  }
-
-  async commitRevision(command: CacheRevisionCommit): Promise<boolean> {
-    return this.commitRevisionMutations(command, command.expectedRevision)
-  }
-
-  async mutateRevision(command: CacheRevisionMutationCommit): Promise<boolean> {
-    return this.commitRevisionMutations(command)
-  }
-
-  private async commitRevisionMutations(command: CacheRevisionMutationCommit, expectedRevision?: string | null): Promise<boolean> {
-    validateCacheRevisionCommand(command, this.defaultTTL)
-    const mutations = [...command.mutations].sort((first, second) => (first.key < second.key ? -1 : first.key > second.key ? 1 : 0))
-
+  async compareAndSwap(command: CacheCompareAndSwapCommand): Promise<boolean> {
+    validateCacheCompareAndSwapCommand(command, this.defaultTTL)
+    const value = command.value === undefined ? undefined : this.serialize(command.value)
+    const expiration = command.value === undefined ? undefined : this.getDatabaseTTL(command.ttl)
     for (let attempt = 0; ; attempt++) {
       try {
-        await this.db.transaction(async (tx) => {
-          // Rotate the namespace first. The write is the mutex and is rolled back with every failed precondition.
-          await this.rotateRevision(tx, command.revisionKey, expectedRevision)
-
-          if (expectedRevision === undefined && mutations.length === 1 && mutations[0].expect === 'present') {
-            // The conditional UPDATE/DELETE validates the known lock incarnation without a preceding SELECT FOR UPDATE.
-            await this.applyKnownMutation(tx, mutations[0])
-            return
+        if (command.expectedVersion === null && value !== undefined) {
+          // Expired rows still occupy the unique key. Reclaim one after an insert
+          // collision, then retry the insert to distinguish deletion from a concurrent writer.
+          try {
+            await this.db.insert(cache).values({ key: command.key, value, expiration: expiration! })
+            return true
+          } catch (error) {
+            if (getMysqlError(error)?.code !== 'ER_DUP_ENTRY') throw error
           }
 
-          const entries = mutations.length
-            ? await tx
-                .select({
-                  key: cache.key,
-                  value: cache.value,
-                  expiration: cache.expiration,
-                  now: this.databaseTime().mapWith(Number)
-                })
-                .from(cache)
-                .where(
-                  inArray(
-                    cache.key,
-                    mutations.map(({ key }) => key)
-                  )
-                )
-                .orderBy(cache.key)
-                .for('update')
-            : []
-          const entriesByKey = new Map(entries.map((entry) => [entry.key, entry]))
+          const updateResult = await this.db
+            .update(cache)
+            .set({ value, expiration: expiration! })
+            .where(and(this.whereKey(command.key), this.whereExpired()))
+          if (dbCheckAffectedRows(updateResult, 1, false)) return true
 
-          // Validate the complete locked snapshot before mutating any lock row.
-          for (const mutation of mutations) {
-            const entry = entriesByKey.get(mutation.key)
-            const isPresent = entry !== undefined && (entry.expiration === this.infiniteExpiration || entry.expiration > entry.now)
-            if ((mutation.expect === 'present') !== isPresent) throw CACHE_REVISION_CONFLICT
-            if (mutation.expectedLockId !== undefined) {
-              const value = dbParseJson(entry?.value)
-              if (value === null || typeof value !== 'object' || value.lockId !== mutation.expectedLockId) {
-                throw CACHE_REVISION_CONFLICT
-              }
-            }
+          try {
+            await this.db.insert(cache).values({ key: command.key, value, expiration: expiration! })
+            return true
+          } catch (error) {
+            if (getMysqlError(error)?.code === 'ER_DUP_ENTRY') return false
+            throw error
           }
+        }
 
-          const deleteKeys = mutations.filter((mutation) => mutation.type === 'delete').map(({ key }) => key)
-          if (deleteKeys.length) await tx.delete(cache).where(inArray(cache.key, deleteKeys))
-
-          const setMutations = mutations.filter((mutation): mutation is Extract<CacheRevisionMutation, { type: 'set' }> => mutation.type === 'set')
-          if (setMutations.length) {
-            await tx
-              .insert(cache)
-              .values(
-                setMutations.map(({ key, value, ttl }) => ({
-                  key,
-                  value: this.serialize(value),
-                  expiration: this.getDatabaseTTL(ttl)
-                }))
-              )
-              .onDuplicateKeyUpdate({
-                set: {
-                  value: sql.raw('VALUES(`value`)'),
-                  expiration: sql.raw('VALUES(`expiration`)')
-                }
-              })
+        if (command.expectedVersion !== null) {
+          const whereVersionMatches = and(this.whereKey(command.key), this.whereNotExpired(), this.whereVersion(command.expectedVersion))
+          if (value === undefined) {
+            return dbCheckAffectedRows(await this.db.delete(cache).where(whereVersionMatches), 1, false)
           }
+          return dbCheckAffectedRows(await this.db.update(cache).set({ value, expiration: expiration! }).where(whereVersionMatches), 1, false)
+        }
+
+        return await this.db.transaction(async (tx) => {
+          const [entry] = await tx
+            .select({ expiration: cache.expiration, now: this.databaseTime().mapWith(Number) })
+            .from(cache)
+            .where(this.whereKey(command.key))
+            .limit(1)
+            .for('update')
+          const isPresent = entry !== undefined && (entry.expiration === this.infiniteExpiration || entry.expiration > entry.now)
+
+          if (isPresent) return false
+          if (entry !== undefined) await tx.delete(cache).where(this.whereKey(command.key))
+          return true
         })
-        return true
       } catch (error) {
-        if (error === CACHE_REVISION_CONFLICT) return false
-        if (getMysqlError(error)?.code === this.retryableRevisionErrorCode && attempt < this.revisionDeadlockRetries) {
-          this.logger.warn({ tag: this.commitRevisionMutations.name, msg: `Retrying ${command.revisionKey} after a database deadlock` })
+        if (getMysqlError(error)?.code === this.retryableCompareAndSwapErrorCode && attempt < this.compareAndSwapDeadlockRetries) {
+          this.logger.warn({ tag: this.compareAndSwap.name, msg: `Retrying ${command.key} after a database deadlock` })
           continue
         }
         throw error
@@ -324,7 +258,7 @@ export class MysqlCacheAdapter implements Cache {
   }
 
   async del(key: string): Promise<boolean> {
-    return dbCheckAffectedRows(await this.db.delete(cache).where(eq(cache.key, key)), 1, false)
+    return dbCheckAffectedRows(await this.db.delete(cache).where(this.whereKey(key)), 1, false)
   }
 
   async mdel(keys: string[]): Promise<boolean> {
@@ -339,9 +273,16 @@ export class MysqlCacheAdapter implements Cache {
 
   private readonly databaseTime: () => SQL<number> = () => sql<number>`UNIX_TIMESTAMP(CURRENT_TIMESTAMP(3))`
 
+  // Use the generated hash index, then compare the full key to reject hash collisions.
+  private readonly whereKey = (key: string): SQL => sql`${cache.keyHash} = UNHEX(SHA2(${key}, 256)) AND ${cache.key} = ${key}`
+
   private readonly whereNotExpired: () => SQL = () => notBetween(cache.expiration, 0, this.databaseTime())
 
   private readonly whereExpired: () => SQL = () => between(cache.expiration, 0, this.databaseTime())
+
+  private readonly whereVersion = (expectedVersion: string): SQL => sql`JSON_TYPE(${cache.value}) = 'OBJECT'
+    AND JSON_TYPE(JSON_EXTRACT(${cache.value}, '$.version')) = 'STRING'
+    AND BINARY JSON_UNQUOTE(JSON_EXTRACT(${cache.value}, '$.version')) = BINARY ${expectedVersion}`
 
   private getTTL(ttl?: number): number {
     /* ttl (seconds):
@@ -354,56 +295,6 @@ export class MysqlCacheAdapter implements Cache {
   private getDatabaseTTL(ttl?: number): number | SQL {
     if (ttl === 0) return this.infiniteExpiration
     return sql`CEIL(UNIX_TIMESTAMP(CURRENT_TIMESTAMP(3)) + ${ttl ?? this.defaultTTL})`
-  }
-
-  private async rotateRevision(tx: CacheTransaction, revisionKey: string, expectedRevision?: string | null): Promise<void> {
-    const revision = randomUUID()
-    if (expectedRevision === null) {
-      try {
-        await tx.insert(cache).values({ key: revisionKey, value: revision, expiration: this.infiniteExpiration })
-      } catch (error) {
-        if (getMysqlError(error)?.code === 'ER_DUP_ENTRY') throw CACHE_REVISION_CONFLICT
-        throw error
-      }
-      return
-    }
-
-    // A known-lock mutation requires the permanent sidecar to exist; UPDATE avoids the insert path and its gap locks.
-    const condition = expectedRevision === undefined ? eq(cache.key, revisionKey) : and(eq(cache.key, revisionKey), eq(cache.value, expectedRevision))
-    const [result] = await tx.update(cache).set({ value: revision, expiration: this.infiniteExpiration }).where(condition)
-    if (result.affectedRows !== 1) throw CACHE_REVISION_CONFLICT
-  }
-
-  private async applyKnownMutation(tx: CacheTransaction, mutation: CacheRevisionMutation): Promise<void> {
-    const condition = and(
-      eq(cache.key, mutation.key),
-      this.whereNotExpired(),
-      mutation.expectedLockId === undefined ? undefined : sql`JSON_UNQUOTE(JSON_EXTRACT(${cache.value}, '$.lockId')) = ${mutation.expectedLockId}`
-    )
-    if (mutation.type === 'delete') {
-      const [result] = await tx.delete(cache).where(condition)
-      if (result.affectedRows !== 1) throw CACHE_REVISION_CONFLICT
-      return
-    }
-
-    const [result] = await tx
-      .update(cache)
-      .set({ value: this.serialize(mutation.value), expiration: this.getDatabaseTTL(mutation.ttl) })
-      .where(condition)
-    if (result.affectedRows === 1) return
-
-    // An UPDATE that writes identical JSON and the same second-level TTL reports zero changed rows.
-    const [unchangedEntry] = await tx.select({ key: cache.key }).from(cache).where(condition).limit(1)
-    if (unchangedEntry === undefined) throw CACHE_REVISION_CONFLICT
-  }
-
-  private parseRevision(value: unknown): unknown {
-    if (typeof value !== 'string') return value
-    try {
-      return JSON.parse(value)
-    } catch {
-      return value
-    }
   }
 
   private serialize(data: any) {

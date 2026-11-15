@@ -1,4 +1,4 @@
-import { createCacheKeySlug, createLightSlug, createSlug, InvalidSlugError, stripMatchingQuotes } from './shared.js'
+import { createCacheKeySlug, createLightSlug, createSlug, InvalidSlugError, stripMatchingQuotes, unicodeCaselessIdentity } from './shared.js'
 
 describe(createSlug.name, () => {
   it.each([
@@ -91,6 +91,23 @@ describe(createLightSlug.name, () => {
   })
 })
 
+describe(unicodeCaselessIdentity.name, () => {
+  it.each([
+    ['CAFÉ', 'cafe\u0301'],
+    ['οσ', 'ος'],
+    ['Straße', 'STRASSE'],
+    ['ẞ', 'ss']
+  ])('should give %s and %s the same caseless identity', (first, second) => {
+    expect(unicodeCaselessIdentity(first)).toBe(unicodeCaselessIdentity(second))
+  })
+
+  it('should preserve accents, dotless i and distinctions outside case folding', () => {
+    expect(unicodeCaselessIdentity('café')).not.toBe(unicodeCaselessIdentity('cafe'))
+    expect(unicodeCaselessIdentity('①')).not.toBe(unicodeCaselessIdentity('1'))
+    expect(unicodeCaselessIdentity('ı')).not.toBe(unicodeCaselessIdentity('i'))
+  })
+})
+
 describe(createCacheKeySlug.name, () => {
   it('should preserve cache pattern metacharacters', () => {
     expect(createCacheKeySlug(['SpacesQueries', 'spaces', 1, '*'])).toBe('spacesqueries:spaces:1:*')
@@ -115,6 +132,11 @@ describe(createCacheKeySlug.name, () => {
     expect(createCacheKeySlug(['SpacesQueries', 'permissions', 1, 'ÉQUIPE', 'CAFÉ'])).toBe(
       createCacheKeySlug(['spacesqueries', 'permissions', 1, 'équipe', 'café'])
     )
+  })
+
+  it('should share keys across full Unicode case variants', () => {
+    expect(createCacheKeySlug(['SpacesQueries', 'permissions', 1, 'οσ'])).toBe(createCacheKeySlug(['spacesqueries', 'permissions', 1, 'ος']))
+    expect(createCacheKeySlug(['SpacesQueries', 'permissions', 1, 'Straße'])).toBe(createCacheKeySlug(['spacesqueries', 'permissions', 1, 'STRASSE']))
   })
 
   it('should preserve accented aliases and wildcards in permission invalidation patterns', () => {

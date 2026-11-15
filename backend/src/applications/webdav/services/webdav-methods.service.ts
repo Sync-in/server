@@ -4,12 +4,12 @@ import { toErrorMessage } from '../../../common/errors.js'
 import { currentTimeStamp, encodeUrl } from '../../../common/shared.js'
 import { HTTP_METHOD, HTTP_VERSION } from '../../applications.constants.js'
 import type { FileDBProps } from '../../files/interfaces/file-db-props.interface.js'
-import { FileLock, FileLockOptions } from '../../files/interfaces/file-lock.interface.js'
+import type { FileLockDiscovery, FileLockOptions } from '../../files/interfaces/file-lock.interface.js'
 import { FileError } from '../../files/models/file-error.js'
 import { LockConflict } from '../../files/models/file-lock-error.js'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service.js'
 import { FilesManager } from '../../files/services/files-manager.service.js'
-import { dirName, fileName, genEtag, isPathExists, isPathIsDir, removeFiles, temporaryFilePath } from '../../files/utils/files.js'
+import { dirName, filePathIdentity, genEtag, isPathExists, isPathIsDir, removeFiles, temporaryFilePath } from '../../files/utils/files.js'
 import { FILE_OPERATION } from '../../files/constants/operations.js'
 import { SPACE_OPERATION, SPACE_REPOSITORY } from '../../spaces/constants/spaces.js'
 import { SpaceEnv } from '../../spaces/models/space-env.model.js'
@@ -163,7 +163,7 @@ export class WebDAVMethods {
 
     const responses: any[] = []
     let requestedProps: string[]
-    let locks: Record<string, FileLock> = {}
+    let discoveredLocks: FileLockDiscovery = { root: [], children: {} }
 
     if (req.dav.propfindMode === PROPSTAT.PROP) {
       // ignores all unknown properties (non-RFC compliant but avoids generating too much content, faster)
@@ -176,13 +176,14 @@ export class WebDAVMethods {
     if (req.dav.propfindMode !== PROPSTAT.PROPNAME && isFileSystemResource) {
       if (req.dav.depth === DEPTH.RESOURCE) {
         // match depth '0'
-        locks = await this.filesLockManager.browseLocks(req.space!.dbFile)
+        discoveredLocks.root = await this.filesLockManager.browseLocks(req.space!.dbFile)
       } else {
         // match depth '1' or 'infinity'
-        locks = await this.filesLockManager.browseParentChildLocks(req.space!.dbFile)
+        discoveredLocks = await this.filesLockManager.browseParentChildLocks(req.space!.dbFile)
       }
     }
 
+    let isRootResponse = true
     for await (const f of this.webDAVHandler.propfind(req, repository)) {
       let prop: any
       if (req.dav.propfindMode === PROPSTAT.PROPNAME) {
@@ -194,15 +195,8 @@ export class WebDAVMethods {
           if (p === LOCK_DISCOVERY_PROP) {
             let lockDiscovery: any[] | null = null
             if (isFileSystemResource) {
-              if (f.name in locks) {
-                lockDiscovery = LOCK_DISCOVERY([locks[f.name]])
-              } else {
-                // The lock name may correspond to the original file at the space root.
-                const fName = fileName(req.space!.dbFile.path)
-                if (fName in locks) {
-                  lockDiscovery = LOCK_DISCOVERY([locks[fName]])
-                }
-              }
+              const resourceLocks = isRootResponse ? discoveredLocks.root : discoveredLocks.children[filePathIdentity(f.name)]
+              if (resourceLocks?.length) lockDiscovery = LOCK_DISCOVERY(resourceLocks)
             }
             fP = lockDiscovery
           } else {
@@ -212,6 +206,7 @@ export class WebDAVMethods {
         }
       }
       responses.push(PROP_STAT(f.href, PROP(prop, HTTP_VERSION, HttpStatus.OK)))
+      isRootResponse = false
     }
     const propfind = xmlBuild(MULTI_STATUS(responses))
     return res.type(XML_CONTENT_TYPE).status(HttpStatus.MULTI_STATUS).send(propfind)
@@ -453,13 +448,9 @@ export class WebDAVMethods {
 
       if (condition.token) {
         const token = await this.filesLockManager.getLockByToken(condition.token.value, dbFileFromSpace(req.user.id, lastSpaceEnv))
-        const match = token && lastPath!.startsWith(token.options?.lockRoot as string)
+        const match = token !== null
         if (condition.token.mustMatch !== match) {
-          if (!token) {
-            errors.push(`lock token not found`)
-          } else {
-            errors.push(`lock token url mismatch (${lastPath} is not a child of ${token.options?.lockRoot})`)
-          }
+          errors.push(`lock token condition mismatch (${condition.token.mustMatch} != ${match})`)
           continue
         }
       }
