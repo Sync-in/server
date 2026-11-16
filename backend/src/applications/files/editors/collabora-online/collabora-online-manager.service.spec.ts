@@ -76,10 +76,9 @@ describe(CollaboraOnlineManager.name, () => {
             checkConflicts: vi.fn(),
             convertLockToFileLockProps: vi.fn(),
             create: vi.fn(),
-            removeLock: vi.fn(),
+            removeLockByToken: vi.fn(),
             getLocksByPath: vi.fn(),
-            isLockedWithToken: vi.fn(),
-            refreshLockTimeout: vi.fn()
+            refreshLockByToken: vi.fn()
           }
         }
       ]
@@ -463,7 +462,7 @@ describe(CollaboraOnlineManager.name, () => {
           }
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
-        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(null)
+        vi.spyOn(filesLockManager, 'refreshLockByToken').mockResolvedValue([false, null])
         vi.spyOn(filesLockManager, 'create').mockResolvedValue([true, {} as any])
 
         await service.manageLock(mockRequest, mockReply)
@@ -492,12 +491,11 @@ describe(CollaboraOnlineManager.name, () => {
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
         const existingLock = { key: 'lock-key', options: { lockToken: 'existing-lock-token' } }
-        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(existingLock as any)
-        vi.spyOn(filesLockManager, 'refreshLockTimeout').mockResolvedValue(true)
+        vi.spyOn(filesLockManager, 'refreshLockByToken').mockResolvedValue([true, existingLock as any])
 
         await service.manageLock(mockRequest, mockReply)
 
-        expect(filesLockManager.refreshLockTimeout).toHaveBeenCalledWith(mockSpace.dbFile, existingLock, expect.any(Number))
+        expect(filesLockManager.refreshLockByToken).toHaveBeenCalledWith(mockSpace.dbFile, 'existing-lock-token', expect.any(Number))
         expect(filesLockManager.create).not.toHaveBeenCalled()
       })
 
@@ -511,8 +509,7 @@ describe(CollaboraOnlineManager.name, () => {
           }
         } as unknown as FastifyCollaboraOnlineSpaceRequest
         const existingLock = { key: 'lock-key', options: { lockToken: 'stale-lock-token' } }
-        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(existingLock as any)
-        vi.spyOn(filesLockManager, 'refreshLockTimeout').mockResolvedValue(false)
+        vi.spyOn(filesLockManager, 'refreshLockByToken').mockResolvedValue([false, existingLock as any])
 
         await expect(service.manageLock(mockRequest, mockReply)).rejects.toThrow(new HttpException('Lock not found', HttpStatus.CONFLICT))
       })
@@ -528,7 +525,7 @@ describe(CollaboraOnlineManager.name, () => {
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
         const conflictingLock = { options: { lockToken: 'conflicting-token' } }
-        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(null)
+        vi.spyOn(filesLockManager, 'refreshLockByToken').mockResolvedValue([false, null])
         vi.spyOn(filesLockManager, 'create').mockResolvedValue([false, conflictingLock as any])
 
         await expect(service.manageLock(mockRequest, mockReply)).rejects.toThrow(new HttpException('The file is locked', HttpStatus.CONFLICT))
@@ -560,12 +557,11 @@ describe(CollaboraOnlineManager.name, () => {
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
         const existingLock = { key: 'lock-key', options: { lockToken: 'lock-token-to-remove' } }
-        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(existingLock as any)
-        vi.spyOn(filesLockManager, 'removeLock').mockResolvedValue(true)
+        vi.spyOn(filesLockManager, 'removeLockByToken').mockResolvedValue([true, existingLock as any])
 
         await service.manageLock(mockRequest, mockReply)
 
-        expect(filesLockManager.removeLock).toHaveBeenCalledWith(mockSpace.dbFile, existingLock)
+        expect(filesLockManager.removeLockByToken).toHaveBeenCalledWith(mockSpace.dbFile, 'lock-token-to-remove')
       })
 
       it('should reject a stale lock handle during unlock', async () => {
@@ -577,8 +573,7 @@ describe(CollaboraOnlineManager.name, () => {
             [COLLABORA_HEADERS.LockToken]: 'stale-lock-token'
           }
         } as unknown as FastifyCollaboraOnlineSpaceRequest
-        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue({ key: 'lock-key' } as any)
-        vi.spyOn(filesLockManager, 'removeLock').mockResolvedValue(false)
+        vi.spyOn(filesLockManager, 'removeLockByToken').mockResolvedValue([false, { key: 'lock-key' } as any])
 
         await expect(service.manageLock(mockRequest, mockReply)).rejects.toThrow(new HttpException('Lock not found', HttpStatus.CONFLICT))
       })
@@ -593,7 +588,7 @@ describe(CollaboraOnlineManager.name, () => {
           }
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
-        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(null)
+        vi.spyOn(filesLockManager, 'removeLockByToken').mockResolvedValue([false, null])
 
         await expect(service.manageLock(mockRequest, mockReply)).rejects.toThrow(new HttpException('Lock not found', HttpStatus.CONFLICT))
       })
@@ -646,12 +641,11 @@ describe(CollaboraOnlineManager.name, () => {
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
         const existingLock = { key: 'lock-key', options: { lockToken: 'lock-token-to-refresh' } }
-        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(existingLock as any)
-        vi.spyOn(filesLockManager, 'refreshLockTimeout').mockResolvedValue(true)
+        vi.spyOn(filesLockManager, 'refreshLockByToken').mockResolvedValue([true, existingLock as any])
 
         await service.manageLock(mockRequest, mockReply)
 
-        expect(filesLockManager.refreshLockTimeout).toHaveBeenCalledWith(mockSpace.dbFile, existingLock, expect.any(Number))
+        expect(filesLockManager.refreshLockByToken).toHaveBeenCalledWith(mockSpace.dbFile, 'lock-token-to-refresh', expect.any(Number))
       })
 
       it('should reject a stale lock handle during refresh', async () => {
@@ -663,8 +657,7 @@ describe(CollaboraOnlineManager.name, () => {
             [COLLABORA_HEADERS.LockToken]: 'stale-lock-token'
           }
         } as unknown as FastifyCollaboraOnlineSpaceRequest
-        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue({ key: 'lock-key' } as any)
-        vi.spyOn(filesLockManager, 'refreshLockTimeout').mockResolvedValue(false)
+        vi.spyOn(filesLockManager, 'refreshLockByToken').mockResolvedValue([false, { key: 'lock-key' } as any])
 
         await expect(service.manageLock(mockRequest, mockReply)).rejects.toThrow(new HttpException('Lock not found', HttpStatus.CONFLICT))
       })
@@ -679,7 +672,7 @@ describe(CollaboraOnlineManager.name, () => {
           }
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
-        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(null)
+        vi.spyOn(filesLockManager, 'refreshLockByToken').mockResolvedValue([false, null])
 
         await expect(service.manageLock(mockRequest, mockReply)).rejects.toThrow(new HttpException('Lock not found', HttpStatus.CONFLICT))
       })

@@ -104,6 +104,7 @@ describe(FilesLockManager.name, () => {
       ttl: expect.any(Number)
     })
     expect(cache.compareAndSwap.mock.calls[0][0].ttl).toBeGreaterThanOrEqual(100)
+    expect(cache.get).not.toHaveBeenCalled()
   })
 
   it('should isolate exact states by storage scope and path', async () => {
@@ -182,7 +183,8 @@ describe(FilesLockManager.name, () => {
     setState(stateKey, [conflictLock])
 
     await expect(filesLockManager.create(user, dbFile, WEBDAV_APP_LOCK, DEPTH.RESOURCE)).resolves.toEqual([false, conflictLock])
-    expect(cache.compareAndSwap).not.toHaveBeenCalled()
+    expect(cache.compareAndSwap).toHaveBeenCalledOnce()
+    expect(cache.compareAndSwap).toHaveBeenCalledWith(expect.objectContaining({ key: stateKey, expectedVersion: null }))
   })
 
   it('should retry a stale compare-and-swap from a fresh state', async () => {
@@ -244,7 +246,8 @@ describe(FilesLockManager.name, () => {
         lockScope: LOCK_SCOPE.SHARED
       })
     ).rejects.toThrow(`Cannot store more than ${CACHE_LOCK_STATE_MAX_LOCKS} locks for ${dbFile.path}`)
-    expect(cache.compareAndSwap).not.toHaveBeenCalled()
+    expect(cache.compareAndSwap).toHaveBeenCalledOnce()
+    expect(cache.compareAndSwap).toHaveBeenCalledWith(expect.objectContaining({ key: stateKey, expectedVersion: null }))
   })
 
   it('should preserve createOrRefresh reuse and fence every refreshed member', async () => {
@@ -307,6 +310,106 @@ describe(FilesLockManager.name, () => {
     await expect(filesLockManager.removeLock(dbFile, handleBeforeRefresh)).resolves.toBe(false)
     await expect(filesLockManager.removeLock(dbFile, currentLock)).resolves.toBe(true)
     expect(cacheStore.has(stateKey)).toBe(false)
+  })
+
+  it('should remove a token lock with one read and one compare-and-swap', async () => {
+    const lock = makeLock({
+      options: { lockRoot: '/webdav/docs/file.txt', lockToken: 'token-1', lockScope: LOCK_SCOPE.EXCLUSIVE }
+    })
+    setState(stateKey, [lock])
+
+    await expect(filesLockManager.removeLockByToken(dbFile, 'token-1', user.id)).resolves.toEqual([true, lock])
+
+    expect(cache.get).toHaveBeenCalledOnce()
+    expect(cache.compareAndSwap).toHaveBeenCalledOnce()
+    expect(cacheStore.has(stateKey)).toBe(false)
+  })
+
+  it('should refresh a token lock with one read and one compare-and-swap', async () => {
+    const lock = makeLock({
+      options: { lockRoot: '/webdav/docs/file.txt', lockToken: 'token-1', lockScope: LOCK_SCOPE.EXCLUSIVE }
+    })
+    setState(stateKey, [lock])
+
+    const [refreshed, refreshedLock] = await filesLockManager.refreshLockByToken(dbFile, 'token-1', 120, user.id)
+
+    expect(refreshed).toBe(true)
+    expect(refreshedLock?.lockId).not.toBe(lock.lockId)
+    expect(cache.get).toHaveBeenCalledOnce()
+    expect(cache.compareAndSwap).toHaveBeenCalledOnce()
+    expect(cacheStore.get(stateKey)?.locks).toEqual([refreshedLock])
+  })
+
+  it('should not mutate an absent token or a token owned by another user', async () => {
+    const foreignLock = makeLock({
+      owner: { ...user.asOwner(), id: 42, login: 'alice' },
+      options: { lockRoot: '/webdav/docs/file.txt', lockToken: 'token-1', lockScope: LOCK_SCOPE.EXCLUSIVE }
+    })
+    setState(stateKey, [foreignLock])
+
+    await expect(filesLockManager.removeLockByToken(dbFile, 'missing', user.id)).resolves.toEqual([false, null])
+    await expect(filesLockManager.refreshLockByToken(dbFile, 'token-1', 120, user.id)).resolves.toEqual([false, foreignLock])
+
+    expect(cache.compareAndSwap).not.toHaveBeenCalled()
+    expect(cacheStore.get(stateKey)?.locks).toEqual([foreignLock])
+  })
+
+  it('should fence token mutations against a replacement incarnation', async () => {
+    const lock = makeLock({
+      options: { lockRoot: '/webdav/docs/file.txt', lockToken: 'token-1', lockScope: LOCK_SCOPE.EXCLUSIVE }
+    })
+    const replacement = { ...lock, lockId: 'replacement-id' }
+    setState(stateKey, [lock])
+    cache.compareAndSwap.mockImplementationOnce(async () => {
+      setState(stateKey, [replacement], 'version-2')
+      return false
+    })
+
+    await expect(filesLockManager.removeLockByToken(dbFile, 'token-1', user.id)).resolves.toEqual([false, lock])
+
+    expect(cache.get).toHaveBeenCalledTimes(2)
+    expect(cache.compareAndSwap).toHaveBeenCalledOnce()
+    expect(cacheStore.get(stateKey)?.locks).toEqual([replacement])
+  })
+
+  it('should retry a token mutation when its captured incarnation is unchanged', async () => {
+    const lock = makeLock({
+      options: { lockRoot: '/webdav/docs/file.txt', lockToken: 'token-1', lockScope: LOCK_SCOPE.SHARED }
+    })
+    const concurrentLock = makeLock({
+      lockId: 'concurrent-id',
+      key: `${stateKey}|depth:0|token:token-2`,
+      options: { lockRoot: '/webdav/docs/file.txt', lockToken: 'token-2', lockScope: LOCK_SCOPE.SHARED }
+    })
+    setState(stateKey, [lock])
+    cache.compareAndSwap.mockImplementationOnce(async () => {
+      setState(stateKey, [lock, concurrentLock], 'version-2')
+      return false
+    })
+
+    await expect(filesLockManager.removeLockByToken(dbFile, 'token-1', user.id)).resolves.toEqual([true, lock])
+
+    expect(cache.get).toHaveBeenCalledTimes(2)
+    expect(cache.compareAndSwap).toHaveBeenCalledTimes(2)
+    expect(cacheStore.get(stateKey)?.locks).toEqual([concurrentLock])
+  })
+
+  it('should not refresh a replacement incarnation with the same token', async () => {
+    const lock = makeLock({
+      options: { lockRoot: '/webdav/docs/file.txt', lockToken: 'token-1', lockScope: LOCK_SCOPE.EXCLUSIVE }
+    })
+    const replacement = { ...lock, lockId: 'replacement-id' }
+    setState(stateKey, [lock])
+    cache.compareAndSwap.mockImplementationOnce(async () => {
+      setState(stateKey, [replacement], 'version-2')
+      return false
+    })
+
+    await expect(filesLockManager.refreshLockByToken(dbFile, 'token-1', 120, user.id)).resolves.toEqual([false, lock])
+
+    expect(cache.get).toHaveBeenCalledTimes(2)
+    expect(cache.compareAndSwap).toHaveBeenCalledOnce()
+    expect(cacheStore.get(stateKey)?.locks).toEqual([replacement])
   })
 
   it('should prepare and remove exact and descendant locks by exact state', async () => {

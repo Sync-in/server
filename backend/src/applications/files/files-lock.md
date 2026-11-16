@@ -91,15 +91,18 @@ state.
 
 ## Atomic transitions
 
-Every decision is a single-key read-modify-CAS operation:
+Every decision is a single-key read-modify-CAS operation. Creation first tries
+the absent-state CAS directly; an existing state falls back to the regular read:
 
-1. Read the exact state entry and its `version`, or observe that it is absent.
-2. Remove expired members from the in-memory view.
-3. Validate the transition and compute the new `locks` array.
-4. Write or delete that same entry only if its version still matches the value
-   read in step 1; an absent-state creation succeeds only while the key remains
+1. For creation, attempt to write the state while the key is absent.
+2. On an absent-state miss, or for other operations, read the exact state entry
+   and its `version`.
+3. Remove expired members from the in-memory view.
+4. Validate the transition and compute the new `locks` array.
+5. Write or delete that same entry only if its version still matches the value
+   read in step 2; an absent-state creation succeeds only while the key remains
    absent.
-5. Assign a new version and the maximum remaining member TTL plus the safety
+6. Assign a new version and the maximum remaining member TTL plus the safety
    margin on a successful write.
 
 On a definitive CAS miss, `FilesLockManager` reads the exact entry again and
@@ -116,6 +119,9 @@ provided by the version embedded in the one exact-resource state.
 Known-handle refresh and removal additionally validate the targeted member's
 `lockId`. After a CAS miss they may retry only against a freshly read state; they
 must never apply a stale member handle to a replacement incarnation.
+Token-targeted refresh and removal capture that `lockId` during the transition's
+first read, avoiding a separate lookup while preserving the same fencing on
+every retry.
 
 ## Non-decision discovery and cleanup
 
@@ -148,12 +154,13 @@ preserved while obsolete descendant states are cleaned best effort.
 ## Storage adapters
 
 MariaDB uses conditional single-row `UPDATE` or `DELETE` statements for a known
-version. Absent-state creation uses `INSERT`, conditionally replaces an expired
-row, and resolves a concurrent insert with a final `INSERT`. The absent-delete
-branch uses a short `SELECT ... FOR UPDATE` transaction so it can remove an
-expired row safely. Redis performs the version comparison and mutation of one
-key in one Lua execution. Neither adapter needs a revision sidecar or an index
-of per-token entries.
+version. Absent-state creation uses one conditional
+`INSERT ... ON DUPLICATE KEY UPDATE`: it inserts an absent key, replaces the
+same complete key only when its row is expired, and rejects a live duplicate.
+The absent-delete branch uses a short `SELECT ... FOR UPDATE` transaction so it
+can remove an expired row safely. Redis performs the version comparison and
+mutation of one key in one Lua execution. Neither adapter needs a revision
+sidecar or an index of per-token entries.
 
 Physical TTL expiry removes the complete state shortly after its last active
 member is due to expire. During the safety margin the entry may still exist, but

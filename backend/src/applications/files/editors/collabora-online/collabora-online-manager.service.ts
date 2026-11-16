@@ -170,9 +170,9 @@ export class CollaboraOnlineManager {
     switch (lockAction) {
       case COLLABORA_LOCK_ACTION.LOCK: {
         const reqLockToken = this.lockTokenFromHeaders(req)
-        const currentLock = await this.filesLockManager.isLockedWithToken(reqLockToken, req.space.dbFile)
+        const [refreshed, currentLock] = await this.filesLockManager.refreshLockByToken(req.space.dbFile, reqLockToken, this.expiration)
         if (currentLock) {
-          if (!(await this.filesLockManager.refreshLockTimeout(req.space.dbFile, currentLock, this.expiration))) {
+          if (!refreshed) {
             throw new HttpException('Lock not found', HttpStatus.CONFLICT)
           }
           break
@@ -197,8 +197,8 @@ export class CollaboraOnlineManager {
       }
       case COLLABORA_LOCK_ACTION.UNLOCK: {
         const reqLockToken = this.lockTokenFromHeaders(req)
-        const currentLock = await this.filesLockManager.isLockedWithToken(reqLockToken, req.space.dbFile)
-        if (!currentLock || !(await this.filesLockManager.removeLock(req.space.dbFile, currentLock))) {
+        const [removed] = await this.filesLockManager.removeLockByToken(req.space.dbFile, reqLockToken)
+        if (!removed) {
           throw new HttpException('Lock not found', HttpStatus.CONFLICT)
         }
         break
@@ -212,8 +212,8 @@ export class CollaboraOnlineManager {
       }
       case COLLABORA_LOCK_ACTION.REFRESH_LOCK: {
         const reqLockToken = this.lockTokenFromHeaders(req)
-        const currentLock = await this.filesLockManager.isLockedWithToken(reqLockToken, req.space.dbFile)
-        if (!currentLock || !(await this.filesLockManager.refreshLockTimeout(req.space.dbFile, currentLock, this.expiration))) {
+        const [refreshed] = await this.filesLockManager.refreshLockByToken(req.space.dbFile, reqLockToken, this.expiration)
+        if (!refreshed) {
           throw new HttpException('Lock not found', HttpStatus.CONFLICT)
         }
         break

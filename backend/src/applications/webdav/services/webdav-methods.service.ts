@@ -147,7 +147,7 @@ export class WebDAVMethods {
       return res.status(HttpStatus.NOT_FOUND).send(req.dav.url)
     }
 
-    const lock = await this.filesLockManager.isLockedWithToken(req.dav.lock!.token!, req.space.dbFile)
+    const [removed, lock] = await this.filesLockManager.removeLockByToken(req.space.dbFile, req.dav.lock!.token!, req.user.id)
     if (!lock) {
       this.logger.warn({ tag: this.unlock.name, msg: `Lock token does not exist or not match URL : ${req.dav.lock!.token}` })
       return DAV_ERROR_RES(HttpStatus.CONFLICT, PRECONDITION.LOCK_TOKEN_MISMATCH, res)
@@ -156,7 +156,7 @@ export class WebDAVMethods {
       return res.status(HttpStatus.FORBIDDEN).send('Token was created by another user')
     }
 
-    if (!(await this.filesLockManager.removeLock(req.space.dbFile, lock))) {
+    if (!removed) {
       return DAV_ERROR_RES(HttpStatus.CONFLICT, PRECONDITION.LOCK_TOKEN_MISMATCH, res)
     }
     return res.status(HttpStatus.NO_CONTENT).send()
@@ -504,7 +504,7 @@ export class WebDAVMethods {
       return res.status(HttpStatus.BAD_REQUEST).send('Unable to extract token')
     }
 
-    const lock = await this.filesLockManager.isLockedWithToken(token, dbFile)
+    const [refreshed, lock] = await this.filesLockManager.refreshLockByToken(dbFile, token, req.dav.lock!.timeout!, req.user.id)
     if (!lock) {
       this.logger.warn({ tag: this.lockRefresh.name, msg: `Lock token does not exist or not match URL : ${token}` })
       return DAV_ERROR_RES(HttpStatus.PRECONDITION_FAILED, PRECONDITION.LOCK_TOKEN_MISMATCH, res)
@@ -514,7 +514,7 @@ export class WebDAVMethods {
       return res.status(HttpStatus.FORBIDDEN).send('Lock token does not match owner')
     }
 
-    if (!(await this.filesLockManager.refreshLockTimeout(dbFile, lock, req.dav.lock!.timeout!))) {
+    if (!refreshed) {
       return DAV_ERROR_RES(HttpStatus.PRECONDITION_FAILED, PRECONDITION.LOCK_TOKEN_MISMATCH, res)
     }
     const lockProp = LOCK_PROP([lock])

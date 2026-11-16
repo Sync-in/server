@@ -180,28 +180,25 @@ export class MysqlCacheAdapter implements Cache {
     for (let attempt = 0; ; attempt++) {
       try {
         if (command.expectedVersion === null && value !== undefined) {
-          // Expired rows still occupy the unique key. Reclaim one after an insert
-          // collision, then retry the insert to distinguish deletion from a concurrent writer.
-          try {
-            await this.db.insert(cache).values({ key: command.key, value, expiration: expiration! })
-            return true
-          } catch (error) {
-            if (getMysqlError(error)?.code !== 'ER_DUP_ENTRY') throw error
-          }
-
-          const updateResult = await this.db
-            .update(cache)
-            .set({ value, expiration: expiration! })
-            .where(and(this.whereKey(command.key), this.whereExpired()))
-          if (dbCheckAffectedRows(updateResult, 1, false)) return true
-
-          try {
-            await this.db.insert(cache).values({ key: command.key, value, expiration: expiration! })
-            return true
-          } catch (error) {
-            if (getMysqlError(error)?.code === 'ER_DUP_ENTRY') return false
-            throw error
-          }
+          const insertedKey = sql`VALUES(${sql.identifier(cache.key.name)})`
+          const canReplace = and(sql`BINARY ${cache.key} = BINARY ${insertedKey}`, this.whereExpired())
+          /*
+           * LAST_INSERT_ID is the success marker because mysql2 enables CLIENT_FOUND_ROWS:
+           * affectedRows cannot distinguish an insert from an active duplicate left unchanged.
+           * The INSERT branch sets it to 1; the duplicate branch keeps 1 only when the complete
+           * key matches and the existing row is expired. This also rejects a theoretical hash collision.
+           */
+          const [result]: any = await this.db
+            .insert(cache)
+            .values({ key: sql`IF(LAST_INSERT_ID(1), ${command.key}, NULL)`, value, expiration: expiration! })
+            .onDuplicateKeyUpdate({
+              set: {
+                // Keep this assignment before expiration so both predicates inspect the stored TTL.
+                value: sql`IF(LAST_INSERT_ID(IF(${canReplace}, 1, 0)), VALUES(${sql.identifier(cache.value.name)}), ${cache.value})`,
+                expiration: sql`IF(${canReplace}, VALUES(${sql.identifier(cache.expiration.name)}), ${cache.expiration})`
+              }
+            })
+          return Number(result.insertId) === 1
         }
 
         if (command.expectedVersion !== null) {

@@ -75,7 +75,7 @@ export class FilesLockManager {
     ttl?: number
   ): Promise<[succeeded: boolean, lock: FileLock]> {
     ttl = this.normalizeTTL(ttl)
-    return this.withState(dbFile, (locks) => this.prepareCreate(user, dbFile, app, depth, options, ttl, locks))
+    return this.withState(dbFile, (locks) => this.prepareCreate(user, dbFile, app, depth, options, ttl, locks), true)
   }
 
   async createOrRefresh(
@@ -108,6 +108,27 @@ export class FilesLockManager {
   async removeLock(dbFile: FileDBProps, lock: FileLock): Promise<boolean> {
     this.logger.verbose({ tag: this.removeLock.name, msg: `${lock.key}` })
     return this.removeLocks(dbFile, [lock])
+  }
+
+  async removeLockByToken(dbFile: FileDBProps, token: string, ownerId?: number): Promise<[succeeded: boolean, lock: FileLock | null]> {
+    let capturedLock: FileLock | null | undefined
+    const result = await this.withState<[succeeded: boolean, lock: FileLock | null]>(dbFile, (locks) => {
+      if (capturedLock === undefined) {
+        capturedLock = locks.find((lock) => lock.options?.lockToken === token) ?? null
+      }
+      if (!capturedLock || (ownerId !== undefined && capturedLock.owner.id !== ownerId)) {
+        return { result: [false, capturedLock] }
+      }
+
+      const currentLock = locks.find((lock) => lock.key === capturedLock!.key && lock.lockId === capturedLock!.lockId)
+      if (!currentLock) return { result: [false, capturedLock] }
+      return {
+        result: [true, currentLock],
+        nextLocks: locks.filter((lock) => lock.key !== currentLock.key || lock.lockId !== currentLock.lockId)
+      }
+    })
+    if (result[0]) this.logger.verbose({ tag: this.removeLockByToken.name, msg: `${result[1]!.key}` })
+    return result
   }
 
   // Capture lock incarnations before filesystem I/O. The returned cleanup only
@@ -159,6 +180,24 @@ export class FilesLockManager {
     if (!refreshedLock) return false
     Object.assign(lock, refreshedLock)
     return true
+  }
+
+  async refreshLockByToken(dbFile: FileDBProps, token: string, ttl?: number, ownerId?: number): Promise<[succeeded: boolean, lock: FileLock | null]> {
+    ttl = this.normalizeTTL(ttl)
+    let capturedLock: FileLock | null | undefined
+    return this.withState<[succeeded: boolean, lock: FileLock | null]>(dbFile, (locks) => {
+      if (capturedLock === undefined) {
+        capturedLock = locks.find((lock) => lock.options?.lockToken === token) ?? null
+      }
+      if (!capturedLock || (ownerId !== undefined && capturedLock.owner.id !== ownerId)) {
+        return { result: [false, capturedLock] }
+      }
+
+      const currentLock = locks.find((lock) => lock.key === capturedLock!.key && lock.lockId === capturedLock!.lockId)
+      if (!currentLock) return { result: [false, capturedLock] }
+      const refreshedLock = this.refreshedLock(currentLock, ttl)
+      return { result: [true, refreshedLock], nextLocks: this.replaceLock(locks, currentLock, refreshedLock) }
+    })
   }
 
   async getLockByToken(token: string, dbFile: FileDBProps): Promise<FileLock | null> {
@@ -335,26 +374,41 @@ export class FilesLockManager {
 
   // Re-read and recompute the transition after every CAS miss; a transition built
   // from stale state is never replayed against a newer version.
-  private async withState<T>(dbFile: FileDBProps, transition: (locks: readonly FileLock[]) => FileLockTransition<T>): Promise<T> {
+  private async withState<T>(
+    dbFile: FileDBProps,
+    transition: (locks: readonly FileLock[]) => FileLockTransition<T>,
+    tryAbsentStateFirst = false
+  ): Promise<T> {
     const key = this.getStateKey(dbFile)
     const deadline = performance.now() + this.stateRetryTimeout
+    if (tryAbsentStateFirst) {
+      // The common first-lock path can commit from an empty state without a preliminary cache read.
+      const transitionResult = transition([])
+      if (transitionResult.nextLocks === undefined) return transitionResult.result
+      if (await this.compareAndSwapState(key, null, transitionResult.nextLocks)) return transitionResult.result
+    }
+
     while (true) {
       const state = await this.readState(dbFile)
       const transitionResult = transition(state.locks)
       if (transitionResult.nextLocks === undefined) return transitionResult.result
+      if (await this.compareAndSwapState(key, state.version, transitionResult.nextLocks)) return transitionResult.result
+      if (!(await this.waitForRetry(deadline))) throw new Error(`Unable to coordinate file lock operation for ${dbFile.path}`)
+    }
+  }
 
-      const nextLocks = transitionResult.nextLocks.filter((lock) => lock.expiration > currentTimeStamp())
-      const command = nextLocks.length
+  private async compareAndSwapState(key: string, expectedVersion: string | null, locks: readonly FileLock[]): Promise<boolean> {
+    const nextLocks = locks.filter((lock) => lock.expiration > currentTimeStamp())
+    return this.cache.compareAndSwap(
+      nextLocks.length
         ? {
             key,
-            expectedVersion: state.version,
+            expectedVersion,
             value: { version: crypto.randomUUID(), locks: nextLocks } satisfies FileLockState,
             ttl: this.getStateTTL(nextLocks)
           }
-        : { key, expectedVersion: state.version }
-      if (await this.cache.compareAndSwap(command)) return transitionResult.result
-      if (!(await this.waitForRetry(deadline))) throw new Error(`Unable to coordinate file lock operation for ${dbFile.path}`)
-    }
+        : { key, expectedVersion }
+    )
   }
 
   private async readState(dbFile: FileDBProps): Promise<FileLockStateView> {
