@@ -10,21 +10,39 @@ export function redactRedisUrl(url: string): string {
 }
 
 export function isRetryableConnectionError(error: unknown): boolean {
-  const errors = connectionErrors(error)
-  return errors.length > 0 && errors.every((currentError) => isRetryableError(currentError))
+  return isRetryableError(error, new Set<object>())
 }
 
 export function connectionErrorMessage(error: unknown): string {
-  return connectionErrors(error).map(String).join(', ')
+  try {
+    const errors = (error as { errors?: unknown[] })?.errors
+    return (Array.isArray(errors) ? errors : [error]).map(String).join(', ')
+  } catch {
+    return toErrorMessage(error)
+  }
 }
 
-function connectionErrors(error: unknown): unknown[] {
-  const errors = (error as { errors?: unknown[] })?.errors
-  return Array.isArray(errors) ? errors : [error]
-}
+function isRetryableError(error: unknown, parents: Set<object>): boolean {
+  if (error === null || typeof error !== 'object') {
+    return toErrorMessage(error).includes('Socket closed unexpectedly')
+  }
+  if (parents.has(error)) return false
 
-function isRetryableError(error: unknown): boolean {
-  const code = (error as { code?: string })?.code
-  const message = toErrorMessage(error)
-  return (!!code && RETRYABLE_CONNECTION_ERROR_CODES.has(code)) || message.includes('Socket closed unexpectedly')
+  parents.add(error)
+  try {
+    if ('errors' in error && Array.isArray(error.errors) && error.errors.length > 0) {
+      return error.errors.every((nestedError) => isRetryableError(nestedError, parents))
+    }
+
+    const code = 'code' in error && typeof error.code === 'string' ? error.code : undefined
+    if ((code && RETRYABLE_CONNECTION_ERROR_CODES.has(code)) || toErrorMessage(error).includes('Socket closed unexpectedly')) {
+      return true
+    }
+
+    return 'cause' in error && error.cause !== undefined ? isRetryableError(error.cause, parents) : false
+  } catch {
+    return false
+  } finally {
+    parents.delete(error)
+  }
 }

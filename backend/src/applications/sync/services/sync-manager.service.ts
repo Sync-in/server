@@ -1,10 +1,20 @@
-import { HttpException, HttpStatus, Injectable, Logger, StreamableFile } from '@nestjs/common'
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  ServiceUnavailableException,
+  StreamableFile
+} from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import fs from 'fs/promises'
 import { Dirent, Stats } from 'node:fs'
 import path from 'node:path'
 import { toErrorMessage } from '../../../common/errors.js'
 import { regExpPathPattern } from '../../../common/functions.js'
+import { toErrorLog } from '../../../infrastructure/errors.js'
+import { isRetryableConnectionError } from '../../../infrastructure/utils.js'
 import { FILE_ERROR } from '../../files/constants/errors.js'
 import { FILE_OPERATION } from '../../files/constants/operations.js'
 import { FileError } from '../../files/models/file-error.js'
@@ -122,7 +132,7 @@ export class SyncManager {
         return { ino: stats.ino, mtime: Math.floor(stats.mtime.getTime() / 1000) }
       }
     } catch (e) {
-      this.handleError(req.space, isMove ? FILE_OPERATION.MOVE : FILE_OPERATION.COPY, e, dstSpace)
+      this.handleError(req.space, isMove ? FILE_OPERATION.MOVE : FILE_OPERATION.COPY, e, dstSpace.url)
     }
   }
 
@@ -265,21 +275,27 @@ export class SyncManager {
     fileStats[F_STAT.CHECKSUM] = await checksumFile(realPath, SYNC_CHECKSUM_ALG)
   }
 
-  private handleError(space: SpaceEnv, action: string, e: unknown, dstSpace?: SpaceEnv): never {
-    const errorMessage = toErrorMessage(e)
-    if (!(e instanceof FileError && e.httpCode === HttpStatus.NOT_FOUND)) {
+  private handleError(space: SpaceEnv, action: string, error: unknown, destinationUrl?: string): never {
+    const errorMessage = toErrorMessage(error)
+    if (!(error instanceof FileError && error.httpCode === HttpStatus.NOT_FOUND)) {
       this.logger.error({
         tag: this.handleError.name,
-        msg: `unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${errorMessage}`
+        spaceUrl: space.url,
+        ...(destinationUrl ? { destinationUrl } : {}),
+        ...toErrorLog(error, `Unable to ${action}`)
       })
     }
     // Remove the last part to avoid exposing the path
     const errorMsg = errorMessage.split(',')[0]
-    if (e instanceof LockConflict) {
+    if (error instanceof LockConflict) {
       throw new HttpException('The file is locked', HttpStatus.LOCKED)
-    } else if (e instanceof FileError) {
-      throw new HttpException(errorMsg, e.httpCode)
+    } else if (error instanceof FileError) {
+      throw new HttpException(errorMsg, error.httpCode)
     }
-    throw new HttpException(errorMsg, HttpStatus.INTERNAL_SERVER_ERROR)
+    if (error instanceof HttpException) throw error
+    if (isRetryableConnectionError(error)) {
+      throw new ServiceUnavailableException('Service unavailable')
+    }
+    throw new InternalServerErrorException('Internal server error')
   }
 }

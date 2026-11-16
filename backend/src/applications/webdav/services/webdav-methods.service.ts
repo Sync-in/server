@@ -1,7 +1,17 @@
-import { HttpException, HttpStatus, Injectable, Logger, StreamableFile } from '@nestjs/common'
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  ServiceUnavailableException,
+  StreamableFile
+} from '@nestjs/common'
 import { type FastifyReply } from 'fastify'
 import { toErrorMessage } from '../../../common/errors.js'
 import { currentTimeStamp, encodeUrl } from '../../../common/shared.js'
+import { toErrorLog } from '../../../infrastructure/errors.js'
+import { isRetryableConnectionError } from '../../../infrastructure/utils.js'
 import { HTTP_METHOD, HTTP_VERSION } from '../../applications.constants.js'
 import type { FileDBProps } from '../../files/interfaces/file-db-props.interface.js'
 import type { FileLockDiscovery, FileLockOptions } from '../../files/interfaces/file-lock.interface.js'
@@ -511,26 +521,35 @@ export class WebDAVMethods {
     return res.type(XML_CONTENT_TYPE).status(HttpStatus.OK).send(xmlBuild(lockProp))
   }
 
-  private handleError(req: FastifyDAVRequest, res: FastifyReply, e: unknown, toUrl?: string) {
-    const errorMessage = toErrorMessage(e)
-    if (!(e instanceof FileError && e.httpCode === HttpStatus.NOT_FOUND)) {
-      this.logger.error({ tag: this.handleError.name, msg: `Unable to ${req.method} ${req.dav.url}${toUrl ? ` -> ${toUrl}` : ''} : ${errorMessage}` })
+  private handleError(req: FastifyDAVRequest, res: FastifyReply, error: unknown, destinationUrl?: string) {
+    const errorMessage = toErrorMessage(error)
+    if (!(error instanceof FileError && error.httpCode === HttpStatus.NOT_FOUND)) {
+      this.logger.error({
+        tag: this.handleError.name,
+        spaceUrl: req.dav.url,
+        ...(destinationUrl ? { destinationUrl } : {}),
+        ...toErrorLog(error, `Unable to ${req.method}`)
+      })
     }
     // Remove the last part to avoid exposing the path
     const errorMsg = errorMessage.split(',')[0]
-    if (e instanceof LockConflict) {
-      return DAV_ERROR_RES(HttpStatus.LOCKED, PRECONDITION.LOCK_CONFLICT, res, e.lock.options?.lockRoot || e.lock.dbFilePath)
-    } else if (e instanceof FileError) {
+    if (error instanceof LockConflict) {
+      return DAV_ERROR_RES(HttpStatus.LOCKED, PRECONDITION.LOCK_CONFLICT, res, error.lock.options?.lockRoot || error.lock.dbFilePath)
+    } else if (error instanceof FileError) {
       // A quota or size limit may reject a PUT before its body is fully consumed.
       // Mark the HTTP/1 connection as non-reusable instead of draining the remaining payload.
       const reply =
         req.method === HTTP_METHOD.PUT &&
         req.raw.httpVersionMajor === 1 &&
-        (e.httpCode === HttpStatus.INSUFFICIENT_STORAGE || e.httpCode === HttpStatus.PAYLOAD_TOO_LARGE)
+        (error.httpCode === HttpStatus.INSUFFICIENT_STORAGE || error.httpCode === HttpStatus.PAYLOAD_TOO_LARGE)
           ? res.header('Connection', 'close')
           : res
-      return reply.status(e.httpCode).send(errorMsg)
+      return reply.status(error.httpCode).send(errorMsg)
     }
-    throw new HttpException(errorMsg, HttpStatus.INTERNAL_SERVER_ERROR)
+    if (error instanceof HttpException) throw error
+    if (isRetryableConnectionError(error)) {
+      throw new ServiceUnavailableException('Service unavailable')
+    }
+    throw new InternalServerErrorException('Internal server error')
   }
 }

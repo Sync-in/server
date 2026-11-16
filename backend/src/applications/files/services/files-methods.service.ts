@@ -1,7 +1,17 @@
-import { HttpException, HttpStatus, Injectable, Logger, StreamableFile } from '@nestjs/common'
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  ServiceUnavailableException,
+  StreamableFile
+} from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import path from 'node:path'
 import { toErrorMessage } from '../../../common/errors.js'
+import { toErrorLog } from '../../../infrastructure/errors.js'
+import { isRetryableConnectionError } from '../../../infrastructure/utils.js'
 import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface.js'
 import { SpaceEnv } from '../../spaces/models/space-env.model.js'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
@@ -40,7 +50,7 @@ export class FilesMethods {
     try {
       await this.filesManager.saveMultipart(req.user, req.space, req)
     } catch (e) {
-      this.handleError(req.space, FILE_OPERATION.UPLOAD, e, undefined, undefined, res)
+      this.handleError(req.space, FILE_OPERATION.UPLOAD, e, undefined, res)
     }
   }
 
@@ -68,7 +78,7 @@ export class FilesMethods {
     try {
       return await this.filesManager.delete(user, space, undefined, signal)
     } catch (e) {
-      this.handleError(space, FILE_OPERATION.DELETE, e, undefined, signal)
+      this.handleError(space, FILE_OPERATION.DELETE, e, signal)
     }
   }
 
@@ -77,7 +87,7 @@ export class FilesMethods {
     try {
       return await this.filesManager.downloadFromUrl(user, space, downloadDto, signal)
     } catch (e) {
-      this.handleError(space, FILE_OPERATION.DOWNLOAD, e, undefined, signal)
+      this.handleError(space, FILE_OPERATION.DOWNLOAD, e, signal)
     }
   }
 
@@ -110,7 +120,7 @@ export class FilesMethods {
       }
       return await this.filesManager.compress(user, space, compressFileDto, signal)
     } catch (e) {
-      this.handleError(space, FILE_OPERATION.COMPRESS, e, undefined, signal)
+      this.handleError(space, FILE_OPERATION.COMPRESS, e, signal)
     }
   }
 
@@ -118,7 +128,7 @@ export class FilesMethods {
     try {
       return await this.filesManager.decompress(user, space, signal)
     } catch (e) {
-      this.handleError(space, FILE_OPERATION.DECOMPRESS, e, undefined, signal)
+      this.handleError(space, FILE_OPERATION.DECOMPRESS, e, signal)
     }
   }
 
@@ -199,7 +209,7 @@ export class FilesMethods {
       await this.filesManager.copyMove(user, space, dstSpace, isMove, copyMoveFileDto.overwrite ?? false, false, undefined, signal)
       return { path: dirName(dstUrl), name: fileName(dstUrl), mime: getMimeType(dstSpace.realPath, await isPathIsDir(dstSpace.realPath)) }
     } catch (e) {
-      this.handleError(space, isMove ? FILE_OPERATION.MOVE : FILE_OPERATION.COPY, e, dstSpace ?? undefined, signal)
+      this.handleError(space, isMove ? FILE_OPERATION.MOVE : FILE_OPERATION.COPY, e, signal, undefined, dstSpace?.url)
     }
   }
 
@@ -207,16 +217,18 @@ export class FilesMethods {
     space: SpaceEnv,
     action: FILE_OPERATION | string,
     error: unknown,
-    dstSpace?: SpaceEnv,
     signal?: AbortSignal,
-    res?: FastifyReply
+    res?: FastifyReply,
+    destinationUrl?: string
   ): never {
     if (signal && this.isCancellationError(error, signal)) {
       throw signal.reason
     }
     this.logger.error({
       tag: this.handleError.name,
-      msg: `unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${toErrorMessage(error)}`
+      spaceUrl: space.url,
+      ...(destinationUrl ? { destinationUrl } : {}),
+      ...toErrorLog(error, `Unable to ${action}`)
     })
     const normalizedError = error instanceof Error ? error : new Error(toErrorMessage(error))
     // Remove the last part to avoid exposing the path
@@ -235,7 +247,11 @@ export class FilesMethods {
       }
       throw new HttpException(errorMsg, normalizedError.httpCode)
     }
-    throw new HttpException(errorMsg, HttpStatus.INTERNAL_SERVER_ERROR)
+    if (normalizedError instanceof HttpException) throw normalizedError
+    if (isRetryableConnectionError(error)) {
+      throw new ServiceUnavailableException('Service unavailable')
+    }
+    throw new InternalServerErrorException('Internal server error')
   }
 
   private isCancellationError(error: unknown, signal?: AbortSignal): boolean {

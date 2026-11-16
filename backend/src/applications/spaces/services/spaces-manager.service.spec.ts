@@ -35,6 +35,7 @@ describe(SpacesManager.name, () => {
   let userTest: UserModel
   const spaceAlias = 'project'
   const tmpDir = os.tmpdir()
+  const setQuotaExceeded = vi.fn().mockResolvedValue(undefined)
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -50,7 +51,7 @@ describe(SpacesManager.name, () => {
         },
         {
           provide: FilesQuotaManager,
-          useValue: { setQuotaExceeded: () => vi.fn() }
+          useValue: { setQuotaExceeded }
         },
         SpacesManager,
         SpacesQueries,
@@ -78,6 +79,21 @@ describe(SpacesManager.name, () => {
     expect(filesConfig).toBeDefined()
     expect(spacesManager).toBeDefined()
     expect(userTest).toBeDefined()
+  })
+
+  it('should reject an invalid space path with a bad request', async () => {
+    await expect(spacesManager.spaceEnv(userTest, ['invalid'])).rejects.toMatchObject({
+      status: HttpStatus.BAD_REQUEST,
+      message: 'Space path is not valid'
+    })
+  })
+
+  it('should preserve quota infrastructure errors for the HTTP boundary', async () => {
+    const connectionError = Object.assign(new Error('connect timed out'), { code: 'ETIMEDOUT' })
+    const queryError = new Error('Failed query: select value from cache\nparams: quota-user-1', { cause: connectionError })
+    setQuotaExceeded.mockRejectedValueOnce(queryError)
+
+    await expect(spacesManager.spaceEnv(userTest, [SPACE_REPOSITORY.FILES, SPACE_ALIAS.PERSONAL])).rejects.toBe(queryError)
   })
 
   it('should prevent path traversal', () => {

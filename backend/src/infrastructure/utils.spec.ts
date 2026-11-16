@@ -19,6 +19,7 @@ describe(isRetryableConnectionError.name, () => {
 
     expect(isRetryableConnectionError(refused)).toBe(true)
     expect(isRetryableConnectionError(new AggregateError([refused, timedOut]))).toBe(true)
+    expect(isRetryableConnectionError('Socket closed unexpectedly')).toBe(true)
   })
 
   it('rejects unknown and mixed aggregate errors', () => {
@@ -27,6 +28,22 @@ describe(isRetryableConnectionError.name, () => {
 
     expect(isRetryableConnectionError(invalidConfiguration)).toBe(false)
     expect(isRetryableConnectionError(new AggregateError([refused, invalidConfiguration]))).toBe(false)
+  })
+
+  it('requires all nested aggregate errors to be retryable', () => {
+    const refused = connectionError('ECONNREFUSED')
+    const timedOut = connectionError('ETIMEDOUT')
+    const invalidConfiguration = connectionError('ERR_INVALID_URL')
+
+    expect(isRetryableConnectionError(new Error('query failed', { cause: new AggregateError([refused, timedOut]) }))).toBe(true)
+    expect(isRetryableConnectionError(new Error('query failed', { cause: new AggregateError([refused, invalidConfiguration]) }))).toBe(false)
+  })
+
+  it('stops safely on circular cause chains', () => {
+    const error: Error & { cause?: unknown; code: string } = Object.assign(new Error('failure'), { code: 'ERR_QUERY' })
+    error.cause = error
+
+    expect(isRetryableConnectionError(error)).toBe(false)
   })
 
   it('formats aggregate connection errors for logs', () => {

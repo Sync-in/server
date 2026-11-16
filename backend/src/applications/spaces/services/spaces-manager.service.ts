@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
+import { BadRequestException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { eq, isNotNull } from 'drizzle-orm'
 import fs from 'node:fs/promises'
 import path from 'node:path'
@@ -103,7 +103,7 @@ export class SpacesManager {
       (!spaceAlias && repository !== SPACE_REPOSITORY.SHARES) ||
       Object.values(SPACE_REPOSITORY).indexOf(repository as SPACE_REPOSITORY) === -1
     ) {
-      throw new Error(`Space path is not valid : ${urlSegments}`)
+      throw new BadRequestException('Space path is not valid')
     }
 
     let space: SpaceEnv | undefined
@@ -141,12 +141,14 @@ export class SpacesManager {
     if (!space) return null
     try {
       space.setup(user, repository as SPACE_REPOSITORY, rootAlias, paths, urlSegments, skipEndpointProtection)
-      await this.filesQuotaManager.setQuotaExceeded(user, space)
-      return space
     } catch (e) {
       this.logger.warn({ tag: this.spaceEnv.name, msg: `*${space.alias}* : ${toErrorMessage(e)}` })
-      throw new HttpException(toErrorMessage(e), e instanceof FileError ? e.httpCode : HttpStatus.BAD_REQUEST)
+      if (e instanceof HttpException) throw e
+      if (e instanceof FileError) throw new HttpException(toErrorMessage(e), e.httpCode)
+      throw e
     }
+    await this.filesQuotaManager.setQuotaExceeded(user, space)
+    return space
   }
 
   async searchSpaces(userId: number, searchSpaceDto: ValidatedSearchSpaceDto): Promise<SpaceProps[]> {

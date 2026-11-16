@@ -63,6 +63,7 @@ describe(SpaceGuard.name, () => {
       ]
     }).compile()
 
+    module.useLogger(['fatal'])
     spacesManager = module.get<SpacesManager>(SpacesManager)
     spacesQueries = module.get<SpacesQueries>(SpacesQueries)
     spacesGuard = module.get<SpaceGuard>(SpaceGuard)
@@ -262,6 +263,48 @@ describe(SpaceGuard.name, () => {
       params: { '*': 'files/foo' }
     })
     await expect(spacesGuard.canActivate(context)).rejects.toThrow(HttpException)
+  })
+
+  it.each([
+    [
+      'preserve HTTP exceptions raised while resolving a space',
+      new HttpException('Storage quota exceeded', HttpStatus.INSUFFICIENT_STORAGE),
+      HttpStatus.INSUFFICIENT_STORAGE,
+      'Storage quota exceeded',
+      true
+    ],
+    [
+      'return service unavailable for a nested connection error',
+      new Error('cache unavailable', { cause: Object.assign(new Error('connect timed out'), { code: 'ETIMEDOUT' }) }),
+      HttpStatus.SERVICE_UNAVAILABLE,
+      'Service unavailable',
+      false
+    ],
+    [
+      'return an internal server error for an unexpected space error',
+      new Error('unexpected failure'),
+      HttpStatus.INTERNAL_SERVER_ERROR,
+      'Internal server error',
+      false
+    ]
+  ] as const)('should %s', async (_name, error, status, message, preserveError) => {
+    const spaceEnv = vi.spyOn(spacesManager, 'spaceEnv').mockRejectedValueOnce(error)
+    userTest.role = USER_ROLE.USER
+    userTest.applications = [USER_PERMISSION.PERSONAL_SPACE]
+    context.switchToHttp().getRequest.mockReturnValue({
+      user: userTest,
+      params: { '*': 'files/personal' }
+    })
+
+    try {
+      if (preserveError) {
+        await expect(spacesGuard.canActivate(context)).rejects.toBe(error)
+      } else {
+        await expect(spacesGuard.canActivate(context)).rejects.toMatchObject({ status, message })
+      }
+    } finally {
+      spaceEnv.mockRestore()
+    }
   })
 
   it('should validate (or not) the access to the space depending on the user permissions', async () => {
@@ -493,16 +536,5 @@ describe(SpaceGuard.name, () => {
     await expect(spacesGuard.canActivate(context)).rejects.toMatchObject({ status: HttpStatus.FORBIDDEN })
     SkipSpaceGuard()(context.getHandler())
     expect(await spacesGuard.canActivate(context)).toBe(true)
-  })
-
-  it('coverage only', async () => {
-    userTest.role = USER_ROLE.USER
-    userTest.applications = [USER_PERMISSION.PERSONAL_SPACE]
-    spacesManager.spaceEnv = vi.fn().mockRejectedValueOnce(new Error('error'))
-    context.switchToHttp().getRequest.mockReturnValue({
-      user: userTest,
-      params: { '*': 'files/personal' }
-    })
-    await expect(spacesGuard.canActivate(context)).rejects.toMatchObject({ status: HttpStatus.BAD_REQUEST })
   })
 })

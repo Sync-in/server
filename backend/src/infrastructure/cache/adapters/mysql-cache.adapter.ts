@@ -1,25 +1,20 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { and, between, inArray, notBetween, type SQL, sql } from 'drizzle-orm'
 import type { MySqlQueryResult } from 'drizzle-orm/mysql2'
-import { toErrorMessage } from '../../../common/errors.js'
 import { createCacheKeySlug, currentTimeStamp } from '../../../common/shared.js'
 import { configuration } from '../../../configuration/config.environment.js'
 import { INFRASTRUCTURE_DEPENDENCY } from '../../availability/availability.constants.js'
 import { Availability } from '../../availability/availability.service.js'
 import { DB_TOKEN_PROVIDER } from '../../database/constants.js'
+import { getMysqlError } from '../../database/errors.js'
 import { type DBSchema } from '../../database/interfaces/database.interface.js'
-import { dbCheckAffectedRows, dbParseJson, getMysqlError } from '../../database/utils.js'
+import { dbCheckAffectedRows, dbParseJson } from '../../database/utils.js'
+import { toErrorLog } from '../../errors.js'
 import { SchedulerManager } from '../../scheduler/scheduler-manager.service.js'
 import type { CacheRateLimitResult, CacheRateLimitState } from '../interfaces/cache-rate-limit.interface.js'
 import type { CacheCompareAndSwapCommand } from '../interfaces/cache-compare-and-swap.interface.js'
 import { cache } from '../schemas/mysql-cache.schema.js'
 import { Cache, validateCacheCompareAndSwapCommand } from '../cache.service.js'
-
-function getErrorSource(error: unknown): string | undefined {
-  if (error === null || typeof error !== 'object') return undefined
-  if ('sql' in error && typeof error.sql === 'string') return error.sql
-  return 'code' in error && typeof error.code === 'string' ? error.code : undefined
-}
 
 @Injectable()
 export class MysqlCacheAdapter implements Cache {
@@ -126,7 +121,10 @@ export class MysqlCacheAdapter implements Cache {
         })
       return result.affectedRows === 1 && Number(result.insertId) === 0 ? initialValue : Number(result.insertId)
     } catch (e) {
-      this.logger.error({ tag: this.increment.name, msg: toErrorMessage(e) })
+      this.logger.error({
+        tag: this.increment.name,
+        ...toErrorLog(e, 'Unable to increment cache value')
+      })
       throw e
     }
   }
@@ -229,7 +227,7 @@ export class MysqlCacheAdapter implements Cache {
         })
       } catch (error) {
         if (getMysqlError(error)?.code === this.retryableCompareAndSwapErrorCode && attempt < this.compareAndSwapDeadlockRetries) {
-          this.logger.warn({ tag: this.compareAndSwap.name, msg: `Retrying ${command.key} after a database deadlock` })
+          this.logger.warn({ tag: this.compareAndSwap.name, msg: 'Retrying cache compare-and-swap after a database deadlock' })
           continue
         }
         throw error
@@ -252,7 +250,10 @@ export class MysqlCacheAdapter implements Cache {
         })
       return true
     } catch (e) {
-      this.logger.error({ tag: this.set.name, msg: toErrorMessage(e) })
+      this.logger.error({
+        tag: this.set.name,
+        ...toErrorLog(e, 'Unable to set cache value')
+      })
       return false
     }
   }
@@ -323,12 +324,14 @@ export class MysqlCacheAdapter implements Cache {
       }
       this.logger.log(`Using MySQL scheduler`)
     } catch (e) {
-      const errorSource = getErrorSource(e)
-      this.logger.warn(
-        `MariaDB event scheduler configuration failed${errorSource ? ` on '${errorSource}'` : ''}: ${toErrorMessage(e)}. ` +
-          `Enable the scheduler with "event_scheduler = ON" in the [mysqld] section of the MariaDB configuration (or "SET GLOBAL event_scheduler = ON" as a user with SUPER) ` +
-          `and grant the EVENT privilege on the Sync-in database to its MariaDB user`
-      )
+      const message =
+        `MariaDB event scheduler configuration failed. ` +
+        `Enable the scheduler with "event_scheduler = ON" in the [mysqld] section of the MariaDB configuration (or "SET GLOBAL event_scheduler = ON" as a user with SUPER) ` +
+        `and grant the EVENT privilege on the Sync-in database to its MariaDB user`
+      this.logger.warn({
+        tag: this.useMysqlScheduler.name,
+        ...toErrorLog(e, message)
+      })
       this.useInternalScheduler()
     }
   }
@@ -345,7 +348,10 @@ export class MysqlCacheAdapter implements Cache {
     try {
       await this.db.delete(cache).where(this.whereExpired())
     } catch (e) {
-      this.logger.error({ tag: this.clearExpiredKeys.name, msg: getErrorSource(e) ?? toErrorMessage(e) })
+      this.logger.error({
+        tag: this.clearExpiredKeys.name,
+        ...toErrorLog(e, 'Unable to clear expired cache keys')
+      })
     }
   }
 }

@@ -198,8 +198,9 @@ describe(FilesMethods.name, () => {
     controller.abort(new Error('Cancelled'))
     filesManager.delete.mockRejectedValueOnce(operationError)
 
-    await expect(filesMethods.delete(userTest, spaceEnv, null, controller.signal)).rejects.toEqual(
-      new HttpException(operationError.message, HttpStatus.INTERNAL_SERVER_ERROR)
-    )
+    await expect(filesMethods.delete(userTest, spaceEnv, null, controller.signal)).rejects.toMatchObject({
+      status: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: 'Internal server error'
+    })
   })
 })

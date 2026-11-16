@@ -185,7 +185,7 @@ describe(MysqlCacheAdapter.name, () => {
     expect(transaction).not.toHaveBeenCalled()
     expect(warn).toHaveBeenCalledWith({
       tag: 'compareAndSwap',
-      msg: 'Retrying lock-state after a database deadlock'
+      msg: 'Retrying cache compare-and-swap after a database deadlock'
     })
   })
 

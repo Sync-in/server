@@ -6,7 +6,8 @@ import { setTimeout } from 'node:timers/promises'
 import { configuration } from '../../configuration/config.environment.js'
 import { INFRASTRUCTURE_CONNECTION_RETRY_DELAY, INFRASTRUCTURE_DEPENDENCY } from '../availability/availability.constants.js'
 import { Availability } from '../availability/availability.service.js'
-import { connectionErrorMessage, isRetryableConnectionError } from '../utils.js'
+import { toErrorLog } from '../errors.js'
+import { isRetryableConnectionError } from '../utils.js'
 import { DB_CONNECTION_PROBE_TIMEOUT, DB_SESSION_INIT_QUERIES, DB_TOKEN_PROVIDER } from './constants.js'
 import { DatabaseLogger } from './database.logger.js'
 import type { DBSchema } from './interfaces/database.interface.js'
@@ -95,17 +96,17 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
         return
       } catch (error) {
         this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE, false)
-        const message = `Unable to ${isRecovery ? 'reconnect to' : 'connect to'} MySQL server: ${connectionErrorMessage(error)}`
+        const errorLog = toErrorLog(error, `Unable to ${isRecovery ? 'reconnect to' : 'connect to'} MySQL server`, true)
         if (!isRetryableConnectionError(error)) {
           if (!isRecovery) {
             await this.closePool()
-            throw new Error(message, { cause: error })
+            throw new Error(errorLog.msg, { cause: error })
           }
-          this.logger.error(message)
+          this.logger.error(errorLog)
           this.logger.error('MySQL connection cannot be retried without changing the configuration')
           return
         }
-        this.logger.error(message)
+        this.logger.error(errorLog)
         this.logger.warn(`Retrying connection to MySQL server in ${INFRASTRUCTURE_CONNECTION_RETRY_DELAY / 1000}s`)
         if (!(await this.waitRetryDelay())) return
       }
@@ -116,7 +117,7 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
     if (!this.availability.isAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE) || this.shutdownController.signal.aborted || this.recoveryPromise) {
       return
     }
-    this.logger.warn(`MySQL pool connection lost: ${connectionErrorMessage(error)}`)
+    this.logger.warn(toErrorLog(error, 'MySQL pool connection lost', true))
     this.recoveryPromise = this.recoverAvailability()
   }
 

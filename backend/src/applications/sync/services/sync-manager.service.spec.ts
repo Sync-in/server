@@ -372,7 +372,7 @@ describe(SyncManager.name, () => {
         status: HttpStatus.LOCKED
       })
 
-      expect(spy).toHaveBeenCalledWith(req.space, FILE_OPERATION.MOVE, expect.anything(), dstSpace)
+      expect(spy).toHaveBeenCalledWith(req.space, FILE_OPERATION.MOVE, expect.anything(), dstSpace.url)
     })
   })
 

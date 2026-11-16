@@ -1,6 +1,17 @@
-import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
+import {
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  ServiceUnavailableException
+} from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { toErrorMessage } from '../../../common/errors.js'
+import { toErrorLog } from '../../../infrastructure/errors.js'
+import { isRetryableConnectionError } from '../../../infrastructure/utils.js'
 import { HTTP_METHOD } from '../../applications.constants.js'
 import { FILE_ERROR } from '../../files/constants/errors.js'
 import { COLLABORA_CONTEXT } from '../../files/editors/collabora-online/collabora-online.constants.js'
@@ -70,8 +81,15 @@ export class SpaceGuard implements CanActivate {
     try {
       space = await this.spacesManager.spaceEnv(req.user, urlSegments)
     } catch (e) {
-      this.logger.warn({ tag: this.canActivate.name, msg: toErrorMessage(e) })
-      throw new HttpException('Space path is not valid', HttpStatus.BAD_REQUEST)
+      if (e instanceof HttpException) throw e
+      this.logger.error({
+        tag: this.canActivate.name,
+        ...toErrorLog(e, 'Unable to resolve space')
+      })
+      if (isRetryableConnectionError(e)) {
+        throw new ServiceUnavailableException('Service unavailable')
+      }
+      throw new InternalServerErrorException('Internal server error')
     }
     if (!space) {
       this.logger.warn({ tag: this.canActivate.name, msg: `space not authorized or not found : ${req.params['*']}` })

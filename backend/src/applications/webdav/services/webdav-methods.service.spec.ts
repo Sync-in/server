@@ -1580,7 +1580,7 @@ describe('WebDAVMethods', () => {
           // Expected to throw
         }
 
-        expect(logSpy.mock.calls.some(([payload]) => (payload as { msg?: string })?.msg?.includes(' -> /webdav/test/dest.txt'))).toBe(true)
+        expect(logSpy.mock.calls.some(([payload]) => (payload as { destinationUrl?: string })?.destinationUrl === '/webdav/test/dest.txt')).toBe(true)
       })
     })
   })
@@ -2184,7 +2184,7 @@ describe('WebDAVMethods', () => {
         }
 
         expect(logSpy.mock.calls.some(([payload]) => (payload as { msg?: string })?.msg?.includes('PUT'))).toBe(true)
-        expect(logSpy.mock.calls.some(([payload]) => (payload as { msg?: string })?.msg?.includes('/webdav/test.txt'))).toBe(true)
+        expect(logSpy.mock.calls.some(([payload]) => (payload as { spaceUrl?: string })?.spaceUrl === '/webdav/test.txt')).toBe(true)
       })
 
       it('should include destination URL in log when provided', () => {
@@ -2199,7 +2199,9 @@ describe('WebDAVMethods', () => {
           // Expected to throw
         }
 
-        expect(logSpy.mock.calls.some(([payload]) => (payload as { msg?: string })?.msg?.includes(' -> /webdav/destination.txt'))).toBe(true)
+        expect(logSpy.mock.calls.some(([payload]) => (payload as { destinationUrl?: string })?.destinationUrl === '/webdav/destination.txt')).toBe(
+          true
+        )
       })
     })
   })
