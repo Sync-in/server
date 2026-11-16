@@ -9,6 +9,7 @@ import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/
 import { generateThumbnail } from '../../../common/image.js'
 import { SERVER_NAME } from '../../../common/shared.js'
 import { configuration } from '../../../configuration/config.environment.js'
+import { toErrorLog } from '../../../infrastructure/errors.js'
 import { HTTP_METHOD } from '../../applications.constants.js'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications.js'
 import { NotificationContent } from '../../notifications/interfaces/notification-properties.interface.js'
@@ -349,7 +350,14 @@ export class FilesManager {
           }
           if (!patchMethod && created) {
             // Remove the file lock only if it has not been refreshed
-            await this.filesLockManager.removeLock(dbFile, fileLock)
+            try {
+              await this.filesLockManager.removeLock(dbFile, fileLock)
+            } catch (error) {
+              this.logger.warn({
+                tag: this.saveMultipart.name,
+                ...toErrorLog(error, `Failed to remove lock ${fileLock.key}`)
+              })
+            }
           }
         }
         if (patchMethod) {
