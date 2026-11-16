@@ -1,6 +1,6 @@
 import { type DrizzleMySqlConfig, DrizzleMySqlModule } from '@knaadh/nestjs-drizzle-mysql2'
 import { BeforeApplicationShutdown, Global, Inject, Logger, Module, OnModuleInit, Optional } from '@nestjs/common'
-import type { Connection, Pool, PoolConnection } from 'mysql2'
+import { type Connection, createConnection, type Pool } from 'mysql2'
 import { PinoLogger } from 'nestjs-pino'
 import { setTimeout } from 'node:timers/promises'
 import { configuration } from '../../configuration/config.environment.js'
@@ -130,41 +130,41 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
 
   private runAvailabilityProbe(): Promise<void> {
     return new Promise((resolve, reject) => {
-      let connection: PoolConnection | undefined
+      const connection = this.createProbeConnection()
       let settled = false
       const finish = (error?: unknown): void => {
         if (settled) return
-        settled = true
-        globalThis.clearTimeout(timeout)
         if (error) {
+          settled = true
+          globalThis.clearTimeout(timeout)
+          connection.destroy()
           reject(error)
         } else {
-          resolve()
+          connection.end((endError) => {
+            if (settled) return
+            settled = true
+            globalThis.clearTimeout(timeout)
+            if (endError) {
+              connection.destroy()
+              reject(endError)
+            } else {
+              resolve()
+            }
+          })
         }
       }
 
       const timeout = globalThis.setTimeout(() => {
         finish(Object.assign(new Error(`MySQL availability probe timed out after ${DB_CONNECTION_PROBE_TIMEOUT / 1000}s`), { code: 'ETIMEDOUT' }))
-        connection?.destroy()
       }, DB_CONNECTION_PROBE_TIMEOUT)
 
-      this.pool.getConnection((error, acquiredConnection) => {
-        if (settled) {
-          acquiredConnection?.release()
-          return
-        }
-        if (error) {
-          finish(error)
-          return
-        }
-
-        connection = acquiredConnection
-        acquiredConnection.query('SELECT 1', (queryError) => {
-          acquiredConnection.release()
-          finish(queryError ?? undefined)
-        })
-      })
+      connection.once('error', finish)
+      connection.query('SELECT 1', (queryError) => finish(queryError ?? undefined))
     })
+  }
+
+  private createProbeConnection(): Connection {
+    return createConnection({ uri: configuration.mysql.url, connectTimeout: DB_CONNECTION_PROBE_TIMEOUT })
   }
 
   private async waitRetryDelay(): Promise<boolean> {

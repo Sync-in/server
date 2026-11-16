@@ -12,10 +12,10 @@ this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE, true)
 ```
 
 The database runs `SELECT 1` until MySQL is available during startup. It does not send periodic health queries after that initial connection. The
-mysql2 pool grows on demand up to ten connections and keeps released connections available for reuse. An error from an established pooled connection
-starts a single `SELECT 1` availability probe without immediately marking the database unavailable. The complete probe, including pool acquisition,
-has a six-second timeout. A failed or timed-out probe marks the database unavailable and becomes the recovery loop, which stops as soon as MySQL
-accepts queries again.
+mysql2 application pool grows on demand up to ten connections and keeps released connections available for reuse. An error from an established pooled
+connection starts a single `SELECT 1` availability probe without immediately marking the database unavailable. Each probe uses a short-lived dedicated
+connection so application-pool saturation cannot block recovery detection. The complete probe, including connection establishment, has a six-second
+timeout. A failed or timed-out probe marks the database unavailable and becomes the recovery loop, which stops as soon as MySQL accepts queries again.
 
 This event-driven behavior avoids database traffic while the service is healthy. A silent network interruption may remain undetected until the TCP
 socket or the next application query reports it.

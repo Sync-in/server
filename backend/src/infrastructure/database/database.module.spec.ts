@@ -10,6 +10,7 @@ describe(DatabaseModule.name, () => {
   let query: Mock<(sql: string) => Promise<unknown>>
   let destroy: ReturnType<typeof vi.fn>
   let end: ReturnType<typeof vi.fn>
+  let probeEnd: ReturnType<typeof vi.fn>
   let runInContext: Mock<(callback: () => void) => void>
   let availability: Availability
   let databaseModule: DatabaseModule
@@ -30,20 +31,10 @@ describe(DatabaseModule.name, () => {
     query = vi.fn<(sql: string) => Promise<unknown>>().mockResolvedValue([])
     destroy = vi.fn()
     end = vi.fn().mockResolvedValue(undefined)
+    probeEnd = vi.fn((callback?: (error?: unknown) => void) => callback?.(undefined))
     runInContext = vi.fn((callback) => callback())
     const promisePool = { end }
-    const poolConnection = {
-      destroy,
-      query: vi.fn((sql: string, callback: (error: unknown) => void) => {
-        void query(sql).then(
-          () => callback(undefined),
-          (error: unknown) => callback(error)
-        )
-      }),
-      release: vi.fn()
-    }
     const pool = {
-      getConnection: vi.fn((callback: (error: unknown, connection: typeof poolConnection) => void) => callback(undefined, poolConnection)),
       on: vi.fn((event: string, listener: typeof connectionListener) => {
         if (event === 'connection') connectionListener = listener
       }),
@@ -51,6 +42,17 @@ describe(DatabaseModule.name, () => {
     }
     availability = new Availability()
     databaseModule = new DatabaseModule({ $client: pool } as any, availability, { runInContext } as unknown as PinoLogger)
+    vi.spyOn(databaseModule as any, 'createProbeConnection').mockImplementation(() => ({
+      destroy,
+      end: probeEnd,
+      once: vi.fn(),
+      query: vi.fn((sql: string, callback: (error: unknown) => void) => {
+        void query(sql).then(
+          () => callback(undefined),
+          (error: unknown) => callback(error)
+        )
+      })
+    }))
     vi.spyOn(databaseModule['logger'], 'debug').mockImplementation(() => undefined)
     vi.spyOn(databaseModule['logger'], 'error').mockImplementation(() => undefined)
     vi.spyOn(databaseModule['logger'], 'log').mockImplementation(() => undefined)
@@ -62,13 +64,15 @@ describe(DatabaseModule.name, () => {
     await databaseModule.beforeApplicationShutdown()
   })
 
-  it('does not poll MySQL after the initial connection succeeds', async () => {
+  it('uses a dedicated connection and does not poll MySQL after the initial probe succeeds', async () => {
     const waitRetryDelay = vi.spyOn(databaseModule as any, 'waitRetryDelay').mockResolvedValue(false)
 
     await databaseModule.onModuleInit()
 
     expect(query).toHaveBeenCalledOnce()
     expect(query).toHaveBeenCalledWith('SELECT 1')
+    expect(databaseModule['createProbeConnection']).toHaveBeenCalledOnce()
+    expect(probeEnd).toHaveBeenCalledOnce()
     expect(waitRetryDelay).not.toHaveBeenCalled()
     expect(availability.isAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE)).toBe(true)
   })
@@ -92,6 +96,7 @@ describe(DatabaseModule.name, () => {
 
     expect(availability.isAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE)).toBe(true)
     expect(query).toHaveBeenCalledTimes(2)
+    expect(databaseModule['createProbeConnection']).toHaveBeenCalledTimes(2)
     expect(runInContext).toHaveBeenCalledTimes(2)
     expect(runInContext).toHaveBeenCalledWith(expect.any(Function), { inherit: false })
     expect(databaseModule['recoveryPromise']).toBe(recoveryPromise)
@@ -117,6 +122,7 @@ describe(DatabaseModule.name, () => {
       await recoveryPromise
 
       expect(availability.isAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE)).toBe(false)
+      expect(databaseModule['createProbeConnection']).toHaveBeenCalledTimes(2)
       expect(destroy).toHaveBeenCalledOnce()
       expect(waitRetryDelay).toHaveBeenCalledOnce()
     } finally {
@@ -139,6 +145,9 @@ describe(DatabaseModule.name, () => {
     await recoveryPromise
 
     expect(query).toHaveBeenCalledTimes(3)
+    expect(databaseModule['createProbeConnection']).toHaveBeenCalledTimes(3)
+    expect(destroy).toHaveBeenCalledOnce()
+    expect(probeEnd).toHaveBeenCalledTimes(2)
     expect(waitRetryDelay).toHaveBeenCalledOnce()
     expect(availability.isAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE)).toBe(true)
     expect(databaseModule['recoveryPromise']).toBeUndefined()
