@@ -1,4 +1,28 @@
 
+## [2.6.4](https://github.com/Sync-in/server/compare/v2.6.3...v2.6.4) (2026-11-16)
+
+### Features
+
+* **frontend:search:** preserve result selection and scroll position ([d84a03d](https://github.com/Sync-in/server/commit/d84a03dd5c92b3f18eca05588b02a2debbbcba78))
+
+### Bug Fixes
+
+* allow PDF.js thumbnail blob images in CSP ([#344](https://github.com/Sync-in/server/issues/344)) ([0cf66f8](https://github.com/Sync-in/server/commit/0cf66f8a2508e6757ba833b5baef396bd3a603de))
+* **backend:cache:** skip SET GLOBAL event_scheduler when already enabled ([#334](https://github.com/Sync-in/server/issues/334)) ([9c47a50](https://github.com/Sync-in/server/commit/9c47a5020c4040cea016215f3556785be0a52048))
+* **backend:database:** isolate availability probes from application pool ([ceab857](https://github.com/Sync-in/server/commit/ceab85730b04d65b3b6865e7feaef7f0e1edcbae))
+* **backend:database:** isolate recovery logs from request context ([faf2a82](https://github.com/Sync-in/server/commit/faf2a82b270a66de9e90b87c84ab4ed70674ae9e))
+* **backend:files:** coordinate file locks atomically across cache backends ([45fced6](https://github.com/Sync-in/server/commit/45fced6a7727c85fdec1482ef18d5fd5248f7250))
+* **backend:files:** fall back to regular copy when reflink fails with EPERM ([#342](https://github.com/Sync-in/server/issues/342)) ([a422c7a](https://github.com/Sync-in/server/commit/a422c7a2f6eeb36ee409f91dc444ed95e8e55790))
+* **backend:files:** make upload lock cleanup best effort ([0aac494](https://github.com/Sync-in/server/commit/0aac494d8dc9ecbd183ce3978befc14f4476e7b9))
+* **backend:spaces:** resolve lock targets for browsed roots ([2b4796a](https://github.com/Sync-in/server/commit/2b4796a8f98335e28230b033d6f2c1ae101906c7))
+* **backend:** normalize database error handling and logging ([bfcc963](https://github.com/Sync-in/server/commit/bfcc963e95520ac15f0597ad310f377cc3fdf401))
+* **docker:** enable MariaDB event scheduler on startup ([3674abf](https://github.com/Sync-in/server/commit/3674abf911beb89bb6e05b77e5e54d95c72ee1e9))
+* **files:** normalize quota handling and input behavior ([e772fef](https://github.com/Sync-in/server/commit/e772feff66d4de78ac9894975ac674fc2609b550))
+* **frontend:assets:** add PowerShell MIME icon alias ([3867fb5](https://github.com/Sync-in/server/commit/3867fb5b2b98da4dcf52b7c181eddc2bec5fee65))
+* **frontend:users:** default macOS package to Apple Silicon ([ac9a758](https://github.com/Sync-in/server/commit/ac9a7589fe23b80ecc7afcdd2257091eeee043e9))
+* **frontend:** prevent virtual scroll jump on empty lists ([8fc99e1](https://github.com/Sync-in/server/commit/8fc99e1b332ecfebb42af0f843f8e92df1cd7c16))
+* **test:** move logger configuration out of setup hooks ([a112985](https://github.com/Sync-in/server/commit/a1129851fc0516a94bcb963a60145c6993defa4b))
+
 ## [2.6.3](https://github.com/Sync-in/server/compare/v2.6.2...v2.6.3) (2026-11-09)
 
 ### Features
