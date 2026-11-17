@@ -79,7 +79,7 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
     await this.closePool()
   }
 
-  private async waitUntilAvailable(isRecovery = false): Promise<void> {
+  private async waitUntilAvailable(isRecovery = false, poolConnectionError?: unknown): Promise<void> {
     while (!this.shutdownController.signal.aborted) {
       try {
         await this.runAvailabilityProbe()
@@ -89,7 +89,7 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
         if (!isRecovery) {
           this.logger.log('Connected to MySQL server')
         } else if (wasAvailable) {
-          this.logger.debug('Connection to MySQL server verified')
+          this.logger.debug(toErrorLog(poolConnectionError, 'MySQL pool connection lost; connection to MySQL server verified', true))
         } else {
           this.logger.log('Connection to MySQL server restored')
         }
@@ -117,13 +117,12 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
     if (!this.availability.isAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE) || this.shutdownController.signal.aborted || this.recoveryPromise) {
       return
     }
-    this.logger.warn(toErrorLog(error, 'MySQL pool connection lost', true))
-    this.recoveryPromise = this.recoverAvailability()
+    this.recoveryPromise = this.recoverAvailability(error)
   }
 
-  private async recoverAvailability(): Promise<void> {
+  private async recoverAvailability(poolConnectionError: unknown): Promise<void> {
     try {
-      await this.waitUntilAvailable(true)
+      await this.waitUntilAvailable(true, poolConnectionError)
     } finally {
       this.recoveryPromise = undefined
     }
