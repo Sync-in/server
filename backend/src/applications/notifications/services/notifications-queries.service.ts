@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common'
-import { and, desc, eq, inArray, SQL } from 'drizzle-orm'
+import { and, desc, eq, inArray, SQL, sql } from 'drizzle-orm'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import { type DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
 import { dbCheckAffectedRows } from '../../../infrastructure/database/utils.js'
@@ -53,6 +53,13 @@ export class NotificationsQueries {
   async delete(userId: number, notificationId?: number): Promise<void> {
     const where: SQL[] = [eq(notifications.toUserId, userId), ...(notificationId ? [eq(notifications.id, notificationId)] : [])]
     await this.db.delete(notifications).where(and(...where))
+  }
+
+  async deleteExpired(): Promise<number> {
+    const [result] = await this.db.execute(
+      sql`DELETE FROM ${notifications} WHERE ${notifications.createdAt} < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 6 MONTH)`
+    )
+    return result.affectedRows
   }
 
   usersNotifiedByEmail(userIds: number[]): Promise<UserMailNotification[]> {
