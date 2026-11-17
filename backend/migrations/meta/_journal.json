@@ -57,6 +57,13 @@
       "when": 1794734257838,
       "tag": "0007_secret_prodigy",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1794934237569,
+      "tag": "0008_clean_viper",
+      "breakpoints": true
     }
   ]
 }

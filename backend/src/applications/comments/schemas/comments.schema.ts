@@ -21,7 +21,7 @@ export const comments = mysqlTable(
     fileId: bigint('fileId', { mode: 'number', unsigned: true })
       .references(() => files.id, { onDelete: 'cascade' })
       .notNull(),
-    content: text(),
+    content: text().notNull(),
     modifiedAt: datetime('modifiedAt', { mode: 'date' }).default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
     createdAt: datetime('createdAt', { mode: 'date' })
       .default(sql`CURRENT_TIMESTAMP`)

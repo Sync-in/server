@@ -12,11 +12,11 @@ export const notifications = mysqlTable(
     toUserId: bigint('toUserId', { mode: 'number', unsigned: true })
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
-    content: jsonColumn<NotificationContent>()('content'),
+    content: jsonColumn<NotificationContent>()('content').notNull(),
     wasRead: boolean('wasRead').default(false).notNull(),
     createdAt: datetime('createdAt', { mode: 'date' })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull()
   },
-  (table) => [index('from_user_idx').on(table.fromUserId), index('to_user_idx').on(table.toUserId)]
+  (table) => [index('from_user_idx').on(table.fromUserId), index('to_user_idx').on(table.toUserId), index('created_at_idx').on(table.createdAt)]
 )
