@@ -1,4 +1,4 @@
-import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
+import type { FileTask } from '@sync-in-server/backend/src/applications/files/tasks/models/file-task'
 import type { Observable } from 'rxjs'
 
 export interface FileUpload extends File {

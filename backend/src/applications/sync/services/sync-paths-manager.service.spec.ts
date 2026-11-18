@@ -1,9 +1,9 @@
 import { HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { currentTimeStamp } from '../../../common/shared.js'
-import type { FileProps } from '../../files/interfaces/file-props.interface.js'
-import { FilesQueries } from '../../files/services/files-queries.service.js'
-import { getProps, isPathExists, isPathIsDir } from '../../files/utils/files.js'
+import type { FileProps } from '../../files/core/interfaces/file-props.interface.js'
+import { FilesQueries } from '../../files/core/services/files-queries.service.js'
+import { getProps, isPathExists, isPathIsDir } from '../../files/core/utils/files.js'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service.js'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
 import { getEnvPermissions } from '../../spaces/utils/permissions.js'
@@ -21,8 +21,8 @@ vi.mock('../../../common/shared.js', async (importOriginal) => {
   }
 })
 
-vi.mock('../../files/utils/files.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../files/utils/files.js')>()
+vi.mock('../../files/core/utils/files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/core/utils/files.js')>()
   return {
     ...actual,
     isPathExists: vi.fn(),

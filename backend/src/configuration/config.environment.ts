@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { getDocumentTypes } from '../applications/files/constants/samples.js'
+import { getDocumentTypes } from '../applications/files/core/constants/samples.js'
 import { FilesContentIndexingConfigSchema } from '../applications/files/files.config.js'
 import type { AuthTokenAccessConfig, AuthTokenRefreshConfig } from '../authentication/auth.config.js'
 import { ACCESS_KEY, CSRF_KEY, TWO_FA_VERIFY_EXPIRATION, WS_KEY } from '../authentication/constants/auth.js'

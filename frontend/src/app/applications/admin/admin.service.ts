@@ -42,8 +42,8 @@ import {
   API_FILES_INDEXING,
   API_FILES_INDEXING_START,
   API_FILES_INDEXING_STOP
-} from '@sync-in-server/backend/src/applications/files/constants/routes'
-import type { IndexingStatus } from '@sync-in-server/backend/src/applications/files/interfaces/indexing.interface'
+} from '@sync-in-server/backend/src/applications/files/core/constants/routes'
+import type { IndexingStatus } from '@sync-in-server/backend/src/applications/files/search/interfaces/indexing.interface'
 import type { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 
 type OptionalTwoFaHeaders = HttpHeaders | undefined

@@ -1,4 +1,4 @@
-import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
+import type { FileTree } from '@sync-in-server/backend/src/applications/files/core/interfaces/file-tree.interface'
 
 export interface FilesTreeNode {
   data: FileTree

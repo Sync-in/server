@@ -1,5 +1,5 @@
-import type { FileDBProps } from '../../files/interfaces/file-db-props.interface.js'
-import type { FileProps } from '../../files/interfaces/file-props.interface.js'
+import type { FileDBProps } from '../../files/core/interfaces/file-db-props.interface.js'
+import type { FileProps } from '../../files/core/interfaces/file-props.interface.js'
 
 export interface SpaceBrowserRootFile {
   file: FileProps

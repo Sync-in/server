@@ -2,9 +2,9 @@ import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
-import type { FileProps } from '../../files/interfaces/file-props.interface.js'
-import { FilesQueries } from '../../files/services/files-queries.service.js'
-import { dirName, fileName, getProps, isPathExists } from '../../files/utils/files.js'
+import type { FileProps } from '../../files/core/interfaces/file-props.interface.js'
+import { FilesQueries } from '../../files/core/services/files-queries.service.js'
+import { dirName, fileName, getProps, isPathExists } from '../../files/core/utils/files.js'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service.js'
 import { SharesQueries } from '../../shares/services/shares-queries.service.js'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service.js'
@@ -13,8 +13,8 @@ import { CommentsQueries } from './comments-queries.service.js'
 import { Mock } from 'vitest'
 
 // Mocks of the file utilities used by the service
-vi.mock('../../files/utils/files.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../files/utils/files.js')>()
+vi.mock('../../files/core/utils/files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/core/utils/files.js')>()
   return {
     ...actual,
     isPathExists: vi.fn(),

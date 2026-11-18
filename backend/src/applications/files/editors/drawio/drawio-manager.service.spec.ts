@@ -3,10 +3,10 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { configuration } from '../../../../configuration/config.environment.js'
 import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service.js'
 import type { SpaceEnv } from '../../../spaces/models/space-env.model.js'
-import * as filesUtils from '../../utils/files.js'
+import * as filesUtils from '../../core/utils/files.js'
 import { DrawioManager } from './drawio-manager.service.js'
 
-vi.mock('../../utils/files.js')
+vi.mock('../../core/utils/files.js')
 
 describe(DrawioManager.name, () => {
   let service: DrawioManager

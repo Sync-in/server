@@ -33,8 +33,8 @@ import {
   LucideShare2,
   LucideX
 } from '@lucide/angular'
-import { FILE_OPERATION, FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
-import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
+import { FILE_OPERATION, FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/core/constants/operations'
+import type { FileTree } from '@sync-in-server/backend/src/applications/files/core/interfaces/file-tree.interface'
 import { SPACE_ALIAS, SPACE_ALL_OPERATIONS, SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10nTranslateDirective } from 'angular-l10n'

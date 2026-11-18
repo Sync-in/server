@@ -7,7 +7,7 @@ import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js
 import { DatabaseModule } from '../../../infrastructure/database/database.module.js'
 import type { DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
 import { dbGetInsertedId } from '../../../infrastructure/database/utils.js'
-import { files } from '../../files/schemas/files.schema.js'
+import { files } from '../../files/core/schemas/files.schema.js'
 import { shares } from '../../shares/schemas/shares.schema.js'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema.js'
 import { spaces } from '../../spaces/schemas/spaces.schema.js'

@@ -1,5 +1,5 @@
 import type { LucideIcon } from '@lucide/angular'
-import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/core/constants/operations'
 import { SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { resolveFileLocation } from '../components/utils/file-location.utils'
 import { defaultMimeUrl, getAssetsMimeUrl, mimeDirectory, mimeDirectoryShare } from '../files.constants'

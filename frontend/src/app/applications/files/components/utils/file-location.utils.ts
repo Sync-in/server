@@ -1,4 +1,4 @@
-import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/core/constants/operations'
 import { SPACE_ALIAS, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SPACES_ICON, SPACES_TITLE } from '../../../spaces/spaces.constants'
 import type { FileLocationOptions, FileLocationPresentation, FileLocationRepository } from '../../interfaces/file-location.interface'

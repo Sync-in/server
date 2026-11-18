@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { AnyMySqlColumn, bigint, boolean, datetime, index, mysqlTable, tinyint, uniqueIndex, varchar } from 'drizzle-orm/mysql-core'
 import { pathVarchar } from '../../../infrastructure/database/columns.js'
-import { files } from '../../files/schemas/files.schema.js'
+import { files } from '../../files/core/schemas/files.schema.js'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema.js'
 import { spaces } from '../../spaces/schemas/spaces.schema.js'
 import { users } from '../../users/schemas/users.schema.js'

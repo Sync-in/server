@@ -1,6 +1,6 @@
 import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideFile, LucideFolderClosed } from '@lucide/angular'
-import { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
+import { FileTree } from '@sync-in-server/backend/src/applications/files/core/interfaces/file-tree.interface'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import type { SpaceRootProps } from '@sync-in-server/backend/src/applications/spaces/models/space-root-props.model'
 import { L10nTranslateDirective } from 'angular-l10n'

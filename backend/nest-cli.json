@@ -15,13 +15,16 @@
     "watchAssets": true,
     "assets": [
       {
-        "include": "./applications/files/assets"
+        "include": "./applications/files/core/assets"
+      },
+      {
+        "include": "./applications/files/search/assets"
       },
       {
         "include": "./common/fonts"
       },
       {
-        "include": "./configuration/config.logger.transport.mjs"
+        "include": "./infrastructure/logger/logger.transport.mjs"
       }
     ]
   }

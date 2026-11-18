@@ -1,6 +1,6 @@
 import { Column, SQL, sql } from 'drizzle-orm'
 import { bigint, datetime, index, mysqlTable, text } from 'drizzle-orm/mysql-core'
-import { files } from '../../files/schemas/files.schema.js'
+import { files } from '../../files/core/schemas/files.schema.js'
 import { users } from '../../users/schemas/users.schema.js'
 
 /*

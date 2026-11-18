@@ -1,4 +1,4 @@
-import type { FileFavorite } from '@sync-in-server/backend/src/applications/files/schemas/file-favorite.interface'
+import type { FileFavorite } from '@sync-in-server/backend/src/applications/files/favorites/schemas/file-favorite.interface'
 import { getNewly } from '../../../common/utils/functions'
 import { dJs } from '../../../common/utils/time'
 import { FileLocationModel } from './file-location.model'

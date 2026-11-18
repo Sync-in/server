@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { convertImageToBase64 } from '../../../common/image.js'
 import { STATIC_ASSETS_PATH } from '../../../configuration/config.constants.js'
-import { isPathExists } from '../../files/utils/files.js'
+import { isPathExists } from '../../files/core/utils/files.js'
 import { UserModel } from '../models/user.model.js'
 import { readFile, writeFile } from 'node:fs/promises'
 import fs from 'fs/promises'

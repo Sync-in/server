@@ -12,7 +12,7 @@ import { UsersManager } from './services/users-manager.service.js'
 import { UsersQueries } from './services/users-queries.service.js'
 import { UsersController } from './users.controller.js'
 import { generateUserTest } from './utils/test.js'
-import { FilesQuotaManager } from '../files/services/files-quota-manager.service.js'
+import { FilesQuotaManager } from '../files/quota/services/files-quota-manager.service.js'
 
 describe(UsersController.name, () => {
   let module: TestingModule

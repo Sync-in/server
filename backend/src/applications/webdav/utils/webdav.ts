@@ -1,7 +1,7 @@
 import { FastifyReply } from 'fastify'
 import http from 'node:http'
 import { currentTimeStamp, encodeUrl, SERVER_NAME } from '../../../common/shared.js'
-import { FileLock } from '../../files/interfaces/file-lock.interface.js'
+import { FileLock } from '../../files/locks/interfaces/file-lock.interface.js'
 import { LOCK_SCOPE, NS_DAV, NS_PREFIX, PROPSTAT, XML_CONTENT_TYPE } from '../constants/webdav.js'
 import { XML_NS, xmlBuild } from './xml.js'
 

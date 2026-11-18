@@ -7,9 +7,9 @@ import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import sharp from 'sharp'
 import TextToSVG from 'text-to-svg'
-import type { FileThumbnail } from '../applications/files/interfaces/file-thumbnail.interface.js'
-import { maxFileSizeExceededError } from '../applications/files/utils/errors.js'
-import { moveFiles } from '../applications/files/utils/files.js'
+import type { FileThumbnail } from '../applications/files/core/interfaces/file-thumbnail.interface.js'
+import { maxFileSizeExceededError } from '../applications/files/core/utils/errors.js'
+import { moveFiles } from '../applications/files/core/utils/files.js'
 
 // Sharp settings
 sharp.cache(false)

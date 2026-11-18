@@ -1,5 +1,5 @@
 import type { LucideIcon } from '@lucide/angular'
-import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
+import type { FileTask } from '@sync-in-server/backend/src/applications/files/tasks/models/file-task'
 
 export type TaskProgressbarType = 'warning' | 'danger' | null
 export type TaskProgressItemType = 'currentSize' | 'totalSize' | 'size' | 'directories' | 'files' | 'endedAt'

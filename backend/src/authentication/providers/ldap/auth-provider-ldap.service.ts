@@ -14,7 +14,7 @@ import {
 } from 'ldapts'
 import { readFile } from 'node:fs/promises'
 import { CONNECT_ERROR_CODE } from '../../../app.constants.js'
-import { isPathIsReadable } from '../../../applications/files/utils/files.js'
+import { isPathIsReadable } from '../../../applications/files/core/utils/files.js'
 import { USER_ROLE } from '../../../applications/users/constants/user.js'
 import type { CreateUserDto, UpdateUserDto } from '../../../applications/users/dto/create-or-update-user.dto.js'
 import { UserModel } from '../../../applications/users/models/user.model.js'

@@ -1,4 +1,4 @@
-import type { FileSpace } from '../../files/interfaces/file-space.interface.js'
+import type { FileSpace } from '../../files/core/interfaces/file-space.interface.js'
 import type { LinkGuest } from '../../links/interfaces/link-guest.interface.js'
 import type { Share } from '../schemas/share.interface.js'
 

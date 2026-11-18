@@ -1,5 +1,5 @@
-import type { FILE_MODE } from '../../constants/operations.js'
-import type { FileLockProps } from '../../interfaces/file-props.interface.js'
+import type { FILE_MODE } from '../../core/constants/operations.js'
+import type { FileLockProps } from '../../core/interfaces/file-props.interface.js'
 
 export interface CollaboraOnlineReqDto {
   documentServerUrl: string

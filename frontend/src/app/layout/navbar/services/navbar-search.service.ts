@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core'
 import { NavigationEnd, Router } from '@angular/router'
-import { MIN_CHARS_TO_SEARCH } from '@sync-in-server/backend/src/applications/files/constants/indexing'
+import { MIN_CHARS_TO_SEARCH } from '@sync-in-server/backend/src/applications/files/search/constants/indexing'
 import { filter, Subject } from 'rxjs'
 import { SEARCH_PATH, SEARCH_QUERY_PARAM } from '../../../applications/search/search.constants'
 import { StoreService } from '../../../store/store.service'

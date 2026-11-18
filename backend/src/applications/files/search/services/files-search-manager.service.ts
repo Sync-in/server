@@ -1,0 +1,151 @@
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
+import fs from 'fs/promises'
+import { Stats } from 'node:fs'
+import path from 'node:path'
+import { toErrorMessage } from '../../../../common/errors.js'
+import { escapePath } from '../../../../common/functions.js'
+import { configuration } from '../../../../configuration/config.environment.js'
+import { SharesQueries } from '../../../shares/services/shares-queries.service.js'
+import { SPACE_REPOSITORY } from '../../../spaces/constants/spaces.js'
+import { SpacesQueries } from '../../../spaces/services/spaces-queries.service.js'
+import { UserModel } from '../../../users/models/user.model.js'
+import type { ValidatedSearchFilesDto } from '../../operations/dto/file-operations.dto.js'
+import { FilesContentStore } from '../models/files-content-store.js'
+import { FileContent } from '../schemas/file-content.interface.js'
+import { dirName, fileName, getMimeType, isInternalTemporaryEntry } from '../../core/utils/files.js'
+import { genRegexPositiveAndNegativeTerms, normalizeSearchLimit } from '../utils/files-search.js'
+import { FilesContentParser } from './files-content-parser.service.js'
+import { FILE_REPOSITORY } from '../../core/constants/operations.js'
+import { genIndexingKey } from '../utils/indexing.js'
+
+@Injectable()
+export class FilesSearchManager {
+  private readonly logger = new Logger(FilesSearchManager.name)
+
+  constructor(
+    private readonly filesIndexer: FilesContentStore,
+    private readonly filesParser: FilesContentParser,
+    private readonly spacesQueries: SpacesQueries,
+    private readonly sharesQueries: SharesQueries
+  ) {}
+
+  async search(user: UserModel, search: ValidatedSearchFilesDto): Promise<FileContent[]> {
+    if (search.fullText && !configuration.applications.files.contentIndexing.enabled) {
+      throw new HttpException('Full-text search is disabled', HttpStatus.BAD_REQUEST)
+    }
+    const limit = normalizeSearchLimit(search.limit)
+    const [userSpaces, userShares] = await Promise.all([
+      this.spacesQueries.spaceIdentities(user.id),
+      this.sharesQueries.shareIdentities(user.id, +user.isAdmin)
+    ])
+    const spaceIds = userSpaces.map((space) => space.id)
+    const shareIds = userShares.map((share) => share.id)
+    const fileContents = await (search.fullText
+      ? this.searchFullText(user.id, spaceIds, shareIds, search.content, limit)
+      : this.searchFileNames(user.id, spaceIds, shareIds, search.content, limit))
+    return this.setDisplayRootNames(fileContents, userSpaces, userShares)
+  }
+
+  private async searchFullText(userId: number, spaceIds: number[], shareIds: number[], search: string, limit: number): Promise<FileContent[]> {
+    const indexNames = await this.filesIndexer.existingIndexes([
+      genIndexingKey(userId, FILE_REPOSITORY.USER),
+      ...spaceIds.map((id) => genIndexingKey(id, FILE_REPOSITORY.SPACE)),
+      ...shareIds.map((id) => genIndexingKey(id, FILE_REPOSITORY.SHARE))
+    ])
+    if (indexNames.length === 0) {
+      return []
+    }
+    try {
+      return await this.filesIndexer.searchRecords(indexNames, search, limit)
+    } catch (e) {
+      const error = e instanceof Error ? e : new Error(toErrorMessage(e))
+      this.logger.error({ tag: this.searchFullText.name, msg: `${JSON.stringify(indexNames)} - ${search}`, err: error })
+      let msg: string
+      if (/Invalid regular expression/.test(error.message)) {
+        msg = 'SyntaxError (check special characters)'
+      } else {
+        msg = 'Unable to perform full-text search'
+      }
+      throw new HttpException(msg, HttpStatus.BAD_REQUEST)
+    }
+  }
+
+  private async searchFileNames(userId: number, spaceIds: number[], shareIds: number[], search: string, limit: number): Promise<FileContent[]> {
+    const fileContents: FileContent[] = []
+    const regexpTerms = genRegexPositiveAndNegativeTerms(search)
+    for (const { paths } of await this.filesParser.allPaths([userId], spaceIds, shareIds)) {
+      for (const p of paths) {
+        if (isInternalTemporaryEntry(path.basename(p.realPath))) continue
+        const regexBasePath = new RegExp(`^/?${escapePath(p.realPath)}/?`)
+        if (!p.isDir) {
+          const f = await this.analyzeFile(p.realPath, p.pathPrefix, regexBasePath, regexpTerms)
+          if (f !== null) {
+            fileContents.push(f)
+            if (fileContents.length >= limit) return fileContents
+          }
+          continue
+        }
+        for await (const fileContent of this.parseFileNames(p.realPath, p.pathPrefix, regexBasePath, regexpTerms)) {
+          fileContents.push(fileContent)
+          if (fileContents.length >= limit) {
+            return fileContents
+          }
+        }
+      }
+    }
+    return fileContents
+  }
+
+  private async *parseFileNames(dir: string, pathPrefix: string, regexBasePath: RegExp, regexpTerms: RegExp): AsyncGenerator<FileContent> {
+    try {
+      for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+        if (isInternalTemporaryEntry(entry.name)) continue
+        const realPath = path.join(entry.parentPath, entry.name)
+        const fileContent = await this.analyzeFile(realPath, pathPrefix, regexBasePath, regexpTerms)
+        if (fileContent !== null) {
+          yield fileContent
+        }
+        if (entry.isDirectory()) {
+          yield* this.parseFileNames(realPath, pathPrefix, regexBasePath, regexpTerms)
+        }
+      }
+    } catch (e) {
+      this.logger.warn({ tag: this.parseFileNames.name, msg: `unable to parse: ${dir} (${toErrorMessage(e)})` })
+    }
+  }
+
+  private async analyzeFile(realPath: string, pathPrefix: string, regexBasePath: RegExp, regexpTerms: RegExp): Promise<FileContent | null> {
+    const filePath = realPath.replace(regexBasePath, '')
+    if (!regexpTerms.test(filePath)) return null
+    const stats: Stats = await fs.stat(realPath)
+    return {
+      id: stats.ino,
+      path: path.join(pathPrefix, dirName(filePath)),
+      name: fileName(filePath),
+      mime: getMimeType(realPath, stats.isDirectory()),
+      size: stats.size,
+      mtime: stats.mtime.getTime()
+    }
+  }
+
+  private setDisplayRootNames(
+    fileContents: FileContent[],
+    userSpaces: { alias?: string; name?: string }[],
+    userShares: { alias?: string; name?: string }[]
+  ): FileContent[] {
+    if (fileContents.length === 0) return fileContents
+    const displayRootNames = new Map<string, string>()
+    for (const { alias, name } of userSpaces) {
+      if (alias && name) displayRootNames.set(`${SPACE_REPOSITORY.FILES}/${alias}`, name)
+    }
+    for (const { alias, name } of userShares) {
+      if (alias && name) displayRootNames.set(`${SPACE_REPOSITORY.SHARES}/${alias}`, name)
+    }
+    for (const fileContent of fileContents) {
+      const [repository, alias] = fileContent.path.split('/', 2)
+      const displayRootName = displayRootNames.get(`${repository}/${alias}`)
+      if (displayRootName) fileContent.displayRootName = displayRootName
+    }
+    return fileContents
+  }
+}

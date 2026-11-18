@@ -23,12 +23,12 @@ import type { UserTheme } from '../../../users/interfaces/user-preferences.inter
 import type { UserModel } from '../../../users/models/user.model.js'
 import { getAvatarBase64 } from '../../../users/utils/avatar.js'
 import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav.js'
-import { FILE_MODE } from '../../constants/operations.js'
-import type { FileDBProps } from '../../interfaces/file-db-props.interface.js'
-import { FileLockOptions } from '../../interfaces/file-lock.interface.js'
-import { FileLockProps } from '../../interfaces/file-props.interface.js'
-import { LockConflict } from '../../models/file-lock-error.js'
-import { FilesLockManager } from '../../services/files-lock-manager.service.js'
+import { FILE_MODE } from '../../core/constants/operations.js'
+import type { FileDBProps } from '../../core/interfaces/file-db-props.interface.js'
+import { FileLockOptions } from '../../locks/interfaces/file-lock.interface.js'
+import { FileLockProps } from '../../core/interfaces/file-props.interface.js'
+import { LockConflict } from '../../locks/models/file-lock-error.js'
+import { FilesLockManager } from '../../locks/services/files-lock-manager.service.js'
 import {
   copyFileContent,
   fileSize,
@@ -38,7 +38,7 @@ import {
   isPathIsDir,
   removeFiles,
   writeUploadFromStream
-} from '../../utils/files.js'
+} from '../../core/utils/files.js'
 import {
   EURO_OFFICE_APP_LOCK,
   ONLY_OFFICE_APP_LOCK,
@@ -52,9 +52,9 @@ import {
 import { OnlyOfficeReqDto } from './only-office.dtos.js'
 import { OnlyOfficeCallBack, OnlyOfficeConfig, OnlyOfficeConvertForm } from './only-office.interface.js'
 import { API_ONLY_OFFICE_CALLBACK, API_ONLY_OFFICE_DOCUMENT } from './only-office.routes.js'
-import { FileEvent } from '../../events/file-events.js'
+import { FileEvent } from '../../core/events/file-events.js'
 import { ACTION } from '../../../../common/constants.js'
-import { createUploadStreamLimiter, parseContentLength } from '../../utils/upload-file.js'
+import { createUploadStreamLimiter, parseContentLength } from '../../core/utils/upload-file.js'
 
 @Injectable()
 export class OnlyOfficeManager {

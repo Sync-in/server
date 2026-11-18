@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { makeFileSchema } from '../../files/dto/file-operations.dto.js'
+import { makeFileSchema } from '../../files/operations/dto/file-operations.dto.js'
 import type { SyncFileStats } from '../interfaces/sync-diff.interface.js'
 import { transformPathFilters } from '../utils/functions.js'
 import { NormalizedMap } from '../utils/normalizedMap.js'

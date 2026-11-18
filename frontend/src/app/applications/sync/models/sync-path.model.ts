@@ -1,5 +1,5 @@
 import type { LucideIcon } from '@lucide/angular'
-import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/core/constants/operations'
 import { SyncPathFromClient, SyncPathSettings } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-path.interface'
 import type { SyncPath } from '@sync-in-server/backend/src/applications/sync/schemas/sync-path.interface'
 import { popFromObject } from '@sync-in-server/backend/src/common/shared'

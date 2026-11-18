@@ -1,14 +1,14 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import { effect, inject, Injectable, signal, untracked } from '@angular/core'
-import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/core/constants/operations'
 import {
   API_FILES_TASKS,
   API_FILES_TASKS_CANCEL,
   API_FILES_TASKS_DELETE,
   API_FILES_TASKS_POLL
-} from '@sync-in-server/backend/src/applications/files/constants/routes'
-import type { FileTasksPollResponse } from '@sync-in-server/backend/src/applications/files/interfaces/file-task.interface'
-import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
+} from '@sync-in-server/backend/src/applications/files/core/constants/routes'
+import type { FileTasksPollResponse } from '@sync-in-server/backend/src/applications/files/tasks/interfaces/file-task.interface'
+import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/tasks/models/file-task'
 import { SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { currentTimeStamp } from '@sync-in-server/backend/src/common/shared'
 import { EMPTY, Observable, Subscription, timer } from 'rxjs'

@@ -1,0 +1,197 @@
+import {
+  Body,
+  Controller,
+  Copy,
+  Delete,
+  Get,
+  Head,
+  Lock,
+  Logger,
+  Move,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Req,
+  Res,
+  StreamableFile,
+  Unlock,
+  UseGuards
+} from '@nestjs/common'
+import { type FastifyReply } from 'fastify'
+import { SkipSpacePermissionsCheck } from '../../spaces/decorators/space-skip-permissions.decorator.js'
+import { GetSpace } from '../../spaces/decorators/space.decorator.js'
+import { SpaceGuard } from '../../spaces/guards/space.guard.js'
+import { type FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface.js'
+import { SpaceEnv } from '../../spaces/models/space-env.model.js'
+import { GetUser } from '../../users/decorators/user.decorator.js'
+import { UserModel } from '../../users/models/user.model.js'
+import { FILE_OPERATION, FORCE_AS_FILE_OWNER } from '../core/constants/operations.js'
+import { FILES_ROUTE } from '../core/constants/routes.js'
+import {
+  type CompressFileDto,
+  compressFileSchema,
+  copyMoveFileSchema,
+  type DownloadFileDto,
+  downloadFileSchema,
+  type MakeFileDto,
+  makeFileSchema,
+  type ValidatedCopyMoveFileDto
+} from './dto/file-operations.dto.js'
+import { forceAsFileOwnerQuerySchema, thumbnailSizeQuerySchema } from '../core/schemas/files-validation.schema.js'
+import type { CopyMoveFileResponse } from '../core/interfaces/copy-move-file.interface.js'
+import type { FileLockProps, FilePropsWithPermissions } from '../core/interfaces/file-props.interface.js'
+import { FileTask } from '../tasks/models/file-task.js'
+import { FilesMethods } from './services/files-methods.service.js'
+import { FilesTasksManager } from '../tasks/services/files-tasks-manager.service.js'
+
+@Controller(FILES_ROUTE.BASE)
+@UseGuards(SpaceGuard)
+export class FilesOperationsController {
+  private readonly logger = new Logger(FilesOperationsController.name)
+
+  constructor(
+    private readonly filesMethods: FilesMethods,
+    private readonly filesTasksManager: FilesTasksManager
+  ) {}
+
+  // OPERATIONS
+
+  @Head(`${FILES_ROUTE.OPERATION}/*`)
+  async head(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<StreamableFile> {
+    return this.filesMethods.headOrGet(req, res)
+  }
+
+  @Get(`${FILES_ROUTE.OPERATION}/*`)
+  async download(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<StreamableFile> {
+    return this.filesMethods.headOrGet(req, res)
+  }
+
+  @Post(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.MAKE}/*`)
+  async make(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body({ schema: makeFileSchema }) makeFileDto: MakeFileDto): Promise<void> {
+    return this.filesMethods.make(user, space, makeFileDto)
+  }
+
+  @Post(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
+  async uploadCreate(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<void> {
+    return this.filesMethods.upload(req, res)
+  }
+
+  @Put(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
+  async uploadOverwrite(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<void> {
+    return this.filesMethods.upload(req, res)
+  }
+
+  @Patch(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
+  async uploadContent(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<void> {
+    return this.filesMethods.upload(req, res)
+  }
+
+  @Copy(`${FILES_ROUTE.OPERATION}/*`)
+  async copy(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Body({ schema: copyMoveFileSchema }) copyMoveFileDto: ValidatedCopyMoveFileDto
+  ): Promise<CopyMoveFileResponse> {
+    return this.filesMethods.copy(user, space, copyMoveFileDto)
+  }
+
+  @Move(`${FILES_ROUTE.OPERATION}/*`)
+  async move(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Body({ schema: copyMoveFileSchema }) copyMoveFileDto: ValidatedCopyMoveFileDto
+  ): Promise<CopyMoveFileResponse> {
+    return this.filesMethods.move(user, space, copyMoveFileDto)
+  }
+
+  @Delete(`${FILES_ROUTE.OPERATION}/*`)
+  async delete(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<void> {
+    return this.filesMethods.delete(user, space)
+  }
+
+  @Get(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.THUMBNAIL}/*`)
+  async genThumbnail(@GetSpace() space: SpaceEnv, @Query('size', { schema: thumbnailSizeQuerySchema }) size = 256): Promise<StreamableFile> {
+    if (size > 1024) size = 1024
+    const thumbnail = await this.filesMethods.genThumbnail(space, size)
+    return new StreamableFile(thumbnail.stream, { length: thumbnail.size, type: thumbnail.mimeType })
+  }
+
+  @Lock(`${FILES_ROUTE.OPERATION}/*`)
+  async lock(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<FileLockProps> {
+    return this.filesMethods.lock(user, space)
+  }
+
+  @Unlock(`${FILES_ROUTE.OPERATION}/*`)
+  async unlock(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Query(FORCE_AS_FILE_OWNER, { schema: forceAsFileOwnerQuerySchema }) forceAsFileOwner?: boolean
+  ): Promise<void> {
+    return this.filesMethods.unlock(user, space, forceAsFileOwner)
+  }
+
+  @Unlock(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UNLOCK_REQUEST}/*`)
+  async unlockRequest(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<void> {
+    return this.filesMethods.unlockRequest(user, space)
+  }
+
+  @Get(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.GET_SIZE}/*`)
+  async getSize(@GetSpace() space: SpaceEnv): Promise<{ size: number }> {
+    return this.filesMethods.getSize(space)
+  }
+
+  @Get(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.GET_PROPS}/*`)
+  async getProps(@GetSpace() space: SpaceEnv): Promise<FilePropsWithPermissions> {
+    return this.filesMethods.getProps(space)
+  }
+
+  // TASKS OPERATIONS
+
+  @Post(`${FILES_ROUTE.TASK_OPERATION}/${FILE_OPERATION.DOWNLOAD}/*`)
+  async downloadFromUrlAsTask(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Body({ schema: downloadFileSchema }) downloadFileDto: DownloadFileDto
+  ): Promise<FileTask> {
+    return this.filesTasksManager.createTask(FILE_OPERATION.DOWNLOAD, user, space, downloadFileDto, this.filesMethods.downloadFromUrl.name)
+  }
+
+  @Post(`${FILES_ROUTE.TASK_OPERATION}/${FILE_OPERATION.COMPRESS}/*`)
+  @SkipSpacePermissionsCheck()
+  // Can be used to create or download an archive of files; permissions are checked later
+  async compressAsTask(@Req() req: FastifySpaceRequest, @Body({ schema: compressFileSchema }) compressFileDto: CompressFileDto): Promise<FileTask> {
+    if (compressFileDto.compressInDirectory) {
+      await SpaceGuard.checkPermissions(req, this.logger)
+    }
+    return this.filesTasksManager.createTask(FILE_OPERATION.COMPRESS, req.user, req.space, compressFileDto, this.filesMethods.compress.name)
+  }
+
+  @Post(`${FILES_ROUTE.TASK_OPERATION}/${FILE_OPERATION.DECOMPRESS}/*`)
+  async decompressAsTask(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<FileTask> {
+    return this.filesTasksManager.createTask(FILE_OPERATION.DECOMPRESS, user, space, null, this.filesMethods.decompress.name)
+  }
+
+  @Copy(`${FILES_ROUTE.TASK_OPERATION}/*`)
+  async copyAsTask(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Body({ schema: copyMoveFileSchema }) copyMoveFileDto: ValidatedCopyMoveFileDto
+  ): Promise<FileTask> {
+    return this.filesTasksManager.createTask(FILE_OPERATION.COPY, user, space, copyMoveFileDto, this.filesMethods.copy.name)
+  }
+
+  @Move(`${FILES_ROUTE.TASK_OPERATION}/*`)
+  async moveAsTask(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Body({ schema: copyMoveFileSchema }) copyMoveFileDto: ValidatedCopyMoveFileDto
+  ): Promise<FileTask> {
+    return this.filesTasksManager.createTask(FILE_OPERATION.MOVE, user, space, copyMoveFileDto, this.filesMethods.move.name)
+  }
+
+  @Delete(`${FILES_ROUTE.TASK_OPERATION}/*`)
+  async deleteAsTask(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<FileTask> {
+    return this.filesTasksManager.createTask(FILE_OPERATION.DELETE, user, space, null, this.filesMethods.delete.name)
+  }
+}

@@ -15,7 +15,7 @@ import { AuthPasswordWorkLimitException } from '../errors/auth-password-work-lim
 import { AuthProvider } from '../providers/auth-providers.models.js'
 import { genWebDAVAuthCacheKey } from '../utils/auth-cache.js'
 import { consumeWebDAVRateLimit } from '../utils/auth-rate-limit.js'
-import { HttpBasicStrategy } from './implementations/http-basic.strategy.js'
+import { HttpBasicStrategy } from './adapters/http-basic.strategy.js'
 
 @Injectable()
 export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basic') implements AbstractStrategy {

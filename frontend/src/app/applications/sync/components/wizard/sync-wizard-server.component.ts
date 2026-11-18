@@ -3,7 +3,7 @@ import { Component, inject, signal, viewChild, WritableSignal } from '@angular/c
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { LucideCircleArrowLeft, LucideCircleArrowRight, LucideDynamicIcon, LucideFolderPlus } from '@lucide/angular'
-import { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
+import { FileTree } from '@sync-in-server/backend/src/applications/files/core/interfaces/file-tree.interface'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'

@@ -14,12 +14,12 @@ import { canModifySpaceEnv } from '../../../spaces/utils/permissions.js'
 import type { UserModel } from '../../../users/models/user.model.js'
 import { getAvatarBase64 } from '../../../users/utils/avatar.js'
 import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav.js'
-import { FILE_MODE } from '../../constants/operations.js'
-import { FileLockOptions } from '../../interfaces/file-lock.interface.js'
-import { FileLockProps } from '../../interfaces/file-props.interface.js'
-import { FileError } from '../../models/file-error.js'
-import { LockConflict } from '../../models/file-lock-error.js'
-import { FilesLockManager } from '../../services/files-lock-manager.service.js'
+import { FILE_MODE } from '../../core/constants/operations.js'
+import { FileLockOptions } from '../../locks/interfaces/file-lock.interface.js'
+import { FileLockProps } from '../../core/interfaces/file-props.interface.js'
+import { FileError } from '../../core/models/file-error.js'
+import { LockConflict } from '../../locks/models/file-lock-error.js'
+import { FilesLockManager } from '../../locks/services/files-lock-manager.service.js'
 import {
   copyFileContent,
   fileName,
@@ -31,7 +31,7 @@ import {
   removeFiles,
   uniqueFilePathFromDir,
   writeUploadFromStream
-} from '../../utils/files.js'
+} from '../../core/utils/files.js'
 import {
   COLLABORA_APP_LOCK,
   COLLABORA_HEADERS,
@@ -44,9 +44,9 @@ import {
 import { CollaboraOnlineReqDto, CollaboraSaveDocumentDto } from './collabora-online.dtos.js'
 import type { CollaboraOnlineCheckFileInfo, FastifyCollaboraOnlineSpaceRequest, JwtPayloadCollaboraOnline } from './collabora-online.interface.js'
 import { API_COLLABORA_ONLINE_FILES } from './collabora-online.routes.js'
-import { FileEvent } from '../../events/file-events.js'
+import { FileEvent } from '../../core/events/file-events.js'
 import { ACTION } from '../../../../common/constants.js'
-import { createUploadStreamLimiter, parseContentLength } from '../../utils/upload-file.js'
+import { createUploadStreamLimiter, parseContentLength } from '../../core/utils/upload-file.js'
 
 @Injectable()
 export class CollaboraOnlineManager {

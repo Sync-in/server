@@ -1,4 +1,4 @@
-import * as filesUtils from '../../files/utils/files.js'
+import * as filesUtils from '../../files/core/utils/files.js'
 import type { UserModel } from '../../users/models/user.model.js'
 import { SPACE_ALIAS, SPACE_ALL_OPERATIONS, SPACE_OPERATION, SPACE_REPOSITORY, SPACE_ROLE } from '../constants/spaces.js'
 import { SpaceEnv } from './space-env.model.js'

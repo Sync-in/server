@@ -1,4 +1,4 @@
-import type { FileProps } from '../../files/interfaces/file-props.interface.js'
+import type { FileProps } from '../../files/core/interfaces/file-props.interface.js'
 import type { Owner } from '../../users/interfaces/owner.interface.js'
 
 export interface SpaceRootProps {

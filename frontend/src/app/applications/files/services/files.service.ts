@@ -1,12 +1,12 @@
 import { HttpClient, HttpErrorResponse, HttpParams, HttpResponse } from '@angular/common/http'
 import { inject, Injectable, signal } from '@angular/core'
-import { TAR_EXTENSION, TAR_GZ_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
+import { TAR_EXTENSION, TAR_GZ_EXTENSION } from '@sync-in-server/backend/src/applications/files/core/constants/compress'
 import {
   FILE_MODE,
   FILE_OPERATION,
   FORCE_AS_FILE_OWNER,
   SEND_FILE_ERROR_MSG
-} from '@sync-in-server/backend/src/applications/files/constants/operations'
+} from '@sync-in-server/backend/src/applications/files/core/constants/operations'
 import {
   API_FILES_FAVORITES,
   API_FILES_OPERATION,
@@ -19,19 +19,19 @@ import {
   API_FILES_TASK_OPERATION_DECOMPRESS,
   API_FILES_TASK_OPERATION_DOWNLOAD,
   API_FILES_TASKS_DOWNLOAD
-} from '@sync-in-server/backend/src/applications/files/constants/routes'
-import type { DeleteFileFavoriteDto, FileFavoriteDto } from '@sync-in-server/backend/src/applications/files/dto/file-favorite.dto'
+} from '@sync-in-server/backend/src/applications/files/core/constants/routes'
+import type { DeleteFileFavoriteDto, FileFavoriteDto } from '@sync-in-server/backend/src/applications/files/favorites/dto/file-favorite.dto'
 import type {
   CompressFileDto,
   CopyMoveFileDto,
   DownloadFileDto,
   MakeFileDto,
   SearchFilesDto
-} from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
-import type { CopyMoveFileResponse } from '@sync-in-server/backend/src/applications/files/interfaces/copy-move-file.interface'
-import type { FileLockProps, FilePropsWithPermissions } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
-import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
-import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
+} from '@sync-in-server/backend/src/applications/files/operations/dto/file-operations.dto'
+import type { CopyMoveFileResponse } from '@sync-in-server/backend/src/applications/files/core/interfaces/copy-move-file.interface'
+import type { FileLockProps, FilePropsWithPermissions } from '@sync-in-server/backend/src/applications/files/core/interfaces/file-props.interface'
+import type { FileTree } from '@sync-in-server/backend/src/applications/files/core/interfaces/file-tree.interface'
+import type { FileTask } from '@sync-in-server/backend/src/applications/files/tasks/models/file-task'
 import {
   COLLABORA_EDITOR,
   COLLABORA_ONLINE_EXTENSIONS
@@ -42,9 +42,9 @@ import {
   ONLY_OFFICE_EDITOR,
   ONLY_OFFICE_EXTENSIONS
 } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
-import type { FileContent } from '@sync-in-server/backend/src/applications/files/schemas/file-content.interface'
-import type { FileFavorite, FileFavoriteIdentity } from '@sync-in-server/backend/src/applications/files/schemas/file-favorite.interface'
-import type { FileRecent } from '@sync-in-server/backend/src/applications/files/schemas/file-recent.interface'
+import type { FileContent } from '@sync-in-server/backend/src/applications/files/search/schemas/file-content.interface'
+import type { FileFavorite, FileFavoriteIdentity } from '@sync-in-server/backend/src/applications/files/favorites/schemas/file-favorite.interface'
+import type { FileRecent } from '@sync-in-server/backend/src/applications/files/recents/schemas/file-recent.interface'
 import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
 import { SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { encodeUrl, forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'

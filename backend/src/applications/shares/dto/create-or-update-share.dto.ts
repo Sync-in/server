@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { integerNumberSchema } from '../../../configuration/config.schema.js'
-import { sanitizeName, sanitizePath } from '../../files/utils/files.js'
+import { sanitizeName, sanitizePath } from '../../files/core/utils/files.js'
 import { createOrUpdateLinkSchema } from '../../links/dto/create-or-update-link.dto.js'
 import { MEMBER_TYPE, MEMBER_TYPE_REVERSE } from '../../users/constants/member.js'
 import type { Member } from '../../users/interfaces/member.interface.js'

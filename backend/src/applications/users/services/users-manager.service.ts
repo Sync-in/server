@@ -17,7 +17,7 @@ import { convertTempImageToPng, generateAvatar, imgMimeTypePrefix, pngMimeType, 
 import { createLightSlug, genPassword } from '../../../common/shared.js'
 import { configuration, serverConfig } from '../../../configuration/config.environment.js'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
-import { isPathExists, removeFiles, sanitizeName, temporaryFilePath } from '../../files/utils/files.js'
+import { isPathExists, removeFiles, sanitizeName, temporaryFilePath } from '../../files/core/utils/files.js'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications.js'
 import type { NotificationContent } from '../../notifications/interfaces/notification-properties.interface.js'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service.js'

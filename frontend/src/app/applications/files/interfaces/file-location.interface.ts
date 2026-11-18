@@ -1,5 +1,5 @@
 import type { LucideIcon } from '@lucide/angular'
-import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/core/constants/operations'
 import { SPACE_ALIAS } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 
 export type FileLocationRepository = SPACE_ALIAS.PERSONAL | FILE_REPOSITORY.SPACE | FILE_REPOSITORY.SHARE

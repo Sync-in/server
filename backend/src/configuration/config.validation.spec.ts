@@ -1,4 +1,4 @@
-import { SAMPLE_DOCUMENT_GROUPS } from '../applications/files/constants/samples.js'
+import { SAMPLE_DOCUMENT_GROUPS } from '../applications/files/core/constants/samples.js'
 import { FilesContentIndexingConfigSchema } from '../applications/files/files.config.js'
 import { OnlyOfficeConfigSchema } from '../applications/files/editors/only-office/only-office.config.js'
 import { APP_STORE_REPOSITORY } from '../applications/sync/constants/store.js'
@@ -13,9 +13,10 @@ import { SERVER_NAME } from '../common/shared.js'
 import { CacheConfigSchema } from '../infrastructure/cache/cache.config.js'
 import { DB_CHARSET } from '../infrastructure/database/constants.js'
 import { MailerConfigSchema } from '../infrastructure/mailer/mailer.config.js'
+import { LoggerConfigSchema } from '../infrastructure/logger/logger.config.js'
 import { WebSocketConfigSchema } from '../infrastructure/websocket/web-socket.config.js'
 import { DEFAULT_LOG_FILE_PATH } from './config.constants.js'
-import { GlobalConfigSchema, LoggerConfigSchema } from './config.validation.js'
+import { GlobalConfigSchema } from './config.validation.js'
 
 const filePaths = { dataPath: '/data', usersPath: '/data/users', spacesPath: '/data/spaces', linksPath: '/data/links' }
 const ldapRequired = { servers: ['ldap://directory.example.test'], baseDN: 'dc=example,dc=test' }

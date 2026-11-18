@@ -1,0 +1,313 @@
+import { Test, TestingModule } from '@nestjs/testing'
+import { eq, inArray } from 'drizzle-orm'
+import { randomUUID } from 'node:crypto'
+import { AvailabilityModule } from '../../../../infrastructure/availability/availability.module.js'
+import type { Cache } from '../../../../infrastructure/cache/cache.service.js'
+import { DB_TOKEN_PROVIDER } from '../../../../infrastructure/database/constants.js'
+import { DatabaseModule } from '../../../../infrastructure/database/database.module.js'
+import type { DBSchema } from '../../../../infrastructure/database/interfaces/database.interface.js'
+import { dbGetInsertedId } from '../../../../infrastructure/database/utils.js'
+import { comments } from '../../../comments/schemas/comments.schema.js'
+import { CommentsQueries } from '../../../comments/services/comments-queries.service.js'
+import { sharesMembers } from '../../../shares/schemas/shares-members.schema.js'
+import { shares } from '../../../shares/schemas/shares.schema.js'
+import { SharesQueries } from '../../../shares/services/shares-queries.service.js'
+import { SPACE_ALIAS } from '../../../spaces/constants/spaces.js'
+import { spacesMembers } from '../../../spaces/schemas/spaces-members.schema.js'
+import { spacesRoots } from '../../../spaces/schemas/spaces-roots.schema.js'
+import { spaces } from '../../../spaces/schemas/spaces.schema.js'
+import { SpacesQueries } from '../../../spaces/services/spaces-queries.service.js'
+import {
+  SYNC_CLIENT_TYPE,
+  SYNC_PATH_CONFLICT_MODE,
+  SYNC_PATH_DIFF_MODE,
+  SYNC_PATH_MODE,
+  SYNC_PATH_SCHEDULER_UNIT
+} from '../../../sync/constants/sync.js'
+import { syncClients } from '../../../sync/schemas/sync-clients.schema.js'
+import { syncPaths } from '../../../sync/schemas/sync-paths.schema.js'
+import { users } from '../../../users/schemas/users.schema.js'
+import { FILE_REPOSITORY } from '../../core/constants/operations.js'
+import { filesFavorites } from '../schemas/files-favorites.schema.js'
+import { files } from '../../core/schemas/files.schema.js'
+import { FilesFavoritesQueries } from './files-favorites-queries.service.js'
+import { FilesQueries } from '../../core/services/files-queries.service.js'
+
+describe('Files favorites queries (e2e)', () => {
+  let module: TestingModule
+  let db: DBSchema
+  let favoritesQueries: FilesFavoritesQueries
+  let commentsQueries: CommentsQueries
+  let spacesQueries: SpacesQueries
+  let sharesQueries: SharesQueries
+  let ownerId: number
+  let memberId: number
+  let spaceId: number
+  let shareId: number
+  let rootFileId: number
+  let trashedRootFileId: number
+  let activeFileId: number
+  let movedFileId: number
+  let trashedFileId: number
+  let directTrashedFileId: number
+  let syncPathId: number
+
+  const suffix = randomUUID().replaceAll('-', '').slice(0, 12)
+  const rootName = `favorite-root-[${suffix}`
+  const trashedRootAlias = 'trashed-anchor'
+  const nestedName = 'nested.+'
+  const movedParentPath = `${rootName}-moved`
+  const spaceAlias = `e2e-favorite-space-${suffix}`
+  const shareAlias = `e2e-favorite-share-${suffix}`
+  const syncClientId = randomUUID()
+  const noCache = {
+    genSlugKey: vi.fn((...args: unknown[]) => args.join(':')),
+    get: vi.fn().mockResolvedValue(undefined),
+    set: vi.fn().mockResolvedValue(true)
+  } as unknown as Cache
+
+  beforeAll(async () => {
+    module = await Test.createTestingModule({ imports: [AvailabilityModule, DatabaseModule] }).compile()
+    module.useLogger(['fatal'])
+    db = await module.resolve<DBSchema>(DB_TOKEN_PROVIDER)
+    const filesQueries = new FilesQueries(db)
+    favoritesQueries = new FilesFavoritesQueries(db)
+    spacesQueries = new SpacesQueries(db, noCache, filesQueries)
+    sharesQueries = new SharesQueries(db, noCache)
+    commentsQueries = new CommentsQueries(db, spacesQueries, sharesQueries)
+
+    ownerId = dbGetInsertedId(
+      await db.insert(users).values({
+        login: `e2e-favorite-owner-${suffix}`,
+        email: `e2e-favorite-owner-${suffix}@example.test`,
+        password: 'password'
+      })
+    )
+    memberId = dbGetInsertedId(
+      await db.insert(users).values({
+        login: `e2e-favorite-member-${suffix}`,
+        email: `e2e-favorite-member-${suffix}@example.test`,
+        password: 'password'
+      })
+    )
+
+    rootFileId = dbGetInsertedId(await db.insert(files).values({ ownerId, path: '.', name: rootName, isDir: true }))
+    trashedRootFileId = dbGetInsertedId(
+      await db.insert(files).values({ ownerId, path: '.', name: `${rootName}-trashed`, isDir: true, inTrash: true })
+    )
+    activeFileId = dbGetInsertedId(
+      await db
+        .insert(files)
+        .values({ ownerId, path: `${rootName.toUpperCase()}/${nestedName}`, name: 'active.txt', isDir: false, mime: 'text/plain' })
+    )
+    movedFileId = dbGetInsertedId(
+      await db.insert(files).values({ ownerId, path: movedParentPath, name: 'moved', isDir: true, mime: 'inode/directory' })
+    )
+    trashedFileId = dbGetInsertedId(await db.insert(files).values({ ownerId, path: rootName, name: 'trashed.txt', isDir: false, inTrash: true }))
+    spaceId = dbGetInsertedId(await db.insert(spaces).values({ alias: spaceAlias, name: 'Favorite space' }))
+    directTrashedFileId = dbGetInsertedId(await db.insert(files).values({ spaceId, path: '.', name: 'space-trash.txt', isDir: false, inTrash: true }))
+    await db.insert(spacesRoots).values([
+      { spaceId, fileId: rootFileId, alias: 'anchor', name: 'Anchor' },
+      { spaceId, fileId: trashedRootFileId, alias: trashedRootAlias, name: 'Trashed anchor' }
+    ])
+    await db.insert(spacesMembers).values({ spaceId, userId: memberId, permissions: 'a:d:m:so' })
+
+    shareId = dbGetInsertedId(await db.insert(shares).values({ ownerId, fileId: rootFileId, alias: shareAlias, name: 'Favorite share' }))
+    await db.insert(sharesMembers).values({ shareId, userId: memberId, permissions: 'd:m' })
+    await db.insert(syncClients).values({
+      id: syncClientId,
+      ownerId,
+      token: randomUUID(),
+      tokenExpiration: Number.MAX_SAFE_INTEGER,
+      info: {
+        node: 'Favorite client',
+        os: 'test',
+        osRelease: 'test',
+        user: 'test',
+        type: SYNC_CLIENT_TYPE.DESKTOP,
+        version: 'test'
+      }
+    })
+    syncPathId = dbGetInsertedId(
+      await db.insert(syncPaths).values({
+        clientId: syncClientId,
+        ownerId,
+        fileId: rootFileId,
+        settings: {
+          name: 'Favorite sync',
+          localPath: '/favorites',
+          remotePath: `personal/${rootName}`,
+          permissions: '',
+          mode: SYNC_PATH_MODE.BOTH,
+          ignoreDelete: false,
+          enabled: true,
+          diffMode: SYNC_PATH_DIFF_MODE.FAST,
+          conflictMode: SYNC_PATH_CONFLICT_MODE.RECENT,
+          filters: [],
+          scheduler: { value: 0, unit: SYNC_PATH_SCHEDULER_UNIT.DISABLED },
+          timestamp: 0,
+          lastSync: new Date(0)
+        }
+      })
+    )
+    await db.insert(filesFavorites).values([
+      { userId: ownerId, fileId: rootFileId },
+      { userId: ownerId, fileId: trashedFileId },
+      { userId: memberId, fileId: rootFileId },
+      { userId: memberId, fileId: trashedRootFileId },
+      { userId: memberId, fileId: trashedFileId },
+      { userId: memberId, fileId: directTrashedFileId },
+      { userId: memberId, fileId: activeFileId },
+      { userId: memberId, fileId: movedFileId }
+    ])
+    await db.insert(comments).values([
+      { userId: ownerId, fileId: trashedFileId, content: 'Comment from owner' },
+      { userId: memberId, fileId: trashedFileId, content: 'Comment from member' }
+    ])
+  })
+
+  afterAll(async () => {
+    try {
+      if (shareId) await db.delete(shares).where(eq(shares.id, shareId))
+      if (spaceId) await db.delete(spaces).where(eq(spaces.id, spaceId))
+      const userIds = [ownerId, memberId].filter((id): id is number => Number.isInteger(id))
+      if (userIds.length) await db.delete(users).where(inArray(users.id, userIds))
+    } finally {
+      await module?.close()
+    }
+  })
+
+  it('resolves an active anchored file through its accessible space and direct share', async () => {
+    const [spaceIds, shareIds] = await Promise.all([
+      spacesQueries.spaceIdentities(memberId).then((identities) => identities.map(({ id }) => id)),
+      sharesQueries.shareIdentities(memberId, 0).then((identities) => identities.map(({ id }) => id))
+    ])
+    const [spaceLocations, shareLocations] = await Promise.all([
+      favoritesQueries.getFavoriteLocationsFromSpaces(memberId, spaceIds, true),
+      favoritesQueries.getFavoriteLocationsFromShares(memberId, shareIds)
+    ])
+
+    expect(spaceLocations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fileId: activeFileId,
+          repository: FILE_REPOSITORY.SPACE,
+          path: `files/${spaceAlias}/anchor/${nestedName}`,
+          targetPath: `files/${spaceAlias}/anchor/${nestedName}/active.txt`,
+          displayRootName: 'Favorite space'
+        })
+      ])
+    )
+    expect(shareLocations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fileId: activeFileId,
+          repository: FILE_REPOSITORY.SHARE,
+          path: `shares/${shareAlias}/${nestedName}`,
+          targetPath: `shares/${shareAlias}/${nestedName}/active.txt`,
+          displayRootName: 'Favorite share'
+        })
+      ])
+    )
+    expect(spaceLocations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fileId: rootFileId,
+          targetPath: `files/${spaceAlias}/anchor`
+        })
+      ])
+    )
+    expect(shareLocations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fileId: rootFileId,
+          targetPath: `shares/${shareAlias}`
+        })
+      ])
+    )
+    expect(spaceLocations.some(({ fileId }) => fileId === movedFileId)).toBe(false)
+    expect(shareLocations.some(({ fileId }) => fileId === movedFileId)).toBe(false)
+  })
+
+  it('keeps anchored trash roots in files and excludes direct trash for guests', async () => {
+    const spaceIds = (await spacesQueries.spaceIdentities(memberId)).map(({ id }) => id)
+    const [withTrash, withoutTrash] = await Promise.all([
+      favoritesQueries.getFavoriteLocationsFromSpaces(memberId, spaceIds, true),
+      favoritesQueries.getFavoriteLocationsFromSpaces(memberId, spaceIds, false)
+    ])
+    const anchoredRoot = {
+      fileId: trashedRootFileId,
+      path: `files/${spaceAlias}`,
+      targetPath: `files/${spaceAlias}/${trashedRootAlias}`
+    }
+
+    expect(withTrash).toEqual(expect.arrayContaining([expect.objectContaining(anchoredRoot)]))
+    expect(withoutTrash).toEqual(expect.arrayContaining([expect.objectContaining(anchoredRoot)]))
+    expect(withTrash).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fileId: directTrashedFileId,
+          path: `trash/${spaceAlias}`,
+          targetPath: `trash/${spaceAlias}/space-trash.txt`
+        })
+      ])
+    )
+    expect(withoutTrash.some(({ fileId }) => fileId === directTrashedFileId)).toBe(false)
+  })
+
+  it('returns browser details', async () => {
+    const favorites = await favoritesQueries.getFavoritesFromUser(ownerId, true, true)
+    const rootFavorite = favorites.find(({ fileId }) => fileId === rootFileId)
+    const commentedFavorite = favorites.find(({ fileId }) => fileId === trashedFileId)
+
+    expect(rootFavorite).toEqual(
+      expect.objectContaining({
+        spaces: [{ id: spaceId, alias: spaceAlias, name: 'Favorite space' }],
+        shares: [{ id: shareId, alias: shareAlias, name: 'Favorite share', type: 0 }],
+        syncs: [{ id: syncPathId, clientId: syncClientId, clientName: 'Favorite client' }],
+        targetPath: `files/personal/${rootName}`,
+        hasComments: false
+      })
+    )
+    expect(commentedFavorite).toEqual(expect.objectContaining({ targetPath: `trash/personal/${rootName}/trashed.txt`, hasComments: true }))
+
+    const favoritesWithoutSyncs = await favoritesQueries.getFavoritesFromUser(ownerId, true, false)
+    const rootFavoriteWithoutSyncs = favoritesWithoutSyncs.find(({ fileId }) => fileId === rootFileId)
+    expect(rootFavoriteWithoutSyncs).toEqual(
+      expect.objectContaining({
+        spaces: [{ id: spaceId, alias: spaceAlias, name: 'Favorite space' }],
+        shares: [{ id: shareId, alias: shareAlias, name: 'Favorite share', type: 0 }]
+      })
+    )
+    expect(rootFavoriteWithoutSyncs).not.toHaveProperty('syncs')
+  })
+
+  it('does not resolve a trashed child through its former space anchor', async () => {
+    const spaceIds = (await spacesQueries.spaceIdentities(memberId)).map(({ id }) => id)
+    const locations = await favoritesQueries.getFavoriteLocationsFromSpaces(memberId, spaceIds, true)
+    const recentComments = await commentsQueries.getRecentsFromSpaces(memberId, spaceIds, 10)
+
+    expect(spaceIds).toContain(spaceId)
+    expect(locations.some(({ fileId }) => fileId === trashedFileId)).toBe(false)
+    expect(recentComments.some(({ content }) => content === 'Comment from owner')).toBe(false)
+
+    await expect(favoritesQueries.getFavoritesFromUser(ownerId, true, true)).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ fileId: trashedFileId, repository: SPACE_ALIAS.PERSONAL, path: `trash/personal/${rootName}`, isDisabled: false })
+      ])
+    )
+    await expect(commentsQueries.getRecentsFromPersonal(ownerId, 10)).resolves.toEqual([
+      expect.objectContaining({ file: expect.objectContaining({ path: `trash/personal/${rootName}` }) })
+    ])
+  })
+
+  it('does not resolve a trashed child through its former share', async () => {
+    const shareIds = (await sharesQueries.shareIdentities(memberId, 0)).map(({ id }) => id)
+    const locations = await favoritesQueries.getFavoriteLocationsFromShares(memberId, shareIds)
+    const recentComments = await commentsQueries.getRecentsFromShares(memberId, shareIds, 10)
+
+    expect(shareIds).toContain(shareId)
+    expect(locations.some(({ fileId }) => fileId === trashedFileId)).toBe(false)
+    expect(recentComments.some(({ content }) => content === 'Comment from owner')).toBe(false)
+  })
+})

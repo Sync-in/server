@@ -9,13 +9,13 @@ import { searchMembersSchema, type ValidatedSearchMembersDto } from '../dto/sear
 import { UserModel } from '../models/user.model.js'
 import { AdminUsersManager } from './admin-users-manager.service.js'
 import { AdminUsersQueries } from './admin-users-queries.service.js'
-import { FilesQuotaManager } from '../../files/services/files-quota-manager.service.js'
+import { FilesQuotaManager } from '../../files/quota/services/files-quota-manager.service.js'
 import { Mock } from 'vitest'
-import * as _fs from '../../files/utils/files.js'
+import * as _fs from '../../files/core/utils/files.js'
 
 // mock file utils used by the service (delete/rename user space)
-vi.mock('../../files/utils/files.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../files/utils/files.js')>()
+vi.mock('../../files/core/utils/files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/core/utils/files.js')>()
   return {
     ...actual,
     isPathInside: vi.fn(() => true),

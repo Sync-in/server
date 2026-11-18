@@ -1,12 +1,12 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { HTTP_VERSION } from '../../applications.constants.js'
-import type { FileLock } from '../../files/interfaces/file-lock.interface.js'
-import { FileError } from '../../files/models/file-error.js'
-import { LockConflict } from '../../files/models/file-lock-error.js'
-import { FilesLockManager } from '../../files/services/files-lock-manager.service.js'
-import { FilesManager } from '../../files/services/files-manager.service.js'
-import { dirName, genEtag, isPathExists, removeFiles } from '../../files/utils/files.js'
+import type { FileLock } from '../../files/locks/interfaces/file-lock.interface.js'
+import { FileError } from '../../files/core/models/file-error.js'
+import { LockConflict } from '../../files/locks/models/file-lock-error.js'
+import { FilesLockManager } from '../../files/locks/services/files-lock-manager.service.js'
+import { FilesManager } from '../../files/core/services/files-manager.service.js'
+import { dirName, genEtag, isPathExists, removeFiles } from '../../files/core/utils/files.js'
 import { SPACE_REPOSITORY } from '../../spaces/constants/spaces.js'
 import * as PathsUtils from '../../spaces/utils/paths.js'
 import { haveSpaceEnvPermissions } from '../../spaces/utils/permissions.js'
@@ -17,8 +17,8 @@ import { WebDAVSpaces } from './webdav-spaces.service.js'
 import { Mocked } from 'vitest'
 
 // Mock external dependencies
-vi.mock('../../files/utils/files.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../files/utils/files.js')>()
+vi.mock('../../files/core/utils/files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/core/utils/files.js')>()
   return {
     ...actual,
     isPathExists: vi.fn().mockReturnValue(false),

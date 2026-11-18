@@ -4,7 +4,7 @@ import { toErrorMessage } from '../../../common/errors.js'
 import { urlToPath } from '../../../common/functions.js'
 import { decodeUrl } from '../../../common/shared.js'
 import { HTTP_METHOD } from '../../applications.constants.js'
-import { CACHE_LOCK_DEFAULT_TTL } from '../../files/constants/cache.js'
+import { CACHE_LOCK_DEFAULT_TTL } from '../../files/core/constants/cache.js'
 import { USER_PERMISSION } from '../../users/constants/user.js'
 import {
   ALLOW_EMPTY_BODY_METHODS,

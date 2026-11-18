@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { integerNumberSchema } from '../../../configuration/config.schema.js'
-import { sanitizeName } from '../../files/utils/files.js'
+import { sanitizeName } from '../../files/core/utils/files.js'
 import { GROUP_VISIBILITY } from '../constants/group.js'
 
 const optionalGroupNameSchema = z.string().trim().overwrite(sanitizeName).min(1).optional()

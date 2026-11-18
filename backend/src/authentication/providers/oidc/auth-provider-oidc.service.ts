@@ -44,10 +44,10 @@ import { OAuthDesktopCallBackURI, OAuthDesktopLoopbackPorts, OAuthDesktopPortPar
 import type { AuthProviderOIDCConfig } from './auth-oidc.config.js'
 import { OAuthCookie, OAuthCookieSettings, OAuthTokenEndpoint, OIDC_LOGIN_HASH_LENGTH, OIDC_LOGIN_MAX_LENGTH } from './auth-oidc.constants.js'
 import { HttpService } from '@nestjs/axios'
-import { type DownloadFileDto, downloadFileSchema } from '../../../applications/files/dto/file-operations.dto.js'
-import { DownloadFile } from '../../../applications/files/utils/download-file.js'
+import { type DownloadFileDto, downloadFileSchema } from '../../../applications/files/operations/dto/file-operations.dto.js'
+import { DownloadFile } from '../../../applications/files/core/utils/download-file.js'
 import { convertTempImageToPng, imgMimeTypePrefix } from '../../../common/image.js'
-import { fileSize, temporaryFilePath } from '../../../applications/files/utils/files.js'
+import { fileSize, temporaryFilePath } from '../../../applications/files/core/utils/files.js'
 
 @Injectable()
 export class AuthProviderOIDC implements AuthProvider {

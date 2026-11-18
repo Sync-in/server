@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { hydrateConfigDefaults, integerNumberSchema, nonEmptyStringSchema } from '../../configuration/config.schema.js'
-import { SAMPLE_DOCUMENT_GROUPS } from './constants/samples.js'
+import { SAMPLE_DOCUMENT_GROUPS } from './core/constants/samples.js'
 import { CollaboraOnlineConfigSchema } from './editors/collabora-online/collabora-online.config.js'
 import { DrawioConfigSchema } from './editors/drawio/drawio.config.js'
 import { OnlyOfficeConfigSchema } from './editors/only-office/only-office.config.js'

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { integerNumberSchema } from '../../../configuration/config.schema.js'
-import { sanitizeName, sanitizePath } from '../../files/utils/files.js'
+import { sanitizeName, sanitizePath } from '../../files/core/utils/files.js'
 import { SPACE_ALIAS, SPACE_REPOSITORY } from '../constants/spaces.js'
 import type { SpaceRootProps } from '../models/space-root-props.model.js'
 

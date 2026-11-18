@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { Cache } from '../../infrastructure/cache/cache.service.js'
 import { DB_TOKEN_PROVIDER } from '../../infrastructure/database/constants.js'
-import { FilesQueries } from '../files/services/files-queries.service.js'
+import { FilesQueries } from '../files/core/services/files-queries.service.js'
 import { LinksQueries } from '../links/services/links-queries.service.js'
 import { NotificationsManager } from '../notifications/services/notifications-manager.service.js'
 import { SharesManager } from '../shares/services/shares-manager.service.js'
@@ -12,7 +12,7 @@ import { UsersQueries } from '../users/services/users-queries.service.js'
 import { CommentsController } from './comments.controller.js'
 import { CommentsManager } from './services/comments-manager.service.js'
 import { CommentsQueries } from './services/comments-queries.service.js'
-import { FilesQuotaManager } from '../files/services/files-quota-manager.service.js'
+import { FilesQuotaManager } from '../files/quota/services/files-quota-manager.service.js'
 import { Mocked } from 'vitest'
 
 describe(CommentsController.name, () => {

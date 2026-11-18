@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { bigint, datetime, index, mysqlTable, unique, varchar } from 'drizzle-orm/mysql-core'
 import { pathVarchar } from '../../../infrastructure/database/columns.js'
-import { files } from '../../files/schemas/files.schema.js'
+import { files } from '../../files/core/schemas/files.schema.js'
 import { spaces } from './spaces.schema.js'
 
 /*

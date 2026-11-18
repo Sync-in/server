@@ -1,4 +1,4 @@
-import type { FileSpace } from '@sync-in-server/backend/src/applications/files/interfaces/file-space.interface'
+import type { FileSpace } from '@sync-in-server/backend/src/applications/files/core/interfaces/file-space.interface'
 import type { ShareFile } from '@sync-in-server/backend/src/applications/shares/interfaces/share-file.interface'
 import { getNewly } from '../../../common/utils/functions'
 import { dJs } from '../../../common/utils/time'

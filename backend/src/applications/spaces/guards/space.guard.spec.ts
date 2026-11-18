@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { intersectPermissions } from '../../../common/shared.js'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
-import { FilesQueries } from '../../files/services/files-queries.service.js'
+import { FilesQueries } from '../../files/core/services/files-queries.service.js'
 import { LinksQueries } from '../../links/services/links-queries.service.js'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service.js'
 import { SHARE_ALL_OPERATIONS } from '../../shares/constants/shares.js'
@@ -24,7 +24,7 @@ import { SpaceEnv } from '../models/space-env.model.js'
 import { SpacesManager } from '../services/spaces-manager.service.js'
 import { SpacesQueries } from '../services/spaces-queries.service.js'
 import { SpaceGuard } from './space.guard.js'
-import { FilesQuotaManager } from '../../files/services/files-quota-manager.service.js'
+import { FilesQuotaManager } from '../../files/quota/services/files-quota-manager.service.js'
 
 describe(SpaceGuard.name, () => {
   let spacesGuard: SpaceGuard

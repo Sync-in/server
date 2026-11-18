@@ -7,7 +7,7 @@ import {
   AuthTwoFaVerificationWithoutPasswordGuard
 } from '../../authentication/providers/two-fa/guards/auth-two-fa-verification.guard.js'
 import { integerFromStringSchema } from '../../configuration/config.schema.js'
-import { makeContentDispositionAttachment } from '../files/utils/send-file.js'
+import { makeContentDispositionAttachment } from '../files/core/utils/send-file.js'
 import { USERS_ROUTE } from './constants/routes.js'
 import { USER_PERMISSION, USER_ROLE } from './constants/user.js'
 import { UserHavePermission } from './decorators/permissions.decorator.js'

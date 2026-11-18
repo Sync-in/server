@@ -7,7 +7,7 @@ import { ADMIN_ICON, ADMIN_PATH, ADMIN_TITLE } from '../admin.constants'
 import { LayoutService } from '../../../layout/layout.service'
 import { AdminService } from '../admin.service'
 import { switchMap, timer } from 'rxjs'
-import { IndexingState, IndexingStatus } from '@sync-in-server/backend/src/applications/files/interfaces/indexing.interface'
+import { IndexingState, IndexingStatus } from '@sync-in-server/backend/src/applications/files/search/interfaces/indexing.interface'
 import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
 
 @Component({

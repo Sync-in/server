@@ -1,4 +1,4 @@
-import type { FileSpace } from '@sync-in-server/backend/src/applications/files/interfaces/file-space.interface'
+import type { FileSpace } from '@sync-in-server/backend/src/applications/files/core/interfaces/file-space.interface'
 import { SHARE_ALL_OPERATIONS } from '@sync-in-server/backend/src/applications/shares/constants/shares'
 import type { ShareProps } from '@sync-in-server/backend/src/applications/shares/interfaces/share-props.interface'
 import { SPACE_OPERATION, SPACE_PERMS_SEP } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'

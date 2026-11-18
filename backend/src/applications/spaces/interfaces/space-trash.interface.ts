@@ -1,4 +1,4 @@
-import type { FileDBProps } from '../../files/interfaces/file-db-props.interface.js'
+import type { FileDBProps } from '../../files/core/interfaces/file-db-props.interface.js'
 
 export interface SpaceTrash {
   id: number

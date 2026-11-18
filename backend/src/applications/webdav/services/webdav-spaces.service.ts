@@ -1,6 +1,6 @@
 import { toErrorMessage } from '../../../common/errors.js'
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
-import { getProps, isPathExists, isPathIsDir } from '../../files/utils/files.js'
+import { getProps, isPathExists, isPathIsDir } from '../../files/core/utils/files.js'
 import { SPACE_REPOSITORY } from '../../spaces/constants/spaces.js'
 import { SpaceEnv } from '../../spaces/models/space-env.model.js'
 import { SpacesBrowser } from '../../spaces/services/spaces-browser.service.js'

@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
-import type { FileSpace } from '@sync-in-server/backend/src/applications/files/interfaces/file-space.interface'
+import type { FileSpace } from '@sync-in-server/backend/src/applications/files/core/interfaces/file-space.interface'
 import { API_SHARES_LIST, SHARES_ROUTE } from '@sync-in-server/backend/src/applications/shares/constants/routes'
 import type { CreateOrUpdateShareDto } from '@sync-in-server/backend/src/applications/shares/dto/create-or-update-share.dto'
 import type { ShareFile } from '@sync-in-server/backend/src/applications/shares/interfaces/share-file.interface'

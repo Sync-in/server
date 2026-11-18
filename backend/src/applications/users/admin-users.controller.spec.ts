@@ -11,7 +11,7 @@ import { AdminUsersManager } from './services/admin-users-manager.service.js'
 import { AdminUsersQueries } from './services/admin-users-queries.service.js'
 import { UsersManager } from './services/users-manager.service.js'
 import { UsersQueries } from './services/users-queries.service.js'
-import { FilesQuotaManager } from '../files/services/files-quota-manager.service.js'
+import { FilesQuotaManager } from '../files/quota/services/files-quota-manager.service.js'
 
 describe(AdminUsersController.name, () => {
   let controller: AdminUsersController

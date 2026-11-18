@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core'
-import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
+import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/core/interfaces/file-props.interface'
 
 export function fileLockPropsToString(lock: FileLockProps): string {
   const lockInfo = `${lock.info ? `${lock.info}` : ''}${lock.app ? ` ${lock.app}` : ''}`

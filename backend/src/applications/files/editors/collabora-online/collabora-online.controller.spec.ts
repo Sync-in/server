@@ -4,7 +4,7 @@ import { ContextInterceptor } from '../../../../infrastructure/context/intercept
 import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service.js'
 import { SpaceGuard } from '../../../spaces/guards/space.guard.js'
 import { SpacesManager } from '../../../spaces/services/spaces-manager.service.js'
-import { FilesMethods } from '../../services/files-methods.service.js'
+import { FilesMethods } from '../../operations/services/files-methods.service.js'
 import { COLLABORA_CONTEXT } from './collabora-online.constants.js'
 import { CollaboraOnlineManager } from './collabora-online-manager.service.js'
 import { CollaboraOnlineController } from './collabora-online.controller.js'

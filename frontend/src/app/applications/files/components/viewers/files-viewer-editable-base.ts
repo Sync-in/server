@@ -16,8 +16,8 @@ import {
   viewChildren
 } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
-import { CACHE_LOCK_FILE_TTL } from '@sync-in-server/backend/src/applications/files/constants/cache'
-import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
+import { CACHE_LOCK_FILE_TTL } from '@sync-in-server/backend/src/applications/files/core/constants/cache'
+import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/core/interfaces/file-props.interface'
 import { L10N_LOCALE, L10nLocale } from 'angular-l10n'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { catchError, EMPTY, exhaustMap, filter, firstValueFrom, Subscription, tap, timer } from 'rxjs'

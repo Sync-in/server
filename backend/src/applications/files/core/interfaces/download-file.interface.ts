@@ -1,0 +1,24 @@
+import type { SpaceEnv } from '../../../spaces/models/space-env.model.js'
+
+export interface DownloadFileContentInfo {
+  contentLength: number | null
+  contentType: string
+  lastModified: string | undefined
+}
+
+export interface DownloadFileOptions {
+  allowPrivateIP?: boolean
+  space?: SpaceEnv
+  publishedPath?: string
+  getContentInfo?: boolean
+  maxSize?: number
+  onProgress?: (bytes: number) => void
+  signal?: AbortSignal
+}
+
+export interface DownloadFileRequestOptions {
+  allowPrivateIP?: boolean
+  maxRedirects?: number
+}
+
+export type DownloadStage = 'head' | 'validation' | 'get' | 'stream'

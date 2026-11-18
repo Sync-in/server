@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { getProps, isPathExists, isPathIsDir } from '../../files/utils/files.js'
+import { getProps, isPathExists, isPathIsDir } from '../../files/core/utils/files.js'
 import { SPACE_REPOSITORY } from '../../spaces/constants/spaces.js'
 import { SpacesBrowser } from '../../spaces/services/spaces-browser.service.js'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
@@ -12,8 +12,8 @@ import { WebDAVSpaces } from './webdav-spaces.service.js'
 import { Mocked } from 'vitest'
 
 // mocks for file utils and permissions
-vi.mock('../../files/utils/files.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../files/utils/files.js')>()
+vi.mock('../../files/core/utils/files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/core/utils/files.js')>()
   return {
     ...actual,
     getProps: vi.fn(),

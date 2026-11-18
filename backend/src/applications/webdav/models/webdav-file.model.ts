@@ -1,9 +1,9 @@
 import path from 'node:path'
 
 import { encodeUrl } from '../../../common/shared.js'
-import { DEFAULT_MIME_TYPE } from '../../files/constants/files.js'
-import { FileProps } from '../../files/interfaces/file-props.interface.js'
-import { genEtag } from '../../files/utils/files.js'
+import { DEFAULT_MIME_TYPE } from '../../files/core/constants/files.js'
+import { FileProps } from '../../files/core/interfaces/file-props.interface.js'
+import { genEtag } from '../../files/core/utils/files.js'
 import { PROPFIND_COLLECTION, SUPPORTED_LOCKS } from '../utils/webdav.js'
 
 export class WebDAVFile implements Omit<FileProps, 'path' | 'mime'> {

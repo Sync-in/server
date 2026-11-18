@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { Cache } from '../../infrastructure/cache/cache.service.js'
 import { DB_TOKEN_PROVIDER } from '../../infrastructure/database/constants.js'
-import { FilesLockManager } from '../files/services/files-lock-manager.service.js'
-import { FilesQueries } from '../files/services/files-queries.service.js'
-import { FilesRecents } from '../files/services/files-recents.service.js'
+import { FilesLockManager } from '../files/locks/services/files-lock-manager.service.js'
+import { FilesQueries } from '../files/core/services/files-queries.service.js'
+import { FilesRecents } from '../files/recents/services/files-recents.service.js'
 import { LinksQueries } from '../links/services/links-queries.service.js'
 import { NotificationsManager } from '../notifications/services/notifications-manager.service.js'
 import { SharesManager } from '../shares/services/shares-manager.service.js'
@@ -13,7 +13,7 @@ import { SpacesBrowser } from './services/spaces-browser.service.js'
 import { SpacesManager } from './services/spaces-manager.service.js'
 import { SpacesQueries } from './services/spaces-queries.service.js'
 import { SpacesController } from './spaces.controller.js'
-import { FilesQuotaManager } from '../files/services/files-quota-manager.service.js'
+import { FilesQuotaManager } from '../files/quota/services/files-quota-manager.service.js'
 
 describe(SpacesController.name, () => {
   let spacesController: SpacesController

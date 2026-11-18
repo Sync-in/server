@@ -1,5 +1,5 @@
 import type { LucideIcon } from '@lucide/angular'
-import { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
+import { FileTree } from '@sync-in-server/backend/src/applications/files/core/interfaces/file-tree.interface'
 import { getAssetsMimeUrl, mimeDirectory, mimeDirectoryDisabled, mimeDirectoryShare, mimeDirectorySync } from '../../files/files.constants'
 import { getServerPath, hasWritePermission, isSynchronizable } from '../sync.utils'
 

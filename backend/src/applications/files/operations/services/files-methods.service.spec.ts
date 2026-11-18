@@ -1,0 +1,206 @@
+import { HttpException, HttpStatus } from '@nestjs/common'
+import { Test, TestingModule } from '@nestjs/testing'
+import path from 'node:path'
+import type { Mock } from 'vitest'
+import { Cache } from '../../../../infrastructure/cache/cache.service.js'
+import { DB_TOKEN_PROVIDER } from '../../../../infrastructure/database/constants.js'
+import { NotificationsManager } from '../../../notifications/services/notifications-manager.service.js'
+import { SharesManager } from '../../../shares/services/shares-manager.service.js'
+import { SPACE_REPOSITORY } from '../../../spaces/constants/spaces.js'
+import { SpaceEnv } from '../../../spaces/models/space-env.model.js'
+import { SpaceModel } from '../../../spaces/models/space.model.js'
+import { SpacesManager } from '../../../spaces/services/spaces-manager.service.js'
+import { SpacesQueries } from '../../../spaces/services/spaces-queries.service.js'
+import { UserModel } from '../../../users/models/user.model.js'
+import { UsersQueries } from '../../../users/services/users-queries.service.js'
+import { generateUserTest } from '../../../users/utils/test.js'
+import { TAR_EXTENSION } from '../../core/constants/compress.js'
+import { type CompressFileDto, compressFileSchema, type CopyMoveFileDto, copyMoveFileSchema } from '../dto/file-operations.dto.js'
+import { FileError } from '../../core/models/file-error.js'
+import { FilesManager } from '../../core/services/files-manager.service.js'
+import { FilesMethods } from './files-methods.service.js'
+import { FilesQuotaManager } from '../../quota/services/files-quota-manager.service.js'
+
+describe(FilesMethods.name, () => {
+  let filesMethods: FilesMethods
+  let spacesManager: SpacesManager
+  let filesQuotaManager: FilesQuotaManager
+  let filesManager: { compress: Mock; delete: Mock; sendFileFromSpace: Mock }
+  let sendFileChecks: Mock
+  let userTest: UserModel
+  const getFileProps = vi.fn<SpaceEnv['getFileProps']>()
+  const spaceEnv = new SpaceEnv(
+    {
+      id: 1,
+      alias: 'project',
+      name: 'project',
+      enabled: true,
+      permissions: 'a:d:m:so',
+      role: 0,
+      realBasePath: SpaceModel.getFilesPath('project'),
+      realPath: path.join(SpaceModel.getFilesPath('project'), 'foo'),
+      url: `${SPACE_REPOSITORY.FILES}/project/foo`,
+      paths: ['foo'],
+      getFileProps
+    },
+    null,
+    false
+  )
+
+  beforeAll(async () => {
+    sendFileChecks = vi.fn()
+    filesManager = {
+      compress: vi.fn(),
+      delete: vi.fn(),
+      sendFileFromSpace: vi.fn().mockReturnValue({ checks: sendFileChecks })
+    }
+    const module: TestingModule = await Test.createTestingModule({
+      imports: [],
+      providers: [
+        FilesMethods,
+        SpacesManager,
+        { provide: DB_TOKEN_PROVIDER, useValue: {} },
+        {
+          provide: Cache,
+          useValue: { get: () => null }
+        },
+        {
+          provide: NotificationsManager,
+          useValue: {}
+        },
+        { provide: UsersQueries, useValue: {} },
+        { provide: SharesManager, useValue: {} },
+        { provide: FilesQuotaManager, useValue: {} },
+        {
+          provide: SpacesQueries,
+          useValue: {
+            permissions: () => spaceEnv
+          }
+        },
+        {
+          provide: FilesManager,
+          useValue: filesManager
+        }
+      ]
+    }).compile()
+
+    module.useLogger(['fatal'])
+    filesMethods = module.get<FilesMethods>(FilesMethods)
+    spacesManager = module.get<SpacesManager>(SpacesManager)
+    filesQuotaManager = module.get<FilesQuotaManager>(FilesQuotaManager)
+    userTest = new UserModel(generateUserTest())
+    // mock
+    filesQuotaManager.updateSpacesQuota = vi.fn().mockReturnValue(undefined)
+  })
+
+  it('should be defined', () => {
+    expect(filesMethods).toBeDefined()
+    expect(spacesManager).toBeDefined()
+    expect(userTest).toBeDefined()
+  })
+
+  it('should validate the target before returning its properties and permissions', async () => {
+    const props = {
+      id: -1,
+      path: '.',
+      name: 'file.txt',
+      isDir: false,
+      size: 4,
+      ctime: 1,
+      mtime: 2,
+      mime: 'text-plain'
+    }
+    getFileProps.mockResolvedValueOnce(props)
+
+    await expect(filesMethods.getProps(spaceEnv)).resolves.toEqual({ file: props, permissions: 'a:d:m:so' })
+
+    expect(filesManager.sendFileFromSpace).toHaveBeenCalledWith(spaceEnv)
+    expect(sendFileChecks).toHaveBeenCalledOnce()
+    expect(getFileProps).toHaveBeenCalledOnce()
+  })
+
+  it('should expose the visible root metadata returned by the space environment', async () => {
+    const props = {
+      id: -1,
+      path: 'storage',
+      name: 'internal.md',
+      isDir: false,
+      size: 4,
+      ctime: 1,
+      mtime: 2,
+      mime: 'text-markdown'
+    }
+    const root = { alias: 'notes', name: 'Notes.md' }
+    const getFileRootContext = vi.fn<SpaceEnv['getFileRootContext']>().mockReturnValue(root)
+    const rootSpace = new SpaceEnv(
+      {
+        ...spaceEnv,
+        getFileRootContext,
+        getFileProps: vi.fn().mockResolvedValue(props)
+      },
+      null,
+      false
+    )
+
+    await expect(filesMethods.getProps(rootSpace)).resolves.toEqual({
+      file: { ...props, name: 'Notes.md' },
+      permissions: 'a:d:m:so',
+      root
+    })
+    expect(getFileRootContext).toHaveBeenCalledOnce()
+  })
+
+  it('should preserve the download validation errors when loading properties', async () => {
+    const getPropsCallCount = getFileProps.mock.calls.length
+    sendFileChecks.mockRejectedValueOnce(new FileError(HttpStatus.NOT_FOUND, 'Location not found'))
+
+    await expect(filesMethods.getProps(spaceEnv)).rejects.toEqual(new HttpException('Location not found', HttpStatus.NOT_FOUND))
+
+    expect(getFileProps).toHaveBeenCalledTimes(getPropsCallCount)
+  })
+
+  it('should avoid path traversal on CopyMove action', async () => {
+    const copyMoveFileDto: CopyMoveFileDto = { dstDirectory: '../../../foo', dstName: '../bar/../', overwrite: false }
+    expect(() => copyMoveFileSchema.parse(copyMoveFileDto)).toThrow()
+    await expect((filesMethods as any).copyMove(userTest, spaceEnv, copyMoveFileDto, false)).rejects.toThrow(/is not valid/i)
+  })
+
+  it('should avoid path traversal on Compress action', async () => {
+    const compressFileDto: CompressFileDto = {
+      name: '../../archive',
+      compressInDirectory: false,
+      compression: false,
+      files: [{ name: '../../foo', rootAlias: undefined } as any],
+      extension: TAR_EXTENSION
+    }
+    expect(() => compressFileSchema.parse(compressFileDto)).toThrow()
+    await expect(filesMethods.compress(userTest, spaceEnv, compressFileDto)).rejects.toThrow(/does not exist/i)
+    compressFileDto.files[0].path = '../../../bar/../'
+    await expect(filesMethods.compress(userTest, spaceEnv, compressFileDto)).rejects.toThrow(/is not valid/i)
+  })
+
+  it('should preserve the cancellation reason from an abort error', async () => {
+    const controller = new AbortController()
+    const reason = new Error('Cancelled')
+    const abortError = Object.assign(new Error('The operation was aborted', { cause: reason }), {
+      code: 'ABORT_ERR',
+      name: 'AbortError'
+    })
+    controller.abort(reason)
+    filesManager.delete.mockRejectedValueOnce(abortError)
+
+    await expect(filesMethods.delete(userTest, spaceEnv, null, controller.signal)).rejects.toBe(reason)
+  })
+
+  it('should keep a late operation error after the signal was aborted', async () => {
+    const controller = new AbortController()
+    const operationError = new Error('source cleanup failed')
+    controller.abort(new Error('Cancelled'))
+    filesManager.delete.mockRejectedValueOnce(operationError)
+
+    await expect(filesMethods.delete(userTest, spaceEnv, null, controller.signal)).rejects.toMatchObject({
+      status: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: 'Internal server error'
+    })
+  })
+})

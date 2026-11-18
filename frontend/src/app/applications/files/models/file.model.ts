@@ -2,13 +2,13 @@ import {
   API_FILES_OPERATION,
   API_FILES_OPERATION_THUMBNAIL,
   API_FILES_TASK_OPERATION
-} from '@sync-in-server/backend/src/applications/files/constants/routes'
-import type { FileLockProps, FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
+} from '@sync-in-server/backend/src/applications/files/core/constants/routes'
+import type { FileLockProps, FileProps } from '@sync-in-server/backend/src/applications/files/core/interfaces/file-props.interface'
 import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
 import { DRAWIO_SUPPORTED_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.constants'
 import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
 import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
-import type { File } from '@sync-in-server/backend/src/applications/files/schemas/file.interface'
+import type { File } from '@sync-in-server/backend/src/applications/files/core/schemas/file.interface'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { currentTimeStamp, encodeUrl, popFromObject } from '@sync-in-server/backend/src/common/shared'
 import type { Observable } from 'rxjs'

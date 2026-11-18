@@ -12,9 +12,9 @@ import {
 } from '../../../common/functions.js'
 import type { Entries } from '../../../common/interfaces.js'
 import { createSlug, intersectPermissions, InvalidSlugError } from '../../../common/shared.js'
-import type { FileProps } from '../../files/interfaces/file-props.interface.js'
-import { FileError } from '../../files/models/file-error.js'
-import { checkExternalPath, getProps, isPathExists, removeFiles } from '../../files/utils/files.js'
+import type { FileProps } from '../../files/core/interfaces/file-props.interface.js'
+import { FileError } from '../../files/core/models/file-error.js'
+import { checkExternalPath, getProps, isPathExists, removeFiles } from '../../files/core/utils/files.js'
 import { LINK_TYPE } from '../../links/constants/links.js'
 import type { CreateOrUpdateLinkDto } from '../../links/dto/create-or-update-link.dto.js'
 import type { LinkGuest } from '../../links/interfaces/link-guest.interface.js'
@@ -49,8 +49,8 @@ import type { ShareChild } from '../models/share-child.model.js'
 import type { ShareMembers } from '../schemas/share-members.interface.js'
 import type { Share } from '../schemas/share.interface.js'
 import { SharesQueries } from './shares-queries.service.js'
-import { FilesQuotaManager } from '../../files/services/files-quota-manager.service.js'
-import { FILE_REPOSITORY } from '../../files/constants/operations.js'
+import { FilesQuotaManager } from '../../files/quota/services/files-quota-manager.service.js'
+import { FILE_REPOSITORY } from '../../files/core/constants/operations.js'
 
 @Injectable()
 export class SharesManager {

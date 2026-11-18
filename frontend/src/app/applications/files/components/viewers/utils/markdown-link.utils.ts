@@ -1,4 +1,4 @@
-import { API_FILES_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/routes'
+import { API_FILES_OPERATION } from '@sync-in-server/backend/src/applications/files/core/constants/routes'
 import { encodeUrl } from '@sync-in-server/backend/src/common/shared'
 import Link from '@tiptap/extension-link'
 import type { FileModel } from '../../../models/file.model'

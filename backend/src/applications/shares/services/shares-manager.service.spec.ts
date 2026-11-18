@@ -14,8 +14,8 @@ import { UsersQueries } from '../../users/services/users-queries.service.js'
 import { SHARE_ALL_OPERATIONS } from '../constants/shares.js'
 import { SharesManager } from './shares-manager.service.js'
 import { SharesQueries } from './shares-queries.service.js'
-import { FilesQuotaManager } from '../../files/services/files-quota-manager.service.js'
-import * as filesUtils from '../../files/utils/files.js'
+import { FilesQuotaManager } from '../../files/quota/services/files-quota-manager.service.js'
+import * as filesUtils from '../../files/core/utils/files.js'
 import { UserModel } from '../../users/models/user.model.js'
 
 // Mock classes and utility modules used by SharesManager

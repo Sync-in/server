@@ -11,19 +11,19 @@ import type { SpaceEnv } from '../../../spaces/models/space-env.model.js'
 import type { UserModel } from '../../../users/models/user.model.js'
 import { ACTION } from '../../../../common/constants.js'
 import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav.js'
-import { FILE_MODE } from '../../constants/operations.js'
-import { FileEvent } from '../../events/file-events.js'
-import type { FileLock } from '../../interfaces/file-lock.interface.js'
-import { FileLockProps } from '../../interfaces/file-props.interface.js'
-import { FileError } from '../../models/file-error.js'
-import { LockConflict } from '../../models/file-lock-error.js'
-import { FilesLockManager } from '../../services/files-lock-manager.service.js'
-import * as filesUtils from '../../utils/files.js'
+import { FILE_MODE } from '../../core/constants/operations.js'
+import { FileEvent } from '../../core/events/file-events.js'
+import type { FileLock } from '../../locks/interfaces/file-lock.interface.js'
+import { FileLockProps } from '../../core/interfaces/file-props.interface.js'
+import { FileError } from '../../core/models/file-error.js'
+import { LockConflict } from '../../locks/models/file-lock-error.js'
+import { FilesLockManager } from '../../locks/services/files-lock-manager.service.js'
+import * as filesUtils from '../../core/utils/files.js'
 import { CollaboraOnlineManager } from './collabora-online-manager.service.js'
 import { COLLABORA_APP_LOCK, COLLABORA_HEADERS, COLLABORA_LOCK_ACTION } from './collabora-online.constants.js'
 import type { FastifyCollaboraOnlineSpaceRequest } from './collabora-online.interface.js'
 
-vi.mock('../../utils/files.js')
+vi.mock('../../core/utils/files.js')
 vi.mock('node:fs/promises')
 vi.mock('../../../users/utils/avatar.js')
 

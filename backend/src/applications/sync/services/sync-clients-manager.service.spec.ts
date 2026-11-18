@@ -11,7 +11,7 @@ import * as commonFunctions from '../../../common/functions.js'
 import * as commonShared from '../../../common/shared.js'
 import { configuration } from '../../../configuration/config.environment.js'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
-import { isPathExists } from '../../files/utils/files.js'
+import { isPathExists } from '../../files/core/utils/files.js'
 import { UserModel } from '../../users/models/user.model.js'
 import { UsersManager } from '../../users/services/users-manager.service.js'
 import { CLIENT_AUTH_TYPE, CLIENT_TOKEN_EXPIRED_ERROR } from '../constants/auth.js'
@@ -62,8 +62,8 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   }
 })
 
-vi.mock('../../files/utils/files.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../files/utils/files.js')>()
+vi.mock('../../files/core/utils/files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/core/utils/files.js')>()
   return {
     ...actual,
     isPathExists: vi.fn()

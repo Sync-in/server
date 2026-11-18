@@ -3,11 +3,11 @@ import { Test, TestingModule } from '@nestjs/testing'
 // Helpers to access mocked fs/promises
 import fsPromisesModule from 'fs/promises'
 import path from 'node:path'
-import { FILE_OPERATION } from '../../files/constants/operations.js'
-import { FileError } from '../../files/models/file-error.js'
-import { LockConflict } from '../../files/models/file-lock-error.js'
-import { FilesManager } from '../../files/services/files-manager.service.js'
-import { checksumFile, isPathExists, isPathIsDir, removeFiles, touchFile } from '../../files/utils/files.js'
+import { FILE_OPERATION } from '../../files/core/constants/operations.js'
+import { FileError } from '../../files/core/models/file-error.js'
+import { LockConflict } from '../../files/locks/models/file-lock-error.js'
+import { FilesManager } from '../../files/core/services/files-manager.service.js'
+import { checksumFile, isPathExists, isPathIsDir, removeFiles, touchFile } from '../../files/core/utils/files.js'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
 import { F_SPECIAL_STAT, F_STAT, SYNC_CHECKSUM_ALG, SYNC_DIFF_DONE } from '../constants/sync.js'
 import { SyncManager } from './sync-manager.service.js'
@@ -24,8 +24,8 @@ vi.mock('fs/promises', () => ({
 }))
 
 // Mock helper functions used in service
-vi.mock('../../files/utils/files.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../files/utils/files.js')>()
+vi.mock('../../files/core/utils/files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/core/utils/files.js')>()
   return {
     ...actual,
     __esModule: true,
@@ -52,7 +52,7 @@ vi.mock('../utils/routes.js', () => ({
 }))
 
 // Mock heavy providers to avoid configuration side-effects on import
-vi.mock('../../files/services/files-manager.service.js', () => ({
+vi.mock('../../files/core/services/files-manager.service.js', () => ({
   __esModule: true,
   FilesManager: class FilesManager {}
 }))

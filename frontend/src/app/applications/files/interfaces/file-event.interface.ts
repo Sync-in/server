@@ -1,4 +1,4 @@
-import { FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
+import { FileTaskStatus } from '@sync-in-server/backend/src/applications/files/tasks/models/file-task'
 
 export interface FileEvent {
   filePath: string

@@ -13,16 +13,16 @@ import type { SpaceEnv } from '../../../spaces/models/space-env.model.js'
 import type { UserModel } from '../../../users/models/user.model.js'
 import { ACTION } from '../../../../common/constants.js'
 import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav.js'
-import { FILE_MODE } from '../../constants/operations.js'
-import { FileEvent } from '../../events/file-events.js'
-import { LockConflict } from '../../models/file-lock-error.js'
-import { FilesLockManager } from '../../services/files-lock-manager.service.js'
-import { maxFileSizeExceededError } from '../../utils/errors.js'
-import * as filesUtils from '../../utils/files.js'
+import { FILE_MODE } from '../../core/constants/operations.js'
+import { FileEvent } from '../../core/events/file-events.js'
+import { LockConflict } from '../../locks/models/file-lock-error.js'
+import { FilesLockManager } from '../../locks/services/files-lock-manager.service.js'
+import { maxFileSizeExceededError } from '../../core/utils/errors.js'
+import * as filesUtils from '../../core/utils/files.js'
 import { OnlyOfficeManager } from './only-office-manager.service.js'
 import { ONLY_OFFICE_APP_LOCK } from './only-office.constants.js'
 
-vi.mock('../../utils/files.js')
+vi.mock('../../core/utils/files.js')
 vi.mock('../../../users/utils/avatar.js', () => ({
   getAvatarBase64: vi.fn().mockResolvedValue('data:image/png;base64,iVBORw0KGgo=')
 }))

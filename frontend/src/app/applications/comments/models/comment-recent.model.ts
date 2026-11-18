@@ -1,6 +1,6 @@
 import type { LucideIcon } from '@lucide/angular'
 import type { CommentRecent } from '@sync-in-server/backend/src/applications/comments/interfaces/comment-recent.interface'
-import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/core/constants/operations'
 import { SPACE_ALIAS } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { resolveFileLocation } from '../../files/components/utils/file-location.utils'
 import { getAssetsMimeUrl } from '../../files/files.constants'

@@ -1,4 +1,4 @@
-import type { FileSpace } from '../../files/interfaces/file-space.interface.js'
+import type { FileSpace } from '../../files/core/interfaces/file-space.interface.js'
 import type { Share } from '../schemas/share.interface.js'
 
 export interface ShareFile extends Pick<Share, 'id' | 'name' | 'description' | 'alias' | 'createdAt' | 'modifiedAt'> {

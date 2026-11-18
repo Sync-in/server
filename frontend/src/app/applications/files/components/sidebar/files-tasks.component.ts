@@ -20,8 +20,8 @@ import {
   LucideTrash,
   LucideX
 } from '@lucide/angular'
-import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
-import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
+import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/core/constants/operations'
+import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/tasks/models/file-task'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import { ProgressbarComponent } from 'ngx-bootstrap/progressbar'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'

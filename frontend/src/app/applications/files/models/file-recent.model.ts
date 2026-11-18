@@ -1,5 +1,5 @@
-import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
-import type { FileRecent } from '@sync-in-server/backend/src/applications/files/schemas/file-recent.interface'
+import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/core/constants/operations'
+import type { FileRecent } from '@sync-in-server/backend/src/applications/files/recents/schemas/file-recent.interface'
 import { SPACE_ALIAS } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { FileLocationModel } from './file-location.model'
 

@@ -1,4 +1,4 @@
-import type { DocumentTypes } from '../applications/files/constants/samples.js'
+import type { DocumentTypes } from '../applications/files/core/constants/samples.js'
 import type { FileEditorProviders } from '../applications/files/editors/file-editor-providers.interface.js'
 
 export interface ServerFilesConfig {
