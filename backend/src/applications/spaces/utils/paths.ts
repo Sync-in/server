@@ -90,11 +90,11 @@ export function trashTargetFromSpace(user: UserModel, space: SpaceEnv): TrashTar
     shareExternalId: null,
     inTrash: true
   }
-  const userTarget = (ownerId: number, login: string): TrashTarget => ({
+  const userTarget = (ownerId: number, login: string, temporaryRoot = UserModel.getUserTmpPath(login, user.id)): TrashTarget => ({
     dbScope: { ...baseDbScope, ownerId },
     mode: 'trash',
     path: UserModel.getTrashPath(login),
-    temporaryRoot: temporaryRootFromStorage(UserModel.getHomePath(login), user.id)
+    temporaryRoot
   })
   const spaceTarget = (spaceId: number, alias: string): TrashTarget => ({
     dbScope: { ...baseDbScope, spaceId },
@@ -105,7 +105,7 @@ export function trashTargetFromSpace(user: UserModel, space: SpaceEnv): TrashTar
 
   if (space.inPersonalSpace) {
     // personal user space
-    return userTarget(user.id, user.login)
+    return userTarget(user.id, user.login, user.tmpPath)
   } else if (space.root?.externalPath) {
     // external path from space or share
     // space case: use the space trash
@@ -153,15 +153,15 @@ export function temporaryRootFromStorage(storageRoot: string, userId: number): s
 }
 
 export function temporaryRootFromSpace(user: UserModel, space: SpaceEnv): string {
-  // resolve an actor-isolated temporary directory on the same storage as the target
+  // Resolve a temporary directory on the same storage as the target, isolating the actor when that storage is shared.
   if (space.inPersonalSpace) {
-    return temporaryRootFromStorage(UserModel.getHomePath(user.login), user.id)
+    return user.tmpPath
   }
   if (space.root?.externalPath) {
     return temporaryRootFromStorage(space.root.externalPath, user.id)
   }
   if (space.root?.file?.path && space.root.owner?.login) {
-    return temporaryRootFromStorage(UserModel.getHomePath(space.root.owner.login), user.id)
+    return UserModel.getUserTmpPath(space.root.owner.login, user.id)
   }
   if (space.root?.file?.space?.id) {
     if (space.root.file.root?.id) {

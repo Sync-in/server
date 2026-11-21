@@ -1,11 +1,12 @@
 import { HttpStatus } from '@nestjs/common'
 import { FileError } from '../models/file-error.js'
 import type { UploadFileStreamLimiter, UploadQuotaSnapshot } from '../interfaces/upload-file.interface.js'
-import { maxFileSizeExceededError, storageQuotaExceededError } from './errors.js'
+import { maxFileSizeExceededError, maxMultipartSizeExceededError, storageQuotaExceededError } from './errors.js'
 import { temporaryFilePath } from './files.js'
 import { FILE_OPERATION } from '../constants/operations.js'
 
 const FASTIFY_MULTIPART_FILE_TOO_LARGE_CODE = 'FST_REQ_FILE_TOO_LARGE' as const
+const FASTIFY_MULTIPART_COUNT_LIMIT_CODES = new Set(['FST_FIELDS_LIMIT', 'FST_FILES_LIMIT', 'FST_PARTS_LIMIT'])
 
 /**
  * Request-scoped upload limiter. It deliberately does not coordinate quota
@@ -14,10 +15,12 @@ const FASTIFY_MULTIPART_FILE_TOO_LARGE_CODE = 'FST_REQ_FILE_TOO_LARGE' as const
 export class UploadStreamLimiter {
   // Shared by all file limiters created for the same request, notably multipart uploads.
   private quotaConsumed = 0
+  private requestConsumed = 0
 
   constructor(
     private readonly maxFileSize: number,
-    private readonly quotaRemaining?: number
+    private readonly quotaRemaining?: number,
+    private readonly maxRequestSize?: number
   ) {}
 
   createFileLimiter(initialFileSize = 0): UploadFileStreamLimiter {
@@ -37,19 +40,22 @@ export class UploadStreamLimiter {
 
       const fileRemaining = this.maxFileSize - fileSize
       const quotaRemaining = this.quotaRemaining === undefined ? Number.POSITIVE_INFINITY : this.quotaRemaining - this.quotaConsumed
+      const requestRemaining = this.maxRequestSize === undefined ? Number.POSITIVE_INFINITY : this.maxRequestSize - this.requestConsumed
 
-      if (bytes > fileRemaining || bytes > quotaRemaining) {
+      if (bytes > fileRemaining || bytes > quotaRemaining || bytes > requestRemaining) {
         // Report the first effective boundary. If both are equal, the file-size
         // limit is the more specific upload error.
-        if (quotaRemaining < fileRemaining) {
+        if (quotaRemaining < fileRemaining && quotaRemaining <= requestRemaining) {
           throw storageQuotaExceededError()
         }
+        if (requestRemaining < fileRemaining) throw maxMultipartSizeExceededError()
         throw maxFileSizeExceededError()
       }
 
       if (consume) {
         fileSize += bytes
         this.quotaConsumed += bytes
+        this.requestConsumed += bytes
       }
     }
 
@@ -68,25 +74,29 @@ export class UploadStreamLimiter {
   }
 }
 
-export function createUploadStreamLimiter(space: UploadQuotaSnapshot | undefined, maxFileSize: number): UploadStreamLimiter {
+export function createUploadStreamLimiter(space: UploadQuotaSnapshot | undefined, maxFileSize: number, maxRequestSize?: number): UploadStreamLimiter {
   // A null or zero quota means unlimited storage; a negative remainder is clamped so every positive write is rejected.
   const quotaRemaining = space?.storageQuota ? Math.max(0, space.storageQuota - (space.storageUsage ?? 0)) : undefined
-  return new UploadStreamLimiter(maxFileSize, quotaRemaining)
+  return new UploadStreamLimiter(maxFileSize, quotaRemaining, maxRequestSize)
 }
 
-export function parseContentLength(value: unknown): number | undefined {
+export function parseUnsignedIntegerHeader(value: unknown, invalidHeaderMessage: string): number | undefined {
   if (value === undefined || value === null) return undefined
 
   const normalized = typeof value === 'number' ? String(value) : typeof value === 'string' ? value.trim() : ''
   if (!/^\d+$/.test(normalized)) {
-    throw new FileError(HttpStatus.BAD_REQUEST, 'Invalid "content-length" header')
+    throw new FileError(HttpStatus.BAD_REQUEST, invalidHeaderMessage)
   }
 
-  const contentLength = Number(normalized)
-  if (!Number.isSafeInteger(contentLength)) {
-    throw new FileError(HttpStatus.BAD_REQUEST, 'Invalid "content-length" header')
+  const valueAsNumber = Number(normalized)
+  if (!Number.isSafeInteger(valueAsNumber)) {
+    throw new FileError(HttpStatus.BAD_REQUEST, invalidHeaderMessage)
   }
-  return contentLength
+  return valueAsNumber
+}
+
+export function parseContentLength(value: unknown): number | undefined {
+  return parseUnsignedIntegerHeader(value, 'Invalid "content-length" header')
 }
 
 export function parseContentRange(value: string): { start: number; end: number; total?: number } {
@@ -111,6 +121,10 @@ export function parseContentRange(value: string): { start: number; end: number; 
 export function isMultipartFileTooLargeError(e: any): boolean {
   // Other multipart limits also return 413; only this code means the file-size limit was reached.
   return e?.code === FASTIFY_MULTIPART_FILE_TOO_LARGE_CODE
+}
+
+export function isMultipartCountLimitError(e: any): boolean {
+  return FASTIFY_MULTIPART_COUNT_LIMIT_CODES.has(e?.code)
 }
 
 export function uploadTmpFilePath(tmpPath: string, partFileName: string): string {

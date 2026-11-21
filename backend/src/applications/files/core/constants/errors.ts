@@ -5,5 +5,7 @@ export const FILE_ERROR = {
   DOWNLOAD_MISSING_REDIRECT_LOCATION: 'Missing redirect location',
   DOWNLOAD_UNSAFE_REDIRECT_LOCATION: 'Unsafe redirect location',
   MAX_FILE_SIZE_EXCEEDED: 'File size limit exceeded',
+  MAX_MULTIPART_PARTS_EXCEEDED: 'Multipart parts limit exceeded',
+  MAX_MULTIPART_SIZE_EXCEEDED: 'Multipart upload size limit exceeded',
   STORAGE_QUOTA_EXCEEDED: 'Storage quota exceeded'
 } as const

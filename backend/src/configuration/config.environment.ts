@@ -15,6 +15,9 @@ export const serverConfig: ServerConfig = {
   twoFaEnabled: configuration.auth.mfa.totp.enabled,
   mailServerEnabled: !!configuration.mail?.host,
   files: {
+    transfers: {
+      maxChunkSize: configuration.applications.files.transfers.maxChunkSize
+    },
     editors: {
       collabora: configuration.applications.files.editors.collabora.enabled,
       drawio: configuration.applications.files.editors.drawio.enabled,
@@ -27,6 +30,7 @@ export const serverConfig: ServerConfig = {
 
 export function loadConfiguration(): GlobalConfig {
   deprecatedFilesEditorsEnvConfig()
+  deprecatedFilesTransfersEnvConfig()
   const config: GlobalConfig = configLoader()
   // LOGGER
   if (config.logger?.stdout === false) {
@@ -56,6 +60,7 @@ export function loadConfiguration(): GlobalConfig {
   // DEPRECATIONS
   deprecatedServerTrustProxyConfig(config)
   deprecatedFilesEditorsConfig(config)
+  deprecatedFilesTransfersConfig(config)
   deprecatedFilesContentIndexingConfig(config)
 
   const result = GlobalConfigSchema.safeParse(config)
@@ -95,6 +100,28 @@ function deprecatedFilesEditorsEnvConfig(): void {
   }
 }
 
+function deprecatedFilesTransfersEnvConfig(): void {
+  const deprecatedEnvKey = `${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_MAXUPLOADSIZE`
+  const currentEnvKey = `${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_TRANSFERS_MAXUPLOADSIZE`
+  const value = process.env[deprecatedEnvKey]
+  if (value === undefined) return
+  delete process.env[deprecatedEnvKey]
+
+  if (process.env[currentEnvKey] !== undefined) {
+    console.warn(
+      `Environment variable "${deprecatedEnvKey}" is deprecated and will be removed in the next major version. ` +
+        `Ignoring it because "${currentEnvKey}" is set.`
+    )
+    return
+  }
+
+  process.env[currentEnvKey] = value
+  console.warn(
+    `Environment variable "${deprecatedEnvKey}" is deprecated and will be removed in the next major version. ` +
+      `Please use "${currentEnvKey}" instead.`
+  )
+}
+
 function deprecatedServerTrustProxyConfig(config: GlobalConfig): void {
   if (typeof config.server?.trustProxy !== 'number') {
     return
@@ -130,6 +157,26 @@ function deprecatedFilesEditorsConfig(config: GlobalConfig): void {
   console.warn(
     '[DEPRECATED][CONFIGURATION] applications.files.onlyoffice and applications.files.collabora are deprecated and will be removed in a future version. ' +
       'Please use applications.files.editors.onlyoffice and applications.files.editors.collabora instead.'
+  )
+}
+
+function deprecatedFilesTransfersConfig(config: GlobalConfig): void {
+  const files: unknown = config.applications.files
+  if (!isConfigRecord(files)) return
+
+  if (!Object.prototype.hasOwnProperty.call(files, 'maxUploadSize')) return
+
+  const configuredTransfers = files['transfers']
+  const transfers = isConfigRecord(configuredTransfers) ? configuredTransfers : configuredTransfers === undefined ? {} : null
+  if (transfers) {
+    files['transfers'] = transfers
+    if (!Object.prototype.hasOwnProperty.call(transfers, 'maxUploadSize')) transfers['maxUploadSize'] = files['maxUploadSize']
+  }
+  delete files['maxUploadSize']
+
+  console.warn(
+    '[DEPRECATED][CONFIGURATION] applications.files.maxUploadSize will be removed in the next major version. ' +
+      'Please use applications.files.transfers.maxUploadSize instead.'
   )
 }
 

@@ -4,6 +4,8 @@ import { SPACE_PERMS_SEP } from '../applications/spaces/constants/spaces.js'
 
 export const SERVER_NAME = 'Sync-in' as const
 export const RELEASES_URL = 'https://releases.sync-in.org' as const
+export const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] as const
+const TEXT_BYTE_SIZE_PATTERN = /^\s*(\d+)\s*([KMGTPEZY]?B)\s*$/i
 
 export const APP_URL = {
   WEBSITE: 'https://sync-in.com',
@@ -168,4 +170,18 @@ export function intersectPermissions(aPermissions: string, bPermissions: string,
     .filter((p: string) => p !== '' && p !== 'null' && bPerms.indexOf(p) > -1)
     .sort()
     .join(permissionsSeparator)
+}
+
+export function convertTextToBytes(bytes: number, unit: string, precision = 0): number {
+  const exponent = BYTE_UNITS.indexOf(unit.toUpperCase() as (typeof BYTE_UNITS)[number])
+  if (exponent === -1) return Number.NaN
+  return Number.parseInt((bytes * Math.pow(1024, exponent)).toFixed(precision), 10)
+}
+
+export function parseTextToBytes(value: string): number | undefined {
+  const match = TEXT_BYTE_SIZE_PATTERN.exec(value)
+  if (!match) return undefined
+
+  const bytes = convertTextToBytes(Number(match[1]), match[2])
+  return Number.isFinite(bytes) ? bytes : undefined
 }

@@ -1,5 +1,6 @@
 export interface TemporaryDirectory {
-  includeLegacyEntries: boolean
+  // Also considers entries without the managed temporary-file prefix during cleanup.
+  includeUnmanagedEntries: boolean
   path: string
 }
 

@@ -5,9 +5,13 @@ import {
   Delete,
   Get,
   Head,
+  Header,
+  HttpCode,
+  HttpStatus,
   Lock,
   Logger,
   Move,
+  Param,
   Patch,
   Post,
   Put,
@@ -19,6 +23,7 @@ import {
   UseGuards
 } from '@nestjs/common'
 import { type FastifyReply } from 'fastify'
+import { HTTP_METHOD } from '../../applications.constants.js'
 import { SkipSpacePermissionsCheck } from '../../spaces/decorators/space-skip-permissions.decorator.js'
 import { GetSpace } from '../../spaces/decorators/space.decorator.js'
 import { SpaceGuard } from '../../spaces/guards/space.guard.js'
@@ -38,11 +43,13 @@ import {
   makeFileSchema,
   type ValidatedCopyMoveFileDto
 } from './dto/file-operations.dto.js'
+import { fileUploadSessionIdSchema } from './dto/file-upload-session.dto.js'
 import { forceAsFileOwnerQuerySchema, thumbnailSizeQuerySchema } from '../core/schemas/files-validation.schema.js'
 import type { CopyMoveFileResponse } from '../core/interfaces/copy-move-file.interface.js'
 import type { FileLockProps, FilePropsWithPermissions } from '../core/interfaces/file-props.interface.js'
 import { FileTask } from '../tasks/models/file-task.js'
 import { FilesMethods } from './services/files-methods.service.js'
+import { FilesUploadSessionManager } from './services/files-upload-session-manager.service.js'
 import { FilesTasksManager } from '../tasks/services/files-tasks-manager.service.js'
 
 @Controller(FILES_ROUTE.BASE)
@@ -52,7 +59,8 @@ export class FilesOperationsController {
 
   constructor(
     private readonly filesMethods: FilesMethods,
-    private readonly filesTasksManager: FilesTasksManager
+    private readonly filesTasksManager: FilesTasksManager,
+    private readonly uploadSessions: FilesUploadSessionManager
   ) {}
 
   // OPERATIONS
@@ -144,6 +152,68 @@ export class FilesOperationsController {
   @Get(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.GET_PROPS}/*`)
   async getProps(@GetSpace() space: SpaceEnv): Promise<FilePropsWithPermissions> {
     return this.filesMethods.getProps(space)
+  }
+
+  // UPLOAD SESSION OPERATIONS
+
+  @Post(`${FILES_ROUTE.OPERATION}/${FILES_ROUTE.UPLOAD_SESSION}/:uploadId/*`)
+  @HttpCode(HttpStatus.CREATED)
+  @Header('Cache-Control', 'no-store')
+  createUploadSession(
+    @Req() req: FastifySpaceRequest,
+    @Param('uploadId', { schema: fileUploadSessionIdSchema }) uploadId: string,
+    @Res({ passthrough: true }) res: FastifyReply
+  ): Promise<void> {
+    return this.uploadSessions.writeUploadSessionChunk(req, uploadId, res, HTTP_METHOD.POST)
+  }
+
+  @Put(`${FILES_ROUTE.OPERATION}/${FILES_ROUTE.UPLOAD_SESSION}/:uploadId/*`)
+  @HttpCode(HttpStatus.CREATED)
+  @Header('Cache-Control', 'no-store')
+  overwriteUploadSession(
+    @Req() req: FastifySpaceRequest,
+    @Param('uploadId', { schema: fileUploadSessionIdSchema }) uploadId: string,
+    @Res({ passthrough: true }) res: FastifyReply
+  ): Promise<void> {
+    return this.uploadSessions.writeUploadSessionChunk(req, uploadId, res, HTTP_METHOD.PUT)
+  }
+
+  @Head(`${FILES_ROUTE.OPERATION}/${FILES_ROUTE.UPLOAD_SESSION}/:uploadId/*`)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Header('Cache-Control', 'no-store')
+  @SkipSpacePermissionsCheck()
+  status(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Param('uploadId', { schema: fileUploadSessionIdSchema }) uploadId: string,
+    @Res({ passthrough: true }) res: FastifyReply
+  ): Promise<void> {
+    return this.uploadSessions.writeUploadSessionStatus(user, space, uploadId, res)
+  }
+
+  @Patch(`${FILES_ROUTE.OPERATION}/${FILES_ROUTE.UPLOAD_SESSION}/:uploadId/*`)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Header('Cache-Control', 'no-store')
+  @SkipSpacePermissionsCheck()
+  async append(
+    @Req() req: FastifySpaceRequest,
+    @Param('uploadId', { schema: fileUploadSessionIdSchema }) uploadId: string,
+    @Res({ passthrough: true }) res: FastifyReply
+  ): Promise<void> {
+    return this.uploadSessions.writeUploadSessionChunk(req, uploadId, res)
+  }
+
+  @Delete(`${FILES_ROUTE.OPERATION}/${FILES_ROUTE.UPLOAD_SESSION}/:uploadId/*`)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Header('Cache-Control', 'no-store')
+  @SkipSpacePermissionsCheck()
+  cancel(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Param('uploadId', { schema: fileUploadSessionIdSchema }) uploadId: string,
+    @Res({ passthrough: true }) res: FastifyReply
+  ): Promise<void> {
+    return this.uploadSessions.cancelUploadSession(user, space, uploadId, res)
   }
 
   // TASKS OPERATIONS

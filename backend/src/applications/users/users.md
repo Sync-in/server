@@ -184,8 +184,8 @@ desktop synchronization clients.
 
 ## Homes and temporary files
 
-Temporary working data is stored with the targeted storage rather than with the authenticated actor. Archives produced for user download are the
-exception: they are stored in the actor's home until their task is removed or expires.
+Temporary working data for target-storage operations is stored with the targeted storage rather than with the authenticated actor. Downloadable task
+archives are stored in the actor's home until their task is removed or expires, while avatar uploads are staged in the user or guest home.
 
 All paths in this section are relative to the configured application data path, unless an external storage root is explicitly shown.
 
@@ -228,30 +228,31 @@ links/<link-user-id>/
 
 ### Target temporary storage
 
-Working files targeting a native space are isolated by actor:
+`temporaryRootFromSpace` keeps working data on the same physical storage as its destination. The actor is isolated explicitly whenever that storage
+can be used by several identities:
 
-```text
-spaces/<space-alias>/
-├── files/
-├── trash/
-└── tmp/
-    └── users/
-        └── <actor-id>/
-```
+| Destination context                                  | Temporary root                                           |
+|------------------------------------------------------|----------------------------------------------------------|
+| Actor's own personal space                           | `users/<actor-login>/tmp/`                               |
+| Native collaborative space                           | `spaces/<space-alias>/tmp/users/<actor-id>/`              |
+| External space root                                  | `<external-root>/.sync-in-tmp/users/<actor-id>/`          |
+| Root or share backed by personal storage             | `users/<owner-login>/tmp/users/<actor-id>/`               |
+| Share backed by a native collaborative space         | `spaces/<origin-space-alias>/tmp/users/<actor-id>/`       |
+| Share backed by an external root                     | `<external-root>/.sync-in-tmp/users/<actor-id>/`          |
 
-For storage without a managed native-space home, working files are stored under the physical storage root:
+The personal `tmp` directory is already isolated by account, so adding another actor directory would be redundant. For example, if Alice with actor
+identifier `42` uploads into a root anchored in Bob's personal storage, staging uses
+`users/bob/tmp/users/42/`: it remains on Bob's physical storage while staying separate from Bob's own temporary files and from other actors.
+Guests and link identities have no personal space, so their target operations always use one of the actor-isolated shared-storage layouts.
 
-```text
-<storage-root>/.sync-in-tmp/users/<actor-id>/
-```
+The resolver keeps every generated path inside the selected temporary root. Directories are created lazily when first needed.
 
-The temporary-path resolver determines the physical storage behind a space or share, selects the corresponding actor directory, and keeps the
-resulting path inside that temporary root. Temporary directories are created lazily when first needed.
+External storage roots have no managed `tmp` directory, so they use the internal reserved `.sync-in-tmp` directory. It is never exposed through
+filesystem browsing, search, content indexing, archives, recursive copies, or Sync diffs, even when hidden files are enabled. Direct requests
+targeting this directory are rejected.
 
-`.sync-in-tmp` is an internal reserved directory. It is never exposed through filesystem browsing, search, content indexing, archives, recursive
-copies, or Sync diffs, even when hidden files are enabled. Direct requests targeting this directory are rejected.
-
-Target working files never use the authenticated actor's home `tmp` directory. There is no additional `staging` directory.
+Among target-storage operations, only those targeting the actor's own personal space use that actor's home `tmp` directory directly. Downloadable
+task archives and avatar staging also use the account home because they are account-scoped exceptions. There is no additional `staging` directory.
 
 ### Temporary-file names
 
@@ -279,7 +280,7 @@ Examples:
 ~tmp-avatar-550e8400-e29b-41d4-a716-446655440000-avatar.png
 ```
 
-The actor identifier is already present in the parent path and is not repeated in the filename.
+The actor is already identified by the personal home or the `<actor-id>` parent directory and is not repeated in the filename.
 
 The `.sync-in.*` files used by Sync have a separate lifecycle and do not follow this convention. Their prefix is also reserved: these entries and
 directories are excluded from filesystem browsing, search, content indexing, archives, recursive copies, task metrics, and Sync diffs. Sync creates
@@ -297,10 +298,13 @@ Direct operations create their working artifacts in the target temporary directo
 - copy and move staging when an operation requires it;
 - other intermediate files associated with a destination.
 
-New files and resumable uploads may write directly to their destination when the destination itself is the required checkpoint; they do not create a
-separate temporary artifact.
+New files may write directly to their destination when the destination itself is the required checkpoint. When resumable chunking is enabled and a
+client selects that protocol for a file, its payload and recovery metadata are persisted in an upload-session directory under the destination
+storage's selected temporary root, then published after validation with the same move helper as multipart uploads. Standard uploads keep their
+existing lifecycle.
 
-After validation, an artifact is moved to its final destination. It is removed when validation, publication, or an earlier operation step fails.
+After validation, a standard operation artifact is moved to its final destination. It is removed when validation, publication, or an earlier
+operation step fails. A resumable session instead remains after an ordinary transfer failure for possible recovery or scheduled cleanup.
 
 Avatar updates are profile operations rather than target-storage operations. An avatar is prepared in the user or guest home `tmp` directory before
 being published as `avatar.png` at the home root.
@@ -349,8 +353,9 @@ For example, the physical file
 
 ### Cleanup
 
-An operation removes its working artifact after successful publication or after an error. Consequently, completed copy, move, download, compression,
-and decompression tasks do not retain working artifacts on their target storage.
+A standard operation removes its working artifact after successful publication or after an error. Consequently, completed copy, move, download,
+compression, decompression, and resumable-upload operations do not retain working artifacts on their target storage. Explicit cancellation removes
+an active upload session, while scheduled expiration handles abandoned sessions.
 
 When a downloadable archive task is removed, the task manager removes its retained archive using the task ownership prefix:
 
@@ -361,6 +366,7 @@ When a downloadable archive task is removed, the task manager removes its retain
 The scheduler scans user, guest, link, native-space, personal-storage, and registered external-storage temporary roots. It preserves prefixes owned by
 a task that is still cached. Target-storage roots remove expired orphaned
 `~tmp-*` artifacts; home `tmp` directories also remove expired legacy entries. These files may be left by a process crash, interruption, task-cache
-expiration, or an earlier storage layout. The scheduler acts as a recovery mechanism and does not replace normal operation or task cleanup.
+expiration, or an earlier storage layout. An empty `users/<actor-id>` directory is removed after the directory itself reaches the expiration age; the
+parent `users` namespace is retained. The scheduler acts as a recovery mechanism and does not replace normal operation or task cleanup.
 
 The former `tmp/guests` and `tmp/links` paths are not part of this layout and do not receive compatibility cleanup.

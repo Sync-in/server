@@ -19,6 +19,8 @@ import { UserModel } from '../../../users/models/user.model.js'
 import { users } from '../../../users/schemas/users.schema.js'
 import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL, CACHE_TASK_USER_PREFIX } from '../constants/cache.js'
 import { TEMPORARY_FILE_PREFIX, TEMPORARY_PATH } from '../constants/files.js'
+import { isFileUploadSessionDirectoryName } from '../../operations/constants/upload-session.js'
+import { FilesUploadSessionManager } from '../../operations/services/files-upload-session-manager.service.js'
 import type { TemporaryDirectoriesByUser, TemporaryDirectory, TemporaryDirectorySnapshot } from '../interfaces/file-scheduler.interface.js'
 import { FileTask, FileTaskStatus } from '../../tasks/models/file-task.js'
 import { filesRecents } from '../../recents/schemas/files-recents.schema.js'
@@ -46,7 +48,8 @@ export class FilesScheduler {
     private readonly filesQuotaManager: FilesQuotaManager,
     private readonly filesTrashRetention: FilesTrashRetention,
     private readonly spacesQueries: SpacesQueries,
-    private readonly sharesQueries: SharesQueries
+    private readonly sharesQueries: SharesQueries,
+    private readonly filesUploadSessionManager: FilesUploadSessionManager
   ) {}
 
   @Timeout(5_000)
@@ -122,6 +125,9 @@ export class FilesScheduler {
         const homeTmpPath = user.role === USER_ROLE.LINK ? UserModel.getLinkTmpPath(user.id) : UserModel.getTmpPath(user.login)
         this.registerTemporaryDirectory(temporaryDirectories, user.id, homeTmpPath, true)
         if (user.role !== USER_ROLE.LINK) {
+          await this.discoverTemporaryUsersRoot(UserModel.getUsersTmpPath(user.login), temporaryDirectories)
+          // DEPRECATED: scan the former personal staging root only to remove artifacts created
+          // before the move to tmp/users. Remove this compatibility cleanup in the next major release.
           await this.discoverTemporaryUsersRoot(
             path.join(UserModel.getHomePath(user.login), TEMPORARY_PATH.STORAGE, TEMPORARY_PATH.ACTORS),
             temporaryDirectories
@@ -154,6 +160,7 @@ export class FilesScheduler {
     }
     for (const [userId, directories] of temporaryDirectories) {
       await this.cleanupTemporaryDirectories(userId, [...directories.values()], expiration)
+      for (const directory of directories.values()) await this.removeExpiredEmptyActorDirectory(directory, expiration)
     }
     this.logger.log({ tag: this.cleanupUserTmpFiles.name, msg: `END` })
   }
@@ -262,7 +269,7 @@ export class FilesScheduler {
     temporaryDirectories: TemporaryDirectoriesByUser,
     userId: number,
     temporaryPath: string,
-    includeLegacyEntries = false
+    includeUnmanagedEntries = false
   ): void {
     let userDirectories = temporaryDirectories.get(userId)
     if (!userDirectories) {
@@ -272,7 +279,7 @@ export class FilesScheduler {
     const existingDirectory = userDirectories.get(temporaryPath)
     userDirectories.set(temporaryPath, {
       path: temporaryPath,
-      includeLegacyEntries: includeLegacyEntries || existingDirectory?.includeLegacyEntries === true
+      includeUnmanagedEntries: includeUnmanagedEntries || existingDirectory?.includeUnmanagedEntries === true
     })
   }
 
@@ -292,8 +299,10 @@ export class FilesScheduler {
   private async snapshotTemporaryDirectory(directory: TemporaryDirectory): Promise<TemporaryDirectorySnapshot | undefined> {
     try {
       if (!(await isPathExists(directory.path))) return
-      const fileNames = await fs.readdir(directory.path)
-      const candidates = directory.includeLegacyEntries ? fileNames : fileNames.filter((fileName) => fileName.startsWith(TEMPORARY_FILE_PREFIX))
+      const fileNames = (await fs.readdir(directory.path)).filter(
+        (fileName) => !directory.includeUnmanagedEntries || fileName !== TEMPORARY_PATH.ACTORS
+      )
+      const candidates = directory.includeUnmanagedEntries ? fileNames : fileNames.filter((fileName) => fileName.startsWith(TEMPORARY_FILE_PREFIX))
       return candidates.length === 0 ? undefined : { fileNames: candidates, path: directory.path }
     } catch (e) {
       this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to browse ${directory.path} : ${toErrorMessage(e)}` })
@@ -307,6 +316,16 @@ export class FilesScheduler {
       if (snapshot) snapshots.push(snapshot)
     }
     if (snapshots.length === 0) return
+
+    // Upload sessions have their own filesystem lock and expiry rules. Clean them without
+    // depending on task metadata from the cache.
+    for (const snapshot of snapshots) {
+      for (const fileName of snapshot.fileNames.filter(isFileUploadSessionDirectoryName)) {
+        await this.removeTmpFile(path.join(snapshot.path, fileName), expiration)
+      }
+      snapshot.fileNames = snapshot.fileNames.filter((fileName) => !isFileUploadSessionDirectoryName(fileName))
+    }
+    if (snapshots.every((snapshot) => snapshot.fileNames.length === 0)) return
 
     let protectedPrefixes: string[]
     try {
@@ -325,17 +344,38 @@ export class FilesScheduler {
     }
   }
 
+  private async removeExpiredEmptyActorDirectory(directory: TemporaryDirectory, expiration: number): Promise<void> {
+    if (directory.includeUnmanagedEntries) return
+    try {
+      const stats = await fs.lstat(directory.path)
+      if (!stats.isDirectory() || stats.mtimeMs >= expiration) return
+      // rmdir is atomic with respect to directory entries: concurrent activity leaves the directory in place.
+      await fs.rmdir(directory.path)
+    } catch (e) {
+      const code = e instanceof Error ? (e as NodeJS.ErrnoException).code : undefined
+      if (code === 'ENOENT' || code === 'ENOTEMPTY' || code === 'EEXIST') return
+      this.logger.error({
+        tag: this.cleanupUserTmpFiles.name,
+        msg: `unable to remove empty actor directory ${directory.path} : ${toErrorMessage(e)}`
+      })
+    }
+  }
+
   private async taskPrefixes(userId: number): Promise<string[]> {
     const keys = await this.cache.keys(FilesTasksManager.getCacheKey(userId))
     const tasks: (FileTask | null | undefined)[] = keys.length ? await this.cache.mget(keys) : []
     return tasks.filter((task): task is FileTask => Boolean(task?.id && task?.type)).map((task) => temporaryFilePrefix(task.type, task.id))
   }
 
-  private async removeTmpFile(rPath: string, expiration?: number): Promise<void> {
+  private async removeTmpFile(rPath: string, expiration: number): Promise<void> {
     try {
-      if (expiration === undefined || (await fs.lstat(rPath)).mtimeMs < expiration) {
-        await removeFiles(rPath)
+      const stats = await fs.lstat(rPath)
+      if (stats.isDirectory() && isFileUploadSessionDirectoryName(path.basename(rPath))) {
+        await this.filesUploadSessionManager.cleanupExpired(rPath, expiration)
+        return
       }
+      if (stats.mtimeMs >= expiration) return
+      await removeFiles(rPath)
     } catch (e) {
       this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to remove ${rPath} : ${toErrorMessage(e)}` })
     }

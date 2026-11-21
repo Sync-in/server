@@ -2,6 +2,7 @@ import { PlatformLocation } from '@angular/common'
 import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest, HttpXsrfTokenExtractor } from '@angular/common/http'
 import { inject, Injectable, Injector } from '@angular/core'
 import { HTTP_CSRF_IGNORED_METHODS } from '@sync-in-server/backend/src/applications/applications.constants'
+import { API_FILES_OPERATION_UPLOAD_SESSION } from '@sync-in-server/backend/src/applications/files/core/constants/routes'
 import { API_ADMIN_IMPERSONATE_LOGOUT } from '@sync-in-server/backend/src/applications/users/constants/routes'
 import { CSRF_KEY } from '@sync-in-server/backend/src/authentication/constants/auth'
 import { API_AUTH_LOGIN, API_AUTH_LOGOUT, API_AUTH_REFRESH } from '@sync-in-server/backend/src/authentication/constants/routes'
@@ -33,12 +34,14 @@ export class AuthInterceptor implements HttpInterceptor {
     if (encodedUrl) {
       request = request.clone({ url: encodedUrl })
     }
+    // Upload sessions own their retries so every ambiguous response is reconciled with the server offset.
+    const bypassUnavailableHandling = request.url === API_AUTH_LOGOUT || request.url.startsWith(`${API_FILES_OPERATION_UPLOAD_SESSION}/`)
 
     return next.handle(request).pipe(
       retry({
         count: this.retryCount,
         delay: (error: HttpErrorResponse) => {
-          if (error.status !== 0 || request.body instanceof FormData || request.url === API_AUTH_LOGOUT) {
+          if (error.status !== 0 || request.body instanceof FormData || bypassUnavailableHandling) {
             return throwError(() => error)
           }
           return timer(this.retryWaitMilliSeconds)
@@ -47,12 +50,11 @@ export class AuthInterceptor implements HttpInterceptor {
       catchError((e: HttpErrorResponse) => {
         if (e.status === 401 && this.isSameOrigin(request.url)) {
           return this.handleAuthorizationError(request, next, e)
-        } else if (e.status === 503) {
+        } else if (e.status === 503 && !bypassUnavailableHandling) {
           return this.handleServiceUnavailable(request, e)
         } else if (e.status === 0) {
-          // Do not retry multipart uploads on a transport error: the connection may have
-          // been closed after a quota or size rejection, and replaying would resend all files.
-          if (request.body instanceof FormData || request.url === API_AUTH_LOGOUT) {
+          // Let upload flows reconcile transport errors without logging the user out.
+          if (request.body instanceof FormData || bypassUnavailableHandling) {
             return throwError(() => e)
           }
           return this.handleServiceUnavailable(request, e, SERVICE_UNAVAILABLE_ERROR)

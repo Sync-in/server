@@ -49,6 +49,7 @@ import {
   fileSize,
   getMimeType,
   isInternalTemporaryEntry,
+  isInternalTemporaryPath,
   isPathExists,
   isPathInside,
   isPathIsDir,
@@ -73,12 +74,13 @@ import { FileEvent, FileTaskEvent } from '../events/file-events.js'
 import { ACTION } from '../../../../common/constants.js'
 import {
   createUploadStreamLimiter,
+  isMultipartCountLimitError,
   isMultipartFileTooLargeError,
   parseContentLength,
   parseContentRange,
   uploadTmpFilePath
 } from '../utils/upload-file.js'
-import { maxFileSizeExceededError } from '../utils/errors.js'
+import { maxFileSizeExceededError, maxMultipartPartsExceededError } from '../utils/errors.js'
 import { FilesTasksTransfer } from '../../tasks/services/files-tasks-transfer.service.js'
 import { createTar } from '../utils/tar-file.js'
 import { createZip } from '../utils/zip-file.js'
@@ -138,7 +140,7 @@ export class FilesManager {
         throw new FileError(HttpStatus.BAD_REQUEST, 'Content-range : start offset does not match the current file size')
       }
     }
-    const maxUploadSize = configuration.applications.files.maxUploadSize
+    const maxUploadSize = configuration.applications.files.transfers.maxUploadSize
     const maxSize = Math.min(maxUploadSize, options?.maxSize ?? maxUploadSize)
     const fileLimiter = createUploadStreamLimiter(space, maxSize).createFileLimiter(startRange)
     const contentLength = parseContentLength(req.headers['content-length'])
@@ -222,6 +224,22 @@ export class FilesManager {
     }
   }
 
+  async prepareUploadOverwriteDestination(user: UserModel, space: SpaceEnv): Promise<void> {
+    if ((await isPathExists(space.realPath)) && (await isPathIsDir(space.realPath))) {
+      // Keep the publication lock owned by the upload while the conflicting directory is moved to the trash.
+      await this.delete(user, space, undefined, undefined, { preserveExactLocks: true })
+    }
+
+    const parentPath = dirName(space.realPath)
+    if ((await isPathExists(parentPath)) && !(await isPathIsDir(parentPath))) {
+      const parentSpace = await this.spacesManager.spaceEnv(user, dirName(space.url).split('/'))
+      if (!parentSpace || path.resolve(parentSpace.realPath) !== path.resolve(parentPath)) {
+        throw new FileError(HttpStatus.INTERNAL_SERVER_ERROR, 'Unable to resolve upload destination parent')
+      }
+      await this.delete(user, parentSpace)
+    }
+  }
+
   async saveMultipart(user: UserModel, space: SpaceEnv, req: FastifySpaceRequest) {
     /* Accepted methods:
         POST: Creates new resource
@@ -236,7 +254,11 @@ export class FilesManager {
     const postMethod = req.method === HTTP_METHOD.POST
     const realParentPath = dirName(space.realPath)
     const temporaryRoot = overwrite || patchMethod ? temporaryRootFromSpace(user, space) : undefined
-    const uploadLimiter = createUploadStreamLimiter(space, configuration.applications.files.maxUploadSize)
+    const uploadLimiter = createUploadStreamLimiter(
+      space,
+      configuration.applications.files.transfers.maxUploadSize,
+      configuration.applications.files.transfers.maxChunkSize ?? undefined
+    )
 
     // For POST, space.realPath can be either the final file path or the root directory for a folder upload.
     if (postMethod && (await isPathExists(space.realPath))) {
@@ -257,8 +279,13 @@ export class FilesManager {
         const partFileName = patchMethod ? fileName(space.realPath) : part.filename
         // `part.filename` may contain a path like foo/bar.txt
         const dstFile = path.resolve(realParentPath, partFileName)
-        if (!isPathInside(realParentPath, dstFile)) {
+        // A multipart part must target the resource selected by the URL or one of its descendants for a directory upload.
+        if (!isPathInside(space.realPath, dstFile, true)) {
           throw new FileError(HttpStatus.FORBIDDEN, 'Location is not allowed')
+        }
+        // Apply the same reserved-location protection as realPathFromSpace.
+        if (isInternalTemporaryPath(space.realBasePath, dstFile)) {
+          throw new FileError(HttpStatus.FORBIDDEN, 'Internal temporary locations are not accessible')
         }
         const dstExists = await isPathExists(dstFile)
         const dstIsDir = dstExists ? await isPathIsDir(dstFile) : false
@@ -368,6 +395,9 @@ export class FilesManager {
     } catch (e) {
       if (isMultipartFileTooLargeError(e)) {
         throw maxFileSizeExceededError()
+      }
+      if (isMultipartCountLimitError(e)) {
+        throw maxMultipartPartsExceededError()
       }
       throw e
     }
@@ -695,7 +725,7 @@ export class FilesManager {
       await new DownloadFile(this.http).download(downloadDto, tmpPath, {
         space,
         publishedPath: dstPath,
-        maxSize: configuration.applications.files.maxUploadSize,
+        maxSize: configuration.applications.files.transfers.maxUploadSize,
         signal,
         onProgress: isTaskContext ? this.filesTasksTransfer.createByteProgressHandler(space) : undefined
       })

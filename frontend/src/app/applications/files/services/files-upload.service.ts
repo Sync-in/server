@@ -1,13 +1,16 @@
-import { HttpClient, HttpEventType, HttpUploadProgressEvent } from '@angular/common/http'
-import { inject, Injectable } from '@angular/core'
-import { API_FILES_OPERATION_UPLOAD } from '@sync-in-server/backend/src/applications/files/core/constants/routes'
+import { HttpClient, HttpErrorResponse, HttpEvent, HttpEventType, HttpResponse, HttpStatusCode } from '@angular/common/http'
+import { effect, inject, Injectable } from '@angular/core'
+import { FILE_UPLOAD_MULTIPART_MAX_FILES } from '@sync-in-server/backend/src/applications/files/core/constants/files'
+import { API_FILES_OPERATION_UPLOAD, API_FILES_OPERATION_UPLOAD_SESSION } from '@sync-in-server/backend/src/applications/files/core/constants/routes'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/tasks/models/file-task'
 import { FileTaskStatus } from '@sync-in-server/backend/src/applications/files/tasks/models/file-task'
-import { currentTimeStamp } from '@sync-in-server/backend/src/common/shared'
-import { Observable, Subscription } from 'rxjs'
-import { supportUploadDirectory } from '../../../common/utils/functions'
+import type { FileUploadSessionStatus } from '@sync-in-server/backend/src/applications/files/operations/interfaces/file-upload-session.interface'
+import { currentTimeStamp, encodeUrl } from '@sync-in-server/backend/src/common/shared'
+import { catchError, Observable, Subscription, throwError, timeout, TimeoutError } from 'rxjs'
+import { genRandomUUID, supportUploadDirectory } from '../../../common/utils/functions'
 import { LayoutService } from '../../../layout/layout.service'
-import type { FileUpload, FileUploadTaskRequest } from '../interfaces/file-upload.interface'
+import { StoreService } from '../../../store/store.service'
+import type { FileUpload, FileUploadGroup, FileUploadMultipartBatch, FileUploadTaskRequest } from '../interfaces/file-upload.interface'
 import { FileModel } from '../models/file.model'
 import { FilesTasksService } from './files-tasks.service'
 import { FilesService } from './files.service'
@@ -19,29 +22,99 @@ export class FilesUploadService {
   private readonly filesService = inject(FilesService)
   private readonly filesTasksService = inject(FilesTasksService)
   private readonly layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
   private readonly maxConcurrentUploads = 3
+  private readonly sessionRetryCount = 3
+  private readonly sessionRetryWaitMilliSeconds = 2000
+  private readonly sessionRetryMaxWaitMilliSeconds = 30000
+  private readonly sessionCleanupTimeoutMilliSeconds = 10000
   private readonly progressUpdateInterval = 1000
   private readonly progressUpdateTimers = new Map<string, ReturnType<typeof setTimeout>>()
   private readonly progressUpdatedAt = new Map<string, number>()
+  private readonly activeUploads = new Set<FileUploadTaskRequest>()
   private queuedUploads: FileUploadTaskRequest[] = []
   private runningUploads = 0
 
-  async addFiles(files: FileUpload[], overwrite: boolean) {
-    const apiRoute = `${API_FILES_OPERATION_UPLOAD}/${this.filesService.currentRoute}`
-    const taskReqs: FileUploadTaskRequest[] = []
+  constructor() {
+    effect(() => {
+      if (!this.activeUploads.size) {
+        this.store.user()
+        this.store.userImpersonate()
+        return
+      }
+      // Stop work owned by the previous authentication context.
+      // Any session that cannot be deleted with the new identity is left to the scheduler.
+      for (const taskReq of this.activeUploads) {
+        if (!this.isCurrentUploadIdentity(taskReq)) this.cancelUploadTask(taskReq, true)
+      }
+    })
+  }
 
-    for (const [key, data] of Object.entries(this.sortFiles(files))) {
-      const path = `${this.filesService.currentRoute}/${key}`.split('/').slice(0, -1).join('/')
-      const name = `${this.filesService.currentRoute}/${key}`.split('/').slice(-1)[0]
+  async addFiles(files: FileUpload[], overwrite: boolean) {
+    const currentRoute = this.filesService.currentRoute
+    const uploadUserId = this.store.user()?.id
+    const uploadUserImpersonate = this.store.userImpersonate()
+    const apiRoute = `${API_FILES_OPERATION_UPLOAD}/${currentRoute}`
+    const taskReqs: FileUploadTaskRequest[] = []
+    const maxChunkSize = this.store.server().files.transfers.maxChunkSize
+
+    for (const [key, data] of this.groupFiles(files, maxChunkSize)) {
+      const path = `${currentRoute}/${key}`.split('/').slice(0, -1).join('/')
+      const name = `${currentRoute}/${key}`.split('/').slice(-1)[0]
       const task: FileTask = this.filesTasksService.createUploadTask(path, name, data.size)
-      const taskReq = this.createUploadTaskRequest(task, this.uploadFiles(`${apiRoute}/${key}`, data.form, overwrite), files.length === 1)
+      const taskReq = this.createUploadTaskRequest(
+        task,
+        async (uploadTask: FileTask, signal: AbortSignal) => {
+          let completedSize = 0
+          if (
+            !overwrite &&
+            !data.multipartBatches.length &&
+            data.sessionFiles.some((file) => Boolean(file.relativePath || file.webkitRelativePath))
+          ) {
+            // Multipart POST rejects an existing top-level directory. Preserve that behavior when a directory contains only large files.
+            await this.runHttpRequest(this.filesService.make('directory', key, currentRoute, true), signal)
+          }
+          for (const [batchIndex, batch] of data.multipartBatches.entries()) {
+            await this.runHttpRequest(
+              this.uploadFiles(`${apiRoute}/${key}`, batch.form, overwrite || batchIndex > 0 ? 'put' : 'post'),
+              signal,
+              (event: HttpEvent<unknown>) => {
+                if (event.type === HttpEventType.UploadProgress) {
+                  const loaded = event.total ? Math.round((batch.size * event.loaded) / event.total) : Math.min(batch.size, event.loaded)
+                  this.updateChunkProgress(uploadTask, data.size, completedSize, loaded)
+                }
+              }
+            )
+            completedSize += batch.size
+            this.updateChunkProgress(uploadTask, data.size, completedSize, 0)
+          }
+          for (const file of data.sessionFiles) {
+            if (maxChunkSize === null) throw new Error('Chunked uploads are disabled')
+            await this.uploadFileInChunks(
+              file,
+              this.getUploadDestination(file, currentRoute),
+              overwrite,
+              uploadTask,
+              signal,
+              completedSize,
+              data.size,
+              maxChunkSize
+            )
+            completedSize += file.size
+          }
+        },
+        files.length === 1,
+        uploadUserId,
+        uploadUserImpersonate
+      )
+      this.activeUploads.add(taskReq)
       this.filesTasksService.registerUploadCancellation(task.id, () => this.cancelUploadTask(taskReq))
       taskReqs.unshift(taskReq)
     }
     this.queuedUploads.push(...taskReqs)
     this.drainUploadQueue()
     await Promise.all(taskReqs.map((taskReq: FileUploadTaskRequest) => taskReq.completed))
-    if (files.length > 1) {
+    if (files.length > 1 && taskReqs.every((taskReq: FileUploadTaskRequest) => this.isCurrentUploadIdentity(taskReq) && !taskReq.discarded)) {
       this.notifyUploadBatch(taskReqs)
     }
   }
@@ -93,11 +166,255 @@ export class FilesUploadService {
     return this.http.post<void>(`${API_FILES_OPERATION_UPLOAD}/${directoryPath}/${fileName}`, formData)
   }
 
-  private uploadFiles(url: string, form: FormData, overwrite: boolean) {
-    return this.http.request(overwrite ? 'put' : 'post', url, {
+  private uploadFiles(url: string, form: FormData, method: 'post' | 'put') {
+    return this.http.request(method, url, {
       body: form,
       reportUploadProgress: true,
       observe: 'events'
+    })
+  }
+
+  private async uploadFileInChunks(
+    file: FileUpload,
+    destination: string,
+    overwrite: boolean,
+    task: FileTask,
+    signal: AbortSignal,
+    completedSize: number,
+    totalSize: number,
+    chunkSize: number
+  ): Promise<void> {
+    const uploadId = genRandomUUID()
+    const sessionUrl = `${API_FILES_OPERATION_UPLOAD_SESSION}/${encodeURIComponent(uploadId)}/${destination}`
+    let offset = 0
+    let recoveryAttempts = 0
+    let reconcileSession = false
+    let sessionCreated = false
+    try {
+      while (true) {
+        if (reconcileSession) {
+          try {
+            const status = await this.getUploadSessionStatus(sessionUrl, file.size, signal)
+            // HEAD is authoritative, including after a durability failure rolls the persisted payload back.
+            if (status.offset > offset) recoveryAttempts = 0
+            offset = status.offset
+            sessionCreated = true
+            this.updateChunkProgress(task, totalSize, completedSize + offset, 0)
+            reconcileSession = false
+            if (status.state === 'complete') return
+          } catch (error) {
+            if (!sessionCreated && this.isUploadSessionNotFoundError(error)) {
+              reconcileSession = false
+              continue
+            }
+            if (signal.aborted || !this.isUploadSessionRetryableError(error)) throw error
+            recoveryAttempts = await this.recoverUploadSession(error, recoveryAttempts, signal)
+            continue
+          }
+        }
+
+        const chunkEnd = sessionCreated && offset === file.size ? offset : Math.min(offset + chunkSize, file.size)
+        try {
+          const status = await this.uploadChunk(
+            sessionUrl,
+            file,
+            offset,
+            chunkEnd,
+            sessionCreated ? 'patch' : overwrite ? 'put' : 'post',
+            task,
+            signal,
+            completedSize,
+            totalSize
+          )
+          sessionCreated = true
+          if (status.offset !== chunkEnd) throw new Error('Invalid upload offset response')
+          offset = status.offset
+          recoveryAttempts = 0
+          this.updateChunkProgress(task, totalSize, completedSize + offset, 0)
+          if (status.state === 'complete') return
+        } catch (error) {
+          if (signal.aborted || !this.isUploadSessionTransferRecoveryError(error)) throw error
+          recoveryAttempts = await this.recoverUploadSession(error, recoveryAttempts, signal)
+          reconcileSession = true
+          continue
+        }
+      }
+    } catch (error) {
+      if (signal.aborted) await this.cleanupUploadSession(uploadId, destination)
+      throw error
+    }
+  }
+
+  private uploadChunk(
+    sessionUrl: string,
+    file: FileUpload,
+    offset: number,
+    chunkEnd: number,
+    method: 'patch' | 'post' | 'put',
+    task: FileTask,
+    signal: AbortSignal,
+    completedSize: number,
+    totalSize: number
+  ): Promise<FileUploadSessionStatus> {
+    return this.runHttpRequest(
+      this.http.request<void>(method, sessionUrl, {
+        body: file.slice(offset, chunkEnd),
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'Upload-Length': String(file.size),
+          'Upload-Offset': String(offset)
+        },
+        observe: 'events',
+        reportUploadProgress: true
+      }),
+      signal,
+      (event: HttpEvent<void>) => {
+        if (event.type === HttpEventType.UploadProgress) {
+          this.updateChunkProgress(task, totalSize, completedSize + offset, event.loaded)
+        }
+      }
+    ).then((event) => {
+      if (!(event instanceof HttpResponse)) throw new Error('Invalid upload chunk response')
+      return this.parseUploadSessionStatus(event, file.size)
+    })
+  }
+
+  private async getUploadSessionStatus(sessionUrl: string, expectedSize: number, signal: AbortSignal): Promise<FileUploadSessionStatus> {
+    const response = await this.runHttpRequest(this.http.head<void>(sessionUrl, { observe: 'response' }), signal)
+    return this.parseUploadSessionStatus(response, expectedSize)
+  }
+
+  private parseUploadSessionStatus(response: HttpResponse<unknown>, expectedSize: number): FileUploadSessionStatus {
+    const status = {
+      offset: this.parseUploadSessionIntegerHeader(response, 'Upload-Offset'),
+      size: this.parseUploadSessionIntegerHeader(response, 'Upload-Length'),
+      state: response.headers.get('Upload-State')
+    }
+    if (
+      status.size !== expectedSize ||
+      status.offset > status.size ||
+      !['complete', 'ready', 'uploading'].includes(status.state ?? '') ||
+      (status.state === 'uploading' ? status.offset >= status.size : status.offset !== status.size)
+    ) {
+      throw new Error('Invalid upload session status response')
+    }
+    return status as FileUploadSessionStatus
+  }
+
+  private parseUploadSessionIntegerHeader(response: HttpResponse<unknown>, header: string): number {
+    const value = response.headers.get(header)
+    if (!value || !/^\d+$/.test(value)) throw new Error(`Invalid ${header} response header`)
+    const parsed = Number(value)
+    if (!Number.isSafeInteger(parsed)) throw new Error(`Invalid ${header} response header`)
+    return parsed
+  }
+
+  private isUploadSessionRetryableError(error: unknown): error is HttpErrorResponse {
+    return (
+      error instanceof HttpErrorResponse &&
+      (error.status === 0 ||
+        error.status === HttpStatusCode.Locked ||
+        (error.status >= 500 && error.status < 600 && error.status !== HttpStatusCode.InsufficientStorage))
+    )
+  }
+
+  private isUploadSessionConflictError(error: unknown): error is HttpErrorResponse {
+    return error instanceof HttpErrorResponse && error.status === 409
+  }
+
+  private isUploadSessionNotFoundError(error: unknown): error is HttpErrorResponse {
+    return error instanceof HttpErrorResponse && error.status === HttpStatusCode.NotFound
+  }
+
+  private isUploadSessionTransferRecoveryError(error: unknown): error is HttpErrorResponse {
+    return this.isUploadSessionRetryableError(error) || this.isUploadSessionConflictError(error)
+  }
+
+  private cleanupUploadSession(uploadId: string, destination: string): Promise<void> {
+    return this.retryUploadSessionRequest(
+      () =>
+        this.runHttpRequest(
+          this.http.delete<void>(`${API_FILES_OPERATION_UPLOAD_SESSION}/${encodeURIComponent(uploadId)}/${destination}`).pipe(
+            timeout(this.sessionCleanupTimeoutMilliSeconds),
+            catchError((error) =>
+              throwError(() => (error instanceof TimeoutError ? new HttpErrorResponse({ status: 0, statusText: 'Cleanup timed out' }) : error))
+            )
+          )
+        ),
+      undefined,
+      this.sessionRetryCount
+    ).catch(() => undefined)
+  }
+
+  private async retryUploadSessionRequest<T>(request: () => Promise<T>, signal?: AbortSignal, retryCount = this.sessionRetryCount): Promise<T> {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await request()
+      } catch (error) {
+        if (!this.isUploadSessionRetryableError(error) || attempt >= retryCount) throw error
+        await this.waitForUploadSessionRetry(error, attempt + 1, signal)
+      }
+    }
+  }
+
+  private async recoverUploadSession(error: HttpErrorResponse, attempt: number, signal: AbortSignal): Promise<number> {
+    if (attempt >= this.sessionRetryCount) throw error
+    await this.waitForUploadSessionRetry(error, attempt + 1, signal)
+    return attempt + 1
+  }
+
+  private waitForUploadSessionRetry(error: HttpErrorResponse, attempt: number, signal?: AbortSignal): Promise<void> {
+    const retryAfterSeconds = Number(error.headers.get('Retry-After') ?? NaN)
+    const retryAfterDelay = Number.isFinite(retryAfterSeconds) && retryAfterSeconds >= 0 ? retryAfterSeconds * 1000 : 0
+    const backoffDelay = Math.min(this.sessionRetryWaitMilliSeconds * 2 ** Math.max(0, attempt - 1), this.sessionRetryMaxWaitMilliSeconds)
+    const delay = Math.min(Math.max(retryAfterDelay, backoffDelay), this.sessionRetryMaxWaitMilliSeconds)
+    return new Promise((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(signal.reason)
+        return
+      }
+      const onAbort = () => {
+        clearTimeout(timer)
+        reject(signal?.reason)
+      }
+      const timer = setTimeout(() => {
+        signal?.removeEventListener('abort', onAbort)
+        resolve()
+      }, delay)
+      signal?.addEventListener('abort', onAbort, { once: true })
+    })
+  }
+
+  private runHttpRequest<T>(request: Observable<T>, signal?: AbortSignal, onNext?: (value: T) => void): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(signal.reason)
+        return
+      }
+      let latestValue!: T
+      let settled = false
+      const subscription = new Subscription()
+      const settle = (done: () => void) => {
+        if (settled) return
+        settled = true
+        signal?.removeEventListener('abort', onAbort)
+        done()
+      }
+      const onAbort = () => {
+        settle(() => reject(signal?.reason))
+        subscription.unsubscribe()
+      }
+      signal?.addEventListener('abort', onAbort, { once: true })
+      subscription.add(
+        request.subscribe({
+          next: (value: T) => {
+            latestValue = value
+            onNext?.(value)
+          },
+          error: (error) => settle(() => reject(error)),
+          complete: () => settle(() => resolve(latestValue))
+        })
+      )
     })
   }
 
@@ -133,7 +450,13 @@ export class FilesUploadService {
     )
   }
 
-  private createUploadTaskRequest(task: FileTask, req: Observable<any>, notifyCompletion: boolean): FileUploadTaskRequest {
+  private createUploadTaskRequest(
+    task: FileTask,
+    run: (task: FileTask, signal: AbortSignal) => Promise<void>,
+    notifyCompletion: boolean,
+    userId: number | undefined,
+    userImpersonate: boolean
+  ): FileUploadTaskRequest {
     let resolveCompleted: () => void = () => undefined
     const completed = new Promise<void>((resolve) => {
       resolveCompleted = () => resolve()
@@ -141,12 +464,15 @@ export class FilesUploadService {
     return {
       completed,
       controller: new AbortController(),
+      discarded: false,
       done: false,
       notifyCompletion,
-      req,
       resolveCompleted,
+      run,
       started: false,
-      task
+      task,
+      userId,
+      userImpersonate
     }
   }
 
@@ -163,14 +489,18 @@ export class FilesUploadService {
   }
 
   private async runUploadTask(taskReq: FileUploadTaskRequest): Promise<void> {
-    const { controller, req, task } = taskReq
+    const { controller, run, task } = taskReq
     if (taskReq.done) return
+    if (!this.isCurrentUploadIdentity(taskReq)) {
+      this.cancelUploadTask(taskReq, true)
+      return
+    }
     taskReq.started = true
     task.status = FileTaskStatus.PENDING
     task.startedAt = currentTimeStamp(null, true)
     this.updateTask(task)
     try {
-      await this.runUpload(task, req, controller.signal)
+      await run(task, controller.signal)
       task.props.progress = 100
       task.status = FileTaskStatus.SUCCESS
     } catch (e: any) {
@@ -191,51 +521,34 @@ export class FilesUploadService {
     if (taskReq.task.status !== FileTaskStatus.PENDING && taskReq.task.status !== FileTaskStatus.QUEUED) {
       taskReq.task.endedAt = currentTimeStamp(null, true)
     }
+    taskReq.discarded ||= !this.isCurrentUploadIdentity(taskReq)
+    this.activeUploads.delete(taskReq)
     this.filesTasksService.unregisterUploadCancellation(taskReq.task.id)
-    this.updateTask(taskReq.task, taskReq.notifyCompletion)
+    if (taskReq.discarded) {
+      this.store.filesActiveTasks.update((tasks) => tasks.filter((task: FileTask) => task.id !== taskReq.task.id))
+    } else {
+      this.updateTask(taskReq.task, taskReq.notifyCompletion)
+    }
     taskReq.resolveCompleted()
   }
 
-  private runUpload(task: FileTask, req: Observable<any>, signal: AbortSignal): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      if (signal.aborted) {
-        reject(signal.reason)
-        return
-      }
-      let settled = false
-      const subscription = new Subscription()
-      const onAbort = () => {
-        subscription.unsubscribe()
-        settle(() => reject(signal.reason))
-      }
-      const settle = (done: () => void) => {
-        if (settled) return
-        settled = true
-        signal.removeEventListener('abort', onAbort)
-        done()
-      }
-      signal.addEventListener('abort', onAbort, { once: true })
-      subscription.add(
-        req.subscribe({
-          next: (ev: any) => {
-            if (ev.type === HttpEventType.UploadProgress) {
-              this.updateProgress(task, ev)
-            }
-          },
-          error: (e) => settle(() => reject(e)),
-          complete: () => settle(resolve)
-        })
-      )
-    })
+  private cancelUploadTask(taskReq: FileUploadTaskRequest, discard = false) {
+    if (taskReq.done) return
+    taskReq.discarded ||= discard
+    if (discard) {
+      this.clearProgressUpdate(taskReq.task.id)
+      this.store.filesActiveTasks.update((tasks) => tasks.filter((task: FileTask) => task.id !== taskReq.task.id))
+    }
+    taskReq.controller.abort(new Error('Cancelled'))
+    if (!taskReq.started) {
+      this.queuedUploads = this.queuedUploads.filter((queuedTaskReq: FileUploadTaskRequest) => queuedTaskReq !== taskReq)
+      this.setUploadCancelled(taskReq.task)
+      this.finishUploadTask(taskReq)
+    }
   }
 
-  private cancelUploadTask(taskReq: FileUploadTaskRequest) {
-    if (taskReq.done) return
-    taskReq.controller.abort(new Error('Cancelled'))
-    if (taskReq.started) return
-    this.queuedUploads = this.queuedUploads.filter((queuedTaskReq: FileUploadTaskRequest) => queuedTaskReq !== taskReq)
-    this.setUploadCancelled(taskReq.task)
-    this.finishUploadTask(taskReq)
+  private isCurrentUploadIdentity(taskReq: FileUploadTaskRequest): boolean {
+    return taskReq.userId === this.store.user()?.id && taskReq.userImpersonate === this.store.userImpersonate()
   }
 
   private isUploadCancelled(e: any): boolean {
@@ -252,9 +565,9 @@ export class FilesUploadService {
     task.result = e.status === 0 ? e.statusText : e.error?.message || e.message
   }
 
-  private updateProgress(task: FileTask, ev: HttpUploadProgressEvent) {
-    task.props.size = ev.loaded
-    task.props.progress = ev.total ? Math.round((100 * ev.loaded) / ev.total) : task.props.progress || 1
+  private updateChunkProgress(task: FileTask, totalSize: number, confirmedOffset: number, currentChunkLoaded: number) {
+    task.props.size = Math.min(totalSize, confirmedOffset + currentChunkLoaded)
+    task.props.progress = totalSize ? Math.min(99, Math.round((100 * task.props.size) / totalSize)) : task.props.progress || 1
     this.scheduleProgressUpdate(task)
   }
 
@@ -292,18 +605,33 @@ export class FilesUploadService {
     this.filesTasksService.updateTask(task, notifyCompletion)
   }
 
-  private sortFiles(files: FileUpload[]): Record<string, { nb: number; size: number; form: FormData }> {
-    /* Separate files in root directory and directories */
-    const sort: Record<string, { nb: number; size: number; form: FormData }> = {}
-    for (const f of files) {
-      const relPath = f.relativePath || f.webkitRelativePath
-      const key = (relPath ? relPath.split('/')[0] : f.name).normalize()
-      if (!(key in sort)) sort[key] = { nb: 0, size: 0, form: new FormData() }
-      sort[key].form.append('file', f, (relPath || f.name).normalize())
-      sort[key].nb++
-      sort[key].size += f.size
+  private getUploadDestination(file: FileUpload, currentRoute: string): string {
+    const relativePath = (file.relativePath || file.webkitRelativePath || file.name).replace(/^\/+/, '').normalize()
+    return encodeUrl(`${currentRoute.replace(/\/$/, '')}/${relativePath}`)
+  }
+
+  private groupFiles(files: FileUpload[], maxBatchSize: number | null): Map<string, FileUploadGroup> {
+    const groups = new Map<string, FileUploadGroup>()
+    for (const file of files) {
+      const relativePath = file.relativePath || file.webkitRelativePath
+      const key = (relativePath ? relativePath.split('/')[0] : file.name).normalize()
+      const group = groups.get(key) ?? { multipartBatches: [], sessionFiles: [], size: 0 }
+      if (maxBatchSize !== null && file.size > maxBatchSize) {
+        group.sessionFiles.push(file)
+      } else {
+        let batch: FileUploadMultipartBatch | undefined = group.multipartBatches.at(-1)
+        if (!batch || batch.fileCount === FILE_UPLOAD_MULTIPART_MAX_FILES || (maxBatchSize !== null && batch.size + file.size > maxBatchSize)) {
+          batch = { fileCount: 0, form: new FormData(), size: 0 }
+          group.multipartBatches.push(batch)
+        }
+        batch.form.append('file', file, (relativePath || file.name).normalize())
+        batch.fileCount++
+        batch.size += file.size
+      }
+      group.size += file.size
+      groups.set(key, group)
     }
-    return sort
+    return groups
   }
 
   private webkitReadDataTransfer(ev: any, exist: FileModel[]) {

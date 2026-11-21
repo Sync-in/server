@@ -4,6 +4,7 @@ import { z } from 'zod'
 import type { AUTH_SESSION } from '../../../authentication/providers/auth-providers.constants.js'
 import { popFromObject } from '../../../common/shared.js'
 import { configuration } from '../../../configuration/config.environment.js'
+import { TEMPORARY_PATH } from '../../files/core/constants/files.js'
 import { isPathInside } from '../../files/core/utils/files.js'
 import { SPACE_REPOSITORY } from '../../spaces/constants/spaces.js'
 import { GUEST_PERMISSION, USER_PERMISSION, USER_PERMS_SEP, USER_ROLE, USER_TMP_DIRECTORY } from '../constants/user.js'
@@ -209,6 +210,20 @@ export class UserModel implements Omit<User, 'password' | 'permissions'> {
 
   static getTmpPath(userLogin: string): string {
     return path.join(UserModel.getHomePath(userLogin), USER_TMP_DIRECTORY)
+  }
+
+  static getUsersTmpPath(userLogin: string): string {
+    return path.join(UserModel.getTmpPath(userLogin), TEMPORARY_PATH.ACTORS)
+  }
+
+  static getUserTmpPath(userLogin: string, userId: number): string {
+    validateUserId(userId)
+    const usersTmpPath = UserModel.getUsersTmpPath(userLogin)
+    const userTmpPath = path.resolve(usersTmpPath, String(userId))
+    if (!isPathInside(usersTmpPath, userTmpPath)) {
+      throw new Error('User id resolves outside user temporary directory')
+    }
+    return userTmpPath
   }
 
   static getLinkHomePath(userId: number): string {

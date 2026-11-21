@@ -25,12 +25,14 @@ import { FilesQuotaManager } from './quota/services/files-quota-manager.service.
 import { FilesTrashRetention } from './trash/services/files-trash-retention.service.js'
 import { FilesFavoritesManager } from './favorites/services/files-favorites-manager.service.js'
 import { FilesFavoritesQueries } from './favorites/services/files-favorites-queries.service.js'
+import { FilesUploadSessionManager } from './operations/services/files-upload-session-manager.service.js'
 
 @Module({
   imports: [FileEditorsModule.register()],
   controllers: [FilesOperationsController, FilesTasksController, FilesFavoritesController, FilesRecentsController, FilesSearchController],
   providers: [
     FilesMethods,
+    FilesUploadSessionManager,
     FilesManager,
     FilesQueries,
     FilesLockManager,
@@ -50,6 +52,6 @@ import { FilesFavoritesQueries } from './favorites/services/files-favorites-quer
     FilesFavoritesQueries,
     FilesFavoritesManager
   ],
-  exports: [FilesManager, FilesQueries, FilesLockManager, FilesQuotaManager, FilesMethods, FilesRecents]
+  exports: [FilesManager, FilesQueries, FilesLockManager, FilesQuotaManager, FilesMethods, FilesRecents, FilesUploadSessionManager]
 })
 export class FilesModule {}

@@ -8,6 +8,7 @@ import { FastifyInstance, FastifyRequest } from 'fastify'
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino'
 import { CONTENT_SECURITY_POLICY } from './app.constants.js'
 import { AppModule } from './app.module.js'
+import { FILE_UPLOAD_MULTIPART_MAX_FILES, FILE_UPLOAD_MULTIPART_MAX_PARTS } from './applications/files/core/constants/files.js'
 import { bootstrapWebDAV } from './applications/webdav/utils/bootstrap.js'
 import { IS_TEST_ENV, STATIC_PATH } from './configuration/config.constants.js'
 import { configuration } from './configuration/config.environment.js'
@@ -85,7 +86,11 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
   /* UPLOAD */
   await app.register(multipart, {
     preservePath: true,
-    limits: { parts: Infinity, fileSize: configuration.applications.files.maxUploadSize }
+    limits: {
+      files: FILE_UPLOAD_MULTIPART_MAX_FILES,
+      parts: FILE_UPLOAD_MULTIPART_MAX_PARTS,
+      fileSize: configuration.applications.files.transfers.maxUploadSize
+    }
   })
 
   /* WEBSOCKET */

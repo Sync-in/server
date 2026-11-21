@@ -6,6 +6,14 @@ export function maxFileSizeExceededError(): FileError {
   return new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR.MAX_FILE_SIZE_EXCEEDED)
 }
 
+export function maxMultipartPartsExceededError(): FileError {
+  return new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR.MAX_MULTIPART_PARTS_EXCEEDED)
+}
+
+export function maxMultipartSizeExceededError(): FileError {
+  return new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR.MAX_MULTIPART_SIZE_EXCEEDED)
+}
+
 export function storageQuotaExceededError(): FileError {
   return new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED)
 }

@@ -51,7 +51,7 @@ import { createUploadStreamLimiter, parseContentLength } from '../../core/utils/
 @Injectable()
 export class CollaboraOnlineManager {
   private logger = new Logger(CollaboraOnlineManager.name)
-  private readonly maxUploadSize = configuration.applications.files.maxUploadSize
+  private readonly maxUploadSize = configuration.applications.files.transfers.maxUploadSize
   private readonly externalCollaboraOnlineServer = configuration.applications.files.editors.collabora.externalServer || null
   private readonly expiration = convertHumanTimeToSeconds(configuration.auth.token.refresh.expiration)
 

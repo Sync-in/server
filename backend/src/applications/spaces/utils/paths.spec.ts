@@ -19,8 +19,8 @@ describe('temporary path resolution', () => {
   const user = new UserModel({ id: 42, login: 'alice', role: USER_ROLE.USER } as any)
   const emptyTrashDbScope = { ownerId: null, spaceId: null, spaceExternalRootId: null, shareExternalId: null, inTrash: true }
 
-  it('places personal-space artifacts in the personal storage root', () => {
-    expect(temporaryRootFromSpace(user, { inPersonalSpace: true } as any)).toBe('/data/users/alice/.sync-in-tmp/users/42')
+  it('uses the existing personal home temporary root', () => {
+    expect(temporaryRootFromSpace(user, { inPersonalSpace: true } as any)).toBe('/data/users/alice/tmp')
   })
 
   it('places native-space artifacts in the managed space temporary root', () => {
@@ -34,7 +34,7 @@ describe('temporary path resolution', () => {
   it('places anchored personal-space artifacts in the owner storage root', () => {
     const space = { root: { file: { path: 'documents' }, owner: { login: 'bob' } } } as any
 
-    expect(temporaryRootFromSpace(user, space)).toBe('/data/users/bob/.sync-in-tmp/users/42')
+    expect(temporaryRootFromSpace(user, space)).toBe('/data/users/bob/tmp/users/42')
   })
 
   it('places native and external share artifacts with their physical storage', () => {
@@ -62,7 +62,7 @@ describe('temporary path resolution', () => {
       dbScope: { ...emptyTrashDbScope, ownerId: 42 },
       mode: 'trash',
       path: '/data/users/alice/trash',
-      temporaryRoot: '/data/users/alice/.sync-in-tmp/users/42'
+      temporaryRoot: '/data/users/alice/tmp'
     })
     expect(trashTargetFromSpace(user, { id: 1, alias: 'project' } as any)).toEqual({
       dbScope: { ...emptyTrashDbScope, spaceId: 1 },
@@ -112,7 +112,7 @@ describe('temporary path resolution', () => {
       dbScope: { ...emptyTrashDbScope, ownerId: 7 },
       mode: 'trash',
       path: '/data/users/bob/trash',
-      temporaryRoot: '/data/users/bob/.sync-in-tmp/users/42'
+      temporaryRoot: '/data/users/bob/tmp/users/42'
     })
     expect(trashTargetFromSpace(user, {} as any)).toBeNull()
   })
@@ -148,5 +148,6 @@ describe('temporary path resolution', () => {
 
   it('rejects invalid actor identifiers', () => {
     expect(() => temporaryRootFromStorage(path.join('/mnt', 'archive'), 0)).toThrow('Invalid temporary-file owner')
+    expect(() => UserModel.getUserTmpPath('alice', 0)).toThrow('User id must be a positive safe integer')
   })
 })
