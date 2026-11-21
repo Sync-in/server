@@ -40,14 +40,15 @@ occupies the wildcard part of the route and the client generates a UUID v4 for `
 | Operation | Method and relative route | Result |
 | --- | --- | --- |
 | Create and first chunk | `POST upload-session/:uploadId/<destination>` | Creates a new-file session and writes the body |
-| Overwrite and first chunk | `PUT upload-session/:uploadId/<destination>` | Creates an overwrite session and writes the body |
+| Create or overwrite and first chunk | `PUT upload-session/:uploadId/<destination>` | Creates a modify-mode session and writes the body |
 | Following chunk | `PATCH upload-session/:uploadId/<destination>` | Appends at the declared offset |
 | Status and recovery | `HEAD upload-session/:uploadId/<destination>` | Returns the authoritative state |
 | Cancel | `DELETE upload-session/:uploadId/<destination>` | Removes an active session |
 
 A file split into `N` chunks produces `N` data requests. `HEAD` reconciles an ambiguous response, and `DELETE` cancels a session.
 
-`POST` creates a new destination and `PUT` overwrites an existing destination. The client-generated UUID makes the first request recoverable.
+`POST` selects creation-only mode and requires `ADD`; publication fails if the destination exists. `PUT` selects overwrite mode, requires `MODIFY`,
+and may create or replace the destination. The client-generated UUID makes the first request recoverable.
 
 ## Chunk contract
 
@@ -131,15 +132,15 @@ attempt ends on `404`; the published destination remains the source of truth.
 
 New sessions enforce `maxUploadSize`, the current chunk-size limit, destination containment, symlink rules, create/overwrite semantics, and the full
 declared size against the current quota snapshot. Every non-empty chunk rechecks quota before writing. Publication rechecks the destination path,
-permissions, trash restrictions, and destination lock before moving the file.
+the method-level permission (`ADD` for `POST`, `MODIFY` for `PUT`), trash restrictions, and destination lock before moving the file.
 
 Staged bytes live on the target storage and are included by quota scans. Quota is not reserved atomically across concurrent uploads.
 
 ## Web client behavior
 
 The web client snapshots `maxChunkSize` when it builds an upload batch. It groups files by top-level destination and splits multipart files into batches
-of at most 1,000 files and `maxChunkSize` payload bytes. The first batch for a new destination uses `POST`; following batches use `PUT`. Larger files use
-upload sessions:
+of at most 1,000 files and `maxChunkSize` payload bytes. Every batch uses `POST` for creation-only uploads or `PUT` when overwrite was selected. Larger
+files use upload sessions:
 
 1. Generate one UUID and one encoded destination URL.
 2. Send the first slice with `POST` or `PUT` and `Upload-Offset: 0`.

@@ -271,6 +271,17 @@ describe('upload stream writers', () => {
     expect(onProgress).not.toHaveBeenCalled()
   })
 
+  it('does not overwrite an existing file in exclusive mode', async () => {
+    const filePath = path.join(tmpDir, 'file.txt')
+    const limiter = new UploadStreamLimiter(1024).createFileLimiter()
+    await writeFile(filePath, 'existing')
+
+    await expect(writeUploadFromStream(filePath, Readable.from(['replacement']), { exclusive: true, limiter })).rejects.toMatchObject({
+      code: 'EEXIST'
+    })
+    await expect(readFile(filePath, 'utf8')).resolves.toBe('existing')
+  })
+
   it('enforces the limiter in checksum mode', async () => {
     const filePath = path.join(tmpDir, 'file.txt')
     const limiter = new UploadStreamLimiter(3).createFileLimiter()

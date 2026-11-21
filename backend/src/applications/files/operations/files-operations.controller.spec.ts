@@ -1,7 +1,10 @@
+import { Reflector } from '@nestjs/core'
 import { Test, TestingModule } from '@nestjs/testing'
 import type { FastifyReply } from 'fastify'
 import crypto from 'node:crypto'
 import { Readable } from 'node:stream'
+import { SPACE_OPERATION } from '../../spaces/constants/spaces.js'
+import { OverrideSpacePermission } from '../../spaces/decorators/space-override-permission.decorator.js'
 import { SpaceGuard } from '../../spaces/guards/space.guard.js'
 import type { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface.js'
 import { FILE_OPERATION } from '../core/constants/operations.js'
@@ -61,6 +64,13 @@ describe(FilesOperationsController.name, () => {
 
   it('should be defined', () => {
     expect(filesOperationsController).toBeDefined()
+  })
+
+  it('should require modify permission for PUT uploads', () => {
+    const reflector = new Reflector()
+
+    expect(reflector.get(OverrideSpacePermission, FilesOperationsController.prototype.uploadOverwrite)).toBe(SPACE_OPERATION.MODIFY)
+    expect(reflector.get(OverrideSpacePermission, FilesOperationsController.prototype.overwriteUploadSession)).toBe(SPACE_OPERATION.MODIFY)
   })
 
   describe('Operations', () => {

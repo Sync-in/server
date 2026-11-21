@@ -24,6 +24,8 @@ import {
 } from '@nestjs/common'
 import { type FastifyReply } from 'fastify'
 import { HTTP_METHOD } from '../../applications.constants.js'
+import { SPACE_OPERATION } from '../../spaces/constants/spaces.js'
+import { OverrideSpacePermission } from '../../spaces/decorators/space-override-permission.decorator.js'
 import { SkipSpacePermissionsCheck } from '../../spaces/decorators/space-skip-permissions.decorator.js'
 import { GetSpace } from '../../spaces/decorators/space.decorator.js'
 import { SpaceGuard } from '../../spaces/guards/space.guard.js'
@@ -86,6 +88,7 @@ export class FilesOperationsController {
   }
 
   @Put(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
+  @OverrideSpacePermission(SPACE_OPERATION.MODIFY)
   async uploadOverwrite(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<void> {
     return this.filesMethods.upload(req, res)
   }
@@ -168,6 +171,7 @@ export class FilesOperationsController {
   }
 
   @Put(`${FILES_ROUTE.OPERATION}/${FILES_ROUTE.UPLOAD_SESSION}/:uploadId/*`)
+  @OverrideSpacePermission(SPACE_OPERATION.MODIFY)
   @HttpCode(HttpStatus.CREATED)
   @Header('Cache-Control', 'no-store')
   overwriteUploadSession(

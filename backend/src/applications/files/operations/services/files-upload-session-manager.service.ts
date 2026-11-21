@@ -341,7 +341,7 @@ export class FilesUploadSessionManager {
     return this.withPublicationLock(user, space, this.publish.name, async () => {
       await this.assertDestinationFilesystem(space, context.manifest.method === HTTP_METHOD.PUT)
       const destinationStats = await this.lstatIfExists(space.realPath)
-      this.assertCompletionPermission(space, context.manifest.method, Boolean(destinationStats && !destinationStats.isDirectory()))
+      this.assertCompletionPermission(space, context.manifest.method)
       if (context.manifest.method === HTTP_METHOD.POST && destinationStats) {
         throw new HttpException('Resource already exists', HttpStatus.METHOD_NOT_ALLOWED)
       }
@@ -576,8 +576,8 @@ export class FilesUploadSessionManager {
     }
   }
 
-  private assertCompletionPermission(space: SpaceEnv, method: FileUploadSessionMethod, destinationIsFile: boolean): void {
-    const permission = method === HTTP_METHOD.PUT && destinationIsFile ? SPACE_OPERATION.MODIFY : SPACE_OPERATION.ADD
+  private assertCompletionPermission(space: SpaceEnv, method: FileUploadSessionMethod): void {
+    const permission = method === HTTP_METHOD.PUT ? SPACE_OPERATION.MODIFY : SPACE_OPERATION.ADD
     if (!haveSpaceEnvPermissions(space, permission)) throw new HttpException('You are not allowed to complete this upload', HttpStatus.FORBIDDEN)
     if (space.inTrashRepository) throw new HttpException('The trash is read-only', HttpStatus.FORBIDDEN)
   }

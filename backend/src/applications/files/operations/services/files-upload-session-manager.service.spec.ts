@@ -7,6 +7,7 @@ import path from 'node:path'
 import { Readable } from 'node:stream'
 import { configuration } from '../../../../configuration/config.environment.js'
 import { HTTP_METHOD } from '../../../applications.constants.js'
+import { SPACE_OPERATION } from '../../../spaces/constants/spaces.js'
 import type { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface.js'
 import type { SpaceEnv } from '../../../spaces/models/space-env.model.js'
 import { temporaryRootFromSpace } from '../../../spaces/utils/paths.js'
@@ -130,6 +131,18 @@ describe(FilesUploadSessionManager.name, () => {
     await createUpload(3, 'a', HTTP_METHOD.PUT)
 
     expect(space.willExceedQuota).toHaveBeenCalledWith(3)
+  })
+
+  it('requires modify permission to publish a PUT even when the destination is absent', async () => {
+    space.envPermissions = SPACE_OPERATION.ADD
+
+    await expect(createUpload(1, 'a', HTTP_METHOD.PUT)).rejects.toMatchObject({ status: HttpStatus.FORBIDDEN })
+    await expect(fs.stat(space.realPath)).rejects.toMatchObject({ code: 'ENOENT' })
+
+    space.envPermissions = SPACE_OPERATION.MODIFY
+
+    await expect(createUpload(1, 'a', HTTP_METHOD.PUT)).resolves.toMatchObject({ status: { state: FILE_UPLOAD_SESSION_STATE.COMPLETE } })
+    await expect(fs.readFile(space.realPath, 'utf8')).resolves.toBe('a')
   })
 
   it('rechecks quota on every chunk', async () => {

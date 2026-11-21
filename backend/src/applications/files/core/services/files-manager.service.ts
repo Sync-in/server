@@ -260,10 +260,8 @@ export class FilesManager {
       configuration.applications.files.transfers.maxChunkSize ?? undefined
     )
 
-    // For POST, space.realPath can be either the final file path or the root directory for a folder upload.
-    if (postMethod && (await isPathExists(space.realPath))) {
-      throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
-    }
+    // A POST may continue a directory upload whose root was created by an earlier batch.
+    // Creation-only semantics are enforced on every resolved multipart destination below.
     if (!overwrite) {
       if (!(await isPathExists(realParentPath))) {
         throw new FileError(HttpStatus.BAD_REQUEST, 'Parent must exists')
@@ -333,7 +331,7 @@ export class FilesManager {
         // Do
         try {
           const fileLimiter = uploadLimiter.createFileLimiter()
-          await writeUploadFromStream(writePath, part.file, { limiter: fileLimiter })
+          await writeUploadFromStream(writePath, part.file, { exclusive: postMethod, limiter: fileLimiter })
           // With throwFileSizeLimit disabled, multipart marks the file stream as truncated instead of rejecting.
           if (part.file.truncated) {
             throw maxFileSizeExceededError()
@@ -353,6 +351,10 @@ export class FilesManager {
           }
           fileWritten = true
         } catch (e) {
+          // Atomic exclusive creation closes the race between the POST existence check and opening the destination.
+          if (postMethod && (e as NodeJS.ErrnoException)?.code === 'EEXIST') {
+            throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
+          }
           // Failed temporary uploads are discarded without touching the existing destination.
           if (tmpFile) {
             await removeFiles(tmpFile)

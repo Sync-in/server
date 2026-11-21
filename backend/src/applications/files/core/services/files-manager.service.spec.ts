@@ -451,23 +451,33 @@ describe(FilesManager.name, () => {
   })
 
   describe('saveMultipart', () => {
-    it('should reject POST when target root already exists before reading multipart parts', async () => {
-      const space = makeSpace()
-      setPathExists({ [space.realPath]: true }, false)
+    it('should allow POST into an existing multipart root when the resolved destination is new', async () => {
+      const space = makeSpace({
+        url: 'files/personal/folder',
+        realPath: '/data/users/john/files/folder',
+        dbFile: { ownerId: 7, path: 'folder', inTrash: false }
+      })
+      const parentPath = path.dirname(space.realPath)
+      const destination = path.join(space.realPath, 'new.txt')
+      const file = Readable.from(['content'])
+      setPathExists({ [parentPath]: true, [space.realPath]: true, [destination]: false }, false)
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === parentPath || p === space.realPath)
 
       const req = {
         method: 'POST',
         files: vi.fn().mockImplementation(async function* () {
-          yield { filename: path.basename(space.realPath), file: Readable.from(['content']) }
+          yield { filename: 'folder/new.txt', file }
         })
       }
 
-      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(
-        new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
-      )
+      await service.saveMultipart(user, space, req as any)
 
-      expect(req.files).not.toHaveBeenCalled()
-      expectNoWriteOperations()
+      expect(req.files).toHaveBeenCalled()
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
+        destination,
+        file,
+        expect.objectContaining({ exclusive: true, limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+      )
     })
 
     it.each([
@@ -672,10 +682,9 @@ describe(FilesManager.name, () => {
     it('should reject POST when resolved multipart destination already exists', async () => {
       const space = makeSpace()
       const parentPath = path.dirname(space.realPath)
-      let destinationChecks = 0
       const emitSpy = vi.spyOn(FileEvent, 'emit')
       vi.mocked(filesUtils.isPathExists).mockImplementation(async (p: string) => {
-        if (p === space.realPath) return ++destinationChecks > 1
+        if (p === space.realPath) return true
         return p === parentPath
       })
       vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === parentPath)
@@ -696,6 +705,29 @@ describe(FilesManager.name, () => {
       expect(filesUtils.removeFiles).not.toHaveBeenCalled()
       expect(filesLockManager.createOrRefresh).not.toHaveBeenCalled()
       expect(emitSpy).not.toHaveBeenCalled()
+    })
+
+    it('should not overwrite or remove a destination created concurrently with multipart POST', async () => {
+      const space = makeSpace()
+      const parentPath = path.dirname(space.realPath)
+      const concurrentCreationError = Object.assign(new Error('Destination exists'), { code: 'EEXIST' })
+      setPathExists({ [space.realPath]: false, [parentPath]: true }, false)
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === parentPath)
+      vi.mocked(filesUtils.writeUploadFromStream).mockRejectedValueOnce(concurrentCreationError)
+
+      const req = {
+        method: 'POST',
+        files: async function* () {
+          yield { filename: path.basename(space.realPath), file: Readable.from(['content']) }
+        }
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(
+        new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
+      )
+
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(space.realPath, expect.anything(), expect.objectContaining({ exclusive: true }))
+      expect(filesUtils.removeFiles).not.toHaveBeenCalledWith(space.realPath)
     })
 
     it('should reject multipart path traversal before checking destination path', async () => {

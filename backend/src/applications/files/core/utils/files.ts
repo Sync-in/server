@@ -377,8 +377,12 @@ export function createProgressTransform(
 }
 
 export function writeFromStream(rPath: string, stream: Readable, options: WriteFromStreamOptions = {}): Promise<void> {
-  const { start = 0, signal, accountBytes } = options
-  const dst: WriteStream = createWriteStream(rPath, { flags: start ? 'a' : 'w', start: start, highWaterMark: DEFAULT_HIGH_WATER_MARK })
+  const { exclusive = false, start = 0, signal, accountBytes } = options
+  const dst: WriteStream = createWriteStream(rPath, {
+    flags: start ? 'a' : exclusive ? 'wx' : 'w',
+    start: start,
+    highWaterMark: DEFAULT_HIGH_WATER_MARK
+  })
   if (!accountBytes) {
     return pipeline(stream, dst, { signal })
   }
@@ -402,14 +406,14 @@ export async function writeFromStreamAndChecksum(
   alg: string,
   options: WriteFromStreamOptions = {}
 ): Promise<string> {
-  const { start = 0, signal, accountBytes } = options
+  const { exclusive = false, start = 0, signal, accountBytes } = options
   const hash = crypto.createHash(alg)
   if (start) {
     // Seed the hash with the existing prefix so the result covers the complete resumed file.
     const src = createReadStream(rPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })
     await pipeline(src, hash, { end: false, signal })
   }
-  const dst = createWriteStream(rPath, { flags: start ? 'a' : 'w', highWaterMark: DEFAULT_HIGH_WATER_MARK })
+  const dst = createWriteStream(rPath, { flags: start ? 'a' : exclusive ? 'wx' : 'w', highWaterMark: DEFAULT_HIGH_WATER_MARK })
   await pipeline(
     stream,
     async function* (source) {
@@ -426,8 +430,9 @@ export async function writeFromStreamAndChecksum(
   return hash.digest('hex')
 }
 
-function uploadWriteOptions({ limiter, signal, onProgress }: WriteUploadStreamOptions): WriteFromStreamOptions {
+function uploadWriteOptions({ exclusive, limiter, signal, onProgress }: WriteUploadStreamOptions): WriteFromStreamOptions {
   return {
+    exclusive,
     start: limiter.initialFileSize,
     signal,
     accountBytes: (bytes) => {

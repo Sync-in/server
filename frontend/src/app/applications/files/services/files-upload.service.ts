@@ -71,12 +71,12 @@ export class FilesUploadService {
             !data.multipartBatches.length &&
             data.sessionFiles.some((file) => Boolean(file.relativePath || file.webkitRelativePath))
           ) {
-            // Multipart POST rejects an existing top-level directory. Preserve that behavior when a directory contains only large files.
+            // File sessions target individual files, so create the top-level directory before uploading a directory containing only large files.
             await this.runHttpRequest(this.filesService.make('directory', key, currentRoute, true), signal)
           }
-          for (const [batchIndex, batch] of data.multipartBatches.entries()) {
+          for (const batch of data.multipartBatches) {
             await this.runHttpRequest(
-              this.uploadFiles(`${apiRoute}/${key}`, batch.form, overwrite || batchIndex > 0 ? 'put' : 'post'),
+              this.uploadFiles(`${apiRoute}/${key}`, batch.form, overwrite ? 'put' : 'post'),
               signal,
               (event: HttpEvent<unknown>) => {
                 if (event.type === HttpEventType.UploadProgress) {
