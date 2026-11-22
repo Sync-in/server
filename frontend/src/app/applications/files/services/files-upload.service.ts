@@ -240,7 +240,7 @@ export class FilesUploadService {
         }
       }
     } catch (error) {
-      if (signal.aborted) await this.cleanupUploadSession(uploadId, destination)
+      await this.cleanupUploadSession(uploadId, destination)
       throw error
     }
   }
