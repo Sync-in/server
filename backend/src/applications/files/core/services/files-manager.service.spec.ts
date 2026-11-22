@@ -622,7 +622,7 @@ describe(FilesManager.name, () => {
         false
       )
       vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
-      filesLockManager.createOrRefresh.mockResolvedValueOnce([true, { key: 'lock-created' }])
+      filesLockManager.create.mockResolvedValueOnce([true, { key: 'lock-created' }])
 
       const req = {
         method: 'POST',
@@ -705,6 +705,26 @@ describe(FilesManager.name, () => {
       expect(filesUtils.removeFiles).not.toHaveBeenCalled()
       expect(filesLockManager.createOrRefresh).not.toHaveBeenCalled()
       expect(emitSpy).not.toHaveBeenCalled()
+    })
+
+    it('should reject multipart publication when the exclusive destination lock is already held', async () => {
+      const space = makeSpace()
+      const parentPath = path.dirname(space.realPath)
+      filesLockManager.create.mockResolvedValueOnce([false, { key: 'existing-lock', owner: { id: user.id } }])
+      setPathExists({ [space.realPath]: false, [parentPath]: true }, false)
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === parentPath)
+
+      const req = {
+        method: 'POST',
+        files: async function* () {
+          yield { filename: path.basename(space.realPath), file: Readable.from(['content']) }
+        }
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toBeInstanceOf(LockConflict)
+
+      expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
+      expect(filesLockManager.removeLock).not.toHaveBeenCalled()
     })
 
     it('should not overwrite or remove a destination created concurrently with multipart POST', async () => {

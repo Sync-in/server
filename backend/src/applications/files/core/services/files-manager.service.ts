@@ -285,100 +285,122 @@ export class FilesManager {
         if (isInternalTemporaryPath(space.realBasePath, dstFile)) {
           throw new FileError(HttpStatus.FORBIDDEN, 'Internal temporary locations are not accessible')
         }
-        const dstExists = await isPathExists(dstFile)
-        const dstIsDir = dstExists ? await isPathIsDir(dstFile) : false
-        if (postMethod && dstExists) {
-          throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
-        }
-        if (patchMethod && !dstExists) {
-          throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
-        }
-        // PUT/PATCH write outside the destination first, so a failed upload does not corrupt an existing file.
-        const tmpFile = temporaryRoot ? uploadTmpFilePath(temporaryRoot, partFileName) : undefined
-        const writePath = tmpFile || dstFile
-
-        const dstDir = dirName(dstFile)
-        // For overwrite conflicts, defer destructive deletes until the upload stream is fully validated.
-        let dstSpaceToDeleteBeforeMove: SpaceEnv | null | undefined
-        let dstParentSpaceToDeleteBeforeMove: SpaceEnv | null | undefined
-
-        if (overwrite) {
-          // Prevent errors when an uploaded file would replace a directory with the same name
-          // Only applies in `overwrite` cases
-          if (dstExists && dstIsDir) {
-            // If a directory already exists at the destination path, delete it to allow overwriting with the uploaded file
-            const dstUrl = path.join(path.dirname(space.url), partFileName)
-            dstSpaceToDeleteBeforeMove = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
-          } else if ((await isPathExists(dstDir)) && !(await isPathIsDir(dstDir))) {
-            // If the destination's parent exists but is a file, remove it so we can create the directory
-            const dstUrl = path.join(path.dirname(space.url), path.dirname(partFileName))
-            dstParentSpaceToDeleteBeforeMove = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
-          }
-        }
-        if (tmpFile) {
-          await makeDir(dirName(tmpFile), true)
-        } else if (!(await isPathExists(dstDir))) {
-          await makeDir(dstDir, true)
-        }
-
-        // Create or refresh lock
         const dbFile = { ...space.dbFile, path: path.join(dirName(space.dbFile.path), partFileName) }
-        // Use a short TTL for the PATCH method (which is also used for refreshing)
-        const ttl = patchMethod ? CACHE_LOCK_FILE_TTL : undefined
-        const [created, fileLock] = await this.filesLockManager.createOrRefresh(user, dbFile, SERVER_NAME, DEPTH.RESOURCE, ttl)
+        let created = false
+        let fileLock: FileLock | undefined
+        if (!patchMethod) {
+          const exclusiveLock = await this.filesLockManager.create(user, dbFile, SERVER_NAME, DEPTH.RESOURCE)
+          if (!exclusiveLock[0]) throw new LockConflict(exclusiveLock[1], 'Conflicting lock')
+          created = exclusiveLock[0]
+          fileLock = exclusiveLock[1]
+        }
 
-        let fileWritten = false
-        // Do
         try {
-          const fileLimiter = uploadLimiter.createFileLimiter()
-          await writeUploadFromStream(writePath, part.file, { exclusive: postMethod, limiter: fileLimiter })
-          // With throwFileSizeLimit disabled, multipart marks the file stream as truncated instead of rejecting.
-          if (part.file.truncated) {
-            throw maxFileSizeExceededError()
+          // Filesystem state read before the exclusive lock may already be stale.
+          if (!overwrite) {
+            if (!(await isPathExists(realParentPath))) {
+              throw new FileError(HttpStatus.BAD_REQUEST, 'Parent must exists')
+            }
+            if (!(await isPathIsDir(realParentPath))) {
+              throw new FileError(HttpStatus.BAD_REQUEST, 'Parent must be a directory')
+            }
           }
-          if (tmpFile) {
-            // If the following move fails after these deletes, the previous resources remain recoverable from the trash.
-            if (dstSpaceToDeleteBeforeMove) {
-              await this.delete(user, dstSpaceToDeleteBeforeMove)
-            }
-            if (dstParentSpaceToDeleteBeforeMove) {
-              await this.delete(user, dstParentSpaceToDeleteBeforeMove)
-            }
-            if (!(await isPathExists(dstDir))) {
-              await makeDir(dstDir, true)
-            }
-            await moveFiles(tmpFile, dstFile, true)
-          }
-          fileWritten = true
-        } catch (e) {
-          // Atomic exclusive creation closes the race between the POST existence check and opening the destination.
-          if (postMethod && (e as NodeJS.ErrnoException)?.code === 'EEXIST') {
+
+          const dstExists = await isPathExists(dstFile)
+          const dstIsDir = dstExists ? await isPathIsDir(dstFile) : false
+          if (postMethod && dstExists) {
             throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
           }
-          // Failed temporary uploads are discarded without touching the existing destination.
+          if (patchMethod && !dstExists) {
+            throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
+          }
+          // PUT/PATCH write outside the destination first, so a failed upload does not corrupt an existing file.
+          const tmpFile = temporaryRoot ? uploadTmpFilePath(temporaryRoot, partFileName) : undefined
+          const writePath = tmpFile || dstFile
+
+          const dstDir = dirName(dstFile)
+          // For overwrite conflicts, defer destructive deletes until the upload stream is fully validated.
+          let dstSpaceToDeleteBeforeMove: SpaceEnv | null | undefined
+          let dstParentSpaceToDeleteBeforeMove: SpaceEnv | null | undefined
+
+          if (overwrite) {
+            // Prevent errors when an uploaded file would replace a directory with the same name
+            // Only applies in `overwrite` cases
+            if (dstExists && dstIsDir) {
+              // If a directory already exists at the destination path, delete it to allow overwriting with the uploaded file
+              const dstUrl = path.join(path.dirname(space.url), partFileName)
+              dstSpaceToDeleteBeforeMove = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
+            } else if ((await isPathExists(dstDir)) && !(await isPathIsDir(dstDir))) {
+              // If the destination's parent exists but is a file, remove it so we can create the directory
+              const dstUrl = path.join(path.dirname(space.url), path.dirname(partFileName))
+              dstParentSpaceToDeleteBeforeMove = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
+            }
+          }
           if (tmpFile) {
-            await removeFiles(tmpFile)
-          } else if (!dstExists) {
-            await removeFiles(dstFile)
+            await makeDir(dirName(tmpFile), true)
+          } else if (!(await isPathExists(dstDir))) {
+            await makeDir(dstDir, true)
           }
-          if (isMultipartFileTooLargeError(e)) {
-            throw maxFileSizeExceededError()
+
+          // PATCH keeps its persistent, owner-refreshable editor lock.
+          if (patchMethod) {
+            const persistentLock = await this.filesLockManager.createOrRefresh(user, dbFile, SERVER_NAME, DEPTH.RESOURCE, CACHE_LOCK_FILE_TTL)
+            created = persistentLock[0]
+            fileLock = persistentLock[1]
           }
-          throw e
+
+          let fileWritten = false
+          try {
+            const fileLimiter = uploadLimiter.createFileLimiter()
+            await writeUploadFromStream(writePath, part.file, { exclusive: postMethod, limiter: fileLimiter })
+            // With throwFileSizeLimit disabled, multipart marks the file stream as truncated instead of rejecting.
+            if (part.file.truncated) {
+              throw maxFileSizeExceededError()
+            }
+            if (tmpFile) {
+              // If the following move fails after these deletes, the previous resources remain recoverable from the trash.
+              if (dstSpaceToDeleteBeforeMove) {
+                await this.delete(user, dstSpaceToDeleteBeforeMove)
+              }
+              if (dstParentSpaceToDeleteBeforeMove) {
+                await this.delete(user, dstParentSpaceToDeleteBeforeMove)
+              }
+              if (!(await isPathExists(dstDir))) {
+                await makeDir(dstDir, true)
+              }
+              await moveFiles(tmpFile, dstFile, true)
+            }
+            fileWritten = true
+          } catch (e) {
+            // Atomic exclusive creation closes the race between the POST existence check and opening the destination.
+            if (postMethod && (e as NodeJS.ErrnoException)?.code === 'EEXIST') {
+              throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
+            }
+            // Failed temporary uploads are discarded without touching the existing destination.
+            if (tmpFile) {
+              await removeFiles(tmpFile)
+            } else if (!dstExists) {
+              await removeFiles(dstFile)
+            }
+            if (isMultipartFileTooLargeError(e)) {
+              throw maxFileSizeExceededError()
+            }
+            throw e
+          } finally {
+            if (fileWritten) {
+              // Emit only after the final destination has been written or moved into place.
+              const fileEventAction: ACTION = patchMethod || (dstExists && !dstIsDir) ? ACTION.UPDATE : ACTION.ADD
+              FileEvent.emit('event', {
+                user,
+                space,
+                action: fileEventAction,
+                rPath: dstFile,
+                ...(patchMethod && { source: 'editor' as const })
+              })
+            }
+          }
         } finally {
-          if (fileWritten) {
-            // Emit only after the final destination has been written or moved into place.
-            const fileEventAction: ACTION = patchMethod || (dstExists && !dstIsDir) ? ACTION.UPDATE : ACTION.ADD
-            FileEvent.emit('event', {
-              user,
-              space,
-              action: fileEventAction,
-              rPath: dstFile,
-              ...(patchMethod && { source: 'editor' as const })
-            })
-          }
-          if (!patchMethod && created) {
-            // Remove the file lock only if it has not been refreshed
+          if (!patchMethod && created && fileLock) {
             try {
               await this.filesLockManager.removeLock(dbFile, fileLock)
             } catch (error) {

@@ -24,7 +24,7 @@ describe('File upload sessions (e2e)', () => {
   const originalMaxChunkSize = configuration.applications.files.transfers.maxChunkSize
   const originalMaxUploadSize = configuration.applications.files.transfers.maxUploadSize
   const filesLockManager = {
-    createOrRefresh: vi.fn().mockResolvedValue([true, { key: 'upload-lock' }]),
+    create: vi.fn().mockResolvedValue([true, { key: 'upload-lock' }]),
     removeLock: vi.fn().mockResolvedValue(true)
   }
   const filesManager = {
@@ -82,7 +82,7 @@ describe('File upload sessions (e2e)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    filesLockManager.createOrRefresh.mockResolvedValue([true, { key: 'upload-lock' }])
+    filesLockManager.create.mockResolvedValue([true, { key: 'upload-lock' }])
     filesLockManager.removeLock.mockResolvedValue(true)
     filesManager.prepareUploadOverwriteDestination.mockResolvedValue(undefined)
   })
@@ -132,7 +132,7 @@ describe('File upload sessions (e2e)', () => {
     const completed = await app.inject({ method: 'HEAD', url: sessionUrl })
     expect(completed.statusCode).toBe(HttpStatus.NOT_FOUND)
     await expect(fs.readFile(space.realPath, 'utf8')).resolves.toBe('abcdef')
-    expect(filesLockManager.createOrRefresh).toHaveBeenCalledOnce()
+    expect(filesLockManager.create).toHaveBeenCalledOnce()
     expect(filesLockManager.removeLock).toHaveBeenCalledOnce()
   })
 

@@ -38,7 +38,7 @@ describe(FilesUploadSessionManager.name, () => {
   const originalMaxUploadSize = configuration.applications.files.transfers.maxUploadSize
   const user = { id: 42, login: 'alice' } as unknown as UserModel
   const filesLockManager = {
-    createOrRefresh: vi.fn(),
+    create: vi.fn(),
     removeLock: vi.fn()
   }
   const filesManager = {
@@ -55,7 +55,7 @@ describe(FilesUploadSessionManager.name, () => {
     configuration.applications.files.transfers.maxUploadSize = 100
     storageRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'sync-in-upload-session-'))
     space = makeSpace('destination.bin')
-    filesLockManager.createOrRefresh.mockResolvedValue([true, { key: 'upload-lock' }])
+    filesLockManager.create.mockResolvedValue([true, { key: 'upload-lock' }])
     filesLockManager.removeLock.mockResolvedValue(true)
     filesManager.prepareUploadOverwriteDestination.mockResolvedValue(undefined)
   })
@@ -188,6 +188,16 @@ describe(FilesUploadSessionManager.name, () => {
     await expect(manager.status(user, space, uploadId)).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
     await expect(appendUpload(uploadId, 6, 6, '')).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
     expect(emitSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects publication when the exclusive destination lock is already held', async () => {
+    const existingLock = { key: 'existing-lock' }
+    filesLockManager.create.mockResolvedValueOnce([false, existingLock])
+
+    await expect(createUpload(1, 'a')).rejects.toMatchObject({ status: HttpStatus.LOCKED })
+
+    await expect(fs.stat(space.realPath)).rejects.toMatchObject({ code: 'ENOENT' })
+    expect(filesLockManager.removeLock).not.toHaveBeenCalled()
   })
 
   it('publishes an empty file in its creation request', async () => {

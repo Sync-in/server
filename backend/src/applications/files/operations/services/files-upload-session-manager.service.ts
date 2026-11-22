@@ -337,7 +337,7 @@ export class FilesUploadSessionManager {
     }
   }
 
-  private async publish(user: UserModel, space: SpaceEnv, context: FileUploadSessionContext): Promise<number> {
+  private publish(user: UserModel, space: SpaceEnv, context: FileUploadSessionContext): Promise<number> {
     return this.withPublicationLock(user, space, this.publish.name, async () => {
       await this.assertDestinationFilesystem(space, context.manifest.method === HTTP_METHOD.PUT)
       const destinationStats = await this.lstatIfExists(space.realPath)
@@ -376,13 +376,12 @@ export class FilesUploadSessionManager {
   }
 
   private async withPublicationLock<T>(user: UserModel, space: SpaceEnv, tag: string, operation: () => Promise<T>): Promise<T> {
-    // A session lock protects one upload id; publication reuses the multipart destination lock to reject conflicting owners.
-    let created: boolean
+    // A session lock protects one upload id; publication requires a non-reentrant destination lock across upload ids.
     let fileLock: FileLock
     try {
-      const publicationLock = await this.filesLockManager.createOrRefresh(user, space.dbFile, SERVER_NAME, DEPTH.RESOURCE)
-      created = publicationLock[0]
-      fileLock = publicationLock[1]
+      const [created, lock] = await this.filesLockManager.create(user, space.dbFile, SERVER_NAME, DEPTH.RESOURCE)
+      if (!created) throw new LockConflict(lock, 'Conflicting lock')
+      fileLock = lock
     } catch (error) {
       if (error instanceof LockConflict) throw new HttpException('The file is locked', HttpStatus.LOCKED)
       throw error
@@ -393,11 +392,9 @@ export class FilesUploadSessionManager {
       if (error instanceof LockConflict) throw new HttpException('The file is locked', HttpStatus.LOCKED)
       throw error
     } finally {
-      if (created) {
-        await this.filesLockManager
-          .removeLock(space.dbFile, fileLock)
-          .catch((error) => this.logger.warn({ tag, msg: `Unable to release file lock: ${String(error)}` }))
-      }
+      await this.filesLockManager
+        .removeLock(space.dbFile, fileLock)
+        .catch((error) => this.logger.warn({ tag, msg: `Unable to release file lock: ${String(error)}` }))
     }
   }
 
