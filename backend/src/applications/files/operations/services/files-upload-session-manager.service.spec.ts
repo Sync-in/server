@@ -65,18 +65,14 @@ describe(FilesUploadSessionManager.name, () => {
     configuration.applications.files.transfers.maxUploadSize = originalMaxUploadSize
   })
 
-  it('rejects creation when chunking is disabled or the file exceeds the upload ceiling', async () => {
-    configuration.applications.files.transfers.maxChunkSize = null
-    await expect(createUpload(1, 'a')).rejects.toMatchObject({ status: HttpStatus.CONFLICT })
-
-    configuration.applications.files.transfers.maxChunkSize = 4
+  it('rejects creation when the file exceeds the upload ceiling', async () => {
     configuration.applications.files.transfers.maxUploadSize = 5
     await expect(createUpload(6, 'a')).rejects.toMatchObject({ status: HttpStatus.PAYLOAD_TOO_LARGE })
   })
 
-  it('continues an existing session after chunking is disabled', async () => {
-    const { uploadId } = await createUpload(6, 'ab')
+  it('creates and continues a session when client chunking is disabled', async () => {
     configuration.applications.files.transfers.maxChunkSize = null
+    const { uploadId } = await createUpload(6, 'ab')
 
     await expect(manager.status(user, space, uploadId)).resolves.toMatchObject({ offset: 2, state: FILE_UPLOAD_SESSION_STATE.UPLOADING })
     await expect(appendUpload(uploadId, 6, 2, 'cd')).resolves.toMatchObject({ offset: 4, state: FILE_UPLOAD_SESSION_STATE.UPLOADING })
@@ -231,9 +227,9 @@ describe(FilesUploadSessionManager.name, () => {
     await expect(manager.status(user, space, uploadId)).resolves.toMatchObject({ offset: 2 })
   })
 
-  it('rejects chunks larger than the session snapshot or remaining size', async () => {
-    const oversized = await createUpload(10, 'ab')
-    await expect(appendUpload(oversized.uploadId, 10, 2, '12345')).rejects.toMatchObject({ status: HttpStatus.PAYLOAD_TOO_LARGE })
+  it('accepts chunks above the advertised client size and rejects chunks above the remaining size', async () => {
+    const largerThanAdvertised = await createUpload(10, 'ab')
+    await expect(appendUpload(largerThanAdvertised.uploadId, 10, 2, '12345')).resolves.toMatchObject({ offset: 7 })
 
     const exceeding = await createUpload(5, 'ab')
     await expect(appendUpload(exceeding.uploadId, 5, 2, '1234')).rejects.toMatchObject({ status: HttpStatus.PAYLOAD_TOO_LARGE })

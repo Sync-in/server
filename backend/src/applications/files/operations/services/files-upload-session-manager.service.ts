@@ -120,10 +120,6 @@ export class FilesUploadSessionManager {
     const contentLength = this.parseContentLength(headers.contentLength)
     if (contentLength === 0 && size !== 0) throw new HttpException('First chunk body cannot be empty', HttpStatus.BAD_REQUEST)
     if (contentLength > size) throw new HttpException('Chunk exceeds the declared upload size', HttpStatus.PAYLOAD_TOO_LARGE)
-    const maxChunkSize = configuration.applications.files.transfers.maxChunkSize
-    if (maxChunkSize && contentLength > maxChunkSize) {
-      throw new HttpException('Maximum chunk size exceeded', HttpStatus.PAYLOAD_TOO_LARGE)
-    }
     const metadata = this.parseMetadataHeaders(metadataHeaders)
     await this.initialize(user, space, method, uploadId, { size, ...metadata })
     return this.append(user, space, uploadId, stream, headers)
@@ -153,9 +149,6 @@ export class FilesUploadSessionManager {
       if (contentLength === 0) {
         if (offset !== context.manifest.expectedSize) throw new HttpException('Chunk body cannot be empty', HttpStatus.BAD_REQUEST)
         return this.publishCompleted(user, space, context)
-      }
-      if (contentLength > context.manifest.chunkSize) {
-        throw new HttpException('Maximum chunk size exceeded', HttpStatus.PAYLOAD_TOO_LARGE)
       }
       if (contentLength > context.manifest.expectedSize - offset) {
         throw new HttpException('Chunk exceeds the declared upload size', HttpStatus.PAYLOAD_TOO_LARGE)
@@ -212,7 +205,6 @@ export class FilesUploadSessionManager {
     uploadId: string,
     options: FileUploadSessionCreate
   ): Promise<void> {
-    const maxChunkSize = configuration.applications.files.transfers.maxChunkSize
     if (!isUuidV4(uploadId)) throw new HttpException('Invalid upload identifier', HttpStatus.BAD_REQUEST)
     const temporaryRoot = temporaryRootFromSpace(user, space)
     const directory = this.sessionDirectory(temporaryRoot, uploadId)
@@ -226,7 +218,6 @@ export class FilesUploadSessionManager {
       return this.resumeCreate(space, method, options, directory)
     }
 
-    if (!maxChunkSize) throw new HttpException('Chunked uploads are disabled', HttpStatus.CONFLICT)
     if (options.size > configuration.applications.files.transfers.maxUploadSize) {
       throw new HttpException(FILE_ERROR.MAX_FILE_SIZE_EXCEEDED, HttpStatus.PAYLOAD_TOO_LARGE)
     }
@@ -253,11 +244,9 @@ export class FilesUploadSessionManager {
     const initializationDirectory = await fs.mkdtemp(`${directory}.init-`)
     try {
       const manifest: FileUploadSessionManifest = {
-        version: 1,
         destination: path.resolve(space.realPath),
         method,
         expectedSize: options.size,
-        chunkSize: maxChunkSize,
         ...(options.mtime !== undefined && { mtime: options.mtime }),
         ...(options.checksum && { checksum: options.checksum })
       }
@@ -629,13 +618,10 @@ export class FilesUploadSessionManager {
 
   private readonly isManifest = (value: unknown): value is FileUploadSessionManifest =>
     this.isRecord(value) &&
-    value.version === 1 &&
     typeof value.destination === 'string' &&
     (value.method === HTTP_METHOD.POST || value.method === HTTP_METHOD.PUT) &&
     Number.isSafeInteger(value.expectedSize) &&
     (value.expectedSize as number) >= 0 &&
-    Number.isSafeInteger(value.chunkSize) &&
-    (value.chunkSize as number) > 0 &&
     (value.mtime === undefined || (Number.isSafeInteger(value.mtime) && (value.mtime as number) >= 0)) &&
     (value.checksum === undefined ||
       (typeof value.checksum === 'string' && CHECKSUM_PATTERN.test(value.checksum) && value.checksum === value.checksum.toLowerCase()))

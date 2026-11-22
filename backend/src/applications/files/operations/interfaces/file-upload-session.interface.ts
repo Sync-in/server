@@ -25,12 +25,10 @@ export interface FileUploadSessionCreate extends FileUploadSessionMetadata {
 
 export interface FileUploadSessionManifest {
   checksum?: string
-  chunkSize: number
   destination: string
   expectedSize: number
   method: FileUploadSessionMethod
   mtime?: number
-  version: 1
 }
 
 export type FileUploadSessionState = (typeof FILE_UPLOAD_SESSION_STATE)[keyof typeof FILE_UPLOAD_SESSION_STATE]

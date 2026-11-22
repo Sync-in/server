@@ -23,7 +23,7 @@ describe('FilesConfigSchema', () => {
     expect(FilesConfigSchema.parse(paths).transfers.maxChunkSize).toBe(99_614_720)
   })
 
-  it.each([null, 0, '0 B'])('disables chunking when maxChunkSize is %s', (maxChunkSize) => {
+  it.each([null, 0, '0 B'])('advertises client chunking as disabled when maxChunkSize is %s', (maxChunkSize) => {
     expect(FilesConfigSchema.parse({ ...paths, transfers: { maxChunkSize } }).transfers.maxChunkSize).toBeNull()
   })
 

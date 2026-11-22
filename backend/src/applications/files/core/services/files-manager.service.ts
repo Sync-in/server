@@ -254,11 +254,7 @@ export class FilesManager {
     const postMethod = req.method === HTTP_METHOD.POST
     const realParentPath = dirName(space.realPath)
     const temporaryRoot = temporaryRootFromSpace(user, space)
-    const uploadLimiter = createUploadStreamLimiter(
-      space,
-      configuration.applications.files.transfers.maxUploadSize,
-      configuration.applications.files.transfers.maxChunkSize ?? undefined
-    )
+    const uploadLimiter = createUploadStreamLimiter(space, configuration.applications.files.transfers.maxUploadSize)
 
     // A POST may continue a directory upload whose root was created by an earlier batch.
     // Creation-only semantics are enforced on every resolved multipart destination below.

@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common'
 import { FileError } from '../models/file-error.js'
 import type { UploadFileStreamLimiter, UploadQuotaSnapshot } from '../interfaces/upload-file.interface.js'
-import { maxFileSizeExceededError, maxMultipartSizeExceededError, storageQuotaExceededError } from './errors.js'
+import { maxFileSizeExceededError, storageQuotaExceededError } from './errors.js'
 import { temporaryFilePath } from './files.js'
 import { FILE_OPERATION } from '../constants/operations.js'
 
@@ -15,12 +15,10 @@ const FASTIFY_MULTIPART_COUNT_LIMIT_CODES = new Set(['FST_FIELDS_LIMIT', 'FST_FI
 export class UploadStreamLimiter {
   // Shared by all file limiters created for the same request, notably multipart uploads.
   private quotaConsumed = 0
-  private requestConsumed = 0
 
   constructor(
     private readonly maxFileSize: number,
-    private readonly quotaRemaining?: number,
-    private readonly maxRequestSize?: number
+    private readonly quotaRemaining?: number
   ) {}
 
   createFileLimiter(initialFileSize = 0): UploadFileStreamLimiter {
@@ -40,22 +38,17 @@ export class UploadStreamLimiter {
 
       const fileRemaining = this.maxFileSize - fileSize
       const quotaRemaining = this.quotaRemaining === undefined ? Number.POSITIVE_INFINITY : this.quotaRemaining - this.quotaConsumed
-      const requestRemaining = this.maxRequestSize === undefined ? Number.POSITIVE_INFINITY : this.maxRequestSize - this.requestConsumed
 
-      if (bytes > fileRemaining || bytes > quotaRemaining || bytes > requestRemaining) {
+      if (bytes > fileRemaining || bytes > quotaRemaining) {
         // Report the first effective boundary. If both are equal, the file-size
         // limit is the more specific upload error.
-        if (quotaRemaining < fileRemaining && quotaRemaining <= requestRemaining) {
-          throw storageQuotaExceededError()
-        }
-        if (requestRemaining < fileRemaining) throw maxMultipartSizeExceededError()
+        if (quotaRemaining < fileRemaining) throw storageQuotaExceededError()
         throw maxFileSizeExceededError()
       }
 
       if (consume) {
         fileSize += bytes
         this.quotaConsumed += bytes
-        this.requestConsumed += bytes
       }
     }
 
@@ -74,10 +67,10 @@ export class UploadStreamLimiter {
   }
 }
 
-export function createUploadStreamLimiter(space: UploadQuotaSnapshot | undefined, maxFileSize: number, maxRequestSize?: number): UploadStreamLimiter {
+export function createUploadStreamLimiter(space: UploadQuotaSnapshot | undefined, maxFileSize: number): UploadStreamLimiter {
   // A null or zero quota means unlimited storage; a negative remainder is clamped so every positive write is rejected.
   const quotaRemaining = space?.storageQuota ? Math.max(0, space.storageQuota - (space.storageUsage ?? 0)) : undefined
-  return new UploadStreamLimiter(maxFileSize, quotaRemaining, maxRequestSize)
+  return new UploadStreamLimiter(maxFileSize, quotaRemaining)
 }
 
 export function parseUnsignedIntegerHeader(value: unknown, invalidHeaderMessage: string): number | undefined {

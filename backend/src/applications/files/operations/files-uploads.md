@@ -10,7 +10,7 @@ transport-specific publication and recovery semantics.
 
 | Feature or client                             | Upload flow    | Request model                                                                                                | Recovery model                                                                                     | Server entry point                                   |
 | --------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Web client, small files and directory batches | Multipart      | One request can contain many files; cumulative payload is bounded by `maxChunkSize` when chunking is enabled | No persistent byte offset                                                                          | `FilesManager.saveMultipart()`                       |
+| Web client, small files and directory batches | Multipart      | One request can contain many files; the client batches payloads according to `maxChunkSize`                  | No persistent byte offset                                                                          | `FilesManager.saveMultipart()`                       |
 | Web client, files larger than `maxChunkSize`  | Upload session | One initial `POST` or `PUT`, followed by sequential `PATCH` requests                                         | Persistent `uploadId`, authoritative offset through `HEAD`, explicit cancellation through `DELETE` | `FilesUploadSessionManager`                          |
 | Desktop synchronization client                | Single stream  | One `application/octet-stream` request per file                                                              | The complete file is retried after an ambiguous failure                                            | `SyncManager.upload()` → `FilesManager.saveStream()` |
 | Synchronization upload-session API            | Upload session | Same chunk protocol as the web session API, with optional checksum and mtime metadata                        | Persistent `uploadId` and offset                                                                   | `FilesUploadSessionManager`                          |
@@ -63,16 +63,18 @@ applications:
 Both options accept a byte count or a text size. Text units (`KB`, `MB`, `GB`, ...) use base 1024, are case-insensitive, and the separating space is
 optional.
 
-`maxChunkSize` is exposed to authenticated web and sync clients through `ServerConfig.files.transfers`. `maxUploadSize` remains backend-only.
+`maxChunkSize` is exposed to authenticated web and sync clients through `ServerConfig.files.transfers`. It is a client-side transfer hint chosen
+below proxy request limits, not a backend upload limit. `maxUploadSize` remains backend-only.
 
 - An omitted or `undefined` `maxChunkSize` enables chunking with the 95 MB default.
-- `null`, an empty YAML value, or `0` disables chunking.
+- `null`, an empty YAML value, or `0` disables chunking in the bundled clients.
 - An enabled value must be an integer of at least 1,000,000 bytes.
 - A file whose size is less than or equal to `maxChunkSize` uses the multipart endpoint.
-- A larger web file uses an upload session and chunks no larger than `maxChunkSize`.
+- A larger web file uses an upload session and the client targets chunks no larger than `maxChunkSize`.
 - Multipart requests contain at most 1,000 files and 1,000 total parts.
-- When chunking is enabled, the cumulative file payload of one multipart request does not exceed `maxChunkSize`.
-- The server snapshots `maxChunkSize` in the session manifest, so a configuration change does not alter an upload already in progress.
+- When chunking is enabled, the bundled clients keep the cumulative file payload of one multipart request within `maxChunkSize`.
+- The backend does not reject multipart payloads or upload-session chunks that exceed `maxChunkSize`; infrastructure request limits still apply.
+- Upload-session endpoints remain available to API clients when bundled-client chunking is disabled.
 
 The deprecated `applications.files.maxUploadSize` key is also accepted. When both forms are configured,
 `applications.files.transfers.maxUploadSize` takes precedence.
@@ -177,8 +179,8 @@ attempt ends on `404`; the published destination remains the source of truth.
 
 ## Validation, quota, and permissions
 
-New sessions enforce `maxUploadSize`, the current chunk-size limit, destination containment, symlink rules, create/overwrite semantics, and the full
-declared size against the current quota snapshot. Every non-empty chunk rechecks quota before writing. Publication rechecks the destination path,
+New sessions enforce `maxUploadSize`, destination containment, symlink rules, create/overwrite semantics, and the full declared size against the
+current quota snapshot. Every non-empty chunk rechecks quota before writing. Publication rechecks the destination path,
 the method-level permission (`ADD` for `POST`, `MODIFY` for `PUT`), trash restrictions, and destination lock before moving the file.
 
 Staged bytes live on the target storage and are included by quota scans. Quota is not reserved atomically across concurrent uploads.

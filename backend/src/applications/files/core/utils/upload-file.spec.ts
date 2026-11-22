@@ -32,13 +32,12 @@ describe(UploadStreamLimiter.name, () => {
     expect(() => secondFile.consume(1)).toThrow(new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED))
   })
 
-  it('shares the multipart request-size limit across files', () => {
-    const limiter = new UploadStreamLimiter(100, undefined, 6)
-    limiter.createFileLimiter().consume(4)
+  it('applies maxUploadSize independently to each multipart file', () => {
+    const limiter = new UploadStreamLimiter(5)
+    limiter.createFileLimiter().consume(5)
 
     const secondFile = limiter.createFileLimiter()
-    secondFile.consume(2)
-    expect(() => secondFile.consume(1)).toThrow(new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR.MAX_MULTIPART_SIZE_EXCEEDED))
+    expect(() => secondFile.consume(5)).not.toThrow()
   })
 
   it('includes a range offset in maxUploadSize but not in newly consumed quota', () => {

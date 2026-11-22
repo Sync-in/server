@@ -348,8 +348,9 @@ applications:
       # Accepts bytes or text with binary units (KB, MB, GB, ...).
       # default: 5368709120 bytes (5 GB)
       maxUploadSize: 5GB
-      # maxChunkSize: Client-side multipart threshold and maximum chunk size in bytes for resumable uploads.
-      # Set to null, leave empty, or set to 0 to disable chunking. Omit the key to use the default.
+      # maxChunkSize: Client-side multipart threshold and target chunk size in bytes for resumable uploads.
+      # This hint helps clients stay below proxy request limits and is not enforced by the backend.
+      # Set to null, leave empty, or set to 0 to disable chunking in bundled clients. Omit the key to use the default.
       # Positive values below approximately 1 MB (1000000 bytes) are rejected.
       # Accepts bytes or text with binary units (KB, MB, GB, ...).
       # default: 99614720 bytes (95 MB)

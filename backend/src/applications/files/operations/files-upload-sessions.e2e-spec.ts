@@ -21,7 +21,6 @@ const DESTINATION = 'files/personal/upload-session-e2e.bin'
 const USER = { id: 1, login: 'upload-session-e2e' }
 
 describe('File upload sessions (e2e)', () => {
-  const originalMaxChunkSize = configuration.applications.files.transfers.maxChunkSize
   const originalMaxUploadSize = configuration.applications.files.transfers.maxUploadSize
   const filesLockManager = {
     create: vi.fn().mockResolvedValue([true, { key: 'upload-lock' }]),
@@ -36,7 +35,6 @@ describe('File upload sessions (e2e)', () => {
   let storageRoot: string
 
   beforeAll(async () => {
-    configuration.applications.files.transfers.maxChunkSize = 4
     configuration.applications.files.transfers.maxUploadSize = 100
     storageRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'sync-in-upload-session-e2e-'))
     space = makeSpace(storageRoot)
@@ -74,7 +72,6 @@ describe('File upload sessions (e2e)', () => {
     try {
       await app.close()
     } finally {
-      configuration.applications.files.transfers.maxChunkSize = originalMaxChunkSize
       configuration.applications.files.transfers.maxUploadSize = originalMaxUploadSize
       await fs.rm(storageRoot, { force: true, recursive: true })
     }
