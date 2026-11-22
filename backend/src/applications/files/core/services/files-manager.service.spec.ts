@@ -472,11 +472,18 @@ describe(FilesManager.name, () => {
 
       await service.saveMultipart(user, space, req as any)
 
+      const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
       expect(req.files).toHaveBeenCalled()
+      expect(tmpWritePath.startsWith(`${targetTmpRoot}${path.sep}`)).toBe(true)
       expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
-        destination,
+        tmpWritePath,
         file,
-        expect.objectContaining({ exclusive: true, limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+        expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+      )
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, destination, false)
+      expect(filesUtils.removeFiles).not.toHaveBeenCalledWith(tmpWritePath)
+      expect(vi.mocked(filesUtils.writeUploadFromStream).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(filesUtils.moveFiles).mock.invocationCallOrder[0]
       )
     })
 
@@ -633,12 +640,15 @@ describe(FilesManager.name, () => {
 
       await service.saveMultipart(user, space, req as any)
 
+      const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
       expect(filesUtils.makeDir).toHaveBeenCalledWith(dstDir, true)
       expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
-        dstFile,
+        tmpWritePath,
         file,
         expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
       )
+      expect(tmpWritePath.startsWith(`${targetTmpRoot}${path.sep}`)).toBe(true)
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, dstFile, false)
       expect(filesLockManager.removeLock).toHaveBeenCalledWith(
         expect.objectContaining({ path: 'folder/file.txt' }),
         expect.objectContaining({ key: 'lock-created' })
@@ -675,8 +685,12 @@ describe(FilesManager.name, () => {
         new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED)
       )
 
+      const firstTmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
+      const secondTmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[1][0] as string
       expect(filesUtils.writeUploadFromStream).toHaveBeenCalledTimes(2)
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith(secondPath)
+      expect(filesUtils.moveFiles).toHaveBeenCalledTimes(1)
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(firstTmpWritePath, firstPath, false)
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(secondTmpWritePath)
     })
 
     it('should reject POST when resolved multipart destination already exists', async () => {
@@ -730,10 +744,11 @@ describe(FilesManager.name, () => {
     it('should not overwrite or remove a destination created concurrently with multipart POST', async () => {
       const space = makeSpace()
       const parentPath = path.dirname(space.realPath)
-      const concurrentCreationError = Object.assign(new Error('Destination exists'), { code: 'EEXIST' })
+      const concurrentCreationError = new Error('dest already exists.')
       setPathExists({ [space.realPath]: false, [parentPath]: true }, false)
       vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === parentPath)
-      vi.mocked(filesUtils.writeUploadFromStream).mockRejectedValueOnce(concurrentCreationError)
+      vi.mocked(filesUtils.moveFiles).mockRejectedValueOnce(concurrentCreationError)
+      vi.mocked(filesUtils.removeFiles).mockRejectedValueOnce(new Error('Unable to remove staging file'))
 
       const req = {
         method: 'POST',
@@ -746,7 +761,14 @@ describe(FilesManager.name, () => {
         new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
       )
 
-      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(space.realPath, expect.anything(), expect.objectContaining({ exclusive: true }))
+      const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
+        tmpWritePath,
+        expect.anything(),
+        expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+      )
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, space.realPath, false)
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(tmpWritePath)
       expect(filesUtils.removeFiles).not.toHaveBeenCalledWith(space.realPath)
     })
 
@@ -883,13 +905,17 @@ describe(FilesManager.name, () => {
         new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR.MAX_FILE_SIZE_EXCEEDED)
       )
 
+      const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
       expect(req.files).toHaveBeenCalled()
       expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
-        dstFile,
+        tmpWritePath,
         file,
         expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
       )
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith(dstFile)
+      expect(tmpWritePath.startsWith(`${targetTmpRoot}${path.sep}`)).toBe(true)
+      expect(filesUtils.moveFiles).not.toHaveBeenCalled()
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(tmpWritePath)
+      expect(filesUtils.removeFiles).not.toHaveBeenCalledWith(dstFile)
       expect(emitSpy).not.toHaveBeenCalled()
     })
 

@@ -253,7 +253,7 @@ export class FilesManager {
     const patchMethod = req.method === HTTP_METHOD.PATCH
     const postMethod = req.method === HTTP_METHOD.POST
     const realParentPath = dirName(space.realPath)
-    const temporaryRoot = overwrite || patchMethod ? temporaryRootFromSpace(user, space) : undefined
+    const temporaryRoot = temporaryRootFromSpace(user, space)
     const uploadLimiter = createUploadStreamLimiter(
       space,
       configuration.applications.files.transfers.maxUploadSize,
@@ -314,9 +314,8 @@ export class FilesManager {
           if (patchMethod && !dstExists) {
             throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
           }
-          // PUT/PATCH write outside the destination first, so a failed upload does not corrupt an existing file.
-          const tmpFile = temporaryRoot ? uploadTmpFilePath(temporaryRoot, partFileName) : undefined
-          const writePath = tmpFile || dstFile
+          // Every multipart method writes outside the destination first, so readers never observe an incomplete file.
+          const tmpFile = uploadTmpFilePath(temporaryRoot, partFileName)
 
           const dstDir = dirName(dstFile)
           // For overwrite conflicts, defer destructive deletes until the upload stream is fully validated.
@@ -336,11 +335,7 @@ export class FilesManager {
               dstParentSpaceToDeleteBeforeMove = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
             }
           }
-          if (tmpFile) {
-            await makeDir(dirName(tmpFile), true)
-          } else if (!(await isPathExists(dstDir))) {
-            await makeDir(dstDir, true)
-          }
+          await makeDir(dirName(tmpFile), true)
 
           // PATCH keeps its persistent, owner-refreshable editor lock.
           if (patchMethod) {
@@ -352,35 +347,31 @@ export class FilesManager {
           let fileWritten = false
           try {
             const fileLimiter = uploadLimiter.createFileLimiter()
-            await writeUploadFromStream(writePath, part.file, { exclusive: postMethod, limiter: fileLimiter })
+            await writeUploadFromStream(tmpFile, part.file, { limiter: fileLimiter })
             // With throwFileSizeLimit disabled, multipart marks the file stream as truncated instead of rejecting.
             if (part.file.truncated) {
               throw maxFileSizeExceededError()
             }
-            if (tmpFile) {
-              // If the following move fails after these deletes, the previous resources remain recoverable from the trash.
-              if (dstSpaceToDeleteBeforeMove) {
-                await this.delete(user, dstSpaceToDeleteBeforeMove)
-              }
-              if (dstParentSpaceToDeleteBeforeMove) {
-                await this.delete(user, dstParentSpaceToDeleteBeforeMove)
-              }
-              if (!(await isPathExists(dstDir))) {
-                await makeDir(dstDir, true)
-              }
-              await moveFiles(tmpFile, dstFile, true)
+            // If the following move fails after these deletes, the previous resources remain recoverable from the trash.
+            if (dstSpaceToDeleteBeforeMove) {
+              await this.delete(user, dstSpaceToDeleteBeforeMove)
             }
+            if (dstParentSpaceToDeleteBeforeMove) {
+              await this.delete(user, dstParentSpaceToDeleteBeforeMove)
+            }
+            if (!(await isPathExists(dstDir))) {
+              await makeDir(dstDir, true)
+            }
+            // POST keeps creation-only semantics while PUT/PATCH replace the destination.
+            await moveFiles(tmpFile, dstFile, !postMethod)
             fileWritten = true
           } catch (e) {
-            // Atomic exclusive creation closes the race between the POST existence check and opening the destination.
-            if (postMethod && (e as NodeJS.ErrnoException)?.code === 'EEXIST') {
-              throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
-            }
             // Failed temporary uploads are discarded without touching the existing destination.
-            if (tmpFile) {
-              await removeFiles(tmpFile)
-            } else if (!dstExists) {
-              await removeFiles(dstFile)
+            await removeFiles(tmpFile).catch((error) =>
+              this.logger.warn({ tag: this.saveMultipart.name, ...toErrorLog(error, `Failed to remove temporary upload ${tmpFile}`) })
+            )
+            if (postMethod && this.isMoveDestinationExistsError(e, dstFile)) {
+              throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
             }
             if (isMultipartFileTooLargeError(e)) {
               throw maxFileSizeExceededError()
@@ -1008,6 +999,13 @@ export class FilesManager {
 
   private isTrashRepositoryRoot(space: SpaceEnv): boolean {
     return space.inTrashRepository && Array.isArray(space.paths) && space.paths.length === 0
+  }
+
+  private isMoveDestinationExistsError(error: unknown, destination: string): boolean {
+    return (
+      (error as NodeJS.ErrnoException)?.code === 'EEXIST' ||
+      (error instanceof Error && (error.message === 'dest already exists.' || error.message === `'${destination}' already exists`))
+    )
   }
 
   private logSourceCleanupError(error: SourceCleanupError): void {

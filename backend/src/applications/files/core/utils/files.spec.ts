@@ -12,6 +12,7 @@ import {
   isInternalTemporaryEntry,
   isInternalTemporaryPath,
   isPathInside,
+  moveFiles,
   sanitizeName,
   temporaryFileName,
   temporaryFilePath,
@@ -105,6 +106,40 @@ describe(isCrossDevice.name, () => {
     await expect(isCrossDevice('/source.txt', dstPath)).resolves.toBe(true)
 
     expect(statSpy).toHaveBeenCalledWith(path.parse(dstPath).root)
+  })
+})
+
+describe(moveFiles.name, () => {
+  let tmpDir: string
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(path.join(os.tmpdir(), 'move-files-'))
+  })
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true })
+  })
+
+  it('publishes a file without keeping the staged source', async () => {
+    const source = path.join(tmpDir, 'source.txt')
+    const destination = path.join(tmpDir, 'destination.txt')
+    await writeFile(source, 'complete')
+
+    await moveFiles(source, destination, false)
+
+    await expect(readFile(destination, 'utf8')).resolves.toBe('complete')
+    await expect(fs.access(source)).rejects.toMatchObject({ code: 'ENOENT' })
+  })
+
+  it('does not replace an existing destination', async () => {
+    const source = path.join(tmpDir, 'source.txt')
+    const destination = path.join(tmpDir, 'destination.txt')
+    await Promise.all([writeFile(source, 'new'), writeFile(destination, 'existing')])
+
+    await expect(moveFiles(source, destination, false)).rejects.toThrow('dest already exists.')
+
+    await expect(readFile(source, 'utf8')).resolves.toBe('new')
+    await expect(readFile(destination, 'utf8')).resolves.toBe('existing')
   })
 })
 
