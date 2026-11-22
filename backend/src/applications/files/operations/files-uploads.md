@@ -3,6 +3,26 @@
 Files at or below the configured threshold use multipart uploads. Larger web files use resumable upload sessions: the first chunk creates the session
 and the last chunk publishes the file. Each chunk uses `Content-Type: application/octet-stream` with length and offset headers.
 
+## Upload flow matrix
+
+Sync-in keeps three upload transports because they address different request shapes. They share file-size and quota checks, but retain
+transport-specific publication and recovery semantics.
+
+| Feature or client | Upload flow | Request model | Recovery model | Server entry point |
+| --- | --- | --- | --- | --- |
+| Web client, small files and directory batches | Multipart | One request can contain many files; cumulative payload is bounded by `maxChunkSize` when chunking is enabled | No persistent byte offset | `FilesManager.saveMultipart()` |
+| Web client, files larger than `maxChunkSize` | Upload session | One initial `POST` or `PUT`, followed by sequential `PATCH` requests | Persistent `uploadId`, authoritative offset through `HEAD`, explicit cancellation through `DELETE` | `FilesUploadSessionManager` |
+| Desktop synchronization client | Single stream | One `application/octet-stream` request per file | The complete file is retried after an ambiguous failure | `SyncManager.upload()` → `FilesManager.saveStream()` |
+| Synchronization upload-session API | Upload session | Same chunk protocol as the web session API, with optional checksum and mtime metadata | Persistent `uploadId` and offset | `FilesUploadSessionManager` |
+| WebDAV `PUT` | Single stream | One stream per destination; ranged `PUT` can append from the current file size | Optional `Content-Range` checkpoint | `WebdavMethods.put()` → `FilesManager.saveStream()` |
+
+Multipart is optimized for batching many small files without one HTTP request per file. Single-stream uploads preserve compatibility with standard
+protocols such as WebDAV and with the current desktop synchronization client. Upload sessions add persistent recovery state for large or explicitly
+chunked files.
+
+Multipart and single-stream uploads use `UploadStreamLimiter`. Upload sessions apply equivalent size and quota checks from their persisted manifest
+and current payload offset. All quota checks use the current cached snapshot; quota capacity is not reserved atomically between concurrent uploads.
+
 ## Configuration and client selection
 
 ```yaml
@@ -32,7 +52,7 @@ The deprecated `applications.files.maxUploadSize` key is also accepted. When bot
 
 Multipart overhead is additional to the cumulative file payload. The 95 MB default leaves headroom below common 100 MB proxy request limits.
 
-## Routes and request count
+## Upload session routes and request count
 
 The web API uses `/api/app/spaces/operation/upload-session`; the synchronization API uses `/api/app/sync/operation/upload-session`. The destination
 occupies the wildcard part of the route and the client generates a UUID v4 for `uploadId`.
