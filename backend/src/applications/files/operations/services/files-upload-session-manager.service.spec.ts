@@ -19,12 +19,7 @@ import type { FilesManager } from '../../core/services/files-manager.service.js'
 import { temporaryFilePath } from '../../core/utils/files.js'
 import { LockConflict } from '../../locks/models/file-lock-error.js'
 import type { FilesLockManager } from '../../locks/services/files-lock-manager.service.js'
-import {
-  FILE_UPLOAD_SESSION,
-  FILE_UPLOAD_SESSION_HEADER,
-  FILE_UPLOAD_SESSION_MAX_ACTIVE_PER_ACTOR,
-  FILE_UPLOAD_SESSION_STATE
-} from '../constants/upload-session.js'
+import { FILE_UPLOAD_SESSION, FILE_UPLOAD_SESSION_HEADER, FILE_UPLOAD_SESSION_STATE } from '../constants/upload-session.js'
 import type {
   FileUploadSessionChunkHeaders,
   FileUploadSessionMetadataHeaders,
@@ -151,28 +146,6 @@ describe(FilesUploadSessionManager.name, () => {
 
     await expect(appendUpload(uploadId, 5, 2, '3')).rejects.toMatchObject({ status: HttpStatus.INSUFFICIENT_STORAGE })
     expect(space.willExceedQuota).toHaveBeenLastCalledWith(1)
-  })
-
-  it('caps active staged sessions', async () => {
-    const completed = await createUpload(1, 'a')
-    expect(completed.status.state).toBe(FILE_UPLOAD_SESSION_STATE.COMPLETE)
-    await expect(fs.stat(sessionDirectory(completed.uploadId))).rejects.toMatchObject({ code: 'ENOENT' })
-    space = makeSpace('next.bin')
-    const temporaryRoot = temporaryRootFromSpace(user, space)
-    const directories = await Promise.all(
-      Array.from({ length: FILE_UPLOAD_SESSION_MAX_ACTIVE_PER_ACTOR - 1 }, async () => {
-        const directory = temporaryFilePath(temporaryRoot, FILE_UPLOAD_SESSION.DIRECTORY_TARGET, FILE_OPERATION.UPLOAD, crypto.randomUUID())
-        await fs.mkdir(directory)
-        return directory
-      })
-    )
-
-    await expect(createUpload(2, 'b')).resolves.toMatchObject({ status: { state: FILE_UPLOAD_SESSION_STATE.UPLOADING } })
-
-    const blockingDirectory = temporaryFilePath(temporaryRoot, FILE_UPLOAD_SESSION.DIRECTORY_TARGET, FILE_OPERATION.UPLOAD, crypto.randomUUID())
-    await fs.mkdir(blockingDirectory)
-    await expect(createUpload(2, 'c')).rejects.toMatchObject({ status: HttpStatus.TOO_MANY_REQUESTS })
-    await fs.rm(directories[0], { recursive: true })
   })
 
   it('publishes automatically on the last chunk and removes the session', async () => {

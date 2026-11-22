@@ -2,8 +2,6 @@ import { isUuidV4 } from '../../../../common/validation.js'
 import { TEMPORARY_FILE_PREFIX } from '../../core/constants/files.js'
 import { FILE_OPERATION } from '../../core/constants/operations.js'
 
-// Bounds persistent upload-session metadata for one actor on a single storage.
-export const FILE_UPLOAD_SESSION_MAX_ACTIVE_PER_ACTOR = 64
 // Absolute session lifetime, independent of recent status checks or chunk activity.
 export const FILE_UPLOAD_SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1_000
 

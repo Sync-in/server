@@ -22,10 +22,8 @@ import { FILE_OPERATION } from '../../core/constants/operations.js'
 import {
   FILE_UPLOAD_SESSION,
   FILE_UPLOAD_SESSION_HEADER,
-  FILE_UPLOAD_SESSION_MAX_ACTIVE_PER_ACTOR,
   FILE_UPLOAD_SESSION_MAX_AGE_MS,
-  FILE_UPLOAD_SESSION_STATE,
-  isFileUploadSessionDirectoryName
+  FILE_UPLOAD_SESSION_STATE
 } from '../constants/upload-session.js'
 import { FileEvent } from '../../core/events/file-events.js'
 import type {
@@ -251,8 +249,6 @@ export class FilesUploadSessionManager {
       return this.resumeCreate(space, method, options, directory)
     }
 
-    // This limit is intentionally best effort: atomic session exposure prevents duplicate ids, while rare concurrent creations may exceed the cap.
-    await this.assertActiveSessionLimit(temporaryRoot)
     // Prepare the complete session off-path, then expose it atomically so readers never observe a partial manifest or a missing payload.
     const initializationDirectory = await fs.mkdtemp(`${directory}.init-`)
     try {
@@ -615,18 +611,6 @@ export class FilesUploadSessionManager {
 
   private sessionDirectory(temporaryRoot: string, uploadId: string): string {
     return temporaryFilePath(temporaryRoot, FILE_UPLOAD_SESSION.DIRECTORY_TARGET, FILE_OPERATION.UPLOAD, uploadId)
-  }
-
-  private async assertActiveSessionLimit(temporaryRoot: string): Promise<void> {
-    const entries = await fs.readdir(temporaryRoot, { withFileTypes: true })
-    let activeSessions = 0
-    for (const entry of entries) {
-      if (!entry.isDirectory() || !isFileUploadSessionDirectoryName(entry.name)) continue
-      activeSessions++
-      if (activeSessions >= FILE_UPLOAD_SESSION_MAX_ACTIVE_PER_ACTOR) {
-        throw new HttpException('Maximum active upload sessions exceeded', HttpStatus.TOO_MANY_REQUESTS)
-      }
-    }
   }
 
   private async readManifest(directory: string): Promise<FileUploadSessionManifest> {
