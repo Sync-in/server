@@ -4,11 +4,11 @@ export const DEFAULT_HIGH_WATER_MARK = 1024 * 1024
 export const DEFAULT_MIME_TYPE = 'application/octet-stream'
 export const FILE_UPLOAD_MULTIPART_MAX_FILES = 1000
 export const FILE_UPLOAD_MULTIPART_MAX_PARTS = 1000
-export const TEMPORARY_FILE_PREFIX = '~tmp-'
+export const TEMPORARY_FILE_PREFIX = 'server-user-'
 export const TEMPORARY_PATH = {
-  STORAGE: '.sync-in-tmp',
-  ACTORS: 'users'
+  STORAGE: '.sync-in-tmp'
 } as const
+
 export const EXTRA_MIMES_TYPE = new Map([
   ['.drawio', 'application-x-drawio'],
   ['.dwb', 'application-x-drawio-wb'],

@@ -12,7 +12,6 @@ import { toErrorMessage } from '../../../../common/errors.js'
 import { formatDateISOString } from '../../../../common/functions.js'
 import { currentTimeStamp, isValidFileName, regExpPreventPathTraversal, unicodeCaselessIdentity } from '../../../../common/shared.js'
 import { DEFAULT_CHECKSUM_ALGORITHM, DEFAULT_HIGH_WATER_MARK, EXTRA_MIMES_TYPE, TEMPORARY_FILE_PREFIX, TEMPORARY_PATH } from '../constants/files.js'
-import { SYNC_TEMPORARY_FILE_PREFIX } from '../../../sync/constants/sync.js'
 import type { FileDBProps } from '../interfaces/file-db-props.interface.js'
 import type { FileProps } from '../interfaces/file-props.interface.js'
 import type { WriteFromStreamOptions, WriteUploadStreamOptions } from '../interfaces/write-stream.interface.js'
@@ -39,13 +38,29 @@ export function isPathInside(basePath: string, candidatePath: string, allowBaseP
 }
 
 export function isInternalTemporaryEntry(name: string): boolean {
-  return name === TEMPORARY_PATH.STORAGE || name.startsWith(SYNC_TEMPORARY_FILE_PREFIX)
+  return filePathIdentity(name) === filePathIdentity(TEMPORARY_PATH.STORAGE)
 }
 
 export function isInternalTemporaryPath(basePath: string, candidatePath: string): boolean {
   const relativePath = path.relative(path.resolve(basePath), path.resolve(candidatePath))
   if (!relativePath || path.isAbsolute(relativePath) || relativePath.startsWith(`..${path.sep}`) || relativePath === '..') return false
   return relativePath.split(path.sep).some(isInternalTemporaryEntry)
+}
+
+export function serverTemporaryEntryPrefix(userId: number): string {
+  if (!Number.isSafeInteger(userId) || userId <= 0) {
+    throw new Error('Temporary-file user id must be a positive safe integer')
+  }
+  return `${TEMPORARY_FILE_PREFIX}${userId}-`
+}
+
+export function serverTemporaryEntryUserId(value: string): number | undefined {
+  const match = /^server-user-(\d+)-/.exec(value)
+  if (!match) return
+  const userId = Number(match[1])
+  // Keep one canonical namespace spelling per actor; leading zeros and unsafe ids must not alias a valid user.
+  if (!Number.isSafeInteger(userId) || userId <= 0 || String(userId) !== match[1]) return
+  return userId
 }
 
 export function sanitizeName(name: string): string {
@@ -170,25 +185,31 @@ function truncateTemporaryBasename(name: string, maxBytes: number): string {
   return truncateUtf8(name, maxBytes)
 }
 
-export function temporaryFilePrefix(operation: string, executionId: string): string {
-  return `${TEMPORARY_FILE_PREFIX}${temporaryNameSegment(operation, 'operation')}-${temporaryNameSegment(executionId, 'execution id')}-`
+export function temporaryFilePrefix(userId: number, operation: string, executionId: string): string {
+  return `${serverTemporaryEntryPrefix(userId)}${temporaryNameSegment(operation, 'operation')}-${temporaryNameSegment(executionId, 'execution id')}-`
 }
 
-export function temporaryFileName(targetPath: string, operation: string, executionId: string = crypto.randomUUID()): string {
-  const prefix = temporaryFilePrefix(operation, executionId)
+export function temporaryFileName(userId: number, targetPath: string, operation: string, executionId: string = crypto.randomUUID()): string {
+  const prefix = temporaryFilePrefix(userId, operation, executionId)
   const basename = sanitizeName(fileName(targetPath)) || 'file'
   const basenameBytes = MAX_TEMPORARY_FILE_NAME_BYTES - Buffer.byteLength(prefix)
   if (basenameBytes < 1) throw new Error('Temporary-file prefix exceeds the filesystem filename limit')
   return `${prefix}${truncateTemporaryBasename(basename, basenameBytes)}`
 }
 
-export function temporaryFilePath(parentPath: string, targetPath: string, operation: string, executionId?: string): string {
-  return path.join(parentPath, temporaryFileName(targetPath, operation, executionId))
+export function temporaryFilePath(parentPath: string, userId: number, targetPath: string, operation: string, executionId?: string): string {
+  return path.join(parentPath, temporaryFileName(userId, targetPath, operation, executionId))
 }
 
-export async function makeTemporaryDirectory(parentPath: string, targetPath: string, operation: string, executionId?: string): Promise<string> {
+export async function makeTemporaryDirectory(
+  parentPath: string,
+  userId: number,
+  targetPath: string,
+  operation: string,
+  executionId?: string
+): Promise<string> {
   await makeDir(parentPath, true)
-  const temporaryPath = temporaryFilePath(parentPath, targetPath, operation, executionId)
+  const temporaryPath = temporaryFilePath(parentPath, userId, targetPath, operation, executionId)
   await fs.mkdir(temporaryPath)
   return temporaryPath
 }

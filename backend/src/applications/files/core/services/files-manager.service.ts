@@ -18,7 +18,7 @@ import { SPACE_OPERATION } from '../../../spaces/constants/spaces.js'
 import { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface.js'
 import { SpaceEnv } from '../../../spaces/models/space-env.model.js'
 import { SpacesManager } from '../../../spaces/services/spaces-manager.service.js'
-import { temporaryRootFromSpace, trashRelativePathFromSpace, trashTargetFromSpace } from '../../../spaces/utils/paths.js'
+import { ensureTemporaryRootFromSpace, trashRelativePathFromSpace, trashTargetFromSpace } from '../../../spaces/utils/paths.js'
 import { canAccessToSpace, haveSpaceEnvPermissions } from '../../../spaces/utils/permissions.js'
 import type { UserModel } from '../../../users/models/user.model.js'
 import type { LOCK_DEPTH } from '../../../webdav/constants/webdav.js'
@@ -253,7 +253,7 @@ export class FilesManager {
     const patchMethod = req.method === HTTP_METHOD.PATCH
     const postMethod = req.method === HTTP_METHOD.POST
     const realParentPath = dirName(space.realPath)
-    const temporaryRoot = temporaryRootFromSpace(user, space)
+    const temporaryRoot = await ensureTemporaryRootFromSpace(user, space)
     const uploadLimiter = createUploadStreamLimiter(space, configuration.applications.files.transfers.maxUploadSize)
 
     // A POST may continue a directory upload whose root was created by an earlier batch.
@@ -311,7 +311,7 @@ export class FilesManager {
             throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
           }
           // Every multipart method writes outside the destination first, so readers never observe an incomplete file.
-          const tmpFile = uploadTmpFilePath(temporaryRoot, partFileName)
+          const tmpFile = uploadTmpFilePath(temporaryRoot, user.id, partFileName)
 
           const dstDir = dirName(dstFile)
           // For overwrite conflicts, defer destructive deletes until the upload stream is fully validated.
@@ -682,7 +682,7 @@ export class FilesManager {
         }
         trashDbFile = destinationDbFile
         if (isTaskContext) {
-          sourceCleanupError = await this.filesTasksTransfer.delete(space, trashFile, trashTarget.temporaryRoot, isDir, signal, () =>
+          sourceCleanupError = await this.filesTasksTransfer.delete(user.id, space, trashFile, trashTarget.temporaryRoot, isDir, signal, () =>
             this.moveExistingTrashFile(trashFile, destinationDbFile)
           )
         } else {
@@ -720,8 +720,8 @@ export class FilesManager {
     this.checkNotTrashRepository(space)
     this.logger.log({ tag: this.downloadFromUrl.name, msg: `${downloadDto.url}` })
     const dstPath = await uniqueFilePathFromDir(space.realPath)
-    const temporaryRoot = temporaryRootFromSpace(user, space)
-    const tmpPath = temporaryFilePath(temporaryRoot, dstPath, FILE_OPERATION.DOWNLOAD, space.task?.id)
+    const temporaryRoot = await ensureTemporaryRootFromSpace(user, space)
+    const tmpPath = temporaryFilePath(temporaryRoot, user.id, dstPath, FILE_OPERATION.DOWNLOAD, space.task?.id)
     const dbFile = space.dbFile
     dbFile.path = path.join(dirName(dbFile.path), fileName(dstPath))
 
@@ -769,8 +769,8 @@ export class FilesManager {
     const archiveExt = dto.name!.endsWith(`.${outputExtension}`) ? '' : `.${outputExtension}`
     const archiveName = `${dto.name!}${archiveExt}`
     const dstPath = dto.compressInDirectory ? await uniqueFilePathFromDir(path.join(srcPath, archiveName)) : path.join(user.tmpPath, archiveName)
-    const temporaryRoot = dto.compressInDirectory ? temporaryRootFromSpace(user, space) : user.tmpPath
-    const tmpPath = temporaryFilePath(temporaryRoot, archiveName, FILE_OPERATION.COMPRESS, space.task?.id)
+    const temporaryRoot = dto.compressInDirectory ? await ensureTemporaryRootFromSpace(user, space) : user.tmpPath
+    const tmpPath = temporaryFilePath(temporaryRoot, user.id, archiveName, FILE_OPERATION.COMPRESS, space.task?.id)
     // create lock
     let fileLock: FileLock | undefined
     if (dto.compressInDirectory) {
@@ -829,7 +829,13 @@ export class FilesManager {
     }
     // make temporary extraction folder
     const dstPath = await uniqueFilePathFromDir(path.join(dirName(space.realPath), path.basename(space.realPath, extension)))
-    const tmpPath = await makeTemporaryDirectory(temporaryRootFromSpace(user, space), dstPath, FILE_OPERATION.DECOMPRESS, space.task?.id)
+    const tmpPath = await makeTemporaryDirectory(
+      await ensureTemporaryRootFromSpace(user, space),
+      user.id,
+      dstPath,
+      FILE_OPERATION.DECOMPRESS,
+      space.task?.id
+    )
     let fileLock: FileLock | undefined
     try {
       // create lock

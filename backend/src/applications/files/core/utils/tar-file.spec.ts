@@ -25,16 +25,17 @@ describe(createTar.name, () => {
   it('archives files and directories', async () => {
     const directory = path.join(sourceDir, 'docs')
     await mkdir(directory)
-    await mkdir(path.join(directory, '.sync-in-tmp', 'users'), { recursive: true })
+    await mkdir(path.join(directory, '.sync-in-tmp'), { recursive: true })
     await writeFile(path.join(directory, 'file.txt'), 'content')
     await writeFile(path.join(directory, '.sync-in.partial'), 'partial')
-    await writeFile(path.join(directory, '.sync-in-tmp', 'users', 'staging.bin'), 'staging')
+    await writeFile(path.join(directory, '.sync-in-tmp', 'server-user-7-compress-task-id-staging.bin'), 'staging')
 
     await createTar(archivePath, [{ path: directory, name: 'docs' }], false)
 
     const archiveEntries = await readArchiveEntries()
     expect(archiveEntries.map(({ path }) => path)).toEqual(expect.arrayContaining(['.', 'file.txt']))
-    expect(archiveEntries.some(({ path: entryPath }) => entryPath.includes('.sync-in'))).toBe(false)
+    expect(archiveEntries.map(({ path: entryPath }) => entryPath)).toContain('.sync-in.partial')
+    expect(archiveEntries.some(({ path: entryPath }) => entryPath.startsWith('.sync-in-tmp'))).toBe(false)
   })
 
   it('rejects symbolic links and hard links', async () => {

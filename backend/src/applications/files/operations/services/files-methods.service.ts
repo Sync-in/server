@@ -96,7 +96,11 @@ export class FilesMethods {
     try {
       for (const f of compressFileDto.files) {
         // sanitize file name
-        f.name = sanitizeName(f.name)
+        const sanitizedName = typeof f.name === 'string' ? sanitizeName(f.name) : ''
+        if (!sanitizedName || sanitizedName !== f.name) {
+          return this.handleError(space, FILE_OPERATION.COMPRESS, new FileError(HttpStatus.BAD_REQUEST, `${f.name} is not valid`))
+        }
+        f.name = sanitizedName
         // handles the case where the file is an anchored file
         let baseSpace: SpaceEnv
         if (f.path) {

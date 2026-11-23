@@ -14,6 +14,8 @@ import {
   isPathInside,
   moveFiles,
   sanitizeName,
+  serverTemporaryEntryPrefix,
+  serverTemporaryEntryUserId,
   temporaryFileName,
   temporaryFilePath,
   temporaryFilePrefix,
@@ -60,19 +62,23 @@ describe(isPathInside.name, () => {
   })
 })
 
-describe(isInternalTemporaryEntry.name, () => {
-  it('reserves storage and Sync temporary names only', () => {
-    expect(isInternalTemporaryEntry('.sync-in-tmp')).toBe(true)
-    expect(isInternalTemporaryEntry('.sync-in.uploading')).toBe(true)
-    expect(isInternalTemporaryEntry('.sync-in')).toBe(false)
-    expect(isInternalTemporaryEntry('.sync-in-tmp-user')).toBe(false)
-  })
-
+describe(isInternalTemporaryPath.name, () => {
   it('checks path segments relative to the exposed repository root', () => {
     const basePath = path.join(path.sep, 'data', 'users', '.sync-in.user')
 
-    expect(isInternalTemporaryPath(basePath, path.join(basePath, 'documents', '.sync-in.uploading'))).toBe(true)
+    expect(isInternalTemporaryPath(basePath, path.join(basePath, 'documents', '.sync-in-tmp', 'server-user-42-upload-task-file'))).toBe(true)
+    expect(isInternalTemporaryPath(basePath, path.join(basePath, 'documents', '.SYNC-IN-TMP', 'server-user-42-upload-task-file'))).toBe(true)
+    expect(isInternalTemporaryPath(basePath, path.join(basePath, 'documents', '.sync-in.uploading'))).toBe(false)
     expect(isInternalTemporaryPath(basePath, path.join(basePath, 'documents'))).toBe(false)
+  })
+})
+
+describe(isInternalTemporaryEntry.name, () => {
+  it('reserves every casing of the storage namespace only', () => {
+    expect(isInternalTemporaryEntry('.sync-in-tmp')).toBe(true)
+    expect(isInternalTemporaryEntry('.SYNC-IN-TMP')).toBe(true)
+    expect(isInternalTemporaryEntry('.sync-in.uploading')).toBe(false)
+    expect(isInternalTemporaryEntry('.sync-in-tmp-user')).toBe(false)
   })
 })
 
@@ -331,17 +337,35 @@ describe('upload stream writers', () => {
 
 describe(temporaryFilePath.name, () => {
   it('uses the operation, execution id and sanitized basename', () => {
-    const parentPath = path.join(path.sep, 'storage', '.sync-in-tmp', 'users', '42')
+    const parentPath = path.join(path.sep, 'storage', '.sync-in-tmp')
 
-    expect(temporaryFilePath(parentPath, '../report.pdf', 'upload', 'task/id')).toBe(path.join(parentPath, '~tmp-upload-task-id-report.pdf'))
-    expect(temporaryFilePrefix('compress', 'task-id')).toBe('~tmp-compress-task-id-')
+    expect(temporaryFilePath(parentPath, 42, '../report.pdf', 'upload', 'task/id')).toBe(
+      path.join(parentPath, 'server-user-42-upload-task-id-report.pdf')
+    )
+    expect(temporaryFilePrefix(42, 'compress', 'task-id')).toBe('server-user-42-compress-task-id-')
   })
 
   it('keeps generated names within the filesystem byte limit while preserving the extension', () => {
-    const name = temporaryFileName(`${'é'.repeat(200)}.tar.gz`, 'compress', 'task-id')
+    const name = temporaryFileName(42, `${'é'.repeat(200)}.tar.gz`, 'compress', 'task-id')
 
     expect(Buffer.byteLength(name)).toBeLessThanOrEqual(255)
     expect(name.endsWith('.gz')).toBe(true)
+  })
+})
+
+describe(serverTemporaryEntryUserId.name, () => {
+  it('uses canonical positive user identifiers', () => {
+    expect(serverTemporaryEntryPrefix(42)).toBe('server-user-42-')
+    expect(serverTemporaryEntryUserId('server-user-42-upload-task-file')).toBe(42)
+  })
+
+  it.each(['desktop-client-download-file', 'server-user-0-upload-file', 'server-user-01-upload-file', 'server-user-9007199254740992-upload-file'])(
+    'rejects an unmanaged or invalid entry: %s',
+    (value) => expect(serverTemporaryEntryUserId(value)).toBeUndefined()
+  )
+
+  it.each([0, -1, Number.MAX_SAFE_INTEGER + 1])('rejects an invalid generated user identifier: %s', (userId) => {
+    expect(() => serverTemporaryEntryPrefix(userId)).toThrow('Temporary-file user id must be a positive safe integer')
   })
 })
 

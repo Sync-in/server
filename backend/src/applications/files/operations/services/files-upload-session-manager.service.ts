@@ -1,9 +1,10 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import type { FastifyReply } from 'fastify'
 import crypto from 'node:crypto'
+import { createReadStream } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import type { Readable } from 'node:stream'
+import { Readable } from 'node:stream'
 import { ACTION } from '../../../../common/constants.js'
 import { SERVER_NAME } from '../../../../common/shared.js'
 import { CHECKSUM_PATTERN, isUuidV4 } from '../../../../common/validation.js'
@@ -12,21 +13,24 @@ import { HTTP_METHOD } from '../../../applications.constants.js'
 import { SPACE_OPERATION } from '../../../spaces/constants/spaces.js'
 import type { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface.js'
 import type { SpaceEnv } from '../../../spaces/models/space-env.model.js'
-import { temporaryRootFromSpace } from '../../../spaces/utils/paths.js'
+import { ensureTemporaryRootFromSpace, existingTemporaryRootFromSpace } from '../../../spaces/utils/paths.js'
 import { haveSpaceEnvPermissions } from '../../../spaces/utils/permissions.js'
 import type { UserModel } from '../../../users/models/user.model.js'
 import { DEPTH } from '../../../webdav/constants/webdav.js'
 import { FILE_ERROR } from '../../core/constants/errors.js'
-import { DEFAULT_CHECKSUM_ALGORITHM, DEFAULT_MIME_TYPE } from '../../core/constants/files.js'
-import { FILE_OPERATION } from '../../core/constants/operations.js'
+import { DEFAULT_CHECKSUM_ALGORITHM, DEFAULT_HIGH_WATER_MARK, DEFAULT_MIME_TYPE } from '../../core/constants/files.js'
 import {
   FILE_UPLOAD_SESSION,
+  FILE_UPLOAD_SESSION_CHECKSUM_MODE,
+  FILE_UPLOAD_SESSION_CHECKSUM_SIZE,
   FILE_UPLOAD_SESSION_HEADER,
   FILE_UPLOAD_SESSION_MAX_AGE_MS,
+  FILE_UPLOAD_SESSION_PERSISTED_STATE_VERSION,
   FILE_UPLOAD_SESSION_STATE
 } from '../constants/upload-session.js'
 import { FileEvent } from '../../core/events/file-events.js'
 import type {
+  FileUploadSessionChecksumMode,
   FileUploadSessionChunkHeaders,
   FileUploadSessionContext,
   FileUploadSessionCreate,
@@ -34,9 +38,11 @@ import type {
   FileUploadSessionMetadata,
   FileUploadSessionMetadataHeaders,
   FileUploadSessionMethod,
+  FileUploadSessionPersistentState,
   FileUploadSessionStatus
 } from '../interfaces/file-upload-session.interface.js'
 import { FileUploadSessionOffsetError } from '../models/file-upload-session-offset-error.js'
+import { fileUploadSessionDirectoryName } from '../utils/upload-session.js'
 import { FileError } from '../../core/models/file-error.js'
 import {
   checkFileName,
@@ -46,7 +52,6 @@ import {
   makeDir,
   moveFiles,
   removeFiles,
-  temporaryFilePath,
   touchFile,
   writeFromStream
 } from '../../core/utils/files.js'
@@ -76,8 +81,8 @@ export class FilesUploadSessionManager {
       const headers: FileUploadSessionChunkHeaders = {
         contentLength: req.headers['content-length'],
         contentType: req.headers['content-type'],
-        uploadLength: req.headers['upload-length'],
-        uploadOffset: req.headers['upload-offset']
+        uploadLength: req.headers[FILE_UPLOAD_SESSION_HEADER.LENGTH],
+        uploadOffset: req.headers[FILE_UPLOAD_SESSION_HEADER.OFFSET]
       }
       this.setStatusHeaders(
         method
@@ -88,15 +93,24 @@ export class FilesUploadSessionManager {
               uploadId,
               req.raw,
               headers,
-              sync ? { checksum: req.headers['upload-checksum'], mtime: req.headers['upload-mtime'] } : undefined
+              sync
+                ? {
+                    checksum: req.headers[FILE_UPLOAD_SESSION_HEADER.CHECKSUM],
+                    mtime: req.headers[FILE_UPLOAD_SESSION_HEADER.MTIME]
+                  }
+                : undefined,
+              sync
             )
-          : await this.append(req.user, req.space, uploadId, req.raw, headers),
+          : await this.append(req.user, req.space, uploadId, req.raw, headers, sync),
         res,
         sync
       )
     } catch (error) {
       if (error instanceof FileUploadSessionOffsetError) {
         void res.header(FILE_UPLOAD_SESSION_HEADER.OFFSET, String(error.offset))
+        if (error.validatedOffset !== undefined) {
+          void res.header(FILE_UPLOAD_SESSION_HEADER.VALIDATED_OFFSET, String(error.validatedOffset))
+        }
       }
       this.setRetryAfter(error, res)
       if (req.raw.httpVersionMajor === 1) void res.header('Connection', 'close')
@@ -111,18 +125,25 @@ export class FilesUploadSessionManager {
     uploadId: string,
     stream: Readable,
     headers: FileUploadSessionChunkHeaders,
-    metadataHeaders: FileUploadSessionMetadataHeaders = {}
+    metadataHeaders: FileUploadSessionMetadataHeaders = {},
+    sync = false
   ): Promise<FileUploadSessionStatus> {
     this.assertContentType(headers.contentType)
     const size = this.parseUploadLength(headers.uploadLength)
     const uploadOffset = this.parseUploadOffset(headers.uploadOffset)
-    if (uploadOffset !== 0) throw new FileUploadSessionOffsetError(0)
+    if (uploadOffset !== 0) throw new FileUploadSessionOffsetError(0, undefined, sync ? 0 : undefined)
     const contentLength = this.parseContentLength(headers.contentLength)
-    if (contentLength === 0 && size !== 0) throw new HttpException('First chunk body cannot be empty', HttpStatus.BAD_REQUEST)
-    if (contentLength > size) throw new HttpException('Chunk exceeds the declared upload size', HttpStatus.PAYLOAD_TOO_LARGE)
     const metadata = this.parseMetadataHeaders(metadataHeaders)
-    await this.initialize(user, space, method, uploadId, { size, ...metadata })
-    return this.append(user, space, uploadId, stream, headers)
+    const checksumMode = sync
+      ? metadata.checksum
+        ? FILE_UPLOAD_SESSION_CHECKSUM_MODE.CHUNK_SUFFIX
+        : FILE_UPLOAD_SESSION_CHECKSUM_MODE.SYNC_RAW
+      : undefined
+    const payloadLength = this.payloadContentLength(contentLength, checksumMode)
+    if (payloadLength === 0 && size !== 0) throw new HttpException('First chunk body cannot be empty', HttpStatus.BAD_REQUEST)
+    if (payloadLength > size) throw new HttpException('Chunk exceeds the declared upload size', HttpStatus.PAYLOAD_TOO_LARGE)
+    await this.initialize(user, space, method, uploadId, { size, ...metadata, ...(checksumMode && { checksumMode }) })
+    return this.append(user, space, uploadId, stream, headers, sync)
   }
 
   append(
@@ -130,72 +151,190 @@ export class FilesUploadSessionManager {
     space: SpaceEnv,
     uploadId: string,
     stream: Readable,
-    headers: FileUploadSessionChunkHeaders
+    headers: FileUploadSessionChunkHeaders,
+    sync = false
   ): Promise<FileUploadSessionStatus> {
     this.assertContentType(headers.contentType)
     const uploadLength = this.parseUploadLength(headers.uploadLength)
     const uploadOffset = this.parseUploadOffset(headers.uploadOffset)
     const contentLength = this.parseContentLength(headers.contentLength)
-    const directory = this.directoryForRequest(user, space, uploadId)
-    return this.withSessionLock(directory, async () => {
-      const context = await this.loadContext(user, space, uploadId, directory)
-      if (uploadLength !== context.manifest.expectedSize) {
-        throw new HttpException('Upload-Length does not match the upload session', HttpStatus.CONFLICT)
-      }
+    return this.directoryForRequest(user, space, uploadId).then((directory) =>
+      this.withSessionLock(directory, async () => {
+        const context = await this.loadLockedContext(space, directory)
+        if (uploadLength !== context.manifest.expectedSize) {
+          throw new HttpException('upload-length does not match the upload session', HttpStatus.CONFLICT)
+        }
+        if (sync !== (context.manifest.checksumMode !== undefined)) {
+          throw new HttpException('Upload session mode does not match', HttpStatus.CONFLICT)
+        }
 
-      // The payload length is authoritative. The client offset is only a precondition and cannot skip already missing bytes.
-      const offset = await this.payloadSize(context)
-      if (uploadOffset !== offset) throw new FileUploadSessionOffsetError(offset)
-      if (contentLength === 0) {
-        if (offset !== context.manifest.expectedSize) throw new HttpException('Chunk body cannot be empty', HttpStatus.BAD_REQUEST)
-        return this.publishCompleted(user, space, context)
-      }
-      if (contentLength > context.manifest.expectedSize - offset) {
-        throw new HttpException('Chunk exceeds the declared upload size', HttpStatus.PAYLOAD_TOO_LARGE)
-      }
-      if (space.willExceedQuota(contentLength)) {
-        throw new HttpException('Storage quota exceeded', HttpStatus.INSUFFICIENT_STORAGE)
-      }
+        // The payload length is authoritative. The client offset is only a precondition and cannot skip already missing bytes.
+        const offset = await this.payloadSize(context)
+        if (uploadOffset !== offset) {
+          throw new FileUploadSessionOffsetError(
+            offset,
+            undefined,
+            context.manifest.checksumMode === FILE_UPLOAD_SESSION_CHECKSUM_MODE.SYNC_RAW ? offset : undefined
+          )
+        }
+        if (contentLength === 0) {
+          if (offset !== context.manifest.expectedSize) throw new HttpException('Chunk body cannot be empty', HttpStatus.BAD_REQUEST)
+          return this.publishCompleted(user, space, context)
+        }
+        const payloadLength = this.payloadContentLength(contentLength, context.manifest.checksumMode)
+        if (payloadLength > context.manifest.expectedSize - offset) {
+          throw new HttpException('Chunk exceeds the declared upload size', HttpStatus.PAYLOAD_TOO_LARGE)
+        }
+        if (payloadLength > 0 && space.willExceedQuota(payloadLength)) {
+          throw new HttpException('Storage quota exceeded', HttpStatus.INSUFFICIENT_STORAGE)
+        }
 
-      let received = 0
-      // A chunk is acknowledged only after its complete body is consumed and its resulting size is verified. No fsync is requested here;
-      // physical persistence follows the operating system page-cache and writeback semantics. If the stream is interrupted, its written
-      // prefix remains in payload.part and its actual size becomes the offset used for reconciliation.
-      await writeFromStream(context.payload, stream, {
-        start: offset,
-        accountBytes: (bytes) => {
-          received += bytes
-          if (received > contentLength) throw new HttpException('Chunk body exceeds Content-Length', HttpStatus.BAD_REQUEST)
+        if (context.manifest.checksumMode === FILE_UPLOAD_SESSION_CHECKSUM_MODE.CHUNK_SUFFIX) {
+          return this.appendChecksummedChunk(user, space, context, stream, contentLength, payloadLength, offset)
+        }
+
+        let received = 0
+        // A chunk is acknowledged only after its complete body is consumed and its resulting size is verified. No fsync is requested here;
+        // physical persistence follows the operating system page-cache and writeback semantics. If the stream is interrupted, its written
+        // prefix remains in payload.part and its actual size becomes the offset used for reconciliation.
+        await writeFromStream(context.payload, stream, {
+          start: offset,
+          accountBytes: (bytes) => {
+            received += bytes
+            if (received > contentLength) throw new HttpException('Chunk body exceeds Content-Length', HttpStatus.BAD_REQUEST)
+          }
+        })
+        const newOffset = await this.payloadSize(context)
+        if (received !== contentLength || newOffset !== offset + contentLength) {
+          throw new FileUploadSessionOffsetError(
+            newOffset,
+            'Chunk body is incomplete',
+            context.manifest.checksumMode === FILE_UPLOAD_SESSION_CHECKSUM_MODE.SYNC_RAW ? newOffset : undefined
+          )
+        }
+        if (newOffset === context.manifest.expectedSize) return this.publishCompleted(user, space, context)
+        return {
+          offset: newOffset,
+          size: context.manifest.expectedSize,
+          state: FILE_UPLOAD_SESSION_STATE.UPLOADING,
+          ...(context.manifest.checksumMode === FILE_UPLOAD_SESSION_CHECKSUM_MODE.SYNC_RAW && { validatedOffset: newOffset })
         }
       })
-      const newOffset = await this.payloadSize(context)
-      if (received !== contentLength || newOffset !== offset + contentLength) {
-        throw new FileUploadSessionOffsetError(newOffset, 'Chunk body is incomplete')
-      }
-      if (newOffset === context.manifest.expectedSize) return this.publishCompleted(user, space, context)
-      return {
-        offset: newOffset,
-        size: context.manifest.expectedSize,
-        state: FILE_UPLOAD_SESSION_STATE.UPLOADING
-      }
+    )
+  }
+
+  private async appendChecksummedChunk(
+    user: UserModel,
+    space: SpaceEnv,
+    context: FileUploadSessionContext,
+    stream: Readable,
+    contentLength: number,
+    payloadLength: number,
+    offset: number
+  ): Promise<FileUploadSessionStatus> {
+    const persistentState = await this.readPersistentState(context, offset)
+    const validatedOffset = persistentState.validatedOffset
+    if (payloadLength === 0 && validatedOffset === offset && offset !== context.manifest.expectedSize) {
+      throw new HttpException('Chunk body cannot be empty', HttpStatus.BAD_REQUEST)
+    }
+
+    const hash = crypto.createHash(DEFAULT_CHECKSUM_ALGORITHM)
+    if (validatedOffset < offset) {
+      const pending = createReadStream(context.payload, {
+        start: validatedOffset,
+        end: offset - 1,
+        highWaterMark: DEFAULT_HIGH_WATER_MARK
+      })
+      for await (const chunk of pending) hash.update(chunk)
+    }
+
+    let payloadReceived = 0
+    let received = 0
+    let checksumReceived = 0
+    const expectedChecksum = Buffer.alloc(FILE_UPLOAD_SESSION_CHECKSUM_SIZE)
+    const payloadStream = Readable.from(
+      (async function* () {
+        for await (const value of stream) {
+          const chunk = Buffer.isBuffer(value) ? value : Buffer.from(value)
+          received += chunk.length
+          if (received > contentLength) throw new HttpException('Chunk body exceeds Content-Length', HttpStatus.BAD_REQUEST)
+
+          const payloadBytes = Math.min(payloadLength - payloadReceived, chunk.length)
+          if (payloadBytes > 0) {
+            const payloadChunk = chunk.subarray(0, payloadBytes)
+            payloadReceived += payloadBytes
+            hash.update(payloadChunk)
+            yield payloadChunk
+          }
+
+          const checksumChunk = chunk.subarray(payloadBytes)
+          if (checksumChunk.length > 0) {
+            if (checksumReceived + checksumChunk.length > FILE_UPLOAD_SESSION_CHECKSUM_SIZE) {
+              throw new HttpException('Chunk checksum exceeds its declared size', HttpStatus.BAD_REQUEST)
+            }
+            checksumChunk.copy(expectedChecksum, checksumReceived)
+            checksumReceived += checksumChunk.length
+          }
+        }
+      })(),
+      { objectMode: false }
+    )
+
+    await writeFromStream(context.payload, payloadStream, { start: offset })
+    const newOffset = await this.payloadSize(context)
+    if (
+      received !== contentLength ||
+      payloadReceived !== payloadLength ||
+      checksumReceived !== FILE_UPLOAD_SESSION_CHECKSUM_SIZE ||
+      newOffset !== offset + payloadLength
+    ) {
+      throw new FileUploadSessionOffsetError(newOffset, 'Chunk body is incomplete', validatedOffset)
+    }
+
+    const checksum = hash.digest()
+    if (!crypto.timingSafeEqual(checksum, expectedChecksum)) {
+      await fs.truncate(context.payload, validatedOffset)
+      throw new HttpException('Checksums are not identical', HttpStatus.BAD_REQUEST)
+    }
+
+    await this.writePersistentState(context, {
+      validatedOffset: newOffset,
+      version: FILE_UPLOAD_SESSION_PERSISTED_STATE_VERSION
     })
+    if (newOffset === context.manifest.expectedSize) return this.publishCompleted(user, space, context)
+    return {
+      offset: newOffset,
+      size: context.manifest.expectedSize,
+      state: FILE_UPLOAD_SESSION_STATE.UPLOADING,
+      validatedOffset: newOffset
+    }
   }
 
   status(user: UserModel, space: SpaceEnv, uploadId: string): Promise<FileUploadSessionStatus> {
-    const directory = this.directoryForRequest(user, space, uploadId)
-    return this.withSessionLock(directory, async () => {
-      const context = await this.loadContext(user, space, uploadId, directory)
-      const offset = await this.payloadSize(context)
-      return {
-        offset,
-        size: context.manifest.expectedSize,
-        state: offset === context.manifest.expectedSize ? FILE_UPLOAD_SESSION_STATE.READY : FILE_UPLOAD_SESSION_STATE.UPLOADING
-      }
-    })
+    return this.directoryForRequest(user, space, uploadId).then((directory) =>
+      this.withSessionLock(directory, async () => {
+        const context = await this.loadLockedContext(space, directory)
+        const offset = await this.payloadSize(context)
+        const persistentState =
+          context.manifest.checksumMode === FILE_UPLOAD_SESSION_CHECKSUM_MODE.CHUNK_SUFFIX
+            ? await this.readPersistentState(context, offset)
+            : undefined
+        return {
+          offset,
+          size: context.manifest.expectedSize,
+          state:
+            offset === context.manifest.expectedSize && (!persistentState || persistentState.validatedOffset === offset)
+              ? FILE_UPLOAD_SESSION_STATE.READY
+              : FILE_UPLOAD_SESSION_STATE.UPLOADING,
+          ...(persistentState && { validatedOffset: persistentState.validatedOffset }),
+          ...(context.manifest.checksumMode === FILE_UPLOAD_SESSION_CHECKSUM_MODE.SYNC_RAW && { validatedOffset: offset })
+        }
+      })
+    )
   }
 
-  async writeUploadSessionStatus(user: UserModel, space: SpaceEnv, uploadId: string, res: FastifyReply, includeIno = false): Promise<void> {
-    this.setStatusHeaders(await this.withRetryAfter(this.status(user, space, uploadId), res), res, includeIno)
+  async writeUploadSessionStatus(user: UserModel, space: SpaceEnv, uploadId: string, res: FastifyReply): Promise<void> {
+    this.setStatusHeaders(await this.withRetryAfter(this.status(user, space, uploadId), res), res)
   }
 
   private async initialize(
@@ -206,8 +345,8 @@ export class FilesUploadSessionManager {
     options: FileUploadSessionCreate
   ): Promise<void> {
     if (!isUuidV4(uploadId)) throw new HttpException('Invalid upload identifier', HttpStatus.BAD_REQUEST)
-    const temporaryRoot = temporaryRootFromSpace(user, space)
-    const directory = this.sessionDirectory(temporaryRoot, uploadId)
+    const temporaryRoot = await ensureTemporaryRootFromSpace(user, space)
+    const directory = this.sessionDirectory(temporaryRoot, user.id, uploadId)
 
     // The upload id is the only resumption key: a destination or filename never selects an existing payload.
     const existingDirectory = await this.lstatIfExists(directory)
@@ -248,10 +387,21 @@ export class FilesUploadSessionManager {
         method,
         expectedSize: options.size,
         ...(options.mtime !== undefined && { mtime: options.mtime }),
-        ...(options.checksum && { checksum: options.checksum })
+        ...(options.checksum && { checksum: options.checksum }),
+        ...(options.checksumMode && { checksumMode: options.checksumMode })
       }
       await fs.writeFile(path.join(initializationDirectory, FILE_UPLOAD_SESSION.MANIFEST), JSON.stringify(manifest), { flag: 'wx', mode: 0o600 })
       await fs.writeFile(path.join(initializationDirectory, FILE_UPLOAD_SESSION.PAYLOAD), '', { flag: 'wx' })
+      if (options.checksumMode === FILE_UPLOAD_SESSION_CHECKSUM_MODE.CHUNK_SUFFIX) {
+        const persistentState: FileUploadSessionPersistentState = {
+          validatedOffset: 0,
+          version: FILE_UPLOAD_SESSION_PERSISTED_STATE_VERSION
+        }
+        await fs.writeFile(path.join(initializationDirectory, FILE_UPLOAD_SESSION.STATE), JSON.stringify(persistentState), {
+          flag: 'wx',
+          mode: 0o600
+        })
+      }
       await fs.rename(initializationDirectory, directory)
     } catch (error) {
       await removeFiles(initializationDirectory).catch(() => undefined)
@@ -266,7 +416,12 @@ export class FilesUploadSessionManager {
 
   async cleanupExpired(directory: string, expiration: number): Promise<void> {
     const stats = await this.lstatIfExists(directory)
-    if (!stats?.isDirectory()) return
+    if (!stats) return
+    if (!stats.isDirectory()) {
+      // A malformed entry may still match the session naming convention; keep the normal retention behavior for it.
+      if (stats.mtimeMs < expiration) await removeFiles(directory)
+      return
+    }
     const absoluteExpiration = Date.now() - FILE_UPLOAD_SESSION_MAX_AGE_MS
     const manifestPath = path.join(directory, FILE_UPLOAD_SESSION.MANIFEST)
     const manifestStats = await this.lstatIfExists(manifestPath)
@@ -292,11 +447,11 @@ export class FilesUploadSessionManager {
   }
 
   async cancel(user: UserModel, space: SpaceEnv, uploadId: string): Promise<void> {
-    const directory = this.directoryForRequest(user, space, uploadId)
+    const directory = await this.directoryForRequest(user, space, uploadId)
     if (!(await this.lstatIfExists(directory))) return
     // The session lock serializes deletion with writes and publication. Removing this directory never removes an already published destination.
     await this.withSessionLock(directory, async () => {
-      await this.loadContext(user, space, uploadId, directory)
+      await this.loadLockedContext(space, directory)
       await removeFiles(directory)
     })
   }
@@ -306,10 +461,16 @@ export class FilesUploadSessionManager {
   }
 
   private async publishCompleted(user: UserModel, space: SpaceEnv, context: FileUploadSessionContext): Promise<FileUploadSessionStatus> {
-    if ((await this.payloadSize(context)) !== context.manifest.expectedSize) {
+    const offset = await this.payloadSize(context)
+    if (offset !== context.manifest.expectedSize) {
       throw new HttpException('Upload is incomplete', HttpStatus.CONFLICT)
     }
-    if (context.manifest.checksum) {
+    const persistentState =
+      context.manifest.checksumMode === FILE_UPLOAD_SESSION_CHECKSUM_MODE.CHUNK_SUFFIX ? await this.readPersistentState(context, offset) : undefined
+    if (persistentState && persistentState.validatedOffset !== offset) {
+      throw new HttpException('Upload chunk is not validated', HttpStatus.CONFLICT)
+    }
+    if (context.manifest.checksum && context.manifest.checksumMode !== FILE_UPLOAD_SESSION_CHECKSUM_MODE.CHUNK_SUFFIX) {
       const checksum = await checksumFile(context.payload, DEFAULT_CHECKSUM_ALGORITHM)
       if (checksum !== context.manifest.checksum) throw new HttpException('Checksums are not identical', HttpStatus.BAD_REQUEST)
     }
@@ -318,7 +479,9 @@ export class FilesUploadSessionManager {
       ino,
       offset: context.manifest.expectedSize,
       size: context.manifest.expectedSize,
-      state: FILE_UPLOAD_SESSION_STATE.COMPLETE
+      state: FILE_UPLOAD_SESSION_STATE.COMPLETE,
+      ...(persistentState && { validatedOffset: persistentState.validatedOffset }),
+      ...(context.manifest.checksumMode === FILE_UPLOAD_SESSION_CHECKSUM_MODE.SYNC_RAW && { validatedOffset: offset })
     }
   }
 
@@ -346,17 +509,19 @@ export class FilesUploadSessionManager {
         throw error
       }
 
-      if (context.manifest.mtime !== undefined) await fs.utimes(space.realPath, context.manifest.mtime, context.manifest.mtime)
-      const stats = await fs.lstat(space.realPath)
-      if (!stats.isFile() || stats.size !== context.manifest.expectedSize) {
-        throw new HttpException('Published upload is invalid', HttpStatus.INTERNAL_SERVER_ERROR)
-      }
       try {
+        if (context.manifest.mtime !== undefined) await fs.utimes(space.realPath, context.manifest.mtime, context.manifest.mtime)
+        const stats = await fs.lstat(space.realPath)
+        if (!stats.isFile() || stats.size !== context.manifest.expectedSize) {
+          throw new HttpException('Published upload is invalid', HttpStatus.INTERNAL_SERVER_ERROR)
+        }
         FileEvent.emit('event', { user, space, action, rPath: space.realPath })
+        return stats.ino
       } finally {
-        await removeFiles(context.directory)
+        await removeFiles(context.directory).catch((error: unknown) =>
+          this.logger.warn({ tag: this.publish.name, msg: `Unable to remove completed upload session: ${String(error)}` })
+        )
       }
-      return stats.ino
     })
   }
 
@@ -406,18 +571,13 @@ export class FilesUploadSessionManager {
       manifest.method === method &&
       manifest.expectedSize === options.size &&
       manifest.mtime === options.mtime &&
-      manifest.checksum === options.checksum
+      manifest.checksum === options.checksum &&
+      manifest.checksumMode === options.checksumMode
     )
   }
 
-  private async loadContext(
-    user: UserModel,
-    space: SpaceEnv,
-    uploadId: string,
-    directory = this.directoryForRequest(user, space, uploadId)
-  ): Promise<FileUploadSessionContext> {
-    const stats = await this.lstatIfExists(directory)
-    if (!stats?.isDirectory()) throw new HttpException('Upload session not found', HttpStatus.NOT_FOUND)
+  private async loadLockedContext(space: SpaceEnv, directory: string): Promise<FileUploadSessionContext> {
+    // withSessionLock already validated the directory before acquiring its lock; avoid another lstat for every request.
     const manifest = await this.readManifest(directory)
     // Bind the id to its original destination and do not reveal a session presented through another route.
     if (manifest.destination !== path.resolve(space.realPath)) {
@@ -430,7 +590,37 @@ export class FilesUploadSessionManager {
     return {
       directory,
       payload: path.join(directory, FILE_UPLOAD_SESSION.PAYLOAD),
+      state: path.join(directory, FILE_UPLOAD_SESSION.STATE),
       manifest
+    }
+  }
+
+  private async readPersistentState(context: FileUploadSessionContext, payloadSize: number): Promise<FileUploadSessionPersistentState> {
+    const state = await this.readJson(context.state, 'Upload session state is invalid')
+    if (
+      !this.isRecord(state) ||
+      state.version !== FILE_UPLOAD_SESSION_PERSISTED_STATE_VERSION ||
+      typeof state.validatedOffset !== 'number' ||
+      !Number.isSafeInteger(state.validatedOffset) ||
+      state.validatedOffset < 0 ||
+      state.validatedOffset > payloadSize
+    ) {
+      throw new HttpException('Upload session state is invalid', HttpStatus.CONFLICT)
+    }
+    return {
+      validatedOffset: state.validatedOffset,
+      version: FILE_UPLOAD_SESSION_PERSISTED_STATE_VERSION
+    }
+  }
+
+  private async writePersistentState(context: FileUploadSessionContext, state: FileUploadSessionPersistentState): Promise<void> {
+    const temporaryState = `${context.state}.${crypto.randomUUID()}.tmp`
+    try {
+      await fs.writeFile(temporaryState, JSON.stringify(state), { flag: 'wx', mode: 0o600 })
+      await fs.rename(temporaryState, context.state)
+    } catch (error) {
+      await fs.rm(temporaryState, { force: true }).catch(() => undefined)
+      throw error
     }
   }
 
@@ -483,7 +673,9 @@ export class FilesUploadSessionManager {
     if (manifestStats?.isFile() && manifestStats.mtimeMs < absoluteExpiration) return true
     // Writing payload contents does not update the directory mtime, so inspect every mutable session entry before deleting it.
     const activity = await Promise.all(
-      [FILE_UPLOAD_SESSION.MANIFEST, FILE_UPLOAD_SESSION.PAYLOAD].map((entry) => this.lstatIfExists(path.join(directory, entry)))
+      [FILE_UPLOAD_SESSION.MANIFEST, FILE_UPLOAD_SESSION.PAYLOAD, FILE_UPLOAD_SESSION.STATE].map((entry) =>
+        this.lstatIfExists(path.join(directory, entry))
+      )
     )
     return !activity.some((entry) => entry && entry.mtimeMs >= expiration)
   }
@@ -523,17 +715,20 @@ export class FilesUploadSessionManager {
     void res.header(FILE_UPLOAD_SESSION_HEADER.OFFSET, String(status.offset))
     void res.header(FILE_UPLOAD_SESSION_HEADER.LENGTH, String(status.size))
     void res.header(FILE_UPLOAD_SESSION_HEADER.STATE, status.state)
+    if (status.validatedOffset !== undefined) {
+      void res.header(FILE_UPLOAD_SESSION_HEADER.VALIDATED_OFFSET, String(status.validatedOffset))
+    }
   }
 
   private parseUploadOffset(value: unknown): number {
-    const offset = this.parseUploadHeader(() => parseUnsignedIntegerHeader(value, 'Invalid Upload-Offset header'))
-    if (offset === undefined) throw new HttpException('Upload-Offset header is required', HttpStatus.BAD_REQUEST)
+    const offset = this.parseUploadHeader(() => parseUnsignedIntegerHeader(value, 'Invalid upload-offset header'))
+    if (offset === undefined) throw new HttpException('upload-offset header is required', HttpStatus.BAD_REQUEST)
     return offset
   }
 
   private parseUploadLength(value: unknown): number {
-    const length = this.parseUploadHeader(() => parseUnsignedIntegerHeader(value, 'Invalid Upload-Length header'))
-    if (length === undefined) throw new HttpException('Upload-Length header is required', HttpStatus.BAD_REQUEST)
+    const length = this.parseUploadHeader(() => parseUnsignedIntegerHeader(value, 'Invalid upload-length header'))
+    if (length === undefined) throw new HttpException('upload-length header is required', HttpStatus.BAD_REQUEST)
     return length
   }
 
@@ -543,15 +738,24 @@ export class FilesUploadSessionManager {
     return length
   }
 
+  private payloadContentLength(contentLength: number, checksumMode?: FileUploadSessionChecksumMode): number {
+    if (checksumMode !== FILE_UPLOAD_SESSION_CHECKSUM_MODE.CHUNK_SUFFIX) return contentLength
+    if (contentLength === 0) return 0
+    if (contentLength < FILE_UPLOAD_SESSION_CHECKSUM_SIZE) {
+      throw new HttpException('Chunk checksum is missing', HttpStatus.BAD_REQUEST)
+    }
+    return contentLength - FILE_UPLOAD_SESSION_CHECKSUM_SIZE
+  }
+
   private parseMetadataHeaders(headers: FileUploadSessionMetadataHeaders): FileUploadSessionMetadata {
     let checksum: string | undefined
     if (headers.checksum !== undefined) {
       if (typeof headers.checksum !== 'string' || !CHECKSUM_PATTERN.test(headers.checksum)) {
-        throw new HttpException('Invalid Upload-Checksum header', HttpStatus.BAD_REQUEST)
+        throw new HttpException('Invalid upload-checksum header', HttpStatus.BAD_REQUEST)
       }
       checksum = headers.checksum.toLowerCase()
     }
-    const mtime = this.parseUploadHeader(() => parseUnsignedIntegerHeader(headers.mtime, 'Invalid Upload-Mtime header'))
+    const mtime = this.parseUploadHeader(() => this.parseSignedIntegerHeader(headers.mtime, 'Invalid upload-mtime header'))
     return {
       ...(checksum && { checksum }),
       ...(mtime !== undefined && { mtime })
@@ -562,6 +766,15 @@ export class FilesUploadSessionManager {
     const permission = method === HTTP_METHOD.PUT ? SPACE_OPERATION.MODIFY : SPACE_OPERATION.ADD
     if (!haveSpaceEnvPermissions(space, permission)) throw new HttpException('You are not allowed to complete this upload', HttpStatus.FORBIDDEN)
     if (space.inTrashRepository) throw new HttpException('The trash is read-only', HttpStatus.FORBIDDEN)
+  }
+
+  private parseSignedIntegerHeader(value: unknown, invalidHeaderMessage: string): number | undefined {
+    if (value === undefined || value === null) return undefined
+    const normalized = typeof value === 'number' ? String(value) : typeof value === 'string' ? value.trim() : ''
+    if (!/^-?\d+$/.test(normalized)) throw new FileError(HttpStatus.BAD_REQUEST, invalidHeaderMessage)
+    const parsed = Number(normalized)
+    if (!Number.isSafeInteger(parsed)) throw new FileError(HttpStatus.BAD_REQUEST, invalidHeaderMessage)
+    return parsed
   }
 
   private assertDestination(space: SpaceEnv): void {
@@ -589,17 +802,17 @@ export class FilesUploadSessionManager {
     }
   }
 
-  private directoryForRequest(user: UserModel, space: SpaceEnv, uploadId: string): string {
+  private async directoryForRequest(user: UserModel, space: SpaceEnv, uploadId: string): Promise<string> {
     this.assertUploadId(uploadId)
     this.assertDestination(space)
-    const temporaryRoot = temporaryRootFromSpace(user, space)
-    const directory = this.sessionDirectory(temporaryRoot, uploadId)
+    const temporaryRoot = await existingTemporaryRootFromSpace(user, space)
+    const directory = this.sessionDirectory(temporaryRoot, user.id, uploadId)
     if (!isPathInside(temporaryRoot, directory)) throw new HttpException('Upload session not found', HttpStatus.NOT_FOUND)
     return directory
   }
 
-  private sessionDirectory(temporaryRoot: string, uploadId: string): string {
-    return temporaryFilePath(temporaryRoot, FILE_UPLOAD_SESSION.DIRECTORY_TARGET, FILE_OPERATION.UPLOAD, uploadId)
+  private sessionDirectory(temporaryRoot: string, userId: number, uploadId: string): string {
+    return path.join(temporaryRoot, fileUploadSessionDirectoryName(userId, uploadId))
   }
 
   private async readManifest(directory: string): Promise<FileUploadSessionManifest> {
@@ -622,7 +835,12 @@ export class FilesUploadSessionManager {
     (value.method === HTTP_METHOD.POST || value.method === HTTP_METHOD.PUT) &&
     Number.isSafeInteger(value.expectedSize) &&
     (value.expectedSize as number) >= 0 &&
-    (value.mtime === undefined || (Number.isSafeInteger(value.mtime) && (value.mtime as number) >= 0)) &&
+    (value.mtime === undefined || Number.isSafeInteger(value.mtime)) &&
+    (value.checksumMode === undefined ||
+      value.checksumMode === FILE_UPLOAD_SESSION_CHECKSUM_MODE.CHUNK_SUFFIX ||
+      value.checksumMode === FILE_UPLOAD_SESSION_CHECKSUM_MODE.SYNC_RAW) &&
+    (value.checksumMode !== FILE_UPLOAD_SESSION_CHECKSUM_MODE.CHUNK_SUFFIX || value.checksum !== undefined) &&
+    (value.checksumMode !== FILE_UPLOAD_SESSION_CHECKSUM_MODE.SYNC_RAW || value.checksum === undefined) &&
     (value.checksum === undefined ||
       (typeof value.checksum === 'string' && CHECKSUM_PATTERN.test(value.checksum) && value.checksum === value.checksum.toLowerCase()))
 

@@ -120,6 +120,6 @@ export function isMultipartCountLimitError(e: any): boolean {
   return FASTIFY_MULTIPART_COUNT_LIMIT_CODES.has(e?.code)
 }
 
-export function uploadTmpFilePath(tmpPath: string, partFileName: string): string {
-  return temporaryFilePath(tmpPath, partFileName, FILE_OPERATION.UPLOAD)
+export function uploadTmpFilePath(tmpPath: string, userId: number, partFileName: string): string {
+  return temporaryFilePath(tmpPath, userId, partFileName, FILE_OPERATION.UPLOAD)
 }

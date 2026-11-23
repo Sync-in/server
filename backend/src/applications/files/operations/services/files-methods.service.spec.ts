@@ -174,7 +174,8 @@ describe(FilesMethods.name, () => {
       extension: TAR_EXTENSION
     }
     expect(() => compressFileSchema.parse(compressFileDto)).toThrow()
-    await expect(filesMethods.compress(userTest, spaceEnv, compressFileDto)).rejects.toThrow(/does not exist/i)
+    await expect(filesMethods.compress(userTest, spaceEnv, compressFileDto)).rejects.toThrow(/is not valid/i)
+    compressFileDto.files[0].name = 'foo'
     compressFileDto.files[0].path = '../../../bar/../'
     await expect(filesMethods.compress(userTest, spaceEnv, compressFileDto)).rejects.toThrow(/is not valid/i)
   })

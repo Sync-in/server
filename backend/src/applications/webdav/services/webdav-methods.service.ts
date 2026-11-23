@@ -23,7 +23,7 @@ import { dirName, filePathIdentity, genEtag, isPathExists, isPathIsDir, removeFi
 import { FILE_OPERATION } from '../../files/core/constants/operations.js'
 import { SPACE_OPERATION, SPACE_REPOSITORY } from '../../spaces/constants/spaces.js'
 import { SpaceEnv } from '../../spaces/models/space-env.model.js'
-import { dbFileFromSpace, temporaryRootFromSpace } from '../../spaces/utils/paths.js'
+import { dbFileFromSpace, ensureTemporaryRootFromSpace } from '../../spaces/utils/paths.js'
 import { haveSpaceEnvPermissions } from '../../spaces/utils/permissions.js'
 import type { LOCK_DEPTH } from '../constants/webdav.js'
 import {
@@ -236,7 +236,7 @@ export class WebDAVMethods {
       // Stage only complete overwrites to preserve the previous file on failure. New files and
       // ranged uploads write directly because their partial content is the checkpoint used to resume.
       if (!isRangeUpload && (await isPathExists(req.space.realPath))) {
-        tmpPath = temporaryFilePath(temporaryRootFromSpace(req.user, req.space), req.space.realPath, FILE_OPERATION.UPLOAD)
+        tmpPath = temporaryFilePath(await ensureTemporaryRootFromSpace(req.user, req.space), req.user.id, req.space.realPath, FILE_OPERATION.UPLOAD)
       }
       rExists = await this.filesManager.saveStream(req.user, req.space, req, {
         ...(tmpPath && { tmpPath }),

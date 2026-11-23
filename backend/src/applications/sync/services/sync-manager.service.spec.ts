@@ -7,7 +7,7 @@ import { FILE_OPERATION } from '../../files/core/constants/operations.js'
 import { FileError } from '../../files/core/models/file-error.js'
 import { LockConflict } from '../../files/locks/models/file-lock-error.js'
 import { FilesManager } from '../../files/core/services/files-manager.service.js'
-import { checksumFile, isPathExists, isPathIsDir, removeFiles, touchFile } from '../../files/core/utils/files.js'
+import { checksumFile, isPathExists, isPathIsDir, makeDir, removeFiles, touchFile } from '../../files/core/utils/files.js'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
 import { F_SPECIAL_STAT, F_STAT, SYNC_CHECKSUM_ALG, SYNC_DIFF_DONE } from '../constants/sync.js'
 import { SyncManager } from './sync-manager.service.js'
@@ -19,7 +19,8 @@ vi.mock('fs/promises', () => ({
   __esModule: true,
   default: {
     stat: vi.fn(),
-    readdir: vi.fn()
+    readdir: vi.fn(),
+    writeFile: vi.fn()
   }
 }))
 
@@ -30,10 +31,10 @@ vi.mock('../../files/core/utils/files.js', async (importOriginal) => {
     ...actual,
     __esModule: true,
     checksumFile: vi.fn(),
-    isInternalTemporaryEntry: vi.fn((name: string) => name === '.sync-in-tmp' || name.startsWith('.sync-in.')),
     isPathExists: vi.fn(),
     isPathIsDir: vi.fn(),
-    removeFiles: vi.fn(),
+    makeDir: vi.fn(),
+    removeFiles: vi.fn().mockResolvedValue(undefined),
     touchFile: vi.fn(),
     sanitizePath: vi.fn((p: string) => p)
   }
@@ -43,6 +44,11 @@ vi.mock('../../files/core/utils/files.js', async (importOriginal) => {
 vi.mock('../../../common/functions.js', () => ({
   __esModule: true,
   regExpPathPattern: (base: string) => new RegExp('^' + base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+}))
+
+vi.mock('../../spaces/utils/paths.js', () => ({
+  __esModule: true,
+  ensureTemporaryRootFromSpace: vi.fn().mockResolvedValue('/tmp/.sync-in-tmp')
 }))
 
 // Mock routes helper used by copyMove to bypass repo validation
@@ -65,7 +71,7 @@ vi.mock('./sync-queries.service.js', () => ({
   SyncQueries: class SyncQueries {}
 }))
 
-const fsPromises = fsPromisesModule as unknown as { stat: Mock; readdir: Mock }
+const fsPromises = fsPromisesModule as unknown as { stat: Mock; readdir: Mock; writeFile: Mock }
 
 // small helper to collect async generators
 const collect = async <T>(iter: AsyncIterable<T>): Promise<T[]> => {
@@ -117,6 +123,7 @@ describe(SyncManager.name, () => {
   beforeEach(() => vi.clearAllMocks())
 
   const makeReq = (over?: Partial<any>) => ({
+    headers: {},
     method: 'PUT',
     user: { id: 1, clientId: 42 },
     space: { realPath: '/base/file.txt', url: '/space/file.txt' },
@@ -173,7 +180,7 @@ describe(SyncManager.name, () => {
 
       const r = await service.upload(req as any, dto as any)
       expect(filesManager.saveStream).toHaveBeenCalledWith(req.user, req.space, req, {
-        tmpPath: expect.any(String),
+        tmpPath: expect.stringMatching(/^\/tmp\/\.sync-in-tmp\/server-user-1-upload-/),
         expectedUploadSize: 10,
         checksumAlg: SYNC_CHECKSUM_ALG,
         validateTmpFile: expect.any(Function)
@@ -183,7 +190,7 @@ describe(SyncManager.name, () => {
       expect(removeFiles).not.toHaveBeenCalled()
     })
 
-    it('should reject when checksum mismatches and preserve tmp', async () => {
+    it('should reject when checksum mismatches and clean managed staging', async () => {
       const req = makeReq()
       const dto = { checksum: 'abc', size: 10, mtime: 1710000000 }
       filesManager.saveStream.mockImplementation(async (_user, _space, _req, options) => {
@@ -192,7 +199,7 @@ describe(SyncManager.name, () => {
       fsPromises.stat.mockResolvedValue({ size: 10, ino: 123, mtime: new Date(1710000000 * 1000) })
 
       await expect(service.upload(req as any, dto as any)).rejects.toBeInstanceOf(HttpException)
-      expect(removeFiles).not.toHaveBeenCalled()
+      expect(removeFiles).toHaveBeenCalledExactlyOnceWith(filesManager.saveStream.mock.calls[0][3].tmpPath)
       expect(touchFile).not.toHaveBeenCalled()
     })
 
@@ -206,15 +213,16 @@ describe(SyncManager.name, () => {
 
       const r = await service.upload(req as any, dto as any)
       expect(filesManager.saveStream).toHaveBeenCalledWith(req.user, req.space, req, {
-        tmpPath: expect.any(String),
+        tmpPath: expect.stringMatching(/^\/tmp\/\.sync-in-tmp\/server-user-1-upload-/),
         expectedUploadSize: 5,
         validateTmpFile: expect.any(Function)
       })
       expect(touchFile).toHaveBeenCalledExactlyOnceWith(filesManager.saveStream.mock.calls[0][3].tmpPath, dto.mtime)
       expect(r).toEqual({ ino: 321 })
+      expect(removeFiles).not.toHaveBeenCalled()
     })
 
-    it('should reject when size mismatches and preserve tmp', async () => {
+    it('should reject when size mismatches and clean managed staging', async () => {
       const req = makeReq()
       const dto = { size: 10, mtime: 1710000100 }
       filesManager.saveStream.mockImplementation(async (_user, _space, _req, options) => {
@@ -223,7 +231,7 @@ describe(SyncManager.name, () => {
       fsPromises.stat.mockResolvedValue({ size: 99, ino: 321, mtime: new Date(1710000100 * 1000) })
 
       await expect(service.upload(req as any, dto as any)).rejects.toBeInstanceOf(HttpException)
-      expect(removeFiles).not.toHaveBeenCalled()
+      expect(removeFiles).toHaveBeenCalledExactlyOnceWith(filesManager.saveStream.mock.calls[0][3].tmpPath)
       expect(touchFile).not.toHaveBeenCalled()
     })
 
@@ -243,6 +251,29 @@ describe(SyncManager.name, () => {
       expect(willExceedQuota).not.toHaveBeenCalled()
       expect(removeFiles).not.toHaveBeenCalled()
       expect(touchFile).toHaveBeenCalled()
+    })
+
+    it('should delegate ranged uploads without inspecting adjacent legacy files', async () => {
+      const req = makeReq({
+        headers: { 'content-range': 'bytes 0-9/10' },
+        space: { realPath: '/tmp/up.bin', url: '/space/up.bin' }
+      })
+      const dto = { size: 10, mtime: 1710000100 }
+      filesManager.saveStream.mockResolvedValue(false)
+      fsPromises.stat.mockResolvedValue({ size: 10, ino: 321, mtime: new Date(1710000100 * 1000) })
+
+      await expect(service.upload(req as any, dto as any)).resolves.toEqual({ ino: 321 })
+
+      expect(filesManager.saveStream).toHaveBeenCalledWith(
+        req.user,
+        req.space,
+        req,
+        expect.objectContaining({ tmpPath: expect.stringMatching(/^\/tmp\/\.sync-in-tmp\/server-user-1-upload-/) })
+      )
+      expect(makeDir).toHaveBeenCalledWith(path.dirname(filesManager.saveStream.mock.calls[0][3].tmpPath), true)
+      expect(fsPromises.writeFile).toHaveBeenCalledWith(filesManager.saveStream.mock.calls[0][3].tmpPath, '', { flag: 'wx' })
+      expect(isPathExists).not.toHaveBeenCalled()
+      expect(removeFiles).not.toHaveBeenCalled()
     })
   })
 
@@ -523,7 +554,7 @@ describe(SyncManager.name, () => {
       isFile: () => kind === 'file'
     })
 
-    it('should walk directory, ignore special files, filter by name/path, reuse snapshot checksum, and compute checksum when needed', async () => {
+    it('should walk directory, ignore active staging and special files, filter by name/path, and compute checksums when needed', async () => {
       const base = '/base'
       const ctx: any = {
         regexBasePath: new RegExp('^/base'),
@@ -567,6 +598,8 @@ describe(SyncManager.name, () => {
             return { isDirectory: () => false, isFile: () => true, size: 100, ino: 33, mtime: new Date(1000 * 1000) }
           case path.join(base, 'file4'):
             return { isDirectory: () => false, isFile: () => true, size: 200, ino: 44, mtime: new Date(2000 * 1000) }
+          case path.join(base, '.sync-in.file4'):
+            return { isDirectory: () => false, isFile: () => true, size: 50, ino: 55, mtime: new Date(2000 * 1000) }
           default:
             return { isDirectory: () => false, isFile: () => false, size: 0, ino: 0, mtime: new Date() }
         }
@@ -576,7 +609,7 @@ describe(SyncManager.name, () => {
       const results = await collect<Record<string, any>>((service as any).parseFiles(base, ctx))
 
       const keys = results.map((o) => Object.keys(o)[0]).sort()
-      expect(keys).toEqual(['/dir1', '/file2', '/file3', '/file4', '/fileStatError'])
+      expect(keys).toEqual(['/.sync-in.file4', '/dir1', '/file2', '/file3', '/file4', '/fileStatError'])
 
       const fileStatError = results.find((o) => o['/fileStatError'])
       expect(fileStatError?.['/fileStatError'][0]).toBe(F_SPECIAL_STAT.ERROR)
@@ -587,7 +620,10 @@ describe(SyncManager.name, () => {
 
       const reused = results.find((o) => o['/file3'])?.['/file3']
       expect(reused[F_STAT.CHECKSUM]).toBe('snaphash')
-      expect(checksumFile).toHaveBeenCalledTimes(1)
+      expect(checksumFile).toHaveBeenCalledTimes(2)
+
+      const formerTemporary = results.find((o) => o['/.sync-in.file4'])?.['/.sync-in.file4']
+      expect(formerTemporary[F_STAT.CHECKSUM]).toBe('computed-hash')
 
       const computed = results.find((o) => o['/file4'])?.['/file4']
       expect(computed[F_STAT.CHECKSUM]).toBe('computed-hash')

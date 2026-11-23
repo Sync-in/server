@@ -164,7 +164,7 @@ describe(AuthProviderOIDC.name, () => {
     ;(service as any).oidcConfig.security.allowPrivateIpAvatarDownload = false
     ;(service as any).oidcConfig.security.requireVerifiedEmail = true
     ;(service as any).oidcConfig.options.enablePasswordAuth = false
-    vi.spyOn(filesUtils, 'temporaryFilePath').mockReturnValue('/tmp/sync-in/alice/tmp/~tmp-avatar-test-id-avatar.png')
+    vi.spyOn(filesUtils, 'temporaryFilePath').mockReturnValue('/tmp/sync-in/alice/tmp/server-user-1-avatar-test-id-avatar.png')
     ;(service as any).oidcConfig.options.autoSyncAvatar = false
   })
 
@@ -310,7 +310,13 @@ describe(AuthProviderOIDC.name, () => {
       access_token: 'access-token',
       token_type: 'bearer'
     } as unknown as Awaited<ReturnType<typeof authorizationCodeGrant>>)
-    vi.mocked(fetchUserInfo).mockResolvedValue({ sub: 'subject-1', email: 'a@b.c', email_verified: true, preferred_username: 'alice' })
+    // openid-client brands processed responses with a private symbol that cannot be constructed by a consumer-side mock.
+    vi.mocked(fetchUserInfo).mockResolvedValue({
+      sub: 'subject-1',
+      email: 'a@b.c',
+      email_verified: true,
+      preferred_username: 'alice'
+    } as unknown as Awaited<ReturnType<typeof fetchUserInfo>>)
     const req = {
       cookies: {
         [OAuthCookie.State]: 'state-1',
@@ -706,8 +712,8 @@ describe(AuthProviderOIDC.name, () => {
   })
 
   describe('updatePictureUrl', () => {
-    const oidcUser = { login: 'alice', tmpPath: '/tmp/sync-in/alice/tmp' } as UserModel
-    const avatarTmpPath = '/tmp/sync-in/alice/tmp/~tmp-avatar-test-id-avatar.png'
+    const oidcUser = { id: 1, login: 'alice', tmpPath: '/tmp/sync-in/alice/tmp' } as UserModel
+    const avatarTmpPath = '/tmp/sync-in/alice/tmp/server-user-1-avatar-test-id-avatar.png'
     const userInfo = (picture = 'https://cdn.example.test/avatar.jpg') => ({ picture }) as any
 
     it('returns when picture url is invalid', async () => {

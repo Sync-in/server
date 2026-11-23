@@ -16,6 +16,7 @@ export interface FileTaskTransferOptions {
   overwrite?: boolean
   signal: AbortSignal
   stagingDir?: string
+  userId: number
 }
 
 export interface FileTaskCopyTaskOptions extends FileTaskTransferOptions {

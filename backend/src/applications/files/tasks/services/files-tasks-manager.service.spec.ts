@@ -580,7 +580,7 @@ describe(FilesTasksManager.name, () => {
 
     await filesTasksManager.deleteTasks(user, ['task-ok'])
 
-    expect(removeFilesSpy).toHaveBeenCalledWith('/tmp/~tmp-compress-task-ok-archive.tar')
+    expect(removeFilesSpy).toHaveBeenCalledWith('/tmp/server-user-22-compress-task-ok-archive.tar')
     expect(stopWatchSpy).toHaveBeenCalledWith(`${CACHE_TASK_PREFIX}-22-task-ok`)
     expect(cache.mget).toHaveBeenCalledWith([`${CACHE_TASK_PREFIX}-22-task-ok`])
     expect(cache.mdel).toHaveBeenCalledWith([`${CACHE_TASK_PREFIX}-22-task-ok`])

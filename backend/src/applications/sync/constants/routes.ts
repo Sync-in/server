@@ -12,6 +12,7 @@ export const SYNC_ROUTE = {
   CLIENTS: 'clients',
   PATHS: 'paths',
   OPERATION: 'operation',
+  UPLOAD_SESSION: 'upload-session',
   DIFF: 'diff',
   MAKE: 'make'
 }

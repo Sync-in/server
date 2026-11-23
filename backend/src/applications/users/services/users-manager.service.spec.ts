@@ -860,36 +860,37 @@ describe(UsersManager.name, () => {
 
   it('updateAvatar branches: mime error, stream error, truncated, invalid image, convert fail, success', async () => {
     await ensurePaths()
+    const avatarUser = new UserModel({ ...generateUserTest(), id: 42, login: userTest.login }, false)
     const convertTempImageToPngMock = vi.mocked(imageModule.convertTempImageToPng)
-    await expect(usersManager.updateAvatar(mkReq('text/plain', okStream('X')) as any)).rejects.toMatchObject({
+    await expect(usersManager.updateAvatar(mkReq('text/plain', okStream('X'), avatarUser) as any)).rejects.toMatchObject({
       message: 'Unsupported file type',
       status: HttpStatus.BAD_REQUEST
     })
-    await expect(usersManager.updateAvatar(mkReq('image/png', errStream('stream error')) as any)).rejects.toMatchObject({
+    await expect(usersManager.updateAvatar(mkReq('image/png', errStream('stream error'), avatarUser) as any)).rejects.toMatchObject({
       message: 'Unable to upload avatar',
       status: HttpStatus.INTERNAL_SERVER_ERROR
     })
 
     const t = okStream('OK')
     t.truncated = true
-    await expect(usersManager.updateAvatar(mkReq('image/png', t) as any)).rejects.toMatchObject({
+    await expect(usersManager.updateAvatar(mkReq('image/png', t, avatarUser) as any)).rejects.toMatchObject({
       message: 'Image is too large',
       status: HttpStatus.PAYLOAD_TOO_LARGE
     })
     expect(convertTempImageToPngMock).not.toHaveBeenCalled()
 
     convertTempImageToPngMock.mockRejectedValueOnce(new Error('Input buffer contains unsupported image format'))
-    await expect(usersManager.updateAvatar(mkReq('image/png', okStream()) as any)).rejects.toMatchObject({
+    await expect(usersManager.updateAvatar(mkReq('image/png', okStream(), avatarUser) as any)).rejects.toMatchObject({
       message: 'Unable to convert or create avatar',
       status: HttpStatus.BAD_REQUEST
     })
 
     convertTempImageToPngMock.mockResolvedValueOnce(undefined)
-    await expect(usersManager.updateAvatar(mkReq('image/png', okStream()) as any)).resolves.toBeUndefined()
+    await expect(usersManager.updateAvatar(mkReq('image/png', okStream(), avatarUser) as any)).resolves.toBeUndefined()
     const expectedSrc = convertTempImageToPngMock.mock.calls[convertTempImageToPngMock.mock.calls.length - 1][0]
-    const expectedDst = path.join(userTest.homePath, 'avatar.png')
-    expect(path.dirname(expectedSrc)).toBe(userTest.tmpPath)
-    expect(path.basename(expectedSrc)).toMatch(/^~tmp-avatar-[a-z0-9-]+-avatar\.png$/)
+    const expectedDst = path.join(avatarUser.homePath, 'avatar.png')
+    expect(path.dirname(expectedSrc)).toBe(avatarUser.tmpPath)
+    expect(path.basename(expectedSrc)).toMatch(new RegExp(`^server-user-${avatarUser.id}-avatar-[a-z0-9-]+-avatar\\.png$`))
     expect(convertTempImageToPngMock).toHaveBeenLastCalledWith(expectedSrc, expectedDst)
   })
 

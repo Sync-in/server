@@ -1,4 +1,8 @@
-import type { FILE_UPLOAD_SESSION_STATE } from '../constants/upload-session.js'
+import type {
+  FILE_UPLOAD_SESSION_CHECKSUM_MODE,
+  FILE_UPLOAD_SESSION_PERSISTED_STATE_VERSION,
+  FILE_UPLOAD_SESSION_STATE
+} from '../constants/upload-session.js'
 
 export type FileUploadSessionMethod = 'POST' | 'PUT'
 
@@ -20,11 +24,15 @@ export interface FileUploadSessionMetadata {
 }
 
 export interface FileUploadSessionCreate extends FileUploadSessionMetadata {
+  checksumMode?: FileUploadSessionChecksumMode
   size: number
 }
 
+export type FileUploadSessionChecksumMode = (typeof FILE_UPLOAD_SESSION_CHECKSUM_MODE)[keyof typeof FILE_UPLOAD_SESSION_CHECKSUM_MODE]
+
 export interface FileUploadSessionManifest {
   checksum?: string
+  checksumMode?: FileUploadSessionChecksumMode
   destination: string
   expectedSize: number
   method: FileUploadSessionMethod
@@ -39,10 +47,17 @@ export interface FileUploadSessionStatus {
   offset: number
   size: number
   state: FileUploadSessionState
+  validatedOffset?: number
 }
 
 export interface FileUploadSessionContext {
   directory: string
   manifest: FileUploadSessionManifest
   payload: string
+  state: string
+}
+
+export interface FileUploadSessionPersistentState {
+  validatedOffset: number
+  version: typeof FILE_UPLOAD_SESSION_PERSISTED_STATE_VERSION
 }

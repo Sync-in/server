@@ -4,11 +4,14 @@ import {
   Copy,
   Delete,
   Get,
+  Head,
   Header,
+  HttpCode,
   HttpException,
   HttpStatus,
   Move,
   Param,
+  Patch,
   Post,
   Proppatch,
   Put,
@@ -24,6 +27,11 @@ import { AuthTokenSkip } from '../../authentication/decorators/auth-token-skip.d
 import { AuthRateLimitGuard } from '../../authentication/guards/auth-rate-limit.guard.js'
 import { type FastifyAuthenticatedRequest } from '../../authentication/interfaces/auth-request.interface.js'
 import { integerFromStringSchema } from '../../configuration/config.schema.js'
+import { HTTP_METHOD } from '../applications.constants.js'
+import { fileUploadSessionIdSchema } from '../files/operations/dto/file-upload-session.dto.js'
+import { FilesUploadSessionManager } from '../files/operations/services/files-upload-session-manager.service.js'
+import { SPACE_OPERATION } from '../spaces/constants/spaces.js'
+import { OverrideSpacePermission } from '../spaces/decorators/space-override-permission.decorator.js'
 import { SkipSpacePermissionsCheck } from '../spaces/decorators/space-skip-permissions.decorator.js'
 import { type FastifySpaceRequest } from '../spaces/interfaces/space-request.interface.js'
 import { USER_PERMISSION } from '../users/constants/user.js'
@@ -69,7 +77,8 @@ export class SyncController {
   constructor(
     private readonly syncManager: SyncManager,
     private readonly syncClientsManager: SyncClientsManager,
-    private readonly syncPathsManager: SyncPathsManager
+    private readonly syncPathsManager: SyncPathsManager,
+    private readonly uploadSessions: FilesUploadSessionManager
   ) {}
 
   /* CLIENT */
@@ -262,5 +271,71 @@ export class SyncController {
   @SyncEnvironment()
   delete(@Req() req: FastifySpaceRequest): Promise<void> {
     return this.syncManager.delete(req)
+  }
+
+  /* UPLOAD SESSION */
+
+  @Post(`${SYNC_ROUTE.UPLOAD_SESSION}/:uploadId/*`)
+  @HttpCode(HttpStatus.CREATED)
+  @Header('Cache-Control', 'no-store')
+  @SyncEnvironment()
+  createUploadSession(
+    @Req() req: FastifySpaceRequest,
+    @Param('uploadId', { schema: fileUploadSessionIdSchema }) uploadId: string,
+    @Res({ passthrough: true }) res: FastifyReply
+  ): Promise<void> {
+    return this.uploadSessions.writeUploadSessionChunk(req, uploadId, res, HTTP_METHOD.POST, true)
+  }
+
+  @Put(`${SYNC_ROUTE.UPLOAD_SESSION}/:uploadId/*`)
+  @OverrideSpacePermission(SPACE_OPERATION.MODIFY)
+  @HttpCode(HttpStatus.CREATED)
+  @Header('Cache-Control', 'no-store')
+  @SyncEnvironment()
+  overwriteUploadSession(
+    @Req() req: FastifySpaceRequest,
+    @Param('uploadId', { schema: fileUploadSessionIdSchema }) uploadId: string,
+    @Res({ passthrough: true }) res: FastifyReply
+  ): Promise<void> {
+    return this.uploadSessions.writeUploadSessionChunk(req, uploadId, res, HTTP_METHOD.PUT, true)
+  }
+
+  @Head(`${SYNC_ROUTE.UPLOAD_SESSION}/:uploadId/*`)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Header('Cache-Control', 'no-store')
+  @SkipSpacePermissionsCheck()
+  @SyncEnvironment()
+  uploadSessionStatus(
+    @Req() req: FastifySpaceRequest,
+    @Param('uploadId', { schema: fileUploadSessionIdSchema }) uploadId: string,
+    @Res({ passthrough: true }) res: FastifyReply
+  ): Promise<void> {
+    return this.uploadSessions.writeUploadSessionStatus(req.user, req.space, uploadId, res)
+  }
+
+  @Patch(`${SYNC_ROUTE.UPLOAD_SESSION}/:uploadId/*`)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Header('Cache-Control', 'no-store')
+  @SkipSpacePermissionsCheck()
+  @SyncEnvironment()
+  appendUploadSession(
+    @Req() req: FastifySpaceRequest,
+    @Param('uploadId', { schema: fileUploadSessionIdSchema }) uploadId: string,
+    @Res({ passthrough: true }) res: FastifyReply
+  ): Promise<void> {
+    return this.uploadSessions.writeUploadSessionChunk(req, uploadId, res, undefined, true)
+  }
+
+  @Delete(`${SYNC_ROUTE.UPLOAD_SESSION}/:uploadId/*`)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Header('Cache-Control', 'no-store')
+  @SkipSpacePermissionsCheck()
+  @SyncEnvironment()
+  cancelUploadSession(
+    @Req() req: FastifySpaceRequest,
+    @Param('uploadId', { schema: fileUploadSessionIdSchema }) uploadId: string,
+    @Res({ passthrough: true }) res: FastifyReply
+  ): Promise<void> {
+    return this.uploadSessions.cancelUploadSession(req.user, req.space, uploadId, res)
   }
 }

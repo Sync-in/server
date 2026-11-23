@@ -1,7 +1,16 @@
+import fs from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 import { USER_ROLE } from '../../users/constants/user.js'
 import { UserModel } from '../../users/models/user.model.js'
-import { realPathFromSpace, temporaryRootFromSpace, temporaryRootFromStorage, trashTargetFromSpace } from './paths.js'
+import {
+  ensureTemporaryRootFromStorage,
+  existingTemporaryRootFromStorage,
+  realPathFromSpace,
+  temporaryRootFromSpace,
+  temporaryRootFromStorage,
+  trashTargetFromSpace
+} from './paths.js'
 
 vi.mock('../../../configuration/config.environment.js', () => ({
   configuration: {
@@ -24,17 +33,17 @@ describe('temporary path resolution', () => {
   })
 
   it('places native-space artifacts in the managed space temporary root', () => {
-    expect(temporaryRootFromSpace(user, { alias: 'project' } as any)).toBe('/data/spaces/project/tmp/users/42')
+    expect(temporaryRootFromSpace(user, { alias: 'project' } as any)).toBe('/data/spaces/project/tmp')
   })
 
   it('places external-space artifacts under the external storage root', () => {
-    expect(temporaryRootFromSpace(user, { root: { externalPath: '/mnt/archive' } } as any)).toBe('/mnt/archive/.sync-in-tmp/users/42')
+    expect(temporaryRootFromSpace(user, { root: { externalPath: '/mnt/archive' } } as any)).toBe('/mnt/archive/.sync-in-tmp')
   })
 
   it('places anchored personal-space artifacts in the owner storage root', () => {
     const space = { root: { file: { path: 'documents' }, owner: { login: 'bob' } } } as any
 
-    expect(temporaryRootFromSpace(user, space)).toBe('/data/users/bob/tmp/users/42')
+    expect(temporaryRootFromSpace(user, space)).toBe('/data/users/bob/tmp')
   })
 
   it('places native and external share artifacts with their physical storage', () => {
@@ -43,8 +52,8 @@ describe('temporary path resolution', () => {
       root: { file: { path: 'shared', space: { id: 1, alias: 'project' }, root: { id: 2, externalPath: '/mnt/archive' } } }
     } as any
 
-    expect(temporaryRootFromSpace(user, nativeShare)).toBe('/data/spaces/project/tmp/users/42')
-    expect(temporaryRootFromSpace(user, externalShare)).toBe('/mnt/archive/.sync-in-tmp/users/42')
+    expect(temporaryRootFromSpace(user, nativeShare)).toBe('/data/spaces/project/tmp')
+    expect(temporaryRootFromSpace(user, externalShare)).toBe('/mnt/archive/.sync-in-tmp')
   })
 
   it('uses the shared users namespace for guests and a numeric links namespace for link users', () => {
@@ -68,7 +77,7 @@ describe('temporary path resolution', () => {
       dbScope: { ...emptyTrashDbScope, spaceId: 1 },
       mode: 'trash',
       path: '/data/spaces/project/trash',
-      temporaryRoot: '/data/spaces/project/tmp/users/42'
+      temporaryRoot: '/data/spaces/project/tmp'
     })
     expect(
       trashTargetFromSpace(user, {
@@ -82,13 +91,13 @@ describe('temporary path resolution', () => {
       dbScope: { ...emptyTrashDbScope, spaceId: 1 },
       mode: 'trash',
       path: '/data/spaces/project/trash',
-      temporaryRoot: '/data/spaces/project/tmp/users/42'
+      temporaryRoot: '/data/spaces/project/tmp'
     })
     expect(trashTargetFromSpace(user, { root: { file: { space: { id: 1, alias: 'project' } } } } as any)).toEqual({
       dbScope: { ...emptyTrashDbScope, spaceId: 1 },
       mode: 'trash',
       path: '/data/spaces/project/trash',
-      temporaryRoot: '/data/spaces/project/tmp/users/42'
+      temporaryRoot: '/data/spaces/project/tmp'
     })
     expect(
       trashTargetFromSpace(user, {
@@ -99,7 +108,7 @@ describe('temporary path resolution', () => {
       dbScope: { ...emptyTrashDbScope, spaceId: 1 },
       mode: 'trash',
       path: '/data/spaces/project/trash',
-      temporaryRoot: '/data/spaces/project/tmp/users/42'
+      temporaryRoot: '/data/spaces/project/tmp'
     })
   })
 
@@ -112,27 +121,33 @@ describe('temporary path resolution', () => {
       dbScope: { ...emptyTrashDbScope, ownerId: 7 },
       mode: 'trash',
       path: '/data/users/bob/trash',
-      temporaryRoot: '/data/users/bob/tmp/users/42'
+      temporaryRoot: '/data/users/bob/tmp'
     })
     expect(trashTargetFromSpace(user, {} as any)).toBeNull()
   })
 
-  it.each([['.sync-in-tmp', 'users', '42'], ['.sync-in.uploading']])('rejects direct access to internal temporary paths', (...paths) => {
-    const space = { inPersonalSpace: false, root: { externalPath: '/mnt/archive' }, paths, inSharesRepository: false } as any
+  it('rejects direct access to internal temporary paths', () => {
+    const space = { inPersonalSpace: false, root: { externalPath: '/mnt/archive' }, inSharesRepository: false } as any
 
-    expect(() => realPathFromSpace(user, space)).toThrow('Internal temporary locations are not accessible')
+    expect(() => realPathFromSpace(user, { ...space, paths: ['.sync-in-tmp', 'server-user-42-upload-file'] })).toThrow(
+      'Internal temporary locations are not accessible'
+    )
+    expect(() => realPathFromSpace(user, { ...space, paths: ['.SYNC-IN-TMP', 'server-user-42-upload-file'] })).toThrow(
+      'Internal temporary locations are not accessible'
+    )
   })
 
   it('keeps regular external paths accessible', () => {
     const space = { inPersonalSpace: false, root: { externalPath: '/mnt/archive' }, paths: ['documents'], inSharesRepository: false } as any
 
     expect(realPathFromSpace(user, space)).toBe('/mnt/archive/documents')
+    expect(realPathFromSpace(user, { ...space, paths: ['.sync-in.uploading'] })).toBe('/mnt/archive/.sync-in.uploading')
   })
 
   it('rejects an external root anchored inside the internal temporary tree', () => {
     const space = {
       inPersonalSpace: false,
-      root: { externalPath: '/mnt/archive/.sync-in-tmp/users/42' },
+      root: { externalPath: '/mnt/archive/.sync-in-tmp' },
       paths: [],
       inSharesRepository: true
     } as any
@@ -146,8 +161,26 @@ describe('temporary path resolution', () => {
     expect(realPathFromSpace(reservedLogin, { inPersonalSpace: true, paths: ['documents'] } as any)).toBe('/data/users/.sync-in.user/files/documents')
   })
 
-  it('rejects invalid actor identifiers', () => {
-    expect(() => temporaryRootFromStorage(path.join('/mnt', 'archive'), 0)).toThrow('Invalid temporary-file owner')
-    expect(() => UserModel.getUserTmpPath('alice', 0)).toThrow('User id must be a positive safe integer')
+  it('uses the shared external temporary root', () => {
+    expect(temporaryRootFromStorage(path.join('/mnt', 'archive'))).toBe('/mnt/archive/.sync-in-tmp')
+  })
+
+  it('rejects a symlink used as an external temporary root without following it', async () => {
+    const storageRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'sync-in-external-root-'))
+    const symlinkTarget = await fs.mkdtemp(path.join(os.tmpdir(), 'sync-in-external-target-'))
+    try {
+      await fs.symlink(symlinkTarget, path.join(storageRoot, '.sync-in-tmp'), 'dir')
+
+      await expect(ensureTemporaryRootFromStorage(storageRoot)).rejects.toMatchObject({
+        httpCode: 409,
+        message: 'External temporary location must be a regular directory'
+      })
+      await expect(existingTemporaryRootFromStorage(storageRoot)).rejects.toMatchObject({
+        httpCode: 409,
+        message: 'External temporary location must be a regular directory'
+      })
+    } finally {
+      await Promise.all([fs.rm(storageRoot, { force: true, recursive: true }), fs.rm(symlinkTarget, { force: true, recursive: true })])
+    }
   })
 })

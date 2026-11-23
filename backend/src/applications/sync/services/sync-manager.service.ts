@@ -21,18 +21,19 @@ import { FileError } from '../../files/core/models/file-error.js'
 import type { SaveStreamTmpFileValidationContext } from '../../files/core/interfaces/save-stream.interface.js'
 import { LockConflict } from '../../files/locks/models/file-lock-error.js'
 import { FilesManager } from '../../files/core/services/files-manager.service.js'
-import { checksumFile, isInternalTemporaryEntry, isPathExists, isPathIsDir, touchFile } from '../../files/core/utils/files.js'
+import { checksumFile, isInternalTemporaryEntry, isPathExists, isPathIsDir, makeDir, removeFiles, touchFile } from '../../files/core/utils/files.js'
+import { parseContentRange, uploadTmpFilePath } from '../../files/core/utils/upload-file.js'
 import { SendFile } from '../../files/core/utils/send-file.js'
 import { ParseDiffContext } from '../../spaces/interfaces/space-diff.interface.js'
 import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface.js'
 import { SpaceEnv } from '../../spaces/models/space-env.model.js'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
+import { ensureTemporaryRootFromSpace } from '../../spaces/utils/paths.js'
 import { UserModel } from '../../users/models/user.model.js'
 import { F_SPECIAL_STAT, F_STAT, SYNC_CHECKSUM_ALG, SYNC_DIFF_DONE } from '../constants/sync.js'
 import type { SyncCopyMoveDto, SyncDiffDto, SyncMakeDto, SyncPropsDto } from '../dtos/sync-operations.dto.js'
 import type { SyncUploadDto } from '../dtos/sync-upload.dto.js'
 import { SyncFileSpecialStats, SyncFileStats } from '../interfaces/sync-diff.interface.js'
-import { getSyncTmpFilePath } from '../utils/functions.js'
 import { SYNC_PATH_TO_SPACE_SEGMENTS } from '../utils/routes.js'
 import { SyncQueries } from './sync-queries.service.js'
 
@@ -57,10 +58,20 @@ export class SyncManager {
   }
 
   async upload(req: FastifySpaceRequest, syncUploadDto: SyncUploadDto): Promise<{ ino: number }> {
-    const tmpPath = getSyncTmpFilePath(req.space.realPath)
+    let tmpPath: string | undefined
     try {
+      tmpPath = uploadTmpFilePath(await ensureTemporaryRootFromSpace(req.user, req.space), req.user.id, req.space.realPath)
+      const contentRange = req.headers['content-range']
+      if (contentRange !== undefined) {
+        if (typeof contentRange !== 'string') {
+          throw new FileError(HttpStatus.BAD_REQUEST, 'Content-range : header is malformed')
+        }
+        parseContentRange(contentRange)
+        await makeDir(path.dirname(tmpPath), true)
+        await fs.writeFile(tmpPath, '', { flag: 'wx' })
+      }
       await this.filesManager.saveStream(req.user, req.space, req, {
-        tmpPath: tmpPath,
+        tmpPath,
         expectedUploadSize: syncUploadDto.size,
         ...(syncUploadDto.checksum && { checksumAlg: SYNC_CHECKSUM_ALG }),
         validateTmpFile: async ({ tmpPath, checksum }: SaveStreamTmpFileValidationContext) => {
@@ -79,6 +90,11 @@ export class SyncManager {
       const fileStats = await fs.stat(req.space.realPath)
       return { ino: fileStats.ino }
     } catch (e) {
+      if (tmpPath) {
+        await removeFiles(tmpPath).catch((error: unknown) =>
+          this.logger.warn({ tag: this.upload.name, msg: `unable to remove staged upload: ${toErrorMessage(error)}` })
+        )
+      }
       this.handleError(req.space, req.method, e)
     }
   }
