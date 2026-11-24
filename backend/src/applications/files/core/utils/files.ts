@@ -56,10 +56,10 @@ export function serverTemporaryEntryPrefix(userId: number): string {
 
 export function serverTemporaryEntryUserId(value: string): number | undefined {
   const match = /^server-user-(\d+)-/.exec(value)
-  if (!match) return
+  if (!match) return undefined
   const userId = Number(match[1])
   // Keep one canonical namespace spelling per actor; leading zeros and unsafe ids must not alias a valid user.
-  if (!Number.isSafeInteger(userId) || userId <= 0 || String(userId) !== match[1]) return
+  if (!Number.isSafeInteger(userId) || userId <= 0 || String(userId) !== match[1]) return undefined
   return userId
 }
 
