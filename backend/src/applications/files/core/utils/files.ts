@@ -400,8 +400,9 @@ export function createProgressTransform(
 export function writeFromStream(rPath: string, stream: Readable, options: WriteFromStreamOptions = {}): Promise<void> {
   const { exclusive = false, start = 0, signal, accountBytes } = options
   const dst: WriteStream = createWriteStream(rPath, {
-    flags: start ? 'a' : exclusive ? 'wx' : 'w',
-    start: start,
+    // Never combine an explicit position with append mode: Linux ignores the position and some mounted filesystems reject the write.
+    flags: start ? 'r+' : exclusive ? 'wx' : 'w',
+    start,
     highWaterMark: DEFAULT_HIGH_WATER_MARK
   })
   if (!accountBytes) {

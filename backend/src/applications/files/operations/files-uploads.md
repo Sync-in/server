@@ -184,7 +184,8 @@ authoritative upload offset. Fast mode resumes directly from that offset without
 validated offset does not advance until the complete digest arrives and matches; the backend rehashes only the retained range after that offset before
 continuing the same logical chunk, while the desktop reuses the digest precomputed for the complete fixed-boundary range. A successful chunk response
 means the complete request body was consumed and its resulting size was verified; secure responses additionally acknowledge checksum validation.
-Writes are not synchronized with `fsync`; acknowledged durability follows the operating system and filesystem guarantees.
+Resumed writes open the existing payload for positional updates and never combine an explicit offset with append mode, whose behavior differs across
+operating systems and filesystems. Writes are not synchronized with `fsync`; acknowledged durability follows the operating system and filesystem guarantees.
 
 ## Session storage and publication
 

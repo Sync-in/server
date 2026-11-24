@@ -208,10 +208,10 @@ describe(writeFromStream.name, () => {
     await rm(tmpDir, { recursive: true, force: true })
   })
 
-  it('writes from an offset and accounts each chunk', async () => {
+  it('writes at the requested offset without appending and accounts each chunk', async () => {
     const filePath = path.join(tmpDir, 'file.txt')
     const accountBytes = vi.fn()
-    await writeFile(filePath, 'abc')
+    await writeFile(filePath, 'abc---')
 
     await writeFromStream(filePath, Readable.from([Buffer.from('de'), Buffer.from('f')]), { start: 3, accountBytes })
 
