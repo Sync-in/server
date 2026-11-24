@@ -1,7 +1,8 @@
 # File uploads
 
-Files at or below the configured threshold use multipart uploads. Larger web files use resumable upload sessions: the first chunk creates the session
-and the last chunk publishes the file. Each chunk uses `Content-Type: application/octet-stream` with length and offset headers.
+Files selected through the main web upload flow use multipart uploads at or below the configured threshold. Larger web files use resumable upload
+sessions: the first chunk creates the session and the last chunk publishes the file. Each chunk uses `Content-Type: application/octet-stream` with
+length and offset headers.
 
 ## Upload flow matrix
 
@@ -22,6 +23,23 @@ and for large or explicitly chunked web files.
 
 Multipart and single-stream uploads use `UploadStreamLimiter`. Upload sessions apply equivalent size and quota checks from their persisted manifest
 and current payload offset. All quota checks use the current cached snapshot; quota capacity is not reserved atomically between concurrent uploads.
+
+### Protocol-specific flows outside upload sessions
+
+Upload sessions cover large file transfers initiated by the bundled web and desktop synchronization clients. Other bounded file-ingress paths retain
+the request model imposed by their caller or protocol:
+
+- Direct web content saves, including editable viewers and draw.io document creation, always use the multipart endpoint. They do not select a transport
+  from `maxChunkSize` and have no persistent recovery offset.
+- Collabora Online saves a document through one streamed WOPI request body. The backend applies the file-size and quota limiter and stages the document,
+  but the external WOPI client does not use the Sync-in upload-session protocol.
+- An OnlyOffice or EuroOffice callback uses the same protocol and contains metadata plus a document URL. The backend retrieves that URL as one bounded
+  server-to-server stream before publishing the staged document.
+- A remote-URL file task is also a bounded server-to-server download. Its task progress and cancellation are not an upload-session checkpoint.
+- Avatar uploads use their dedicated multipart route and 5 MB limit. They are outside space file storage and the file-transfer configuration.
+
+HTTP transfer chunking used by an upstream server is transport framing and must not be confused with the application-level resumable chunks described
+in this document.
 
 ## Staging coverage
 
