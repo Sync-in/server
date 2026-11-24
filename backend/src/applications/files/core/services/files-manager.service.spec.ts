@@ -30,6 +30,7 @@ import { FilesQueries } from './files-queries.service.js'
 import { FilesTasksTransfer } from '../../tasks/services/files-tasks-transfer.service.js'
 import { Mock } from 'vitest'
 import { FILE_ERROR } from '../constants/errors.js'
+import { TEMPORARY_PATH } from '../constants/files.js'
 import { FILE_OPERATION } from '../constants/operations.js'
 
 vi.mock('node:dns/promises', () => ({
@@ -56,10 +57,10 @@ describe(FilesManager.name, () => {
   }
 
   const user = { id: 7, login: 'john', tmpPath: '/data/users/john/tmp', preferences: { showHiddenFiles: false } } as any
-  const targetTmpRoot = '/data/users/john/.sync-in-tmp/users/7'
+  const targetTmpRoot = '/data/users/john/tmp'
   const targetTrashDbScope = { ownerId: 7, spaceId: null, spaceExternalRootId: null, shareExternalId: null, inTrash: true }
-  const temporaryPath = (operation: FILE_OPERATION, executionId: string, name: string, parentPath = targetTmpRoot): string =>
-    path.join(parentPath, `${filesUtils.temporaryFilePrefix(operation, executionId)}${path.basename(name)}`)
+  const temporaryPath = (operation: FILE_OPERATION, executionId: string, name: string, parentPath = targetTmpRoot, userId = user.id): string =>
+    path.join(parentPath, `${filesUtils.temporaryFilePrefix(userId, operation, executionId)}${path.basename(name)}`)
 
   const makeSpace = (overrides: Record<string, any> = {}) =>
     ({
@@ -187,11 +188,11 @@ describe(FilesManager.name, () => {
     vi.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
     vi.spyOn(filesUtils, 'isPathIsDir').mockResolvedValue(false)
     vi.spyOn(filesUtils, 'makeDir').mockResolvedValue('/tmp' as any)
-    vi.spyOn(filesUtils, 'temporaryFilePath').mockImplementation((parentPath, targetPath, operation, executionId = 'direct-id') =>
-      temporaryPath(operation as FILE_OPERATION, executionId, targetPath, parentPath)
+    vi.spyOn(filesUtils, 'temporaryFilePath').mockImplementation((parentPath, userId, targetPath, operation, executionId = 'direct-id') =>
+      temporaryPath(operation as FILE_OPERATION, executionId, targetPath, parentPath, userId)
     )
-    vi.spyOn(filesUtils, 'makeTemporaryDirectory').mockImplementation(async (parentPath, targetPath, operation, executionId = 'direct-id') =>
-      temporaryPath(operation as FILE_OPERATION, executionId, targetPath, parentPath)
+    vi.spyOn(filesUtils, 'makeTemporaryDirectory').mockImplementation(async (parentPath, userId, targetPath, operation, executionId = 'direct-id') =>
+      temporaryPath(operation as FILE_OPERATION, executionId, targetPath, parentPath, userId)
     )
     vi.spyOn(filesUtils, 'writeUploadFromStream').mockResolvedValue(undefined)
     vi.spyOn(filesUtils, 'writeUploadFromStreamAndChecksum').mockResolvedValue('sha256-abc')
@@ -216,7 +217,7 @@ describe(FilesManager.name, () => {
       path: '/data/users/john/trash',
       temporaryRoot: targetTmpRoot
     })
-    vi.spyOn(spacesPathUtils, 'temporaryRootFromSpace').mockReturnValue(targetTmpRoot)
+    vi.spyOn(spacesPathUtils, 'ensureTemporaryRootFromSpace').mockResolvedValue(targetTmpRoot)
   })
 
   afterEach(() => {
@@ -226,6 +227,33 @@ describe(FilesManager.name, () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined()
+  })
+
+  it('prepares a chunked PUT by moving a conflicting destination directory to the trash', async () => {
+    const space = makeSpace()
+    const parentPath = path.dirname(space.realPath)
+    const deleteSpy = vi.spyOn(service, 'delete').mockResolvedValue(undefined)
+    setPathExists({ [space.realPath]: true, [parentPath]: true }, false)
+    vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (rPath: string) => rPath === space.realPath || rPath === parentPath)
+
+    await service.prepareUploadOverwriteDestination(user, space)
+
+    expect(deleteSpy).toHaveBeenCalledWith(user, space, undefined, undefined, { preserveExactLocks: true })
+  })
+
+  it('prepares a chunked PUT by deleting its immediate parent file', async () => {
+    const space = makeSpace({ realPath: '/data/users/john/files/folder/file.txt', url: 'files/personal/folder/file.txt' })
+    const parentPath = path.dirname(space.realPath)
+    const parentSpace = makeSpace({ realPath: parentPath, url: 'files/personal/folder' })
+    const deleteSpy = vi.spyOn(service, 'delete').mockResolvedValue(undefined)
+    setPathExists({ [space.realPath]: false, [parentPath]: true }, false)
+    vi.mocked(filesUtils.isPathIsDir).mockResolvedValue(false)
+    spacesManager.spaceEnv.mockResolvedValueOnce(parentSpace)
+
+    await service.prepareUploadOverwriteDestination(user, space)
+
+    expect(spacesManager.spaceEnv).toHaveBeenCalledWith(user, ['files', 'personal', 'folder'])
+    expect(deleteSpy).toHaveBeenCalledWith(user, parentSpace)
   })
 
   it('sendFileFromSpace should return a SendFile instance', () => {
@@ -423,23 +451,40 @@ describe(FilesManager.name, () => {
   })
 
   describe('saveMultipart', () => {
-    it('should reject POST when target root already exists before reading multipart parts', async () => {
-      const space = makeSpace()
-      setPathExists({ [space.realPath]: true }, false)
+    it('should allow POST into an existing multipart root when the resolved destination is new', async () => {
+      const space = makeSpace({
+        url: 'files/personal/folder',
+        realPath: '/data/users/john/files/folder',
+        dbFile: { ownerId: 7, path: 'folder', inTrash: false }
+      })
+      const parentPath = path.dirname(space.realPath)
+      const destination = path.join(space.realPath, 'new.txt')
+      const file = Readable.from(['content'])
+      setPathExists({ [parentPath]: true, [space.realPath]: true, [destination]: false }, false)
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === parentPath || p === space.realPath)
 
       const req = {
         method: 'POST',
         files: vi.fn().mockImplementation(async function* () {
-          yield { filename: path.basename(space.realPath), file: Readable.from(['content']) }
+          yield { filename: 'folder/new.txt', file }
         })
       }
 
-      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(
-        new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
-      )
+      await service.saveMultipart(user, space, req as any)
 
-      expect(req.files).not.toHaveBeenCalled()
-      expectNoWriteOperations()
+      const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
+      expect(req.files).toHaveBeenCalled()
+      expect(tmpWritePath.startsWith(`${targetTmpRoot}${path.sep}`)).toBe(true)
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
+        tmpWritePath,
+        file,
+        expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+      )
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, destination, false)
+      expect(filesUtils.removeFiles).not.toHaveBeenCalledWith(tmpWritePath)
+      expect(vi.mocked(filesUtils.writeUploadFromStream).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(filesUtils.moveFiles).mock.invocationCallOrder[0]
+      )
     })
 
     it.each([
@@ -495,7 +540,7 @@ describe(FilesManager.name, () => {
       const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
       expect(filesLockManager.createOrRefresh).toHaveBeenCalled()
       expect(tmpWritePath.startsWith(`${targetTmpRoot}${path.sep}`)).toBe(true)
-      expect(path.basename(tmpWritePath)).toMatch(/^~tmp-upload-[a-z0-9-]+-report\.txt$/)
+      expect(path.basename(tmpWritePath)).toMatch(/^server-user-7-upload-[a-z0-9-]+-report\.txt$/)
       expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
         tmpWritePath,
         expect.anything(),
@@ -564,9 +609,13 @@ describe(FilesManager.name, () => {
     })
 
     it('should create missing destination directory and release created lock for POST nested upload', async () => {
-      const space = makeSpace()
+      const space = makeSpace({
+        url: 'files/personal/folder',
+        realPath: '/data/users/john/files/folder',
+        dbFile: { ownerId: 7, path: 'folder', inTrash: false }
+      })
       const partFileName = 'folder/file.txt'
-      const dstDir = path.join(path.dirname(space.realPath), 'folder')
+      const dstDir = space.realPath
       const dstFile = path.join(dstDir, 'file.txt')
       const file = Readable.from(['content'])
       const emitSpy = vi.spyOn(FileEvent, 'emit')
@@ -580,7 +629,7 @@ describe(FilesManager.name, () => {
         false
       )
       vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
-      filesLockManager.createOrRefresh.mockResolvedValueOnce([true, { key: 'lock-created' }])
+      filesLockManager.create.mockResolvedValueOnce([true, { key: 'lock-created' }])
 
       const req = {
         method: 'POST',
@@ -591,12 +640,15 @@ describe(FilesManager.name, () => {
 
       await service.saveMultipart(user, space, req as any)
 
+      const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
       expect(filesUtils.makeDir).toHaveBeenCalledWith(dstDir, true)
       expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
-        dstFile,
+        tmpWritePath,
         file,
         expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
       )
+      expect(tmpWritePath.startsWith(`${targetTmpRoot}${path.sep}`)).toBe(true)
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, dstFile, false)
       expect(filesLockManager.removeLock).toHaveBeenCalledWith(
         expect.objectContaining({ path: 'folder/file.txt' }),
         expect.objectContaining({ key: 'lock-created' })
@@ -605,10 +657,16 @@ describe(FilesManager.name, () => {
     })
 
     it('should share the remaining quota across multipart files', async () => {
-      const space = makeSpace({ storageQuota: 5, storageUsage: 0 })
+      const space = makeSpace({
+        url: 'files/personal/folder',
+        realPath: '/data/users/john/files/folder',
+        dbFile: { ownerId: 7, path: 'folder', inTrash: false },
+        storageQuota: 5,
+        storageUsage: 0
+      })
       const parentPath = path.dirname(space.realPath)
-      const firstPath = path.join(parentPath, 'one.bin')
-      const secondPath = path.join(parentPath, 'two.bin')
+      const firstPath = path.join(space.realPath, 'one.bin')
+      const secondPath = path.join(space.realPath, 'two.bin')
       setPathExists({ [space.realPath]: false, [parentPath]: true, [firstPath]: false, [secondPath]: false }, false)
       vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === parentPath)
       vi.mocked(filesUtils.writeUploadFromStream).mockImplementation(async (_path, _stream, options) => {
@@ -618,8 +676,8 @@ describe(FilesManager.name, () => {
       const req = {
         method: 'POST',
         files: async function* () {
-          yield { filename: 'one.bin', file: Readable.from(['one']) }
-          yield { filename: 'two.bin', file: Readable.from(['two']) }
+          yield { filename: 'folder/one.bin', file: Readable.from(['one']) }
+          yield { filename: 'folder/two.bin', file: Readable.from(['two']) }
         }
       }
 
@@ -627,31 +685,28 @@ describe(FilesManager.name, () => {
         new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED)
       )
 
+      const firstTmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
+      const secondTmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[1][0] as string
       expect(filesUtils.writeUploadFromStream).toHaveBeenCalledTimes(2)
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith(secondPath)
+      expect(filesUtils.moveFiles).toHaveBeenCalledTimes(1)
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(firstTmpWritePath, firstPath, false)
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(secondTmpWritePath)
     })
 
     it('should reject POST when resolved multipart destination already exists', async () => {
       const space = makeSpace()
-      const partFileName = 'folder/file.txt'
-      const dstDir = path.join(path.dirname(space.realPath), 'folder')
-      const dstFile = path.join(dstDir, 'file.txt')
+      const parentPath = path.dirname(space.realPath)
       const emitSpy = vi.spyOn(FileEvent, 'emit')
-      setPathExists(
-        {
-          [space.realPath]: false,
-          [path.dirname(space.realPath)]: true,
-          [dstDir]: true,
-          [dstFile]: true
-        },
-        false
-      )
-      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === path.dirname(space.realPath) || p === dstDir)
+      vi.mocked(filesUtils.isPathExists).mockImplementation(async (p: string) => {
+        if (p === space.realPath) return true
+        return p === parentPath
+      })
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === parentPath)
 
       const req = {
         method: 'POST',
         files: async function* () {
-          yield { filename: partFileName, file: Readable.from(['content']) }
+          yield { filename: path.basename(space.realPath), file: Readable.from(['content']) }
         }
       }
 
@@ -664,6 +719,57 @@ describe(FilesManager.name, () => {
       expect(filesUtils.removeFiles).not.toHaveBeenCalled()
       expect(filesLockManager.createOrRefresh).not.toHaveBeenCalled()
       expect(emitSpy).not.toHaveBeenCalled()
+    })
+
+    it('should reject multipart publication when the exclusive destination lock is already held', async () => {
+      const space = makeSpace()
+      const parentPath = path.dirname(space.realPath)
+      filesLockManager.create.mockResolvedValueOnce([false, { key: 'existing-lock', owner: { id: user.id } }])
+      setPathExists({ [space.realPath]: false, [parentPath]: true }, false)
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === parentPath)
+
+      const req = {
+        method: 'POST',
+        files: async function* () {
+          yield { filename: path.basename(space.realPath), file: Readable.from(['content']) }
+        }
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toBeInstanceOf(LockConflict)
+
+      expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
+      expect(filesLockManager.removeLock).not.toHaveBeenCalled()
+    })
+
+    it('should not overwrite or remove a destination created concurrently with multipart POST', async () => {
+      const space = makeSpace()
+      const parentPath = path.dirname(space.realPath)
+      const concurrentCreationError = new Error('dest already exists.')
+      setPathExists({ [space.realPath]: false, [parentPath]: true }, false)
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === parentPath)
+      vi.mocked(filesUtils.moveFiles).mockRejectedValueOnce(concurrentCreationError)
+      vi.mocked(filesUtils.removeFiles).mockRejectedValueOnce(new Error('Unable to remove staging file'))
+
+      const req = {
+        method: 'POST',
+        files: async function* () {
+          yield { filename: path.basename(space.realPath), file: Readable.from(['content']) }
+        }
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(
+        new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
+      )
+
+      const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
+        tmpWritePath,
+        expect.anything(),
+        expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+      )
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, space.realPath, false)
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(tmpWritePath)
+      expect(filesUtils.removeFiles).not.toHaveBeenCalledWith(space.realPath)
     })
 
     it('should reject multipart path traversal before checking destination path', async () => {
@@ -688,6 +794,58 @@ describe(FilesManager.name, () => {
       expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
       expect(filesLockManager.createOrRefresh).not.toHaveBeenCalled()
+      expect(emitSpy).not.toHaveBeenCalled()
+    })
+
+    it('should reject a multipart destination outside the resource selected by the URL', async () => {
+      const space = makeSpace()
+      const parentPath = path.dirname(space.realPath)
+      const siblingFile = path.join(parentPath, 'sibling.txt')
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
+      setPathExists({ [space.realPath]: false, [parentPath]: true }, false)
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === parentPath)
+
+      const req = {
+        method: 'POST',
+        files: async function* () {
+          yield { filename: 'sibling.txt', file: Readable.from(['content']) }
+        }
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, 'Location is not allowed'))
+
+      expect(filesUtils.isPathExists).not.toHaveBeenCalledWith(siblingFile)
+      expectNoWriteOperations()
+      expect(emitSpy).not.toHaveBeenCalled()
+    })
+
+    it('should reject an internal temporary multipart destination', async () => {
+      const space = makeSpace({
+        realBasePath: '/data/external',
+        realPath: '/data/external/upload'
+      })
+      const parentPath = path.dirname(space.realPath)
+      const internalFile = path.join(space.realPath, TEMPORARY_PATH.STORAGE, 'session.json')
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
+      setPathExists({ [space.realPath]: false, [parentPath]: true }, false)
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === parentPath)
+
+      const req = {
+        method: 'POST',
+        files: async function* () {
+          yield {
+            filename: path.join(path.basename(space.realPath), TEMPORARY_PATH.STORAGE, 'session.json'),
+            file: Readable.from(['content'])
+          }
+        }
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(
+        new FileError(HttpStatus.FORBIDDEN, 'Internal temporary locations are not accessible')
+      )
+
+      expect(filesUtils.isPathExists).not.toHaveBeenCalledWith(internalFile)
+      expectNoWriteOperations()
       expect(emitSpy).not.toHaveBeenCalled()
     })
 
@@ -724,8 +882,12 @@ describe(FilesManager.name, () => {
     })
 
     it('should reject truncated multipart file as payload too large', async () => {
-      const space = makeSpace()
-      const dstFile = '/data/users/john/files/too-big.bin'
+      const space = makeSpace({
+        url: 'files/personal/too-big.bin',
+        realPath: '/data/users/john/files/too-big.bin',
+        dbFile: { ownerId: 7, path: 'too-big.bin', inTrash: false }
+      })
+      const dstFile = space.realPath
       const file = Readable.from(['content']) as Readable & { truncated: boolean }
       file.truncated = true
       const emitSpy = vi.spyOn(FileEvent, 'emit')
@@ -743,13 +905,17 @@ describe(FilesManager.name, () => {
         new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR.MAX_FILE_SIZE_EXCEEDED)
       )
 
+      const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
       expect(req.files).toHaveBeenCalled()
       expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
-        dstFile,
+        tmpWritePath,
         file,
         expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
       )
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith(dstFile)
+      expect(tmpWritePath.startsWith(`${targetTmpRoot}${path.sep}`)).toBe(true)
+      expect(filesUtils.moveFiles).not.toHaveBeenCalled()
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(tmpWritePath)
+      expect(filesUtils.removeFiles).not.toHaveBeenCalledWith(dstFile)
       expect(emitSpy).not.toHaveBeenCalled()
     })
 
@@ -774,9 +940,9 @@ describe(FilesManager.name, () => {
       expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
     })
 
-    it('should not map non-file-size multipart 413 errors to file size limit', async () => {
+    it.each(['FST_FIELDS_LIMIT', 'FST_FILES_LIMIT', 'FST_PARTS_LIMIT'])('should map multipart count limit %s to payload too large', async (code) => {
       const space = makeSpace()
-      const error = Object.assign(new Error('reach parts limit'), { code: 'FST_PARTS_LIMIT', statusCode: HttpStatus.PAYLOAD_TOO_LARGE })
+      const error = Object.assign(new Error('reach multipart count limit'), { code, statusCode: HttpStatus.PAYLOAD_TOO_LARGE })
       setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true }, false)
       vi.mocked(filesUtils.isPathIsDir).mockResolvedValue(true)
 
@@ -788,7 +954,9 @@ describe(FilesManager.name, () => {
         })
       }
 
-      await expect(service.saveMultipart(user, space, req as any)).rejects.toBe(error)
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(
+        new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR.MAX_MULTIPART_PARTS_EXCEEDED)
+      )
 
       expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
     })
@@ -814,7 +982,12 @@ describe(FilesManager.name, () => {
         isDir: () => false
       }
     ])('should cleanup temporary file when PUT move fails after deleting $name', async ({ partFileName, pathExists, isDir }) => {
-      const space = makeSpace()
+      const targetName = partFileName.split('/')[0]
+      const space = makeSpace({
+        url: `files/personal/${targetName}`,
+        realPath: path.join('/data/users/john/files', targetName),
+        dbFile: { ownerId: 7, path: targetName, inTrash: false }
+      })
       const file = Readable.from(['content'])
       const error = new Error('move failed')
       const deleteSpy = vi.spyOn(service, 'delete').mockResolvedValue(undefined)
@@ -847,9 +1020,13 @@ describe(FilesManager.name, () => {
     })
 
     it('should recreate destination directory after deleting a parent file before moving PUT tmp file', async () => {
-      const space = makeSpace()
+      const space = makeSpace({
+        url: 'files/personal/folder',
+        realPath: '/data/users/john/files/folder',
+        dbFile: { ownerId: 7, path: 'folder', inTrash: false }
+      })
       const partFileName = 'folder/file.txt'
-      const dstDir = path.join(path.dirname(space.realPath), 'folder')
+      const dstDir = space.realPath
       const dstFile = path.join(dstDir, 'file.txt')
       const file = Readable.from(['content'])
       const deleteSpy = vi.spyOn(service, 'delete').mockResolvedValue(undefined)
@@ -1033,7 +1210,7 @@ describe(FilesManager.name, () => {
         dbScope: trashDbScope,
         mode: 'trash',
         path: '/data/spaces/project/trash',
-        temporaryRoot: '/data/spaces/project/tmp/users/7'
+        temporaryRoot: '/data/spaces/project/tmp'
       })
       setPathExists(
         {
@@ -1648,7 +1825,7 @@ describe(FilesManager.name, () => {
 
       await expect(service.delete(user, space, undefined, signal)).rejects.toBe(cleanupError)
 
-      expect(filesTasksTransfer.delete).toHaveBeenCalledWith(space, trashFile, targetTmpRoot, false, signal, expect.any(Function))
+      expect(filesTasksTransfer.delete).toHaveBeenCalledWith(user.id, space, trashFile, targetTmpRoot, false, signal, expect.any(Function))
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
       expect(filesQueries.moveFiles).toHaveBeenCalledWith(space.dbFile, { ...targetTrashDbScope, path: 'documents/document.txt' }, false)
       expect(filesQueries.deleteFiles).not.toHaveBeenCalled()
@@ -1698,7 +1875,7 @@ describe(FilesManager.name, () => {
         dbScope: trashDbScope,
         mode: 'trash',
         path: '/data/spaces/project/trash',
-        temporaryRoot: '/data/spaces/project/tmp/users/7'
+        temporaryRoot: '/data/spaces/project/tmp'
       })
       prepareFileTransfer(space.realPath, trashFile, true)
       vi.mocked(filesUtils.uniqueDatedFilePath).mockResolvedValueOnce({ isDir: false, path: renamedTrashFile })
@@ -1754,7 +1931,7 @@ describe(FilesManager.name, () => {
 
       expect(space.task.props).toMatchObject({ progress: 1, size: 0, totalSize: 55 })
       expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, '/tmp/download.txt')
-      expect(filesUtils.temporaryFilePath).toHaveBeenCalledWith(targetTmpRoot, '/tmp/download.txt', FILE_OPERATION.DOWNLOAD, 'task-1')
+      expect(filesUtils.temporaryFilePath).toHaveBeenCalledWith(targetTmpRoot, user.id, '/tmp/download.txt', FILE_OPERATION.DOWNLOAD, 'task-1')
       expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
         temporaryPath(FILE_OPERATION.DOWNLOAD, 'task-1', 'download.txt'),
         expect.anything(),
@@ -1774,11 +1951,11 @@ describe(FilesManager.name, () => {
 
     it('should reject a remote download exceeding maxUploadSize before GET', async () => {
       const space = makeSpace()
-      const tmpPath = `${targetTmpRoot}/~tmp-download-direct-id-download.txt`
+      const tmpPath = `${targetTmpRoot}/server-user-7-download-direct-id-download.txt`
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/download.txt')
       vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(tmpPath)
       http.axiosRef.mockResolvedValueOnce({
-        headers: { 'content-length': `${configuration.applications.files.maxUploadSize + 1}` },
+        headers: { 'content-length': `${configuration.applications.files.transfers.maxUploadSize + 1}` },
         request: { socket: { remoteAddress: '8.8.8.8' } }
       })
 
@@ -1796,7 +1973,7 @@ describe(FilesManager.name, () => {
       const error = new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR.MAX_FILE_SIZE_EXCEEDED)
       const space = makeSpace()
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/download.txt')
-      vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(`${targetTmpRoot}/~tmp-download-direct-id-download.txt`)
+      vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(`${targetTmpRoot}/server-user-7-download-direct-id-download.txt`)
       vi.mocked(filesUtils.writeUploadFromStream).mockRejectedValueOnce(error)
       http.axiosRef
         .mockResolvedValueOnce({
@@ -1811,7 +1988,7 @@ describe(FilesManager.name, () => {
 
       await expect(service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })).rejects.toBe(error)
 
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-download-direct-id-download.txt`)
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/server-user-7-download-direct-id-download.txt`)
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
       expect(filesLockManager.removeLock).toHaveBeenCalledWith(space.dbFile, expect.objectContaining({ key: 'lock-1' }))
       expect(fileEmitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/download.txt' })
@@ -1821,7 +1998,7 @@ describe(FilesManager.name, () => {
       const error = new Error('move failed')
       const space = makeSpace()
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/download.txt')
-      vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(`${targetTmpRoot}/~tmp-download-direct-id-download.txt`)
+      vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(`${targetTmpRoot}/server-user-7-download-direct-id-download.txt`)
       vi.mocked(filesUtils.moveFiles).mockRejectedValueOnce(error)
       http.axiosRef
         .mockResolvedValueOnce({
@@ -1836,7 +2013,7 @@ describe(FilesManager.name, () => {
 
       await expect(service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })).rejects.toBe(error)
 
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-download-direct-id-download.txt`)
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/server-user-7-download-direct-id-download.txt`)
       expect(filesLockManager.removeLock).toHaveBeenCalledWith(space.dbFile, expect.objectContaining({ key: 'lock-1' }))
       expect(fileEmitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/download.txt' })
     })
@@ -1872,7 +2049,7 @@ describe(FilesManager.name, () => {
       const archivePath = temporaryPath(FILE_OPERATION.COMPRESS, 'task-c', 'archive.tgz', user.tmpPath)
       expect(tarSpy).toHaveBeenCalledWith(archivePath, dto.files, true, undefined, expect.any(Function), undefined)
       expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, path.join(user.tmpPath, 'archive.tgz'))
-      expect(filesUtils.temporaryFilePath).toHaveBeenCalledWith(user.tmpPath, 'archive.tgz', FILE_OPERATION.COMPRESS, 'task-c')
+      expect(filesUtils.temporaryFilePath).toHaveBeenCalledWith(user.tmpPath, user.id, 'archive.tgz', FILE_OPERATION.COMPRESS, 'task-c')
       expect(space.task.props.size).toBe(Buffer.byteLength('content'))
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
     })
@@ -1895,7 +2072,7 @@ describe(FilesManager.name, () => {
     })
 
     it('should allow archive export from trash as an explicit task', async () => {
-      const archivePath = '/data/users/john/tmp/~tmp-compress-task-export-archive-trash.tgz'
+      const archivePath = '/data/users/john/tmp/server-user-7-compress-task-export-archive-trash.tgz'
       vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(archivePath)
       const emitSpy = vi.spyOn(FileEvent, 'emit')
       const space = makeTrashSpace({
@@ -1922,7 +2099,7 @@ describe(FilesManager.name, () => {
     it('should cleanup temporary archive and skip ADD event when publishing archive fails', async () => {
       const error = new Error('move failed')
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/archive.tgz')
-      const archivePath = `${targetTmpRoot}/~tmp-compress-direct-id-archive.tgz`
+      const archivePath = `${targetTmpRoot}/server-user-7-compress-direct-id-archive.tgz`
       vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(archivePath)
       vi.mocked(filesUtils.moveFiles).mockRejectedValueOnce(error)
       const emitSpy = vi.spyOn(FileEvent, 'emit')
@@ -1943,7 +2120,7 @@ describe(FilesManager.name, () => {
 
     it('should cleanup temporary archive when TAR creation fails', async () => {
       const error = new Error('archive failed')
-      const archivePath = '/data/users/john/tmp/~tmp-compress-task-export-archive.tgz'
+      const archivePath = '/data/users/john/tmp/server-user-7-compress-task-export-archive.tgz'
       vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(archivePath)
       vi.mocked(tarUtils.createTar).mockRejectedValueOnce(error)
       const emitSpy = vi.spyOn(FileEvent, 'emit')
@@ -1966,7 +2143,7 @@ describe(FilesManager.name, () => {
     it('should preserve task cancellation while cleaning the temporary archive', async () => {
       const controller = new AbortController()
       const reason = new Error('Cancelled')
-      const archivePath = '/data/users/john/tmp/~tmp-compress-task-export-archive.tar'
+      const archivePath = '/data/users/john/tmp/server-user-7-compress-task-export-archive.tar'
       vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(archivePath)
       vi.mocked(tarUtils.createTar).mockRejectedValueOnce(reason)
       const space = makeSpace({ realPath: '/data/users/john/files/source.txt', task: compressionTask() })
@@ -1986,7 +2163,7 @@ describe(FilesManager.name, () => {
 
     it('should limit an archive to the known remaining quota', async () => {
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive.tar')
-      const archivePath = `${targetTmpRoot}/~tmp-compress-direct-id-archive.tar`
+      const archivePath = `${targetTmpRoot}/server-user-7-compress-direct-id-archive.tar`
       vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(archivePath)
       const space = makeSpace({
         realPath: '/data/users/john/files/source.txt',
@@ -2007,7 +2184,7 @@ describe(FilesManager.name, () => {
     })
 
     it('should create a compressed ZIP archive with a zero quota treated as unlimited', async () => {
-      const archivePath = '/data/users/john/tmp/~tmp-compress-task-export-archive.zip'
+      const archivePath = '/data/users/john/tmp/server-user-7-compress-task-export-archive.zip'
       vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(archivePath)
       const space = makeSpace({ realPath: '/data/users/john/files/source.txt', task: compressionTask(), storageQuota: 0, storageUsage: 40 })
       const dto = {
@@ -2042,6 +2219,7 @@ describe(FilesManager.name, () => {
       const extractionPath = temporaryPath(FILE_OPERATION.DECOMPRESS, 'task-d', 'archive')
       expect(filesUtils.makeTemporaryDirectory).toHaveBeenCalledWith(
         targetTmpRoot,
+        user.id,
         '/data/users/john/files/archive',
         FILE_OPERATION.DECOMPRESS,
         'task-d'
@@ -2058,34 +2236,37 @@ describe(FilesManager.name, () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.tar.gz', storageQuota: 0, storageUsage: 40 })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
-      vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
+      vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/server-user-7-decompress-direct-id-archive`)
       const untarSpy = vi.spyOn(untarUtils, 'extractTar').mockResolvedValueOnce(undefined)
 
       await service.decompress(user, space)
 
       expect(untarSpy).toHaveBeenCalledWith(
         '/data/users/john/files/archive.tar.gz',
-        `${targetTmpRoot}/~tmp-decompress-direct-id-archive`,
+        `${targetTmpRoot}/server-user-7-decompress-direct-id-archive`,
         true,
         undefined,
         undefined,
         undefined
       )
-      expect(filesUtils.moveFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`, '/data/users/john/files/archive')
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(
+        `${targetTmpRoot}/server-user-7-decompress-direct-id-archive`,
+        '/data/users/john/files/archive'
+      )
     })
 
     it('should limit extracted size to the known remaining quota', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.zip', storageQuota: 100, storageUsage: 40 })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
-      vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
+      vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/server-user-7-decompress-direct-id-archive`)
       const unzipSpy = vi.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
 
       await service.decompress(user, space)
 
       expect(unzipSpy).toHaveBeenCalledWith(
         '/data/users/john/files/archive.zip',
-        `${targetTmpRoot}/~tmp-decompress-direct-id-archive`,
+        `${targetTmpRoot}/server-user-7-decompress-direct-id-archive`,
         60,
         undefined,
         undefined
@@ -2096,14 +2277,14 @@ describe(FilesManager.name, () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.zip' })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
-      vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
+      vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/server-user-7-decompress-direct-id-archive`)
       const error = new Error('extraction failed')
       vi.spyOn(unzipUtils, 'extractZip').mockRejectedValueOnce(error)
       const emitSpy = vi.spyOn(FileEvent, 'emit')
 
       await expect(service.decompress(user, space)).rejects.toBe(error)
 
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/server-user-7-decompress-direct-id-archive`)
       expect(filesUtils.removeFiles).not.toHaveBeenCalledWith('/data/users/john/files/archive')
       expect(filesLockManager.removeLock).toHaveBeenCalledWith(space.dbFile, expect.objectContaining({ key: 'lock-1' }))
       expect(emitSpy).not.toHaveBeenCalledWith('event', {
@@ -2118,14 +2299,14 @@ describe(FilesManager.name, () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.zip' })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
-      vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
+      vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/server-user-7-decompress-direct-id-archive`)
       const error = new Error('move failed')
       vi.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
       vi.mocked(filesUtils.moveFiles).mockRejectedValueOnce(error)
 
       await expect(service.decompress(user, space)).rejects.toBe(error)
 
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/server-user-7-decompress-direct-id-archive`)
       expect(filesUtils.removeFiles).not.toHaveBeenCalledWith('/data/users/john/files/archive')
       expect(filesLockManager.removeLock).toHaveBeenCalledWith(space.dbFile, expect.objectContaining({ key: 'lock-1' }))
     })
@@ -2134,12 +2315,12 @@ describe(FilesManager.name, () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.zip' })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true).mockResolvedValueOnce(true)
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
-      vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
+      vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/server-user-7-decompress-direct-id-archive`)
       vi.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
 
       await expect(service.decompress(user, space)).rejects.toEqual(new FileError(HttpStatus.CONFLICT, 'The destination already exists'))
 
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/server-user-7-decompress-direct-id-archive`)
       expect(filesUtils.removeFiles).not.toHaveBeenCalledWith('/data/users/john/files/archive')
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
     })

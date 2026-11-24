@@ -27,7 +27,7 @@ vi.mock('../../files/core/utils/files.js', async (importOriginal) => {
     dirName: vi.fn(),
     genEtag: vi.fn().mockReturnValue('W/"etag-123"'),
     removeFiles: vi.fn(() => Promise.resolve()),
-    temporaryFilePath: vi.fn().mockReturnValue('/space/tmp/users/1/~tmp-upload-id-file.txt')
+    temporaryFilePath: vi.fn().mockReturnValue('/space/tmp/server-user-1-upload-id-file.txt')
   }
 })
 
@@ -37,7 +37,7 @@ vi.mock('../../spaces/utils/permissions.js', () => ({
 
 vi.mock('../../spaces/utils/paths.js', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../spaces/utils/paths.js')>()
-  return { ...actual, dbFileFromSpace: vi.fn(), temporaryRootFromSpace: vi.fn().mockReturnValue('/space/tmp/users/1') }
+  return { ...actual, dbFileFromSpace: vi.fn(), ensureTemporaryRootFromSpace: vi.fn().mockResolvedValue('/space/tmp') }
 })
 
 vi.mock('../decorators/if-header.decorator.js', () => ({
@@ -719,7 +719,7 @@ describe('WebDAVMethods', () => {
           req.user,
           req.space,
           req,
-          expect.objectContaining({ dav: expect.any(Object), tmpPath: '/space/tmp/users/1/~tmp-upload-id-file.txt' })
+          expect.objectContaining({ dav: expect.any(Object), tmpPath: '/space/tmp/server-user-1-upload-id-file.txt' })
         )
         expect(res.statusCode).toBe(HttpStatus.NO_CONTENT)
         expect(res.headers['etag']).toBeDefined()
@@ -805,7 +805,7 @@ describe('WebDAVMethods', () => {
 
         expect(res.statusCode).toBe(409)
         expect(res.body).toBe('File conflict')
-        expect(removeFiles).toHaveBeenCalledWith('/space/tmp/users/1/~tmp-upload-id-file.txt')
+        expect(removeFiles).toHaveBeenCalledWith('/space/tmp/server-user-1-upload-id-file.txt')
       })
 
       it('should not clean up direct content-range updates after an error', async () => {

@@ -281,7 +281,7 @@ export class UsersManager {
     if (!part!.mimetype.startsWith(imgMimeTypePrefix)) {
       throw new HttpException('Unsupported file type', HttpStatus.BAD_REQUEST)
     }
-    const tmpPath = temporaryFilePath(req.user.tmpPath, USER_AVATAR_FILE_NAME, 'avatar')
+    const tmpPath = temporaryFilePath(req.user.tmpPath, req.user.id, USER_AVATAR_FILE_NAME, 'avatar')
     try {
       await pipeline(part!.file, createWriteStream(tmpPath))
     } catch (e) {

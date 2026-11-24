@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { parseTextToBytes } from '../../common/shared.js'
 import { hydrateConfigDefaults, integerNumberSchema, nonEmptyStringSchema } from '../../configuration/config.schema.js'
 import { SAMPLE_DOCUMENT_GROUPS } from './core/constants/samples.js'
 import { CollaboraOnlineConfigSchema } from './editors/collabora-online/collabora-online.config.js'
@@ -8,6 +9,22 @@ import { OnlyOfficeConfigSchema } from './editors/only-office/only-office.config
 export type FilesContentIndexingOCRConfig = z.output<typeof FilesContentIndexingOCRConfigSchema>
 export type FilesTrashRetentionConfig = z.output<typeof FilesTrashRetentionConfigSchema>
 export type FilesConfig = z.output<typeof FilesConfigSchema>
+
+const textByteSizeSchema = z.string().refine((value) => parseTextToBytes(value) !== undefined, { message: 'Invalid byte size' })
+const byteSizeSchema = z.union([integerNumberSchema, textByteSizeSchema]).transform(byteSizeToNumber)
+
+function byteSizeToNumber(value: number | string): number {
+  return typeof value === 'number' ? value : parseTextToBytes(value)!
+}
+
+export const FilesTransfersConfigSchema = z.looseObject({
+  maxUploadSize: byteSizeSchema.default(5368709120), // 5 GB
+  maxChunkSize: z
+    .union([byteSizeSchema, z.null()])
+    .transform((value) => (value === 0 ? null : value))
+    .pipe(z.number().int().min(1000000).nullable())
+    .default(99614720)
+})
 
 export const FilesContentIndexingOCRConfigSchema = z.discriminatedUnion('enabled', [
   z.looseObject({
@@ -78,7 +95,7 @@ export const FilesConfigSchema = z.looseObject({
   usersPath: nonEmptyStringSchema,
   spacesPath: nonEmptyStringSchema,
   linksPath: nonEmptyStringSchema,
-  maxUploadSize: integerNumberSchema.default(5368709120), // 5 GB
+  transfers: FilesTransfersConfigSchema.prefault({}),
   links: FilesLinksConfigSchema.prefault({}),
   contentIndexing: FilesContentIndexingConfigSchema.prefault({}),
   trashRetention: FilesTrashRetentionConfigSchema.prefault({}),

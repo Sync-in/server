@@ -6,6 +6,7 @@ import { temporaryFilePath } from './files.js'
 import { FILE_OPERATION } from '../constants/operations.js'
 
 const FASTIFY_MULTIPART_FILE_TOO_LARGE_CODE = 'FST_REQ_FILE_TOO_LARGE' as const
+const FASTIFY_MULTIPART_COUNT_LIMIT_CODES = new Set(['FST_FIELDS_LIMIT', 'FST_FILES_LIMIT', 'FST_PARTS_LIMIT'])
 
 /**
  * Request-scoped upload limiter. It deliberately does not coordinate quota
@@ -41,9 +42,7 @@ export class UploadStreamLimiter {
       if (bytes > fileRemaining || bytes > quotaRemaining) {
         // Report the first effective boundary. If both are equal, the file-size
         // limit is the more specific upload error.
-        if (quotaRemaining < fileRemaining) {
-          throw storageQuotaExceededError()
-        }
+        if (quotaRemaining < fileRemaining) throw storageQuotaExceededError()
         throw maxFileSizeExceededError()
       }
 
@@ -74,19 +73,23 @@ export function createUploadStreamLimiter(space: UploadQuotaSnapshot | undefined
   return new UploadStreamLimiter(maxFileSize, quotaRemaining)
 }
 
-export function parseContentLength(value: unknown): number | undefined {
+export function parseUnsignedIntegerHeader(value: unknown, invalidHeaderMessage: string): number | undefined {
   if (value === undefined || value === null) return undefined
 
   const normalized = typeof value === 'number' ? String(value) : typeof value === 'string' ? value.trim() : ''
   if (!/^\d+$/.test(normalized)) {
-    throw new FileError(HttpStatus.BAD_REQUEST, 'Invalid "content-length" header')
+    throw new FileError(HttpStatus.BAD_REQUEST, invalidHeaderMessage)
   }
 
-  const contentLength = Number(normalized)
-  if (!Number.isSafeInteger(contentLength)) {
-    throw new FileError(HttpStatus.BAD_REQUEST, 'Invalid "content-length" header')
+  const valueAsNumber = Number(normalized)
+  if (!Number.isSafeInteger(valueAsNumber)) {
+    throw new FileError(HttpStatus.BAD_REQUEST, invalidHeaderMessage)
   }
-  return contentLength
+  return valueAsNumber
+}
+
+export function parseContentLength(value: unknown): number | undefined {
+  return parseUnsignedIntegerHeader(value, 'Invalid "content-length" header')
 }
 
 export function parseContentRange(value: string): { start: number; end: number; total?: number } {
@@ -113,6 +116,10 @@ export function isMultipartFileTooLargeError(e: any): boolean {
   return e?.code === FASTIFY_MULTIPART_FILE_TOO_LARGE_CODE
 }
 
-export function uploadTmpFilePath(tmpPath: string, partFileName: string): string {
-  return temporaryFilePath(tmpPath, partFileName, FILE_OPERATION.UPLOAD)
+export function isMultipartCountLimitError(e: any): boolean {
+  return FASTIFY_MULTIPART_COUNT_LIMIT_CODES.has(e?.code)
+}
+
+export function uploadTmpFilePath(tmpPath: string, userId: number, partFileName: string): string {
+  return temporaryFilePath(tmpPath, userId, partFileName, FILE_OPERATION.UPLOAD)
 }

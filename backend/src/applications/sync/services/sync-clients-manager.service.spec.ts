@@ -9,7 +9,7 @@ import { AuthProvider } from '../../../authentication/providers/auth-providers.m
 import { AuthProvider2FA } from '../../../authentication/providers/two-fa/auth-provider-two-fa.service.js'
 import * as commonFunctions from '../../../common/functions.js'
 import * as commonShared from '../../../common/shared.js'
-import { configuration } from '../../../configuration/config.environment.js'
+import { configuration, serverConfig } from '../../../configuration/config.environment.js'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
 import { isPathExists } from '../../files/core/utils/files.js'
 import { UserModel } from '../../users/models/user.model.js'
@@ -323,6 +323,8 @@ describe(SyncClientsManager.name, () => {
 
       const r: any = await service.authenticate(CLIENT_AUTH_TYPE.TOKEN, dto as any, ip, {} as FastifyReply)
       expect(authManager.getTokens).toHaveBeenCalledTimes(1)
+      expect(r.capabilities).toEqual({ transfers: serverConfig.files.transfers })
+      expect(r.server).toBe(serverConfig)
       expect(r.client_token_update).toBeUndefined()
     })
 

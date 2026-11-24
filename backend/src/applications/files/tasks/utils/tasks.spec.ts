@@ -32,20 +32,20 @@ describe('file task utilities', () => {
   it('counts task content while ignoring internal temporary entries', async () => {
     const sourceDir = path.join(tmpDir, 'source')
     await fs.mkdir(path.join(sourceDir, 'docs'), { recursive: true })
-    await fs.mkdir(path.join(sourceDir, '.sync-in-tmp', 'users', '7'), { recursive: true })
+    await fs.mkdir(path.join(sourceDir, '.sync-in-tmp'), { recursive: true })
     await fs.mkdir(path.join(sourceDir, '.sync-in.partial-dir'), { recursive: true })
     await Promise.all([
       writeFile(path.join(sourceDir, 'report.txt'), 'report'),
       writeFile(path.join(sourceDir, 'docs', 'notes.txt'), 'notes'),
       writeFile(path.join(sourceDir, '.sync-in.report.txt'), 'ignored'),
-      writeFile(path.join(sourceDir, '.sync-in-tmp', 'users', '7', 'staging.bin'), 'ignored'),
+      writeFile(path.join(sourceDir, '.sync-in-tmp', 'server-user-7-copy-task-id-staging.bin'), 'ignored'),
       writeFile(path.join(sourceDir, '.sync-in.partial-dir', 'chunk.bin'), 'ignored')
     ])
 
     await expect(countDirEntriesAndSize(sourceDir)).resolves.toEqual({
-      directories: 1,
-      files: 2,
-      size: Buffer.byteLength('reportnotes')
+      directories: 2,
+      files: 4,
+      size: Buffer.byteLength('reportnotesignoredignored')
     })
   })
 })

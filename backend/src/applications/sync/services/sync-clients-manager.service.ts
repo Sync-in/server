@@ -14,7 +14,7 @@ import { AuthProvider2FA } from '../../../authentication/providers/two-fa/auth-p
 import { convertHumanTimeToSeconds } from '../../../common/functions.js'
 import { currentTimeStamp, RELEASES_URL } from '../../../common/shared.js'
 import { STATIC_PATH } from '../../../configuration/config.constants.js'
-import { configuration } from '../../../configuration/config.environment.js'
+import { configuration, serverConfig } from '../../../configuration/config.environment.js'
 import { CacheDecorator } from '../../../infrastructure/cache/cache.decorator.js'
 import { HTTP_METHOD } from '../../applications.constants.js'
 import { isPathExists } from '../../files/core/utils/files.js'
@@ -136,7 +136,13 @@ export class SyncClientsManager {
       r = await this.authManager.setCookies(user, res)
     } else if (authType === CLIENT_AUTH_TYPE.TOKEN) {
       // used by the cli app and the sync core
-      r = await this.authManager.getTokens(user)
+      r = {
+        ...(await this.authManager.getTokens(user)),
+        capabilities: {
+          transfers: serverConfig.files.transfers
+        },
+        server: serverConfig
+      }
     }
     // check if the client token must be updated
     r.client_token_update = await this.renewTokenAndExpiration(client, user)

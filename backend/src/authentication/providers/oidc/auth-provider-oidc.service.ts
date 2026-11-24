@@ -493,7 +493,7 @@ export class AuthProviderOIDC implements AuthProvider {
     let pictureLastModified: string | undefined
     const downloader = new DownloadFile(this.http)
     const allowPrivateIP = this.oidcConfig.security.allowPrivateIpAvatarDownload ?? undefined
-    const userAvatarTmpPath = temporaryFilePath(user.tmpPath, USER_AVATAR_FILE_NAME, 'avatar')
+    const userAvatarTmpPath = temporaryFilePath(user.tmpPath, user.id, USER_AVATAR_FILE_NAME, 'avatar')
     try {
       // retrieve headers
       const { contentType, contentLength, lastModified } = await downloader.download(downloadDto, userAvatarTmpPath, {

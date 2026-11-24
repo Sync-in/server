@@ -468,7 +468,7 @@ describe(FilesContentIndexer.name, () => {
       yielded.push(metadata)
     }
 
-    expect(yielded.map((f) => f.name)).toEqual(['b.txt', 'a.txt'])
+    expect(yielded.map((f) => f.name)).toEqual(['b.txt', '.sync-in.document.txt', 'a.txt'])
     expect(readdirSpy.mock.calls.map(([directory]) => directory)).not.toContain('/root/.sync-in-tmp')
   })
 

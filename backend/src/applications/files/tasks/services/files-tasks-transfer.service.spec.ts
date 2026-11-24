@@ -10,6 +10,7 @@ import { SourceCleanupError } from '../../core/models/file-error.js'
 describe(FilesTasksTransfer.name, () => {
   const cacheKey = 'ftask-7-task-id'
   const taskId = 'task-id'
+  const userId = 7
   let service: FilesTasksTransfer
   let tmpDir: string
   let srcPath: string
@@ -22,7 +23,7 @@ describe(FilesTasksTransfer.name, () => {
     srcPath = path.join(tmpDir, 'source.txt')
     dstPath = path.join(tmpDir, 'destination.txt')
     stagingDir = path.join(tmpDir, 'tasks')
-    vi.spyOn(spacesPathUtils, 'temporaryRootFromSpace').mockReturnValue(stagingDir)
+    vi.spyOn(spacesPathUtils, 'ensureTemporaryRootFromSpace').mockResolvedValue(stagingDir)
   })
 
   afterEach(async () => {
@@ -31,9 +32,9 @@ describe(FilesTasksTransfer.name, () => {
   })
 
   const copyAbortable = (options: Record<string, any>) =>
-    (service as any).copyAbortable(srcPath, dstPath, { executionId: taskId, operation: FILE_OPERATION.COPY, ...options })
+    (service as any).copyAbortable(srcPath, dstPath, { executionId: taskId, operation: FILE_OPERATION.COPY, userId, ...options })
   const moveAbortable = (options: Record<string, any>) =>
-    (service as any).moveAbortable(srcPath, dstPath, { executionId: taskId, operation: FILE_OPERATION.MOVE, ...options })
+    (service as any).moveAbortable(srcPath, dstPath, { executionId: taskId, operation: FILE_OPERATION.MOVE, userId, ...options })
 
   const mockCrossDevice = () => {
     vi.spyOn(fs, 'lstat').mockResolvedValueOnce({ dev: 1 } as any)
@@ -62,14 +63,14 @@ describe(FilesTasksTransfer.name, () => {
   it('ignores internal temporary entries during recursive task copies', async () => {
     srcPath = path.join(tmpDir, 'source')
     dstPath = path.join(tmpDir, 'destination')
-    await fs.mkdir(path.join(srcPath, '.sync-in-tmp', 'users'), { recursive: true })
+    await fs.mkdir(path.join(srcPath, '.sync-in-tmp'), { recursive: true })
     await writeFile(path.join(srcPath, 'report.txt'), 'report')
     await writeFile(path.join(srcPath, '.sync-in.partial'), 'partial')
-    await writeFile(path.join(srcPath, '.sync-in-tmp', 'users', 'staging.bin'), 'staging')
+    await writeFile(path.join(srcPath, '.sync-in-tmp', 'server-user-7-copy-task-id-staging.bin'), 'staging')
 
     await (service as any).copyEntry(srcPath, dstPath, true, true, new AbortController().signal)
 
-    await expect(readdir(dstPath)).resolves.toEqual(['report.txt'])
+    await expect(readdir(dstPath)).resolves.toEqual(['.sync-in.partial', 'report.txt'])
   })
 
   it('tracks extracted entries and implicit parent directories', () => {
@@ -93,7 +94,7 @@ describe(FilesTasksTransfer.name, () => {
 
   it('publishes a copied file only after the commit hook', async () => {
     const signal = new AbortController().signal
-    const temporaryPath = filesUtils.temporaryFilePath(stagingDir, dstPath, FILE_OPERATION.COPY, taskId)
+    const temporaryPath = filesUtils.temporaryFilePath(stagingDir, userId, dstPath, FILE_OPERATION.COPY, taskId)
     let transferredBytes = 0
     await writeFile(srcPath, 'content')
 
@@ -112,7 +113,7 @@ describe(FilesTasksTransfer.name, () => {
 
     expect(transferredBytes).toBe(Buffer.byteLength('content'))
     expect(path.dirname(temporaryPath)).toBe(stagingDir)
-    expect(path.basename(temporaryPath)).toBe(`${filesUtils.temporaryFilePrefix(FILE_OPERATION.COPY, taskId)}destination.txt`)
+    expect(path.basename(temporaryPath)).toBe(`${filesUtils.temporaryFilePrefix(userId, FILE_OPERATION.COPY, taskId)}destination.txt`)
     await expect(readFile(dstPath, 'utf8')).resolves.toBe('content')
     await expect(access(temporaryPath)).rejects.toMatchObject({ code: 'ENOENT' })
   })
@@ -223,7 +224,7 @@ describe(FilesTasksTransfer.name, () => {
     const beforeCommit = vi.fn()
     const beforeTransfer = vi.fn()
     const content = 'content'
-    const temporaryPath = filesUtils.temporaryFilePath(stagingDir, dstPath, FILE_OPERATION.MOVE, taskId)
+    const temporaryPath = filesUtils.temporaryFilePath(stagingDir, userId, dstPath, FILE_OPERATION.MOVE, taskId)
     let transferredBytes = 0
     await writeFile(srcPath, content)
     const renameSpy = vi

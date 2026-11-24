@@ -5,7 +5,7 @@ import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { UserModel } from '../../../users/models/user.model.js'
 import { SpaceEnv } from '../../../spaces/models/space-env.model.js'
-import { temporaryRootFromSpace } from '../../../spaces/utils/paths.js'
+import { ensureTemporaryRootFromSpace } from '../../../spaces/utils/paths.js'
 import { DEFAULT_HIGH_WATER_MARK } from '../../core/constants/files.js'
 import { FILE_OPERATION } from '../../core/constants/operations.js'
 import { FileTaskEvent } from '../../core/events/file-events.js'
@@ -45,7 +45,8 @@ export class FilesTasksTransfer {
       overwrite,
       recursive,
       signal,
-      stagingDir: temporaryRootFromSpace(user, dstSpace)
+      stagingDir: await ensureTemporaryRootFromSpace(user, dstSpace),
+      userId: user.id
     })
   }
 
@@ -68,11 +69,13 @@ export class FilesTasksTransfer {
       operation: FILE_OPERATION.MOVE,
       overwrite,
       signal,
-      stagingDir: temporaryRootFromSpace(user, dstSpace)
+      stagingDir: await ensureTemporaryRootFromSpace(user, dstSpace),
+      userId: user.id
     })
   }
 
   async delete(
+    userId: number,
     space: SpaceEnv,
     trashFile: string,
     stagingDir: string,
@@ -89,7 +92,8 @@ export class FilesTasksTransfer {
       operation: FILE_OPERATION.DELETE,
       overwrite: true,
       signal: signal ?? new AbortController().signal,
-      stagingDir
+      stagingDir,
+      userId
     })
   }
 
@@ -165,9 +169,10 @@ export class FilesTasksTransfer {
       preserveTimestamps = true,
       recursive = true,
       signal,
-      stagingDir = path.dirname(dstPath)
+      stagingDir = path.dirname(dstPath),
+      userId
     } = options
-    const temporaryPath = temporaryFilePath(stagingDir, dstPath, operation, executionId)
+    const temporaryPath = temporaryFilePath(stagingDir, userId, dstPath, operation, executionId)
     await fs.mkdir(stagingDir, { recursive: true })
     const copyDirectlyToDestination = await isCrossDevice(stagingDir, dstPath)
 
@@ -204,7 +209,18 @@ export class FilesTasksTransfer {
   }
 
   private async moveAbortable(srcPath: string, dstPath: string, options: FileTaskTransferOptions): Promise<SourceCleanupError | undefined> {
-    const { beforeCommit, beforeTransfer, executionId, onProgress, onTransferStart, operation, overwrite = false, signal, stagingDir } = options
+    const {
+      beforeCommit,
+      beforeTransfer,
+      executionId,
+      onProgress,
+      onTransferStart,
+      operation,
+      overwrite = false,
+      signal,
+      stagingDir,
+      userId
+    } = options
     const crossDevice = await isCrossDevice(srcPath, dstPath)
     let streamedBeforeCommit = beforeCommit
     if (!crossDevice) {
@@ -226,7 +242,8 @@ export class FilesTasksTransfer {
       operation,
       overwrite,
       signal,
-      stagingDir
+      stagingDir,
+      userId
     })
     try {
       await removeFiles(srcPath)

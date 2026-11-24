@@ -1,9 +1,16 @@
+import { Reflector } from '@nestjs/core'
 import { Test, TestingModule } from '@nestjs/testing'
+import type { FastifyReply } from 'fastify'
+import crypto from 'node:crypto'
 import { Readable } from 'node:stream'
+import { SPACE_OPERATION } from '../../spaces/constants/spaces.js'
+import { OverrideSpacePermission } from '../../spaces/decorators/space-override-permission.decorator.js'
 import { SpaceGuard } from '../../spaces/guards/space.guard.js'
+import type { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface.js'
 import { FILE_OPERATION } from '../core/constants/operations.js'
 import { FilesOperationsController } from './files-operations.controller.js'
 import { FilesMethods } from './services/files-methods.service.js'
+import { FilesUploadSessionManager } from './services/files-upload-session-manager.service.js'
 import { FilesTasksManager } from '../tasks/services/files-tasks-manager.service.js'
 
 describe(FilesOperationsController.name, () => {
@@ -34,12 +41,17 @@ describe(FilesOperationsController.name, () => {
     createTask: vi.fn()
   }
 
+  const uploadSessionsMock = {
+    writeUploadSessionChunk: vi.fn().mockResolvedValue(undefined)
+  }
+
   beforeAll(async () => {
     const testingModuleBuilder = Test.createTestingModule({
       controllers: [FilesOperationsController],
       providers: [
         { provide: FilesMethods, useValue: filesMethodsMock },
-        { provide: FilesTasksManager, useValue: filesTasksManagerMock }
+        { provide: FilesTasksManager, useValue: filesTasksManagerMock },
+        { provide: FilesUploadSessionManager, useValue: uploadSessionsMock }
       ]
     })
     // IMPORTANT: override the guard referenced by @UseGuards to avoid resolving its dependencies
@@ -52,6 +64,13 @@ describe(FilesOperationsController.name, () => {
 
   it('should be defined', () => {
     expect(filesOperationsController).toBeDefined()
+  })
+
+  it('should require modify permission for PUT uploads', () => {
+    const reflector = new Reflector()
+
+    expect(reflector.get(OverrideSpacePermission, FilesOperationsController.prototype.uploadOverwrite)).toBe(SPACE_OPERATION.MODIFY)
+    expect(reflector.get(OverrideSpacePermission, FilesOperationsController.prototype.overwriteUploadSession)).toBe(SPACE_OPERATION.MODIFY)
   })
 
   describe('Operations', () => {
@@ -174,6 +193,50 @@ describe(FilesOperationsController.name, () => {
       expect(result.getStream()).toBe(stream)
       expect(result.getHeaders()).toMatchObject({ length: 3, type: 'image/webp' })
     })
+  })
+
+  describe('Upload session operations', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+    })
+
+    it('delegates an appended chunk to the upload session manager', async () => {
+      const req = makeUploadRequest()
+      const uploadId = crypto.randomUUID()
+      const reply = makeReply()
+
+      await expect(filesOperationsController.append(req, uploadId, reply)).resolves.toBeUndefined()
+
+      expect(uploadSessionsMock.writeUploadSessionChunk).toHaveBeenCalledWith(req, uploadId, reply)
+    })
+
+    it('delegates a first chunk with its creation method', async () => {
+      const req = makeUploadRequest()
+      const uploadId = crypto.randomUUID()
+      const reply = makeReply()
+
+      await expect(filesOperationsController.createUploadSession(req, uploadId, reply)).resolves.toBeUndefined()
+
+      expect(uploadSessionsMock.writeUploadSessionChunk).toHaveBeenCalledWith(req, uploadId, reply, 'POST')
+    })
+
+    function makeUploadRequest(): FastifySpaceRequest {
+      return {
+        headers: {
+          'content-length': '4',
+          'content-type': 'application/octet-stream',
+          'upload-length': '4',
+          'upload-offset': '0'
+        },
+        raw: { httpVersionMajor: 1 },
+        space: fakeSpace,
+        user: fakeUser
+      } as unknown as FastifySpaceRequest
+    }
+
+    function makeReply(): FastifyReply {
+      return { header: vi.fn().mockReturnThis() } as unknown as FastifyReply
+    }
   })
 
   describe('Tasks operations', () => {

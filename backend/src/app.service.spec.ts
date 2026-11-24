@@ -147,6 +147,7 @@ describe(AppService.name, () => {
     process.env[`${ENVIRONMENT_PREFIX}LOGGER_STDOUT`] = 'false'
     process.env[`${ENVIRONMENT_PREFIX}LOGGER_COLORIZE`] = '"false"'
     process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_MAXUPLOADSIZE`] = '8888'
+    process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_TRANSFERS_MAXCHUNKSIZE`] = '2000000'
     process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_SAMPLEDOCUMENTS`] = 'microsoft'
     // docker compose secret file
     process.env[`${ENVIRONMENT_PREFIX}AUTH_TOKEN_ACCESS_SECRET_FILE`] = tmpSecretFile
@@ -155,11 +156,24 @@ describe(AppService.name, () => {
     expect(warnSpy).toHaveBeenCalledWith(
       `Environment variable "${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_ONLYOFFICE_SECRET" is deprecated. Please use "${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_EDITORS_ONLYOFFICE_SECRET" instead.`
     )
+    expect(warnSpy).toHaveBeenCalledWith(
+      `Environment variable "${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_MAXUPLOADSIZE" is deprecated and will be removed in the next major version. ` +
+        `Please use "${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_TRANSFERS_MAXUPLOADSIZE" instead.`
+    )
     expect(conf.logger.stdout).toBe(false)
     expect(conf.logger.colorize).toBe(false)
-    expect(conf.applications.files.maxUploadSize).toBe(8888)
+    expect(conf.applications.files.transfers).toEqual({ maxUploadSize: 8888, maxChunkSize: 2000000 })
     expect(conf.applications.files.sampleDocuments).toEqual(['microsoft'])
     expect(conf.auth.token.access.secret).toBe('fooBAR8888')
+
+    process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_MAXUPLOADSIZE`] = '7777'
+    process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_TRANSFERS_MAXUPLOADSIZE`] = '9999'
+    conf = loadConfiguration()
+    expect(conf.applications.files.transfers.maxUploadSize).toBe(9999)
+    expect(warnSpy).toHaveBeenCalledWith(
+      `Environment variable "${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_MAXUPLOADSIZE" is deprecated and will be removed in the next major version. ` +
+        `Ignoring it because "${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_TRANSFERS_MAXUPLOADSIZE" is set.`
+    )
     // clean up secret file
     fs.promises.rm(tmpSecretFile, { force: true }).catch(console.error)
   })

@@ -223,7 +223,7 @@ describe(SpacesBrowser.name, () => {
     expect(getLocksByPath).toHaveBeenCalledWith({ spaceId: 7, spaceExternalRootId: 11, path: '.', inTrash: false })
   })
 
-  it('always hides internal temporary entries from filesystem browsing', async () => {
+  it('hides active temporary storage but keeps former Sync temporary files visible', async () => {
     vi.spyOn(fs, 'readdir').mockResolvedValue([
       { name: '.sync-in-tmp', isDirectory: () => true, isFile: () => false },
       { name: '.sync-in.uploading', isDirectory: () => false, isFile: () => true },
@@ -242,7 +242,7 @@ describe(SpacesBrowser.name, () => {
       names.push(file.name)
     }
 
-    expect(names).toEqual(['.visible'])
+    expect(names).toEqual(['.sync-in.uploading', '.visible'])
   })
 
   it('reconciles hidden files before excluding them from the response', async () => {

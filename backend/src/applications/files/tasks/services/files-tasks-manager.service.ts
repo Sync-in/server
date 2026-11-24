@@ -156,7 +156,7 @@ export class FilesTasksManager implements OnModuleDestroy {
   }
 
   private downloadableArchivePath(user: UserModel, task: FileTask): string {
-    return temporaryFilePath(user.tmpPath, task.name, task.type, task.id)
+    return temporaryFilePath(user.tmpPath, user.id, task.name, task.type, task.id)
   }
 
   private async storeTask(cacheKey: string, task: FileTask, status = FileTaskStatus.PENDING) {

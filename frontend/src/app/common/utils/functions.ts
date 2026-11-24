@@ -1,9 +1,9 @@
 import { UrlSegment } from '@angular/router'
-import { encodeUrl } from '@sync-in-server/backend/src/common/shared'
+import { BYTE_UNITS, encodeUrl } from '@sync-in-server/backend/src/common/shared'
 import { themeDark, themeLight } from '../../layout/layout.interfaces'
 import { escapeRegexp } from './regexp'
 
-export const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+export { convertTextToBytes } from '@sync-in-server/backend/src/common/shared'
 export const reservedUrlChars = new Map([
   ['#', '%23'],
   ['?', '%3F'],
@@ -50,21 +50,20 @@ export function ifStringContains(content: string, search: string) {
 }
 
 export function genRandomUUID(): string {
-  return Math.random().toString(36).substring(7)
-}
-
-export function convertTextToBytes(bytes: number, unit: string, precision = 0): number {
-  const exponent = units.indexOf(unit.toUpperCase())
-  return parseInt((bytes * Math.pow(1024, Math.floor(exponent))).toFixed(precision), 10)
+  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16))
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+  const value = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
+  return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`
 }
 
 export function convertBytesToText(bytes: number, precision = 0, zero = false): string {
   if (bytes === 0) {
     return zero ? '0 KB' : ''
   }
-  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
+  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), BYTE_UNITS.length - 1)
   const value = (bytes / Math.pow(1024, Math.floor(exponent))).toFixed(precision)
-  return `${value} ${units[exponent]}`
+  return `${value} ${BYTE_UNITS[exponent]}`
 }
 
 export function getNewly(value: string | number | Date, withWarning = false): 0 | 1 | 2 | 3 | 4 {

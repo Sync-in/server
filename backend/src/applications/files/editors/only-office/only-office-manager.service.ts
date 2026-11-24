@@ -59,7 +59,7 @@ import { createUploadStreamLimiter, parseContentLength } from '../../core/utils/
 @Injectable()
 export class OnlyOfficeManager {
   private logger = new Logger(OnlyOfficeManager.name)
-  private readonly maxUploadSize = configuration.applications.files.maxUploadSize
+  private readonly maxUploadSize = configuration.applications.files.transfers.maxUploadSize
   private readonly officeConfig = configuration.applications.files.editors.onlyoffice.enabled
     ? configuration.applications.files.editors.onlyoffice
     : configuration.applications.files.editors.eurooffice

@@ -89,6 +89,40 @@ file locks, but they do not implicitly protect collection members. Operations on
 the collection itself, including its removal, still see the exact collection
 state.
 
+## Owner reentrancy and operation guards
+
+Owner identity is authorization metadata, not an operation identity. Two
+requests made by the same owner may come from different tabs, devices, clients,
+background jobs, or retries and must not be assumed to represent one operation.
+
+Transient internal guards protecting a `POST` or `PUT` publication use
+`create`. They are non-reentrant, including for the same owner: a concurrent
+creation on the same exact resource returns a conflict without refreshing or
+replacing the active lock. The guard uses the same exact-resource state as the
+other lock families; it does not introduce a second cache key or coordination
+mechanism.
+
+`createOrRefresh` is owner-reentrant and is reserved for persistent lock
+lifecycles where that behavior is intentional, such as explicit API or editor
+lock renewal. This distinction applies to callers that acquire a transient guard
+with `create`; protocol conflict checks retain their documented owner and token
+compatibility rules and do not imply that every possible writer is globally
+serialized.
+
+An explicit application unlock authorized for the lock owner is a deliberate
+override of this protection, including when the lock currently guards an
+in-flight publication. After that override, serialization against a subsequent
+operation is no longer guaranteed and the owner assumes the effects of any
+concurrent action. This does not make acquisition owner-reentrant: without an
+explicit unlock, another `create` on the same exact resource still conflicts.
+Protocol unlock remains scoped to its matching token and cannot remove a
+tokenless internal guard.
+
+Filesystem preconditions used to decide a guarded publication must be checked
+after the guard is acquired. A check performed before acquisition may reject an
+obviously invalid request early, but an initially successful precheck is only an
+optimization and cannot replace the check inside the guarded section.
+
 ## Atomic transitions
 
 Every decision is a single-key read-modify-CAS operation. Creation first tries

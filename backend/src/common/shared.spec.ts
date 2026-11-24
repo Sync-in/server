@@ -1,4 +1,25 @@
-import { createCacheKeySlug, createLightSlug, createSlug, InvalidSlugError, stripMatchingQuotes, unicodeCaselessIdentity } from './shared.js'
+import {
+  createCacheKeySlug,
+  createLightSlug,
+  createSlug,
+  InvalidSlugError,
+  parseTextToBytes,
+  stripMatchingQuotes,
+  unicodeCaselessIdentity
+} from './shared.js'
+
+describe(parseTextToBytes.name, () => {
+  it.each([
+    ['96 MB', 100_663_296],
+    ['5gb', 5_368_709_120]
+  ])('should convert %s to %s bytes', (value, expectedValue) => {
+    expect(parseTextToBytes(value)).toBe(expectedValue)
+  })
+
+  it.each(['96', '96 XB', '96 MB trailing', '1.5 GB'])('should reject %s', (value) => {
+    expect(parseTextToBytes(value)).toBeUndefined()
+  })
+})
 
 describe(createSlug.name, () => {
   it.each([

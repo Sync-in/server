@@ -4,7 +4,6 @@ export const SYNC_IN_SERVER_AGENT = 'sync-in' as const
 export const CHECK_SERVER_RESP = { server: SYNC_IN_SERVER_AGENT } as const
 export const SYNC_CHECKSUM_ALG = 'sha512-256'
 export const SYNC_DIFF_DONE = 'done'
-export const SYNC_TEMPORARY_FILE_PREFIX = '.sync-in.'
 
 export enum SYNC_REPOSITORY {
   PERSONAL = SPACE_ALIAS.PERSONAL,

@@ -69,7 +69,7 @@ describe('configuration contracts', () => {
         appStore: { repository: APP_STORE_REPOSITORY.PUBLIC },
         files: {
           ...filePaths,
-          maxUploadSize: 5368709120,
+          transfers: { maxUploadSize: 5368709120, maxChunkSize: 99614720 },
           links: { sendPasswordByEmail: false },
           contentIndexing: { enabled: true, ocr: { enabled: true, languages: ['eng'], offline: false } },
           trashRetention: { users: false, spaces: false },
