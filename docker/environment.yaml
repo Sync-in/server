@@ -23,6 +23,10 @@ applications:
         enabled: false
       drawio:
         enabled: false
+      photopea:
+        enabled: false
+        # Optional. Defaults to https://www.photopea.com when enabled.
+        externalServer:
       onlyoffice:
         enabled: false
         # Required when enabled. Must match JWT_SECRET in the OnlyOffice container.

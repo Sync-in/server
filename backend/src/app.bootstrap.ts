@@ -6,7 +6,7 @@ import { NestFactory } from '@nestjs/core'
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify'
 import { FastifyInstance, FastifyRequest } from 'fastify'
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino'
-import { CONTENT_SECURITY_POLICY } from './app.constants.js'
+import { CONTENT_SECURITY_POLICY, CORS_ORIGINS } from './app.constants.js'
 import { AppModule } from './app.module.js'
 import { FILE_UPLOAD_MULTIPART_MAX_FILES, FILE_UPLOAD_MULTIPART_MAX_PARTS } from './applications/files/core/constants/files.js'
 import { bootstrapWebDAV } from './applications/webdav/utils/bootstrap.js'
@@ -61,6 +61,10 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
   app.useStaticAssets({ root: STATIC_PATH, prefixAvoidTrailingSlash: true, dotfiles: 'ignore' })
 
   /* SECURITY */
+  app.enableCors({
+    origin: CORS_ORIGINS(configuration.applications.files.editors.photopea.enabled, configuration.applications.files.editors.photopea.externalServer)
+  })
+
   await app.register(fastifyHelmet, {
     contentSecurityPolicy: CONTENT_SECURITY_POLICY(
       (configuration.applications.files.editors.onlyoffice.enabled
@@ -68,7 +72,8 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
         : configuration.applications.files.editors.eurooffice
       ).externalServer,
       configuration.applications.files.editors.collabora.externalServer,
-      configuration.applications.files.editors.drawio.externalServer
+      configuration.applications.files.editors.drawio.externalServer,
+      configuration.applications.files.editors.photopea.externalServer
     )
   })
 

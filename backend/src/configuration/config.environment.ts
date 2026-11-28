@@ -22,8 +22,10 @@ export const serverConfig: ServerConfig = {
       collabora: configuration.applications.files.editors.collabora.enabled,
       drawio: configuration.applications.files.editors.drawio.enabled,
       eurooffice: configuration.applications.files.editors.eurooffice.enabled,
-      onlyoffice: configuration.applications.files.editors.onlyoffice.enabled
+      onlyoffice: configuration.applications.files.editors.onlyoffice.enabled,
+      photopea: configuration.applications.files.editors.photopea.enabled
     },
+    photopeaExternalServer: configuration.applications.files.editors.photopea.externalServer,
     sampleDocuments: getDocumentTypes(configuration.applications.files.sampleDocuments)
   }
 }

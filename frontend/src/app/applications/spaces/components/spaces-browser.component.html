@@ -69,14 +69,55 @@
     <!--End Download Button-->
   }
   @if (inSharesList()) {
-    <button (click)="shortcutOpen()"
-            [attr.aria-label]="'Open' | translate:locale.language"
-            [disabled]="selection().length !== 1"
-            class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
-            type="button">
-      <svg [lucideIcon]="selection()[0]?.isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>
-      <span class="app-top-menu-tool-bar__label" l10nTranslate>Open</span>
-    </button>
+    @if (isPhotopeaOpenable(selection()[0])) {
+      <div class="btn-group" dropdown>
+        <button dropdownToggle
+                [attr.aria-label]="'Open' | translate:locale.language"
+                [disabled]="selection().length !== 1"
+                class="btn btn-default dropdown-toggle app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
+                type="button">
+          <svg [lucideIcon]="icons.LucideEye"></svg>
+          <span class="app-top-menu-tool-bar__label" l10nTranslate>Open</span>
+        </button>
+        <ul *dropdownMenu class="dropdown-menu" role="menu">
+          @if (selection()[0].isViewable) {
+            <li role="menuitem">
+              <a (click)="shortcutOpen()" class="dropdown-item">
+                <span l10nTranslate><svg [lucideIcon]="icons.LucideEye"></svg>Preview</span>
+              </a>
+            </li>
+          } @else {
+            <li role="menuitem">
+              <a (click)="shortcutOpenInPhotopea()" class="dropdown-item">
+                <span l10nTranslate><svg [lucideIcon]="icons.LucideEye"></svg>Open in Photopea</span>
+              </a>
+            </li>
+          }
+          @if (canEditInPhotopea(selection()[0]) && selection()[0].isViewable) {
+            <li role="menuitem">
+              <a (click)="shortcutEditInPhotopea()" class="dropdown-item">
+                <span l10nTranslate><svg [lucideIcon]="icons.LucidePencil"></svg>Edit</span>
+              </a>
+            </li>
+          } @else if (selection()[0].isViewable) {
+            <li role="menuitem">
+              <a (click)="shortcutOpenInPhotopea()" class="dropdown-item">
+                <span l10nTranslate><svg [lucideIcon]="icons.LucideEye"></svg>Open in Photopea</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    } @else {
+      <button (click)="shortcutOpen()"
+              [attr.aria-label]="'Open' | translate:locale.language"
+              [disabled]="selection().length !== 1"
+              class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
+              type="button">
+        <svg [lucideIcon]="selection()[0]?.isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>
+        <span class="app-top-menu-tool-bar__label" l10nTranslate>Open</span>
+      </button>
+    }
   }
   <!--Start Share Button-->
   @if (!isTrashRepo() && !inSharesList() && (canShare().outside || isPersonalSpace())) {
@@ -146,9 +187,28 @@
         @if (selection()[0]) {
           <li role="menuitem">
             <a (click)="shortcutOpen()" class="dropdown-item">
-              <span l10nTranslate><svg [lucideIcon]="selection()[0].isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>Open</span>
+              @if (isPhotopeaOpenable(selection()[0]) && selection()[0].isViewable) {
+                <span l10nTranslate><svg [lucideIcon]="icons.LucideEye"></svg>Preview</span>
+              } @else if (isPhotopeaOpenable(selection()[0])) {
+                <span l10nTranslate><svg [lucideIcon]="icons.LucideEye"></svg>Open in Photopea</span>
+              } @else {
+                <span l10nTranslate><svg [lucideIcon]="selection()[0].isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>Open</span>
+              }
             </a>
           </li>
+          @if (canEditInPhotopea(selection()[0]) && selection()[0].isViewable) {
+            <li role="menuitem">
+              <a (click)="shortcutEditInPhotopea()" class="dropdown-item">
+                <span l10nTranslate><svg [lucideIcon]="icons.LucidePencil"></svg>Edit</span>
+              </a>
+            </li>
+          } @else if (isPhotopeaOpenable(selection()[0]) && selection()[0].isViewable) {
+            <li role="menuitem">
+              <a (click)="shortcutOpenInPhotopea()" class="dropdown-item">
+                <span l10nTranslate><svg [lucideIcon]="icons.LucideEye"></svg>Open in Photopea</span>
+              </a>
+            </li>
+          }
         }
       }
       <li role="menuitem">
@@ -651,8 +711,23 @@
 <context-menu #FileContextMenu>
   @if (selection().length === 1 && selection()[0]; as selectedFile) {
     <ng-template (execute)="shortcutOpen()" contextMenuItem>
-      <span l10nTranslate><svg [lucideIcon]="selectedFile.isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>Open</span>
+      @if (isPhotopeaOpenable(selectedFile) && selectedFile.isViewable) {
+        <span l10nTranslate><svg [lucideIcon]="icons.LucideEye"></svg>Preview</span>
+      } @else if (isPhotopeaOpenable(selectedFile)) {
+        <span l10nTranslate><svg [lucideIcon]="icons.LucideEye"></svg>Open in Photopea</span>
+      } @else {
+        <span l10nTranslate><svg [lucideIcon]="selectedFile.isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>Open</span>
+      }
     </ng-template>
+    @if (canEditInPhotopea(selectedFile) && selectedFile.isViewable) {
+      <ng-template (execute)="shortcutEditInPhotopea(selectedFile)" contextMenuItem>
+        <span l10nTranslate><svg [lucideIcon]="icons.LucidePencil"></svg>Edit</span>
+      </ng-template>
+    } @else if (isPhotopeaOpenable(selectedFile) && selectedFile.isViewable) {
+      <ng-template (execute)="shortcutOpenInPhotopea(selectedFile)" contextMenuItem>
+        <span l10nTranslate><svg [lucideIcon]="icons.LucideEye"></svg>Open in Photopea</span>
+      </ng-template>
+    }
   }
   @if (!hasDisabledItemsInSelection()) {
     <ng-template (execute)="downloadFiles()" contextMenuItem>

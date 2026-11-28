@@ -2,7 +2,15 @@ import { loadVersion } from './app.functions.js'
 
 export const VERSION = loadVersion()
 export const USER_AGENT = `sync-in-server/${VERSION}`
-export const CONTENT_SECURITY_POLICY = (xOfficeServer: string | null, collaboraServer: string | null, drawioServer: string | null) => ({
+export const CORS_ORIGINS = (photopeaEnabled: boolean, photopeaServer: string | null): string[] =>
+  photopeaEnabled && photopeaServer ? [new URL(photopeaServer).origin] : []
+
+export const CONTENT_SECURITY_POLICY = (
+  xOfficeServer: string | null,
+  collaboraServer: string | null,
+  drawioServer: string | null,
+  photopeaServer: string | null
+) => ({
   useDefaults: false,
   directives: {
     defaultSrc: ["'self'"],
@@ -14,7 +22,7 @@ export const CONTENT_SECURITY_POLICY = (xOfficeServer: string | null, collaboraS
     // PDF.js renders thumbnails and print images using blob URLs.
     imgSrc: ["'self'", 'data:', 'blob:'],
     fontSrc: ["'self'"],
-    frameSrc: ["'self'", 'blob:', xOfficeServer || '', collaboraServer || '', drawioServer || ''],
+    frameSrc: ["'self'", 'blob:', xOfficeServer || '', collaboraServer || '', drawioServer || '', photopeaServer || ''],
     frameAncestors: ["'self'"],
     formAction: ["'self'", collaboraServer || '']
   }

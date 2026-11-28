@@ -17,6 +17,7 @@ import { FilesViewerImageComponent } from '../viewers/files-viewer-image.compone
 import { FilesViewerMarkdownComponent } from '../viewers/files-viewer-markdown.component'
 import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.component'
 import { FilesViewerOnlyOfficeComponent } from '../viewers/files-viewer-only-office.component'
+import { FilesViewerPhotopeaComponent } from '../viewers/files-viewer-photopea.component'
 import { FilesViewerPdfComponent } from '../viewers/files-viewer-pdf.component'
 import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component'
 
@@ -31,6 +32,7 @@ import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component
     FilesViewerImageComponent,
     LucideDynamicIcon,
     FilesViewerOnlyOfficeComponent,
+    FilesViewerPhotopeaComponent,
     FilesViewerCollaboraOnlineComponent,
     FilesViewerDrawioComponent,
     L10nTranslateDirective
@@ -44,6 +46,7 @@ export class FilesViewerDialogComponent implements OnInit {
   @Input({ required: true }) isWriteable: boolean
   @Input({ required: true }) hookedShortMime: string
   @Input({ required: true }) editorProvider: FileEditorProviders
+  @Input() openInPhotopea = false
   @Input() fileChangeHandler?: FileChangeHandler
   readonly fileChange = output<FileModel>()
   protected readonly currentFileState = signal<FileModel | null>(null, { equal: () => false })
@@ -84,16 +87,22 @@ export class FilesViewerDialogComponent implements OnInit {
     this.hookedShortMimeState.set(this.hookedShortMime)
     this.editorProviderState.set(this.editorProvider)
     this.activeViewer.set(this.hookedShortMimeState())
-    this.isReadonly.set(this.hookedShortMimeState() === SHORT_MIME.PDF || this.modeState() === FILE_MODE.VIEW || !this.currentFile.isEditable)
+    if (this.openInPhotopea) this.activeViewer.set(SHORT_MIME.PHOTOPEA)
+    this.isReadonly.set(
+      this.openInPhotopea
+        ? this.modeState() === FILE_MODE.VIEW
+        : this.hookedShortMimeState() === SHORT_MIME.PDF || this.modeState() === FILE_MODE.VIEW || !this.currentFile.isEditable
+    )
     this.openedFile = { path: this.currentFile.path, name: this.currentFile.name, mimeUrl: this.currentFile.mimeUrl }
   }
 
   onClose() {
     const isEditableViewer =
+      this.activeViewer() === SHORT_MIME.PHOTOPEA ||
       this.hookedShortMimeState() === SHORT_MIME.TEXT ||
       this.hookedShortMimeState() === SHORT_MIME.MARKDOWN ||
       this.hookedShortMimeState() === SHORT_MIME.DIAGRAM
-    if (isEditableViewer && this.editableViewerReady()) {
+    if (isEditableViewer && this.editableViewerReady() && !this.isReadonly()) {
       // Prevent closing the modal without saving when using text-based editors
       this.modalClosing.set(true)
       // Force the next state change
@@ -110,7 +119,7 @@ export class FilesViewerDialogComponent implements OnInit {
   @HostListener('window:beforeunload', ['$event'])
   onBeforeUnload(event: BeforeUnloadEvent) {
     const activeViewer = this.activeViewer()
-    if (activeViewer === SHORT_MIME.IMAGE || activeViewer === SHORT_MIME.PDF) return
+    if (activeViewer === SHORT_MIME.IMAGE || activeViewer === SHORT_MIME.PDF || (activeViewer === SHORT_MIME.PHOTOPEA && this.isReadonly())) return
 
     event.preventDefault()
     event.returnValue = ''

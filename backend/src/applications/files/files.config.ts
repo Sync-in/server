@@ -5,6 +5,7 @@ import { SAMPLE_DOCUMENT_GROUPS } from './core/constants/samples.js'
 import { CollaboraOnlineConfigSchema } from './editors/collabora-online/collabora-online.config.js'
 import { DrawioConfigSchema } from './editors/drawio/drawio.config.js'
 import { OnlyOfficeConfigSchema } from './editors/only-office/only-office.config.js'
+import { PhotopeaConfigSchema } from './editors/photopea/photopea.config.js'
 
 export type FilesContentIndexingOCRConfig = z.output<typeof FilesContentIndexingOCRConfigSchema>
 export type FilesTrashRetentionConfig = z.output<typeof FilesTrashRetentionConfigSchema>
@@ -76,7 +77,8 @@ export const FilesEditorsConfigSchema = z.looseObject({
   onlyoffice: OnlyOfficeConfigSchema.default(() => OnlyOfficeConfigSchema.parse({})),
   eurooffice: OnlyOfficeConfigSchema.default(() => OnlyOfficeConfigSchema.parse({})),
   collabora: CollaboraOnlineConfigSchema.prefault({}),
-  drawio: DrawioConfigSchema.prefault({})
+  drawio: DrawioConfigSchema.prefault({}),
+  photopea: PhotopeaConfigSchema.prefault({})
 })
 
 const sampleDocumentsSchema = z.preprocess(

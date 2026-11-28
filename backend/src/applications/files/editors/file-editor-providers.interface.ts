@@ -3,4 +3,5 @@ export interface FileEditorProviders {
   drawio: boolean
   eurooffice: boolean
   onlyoffice: boolean
+  photopea: boolean
 }
