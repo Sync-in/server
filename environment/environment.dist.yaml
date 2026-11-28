@@ -441,6 +441,12 @@ applications:
         # example: https://drawio.domain.com
         # default: null
         externalServer:
+      photopea:
+        # enable Photopea image editor
+        # default: false
+        enabled: false
+        # Optional. Defaults to https://www.photopea.com when enabled.
+        externalServer:
   # Client application repository configuration
   appStore:
     # repository: `public` | `local`

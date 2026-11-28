@@ -1,6 +1,7 @@
 import { SAMPLE_DOCUMENT_GROUPS } from '../applications/files/core/constants/samples.js'
 import { FilesContentIndexingConfigSchema } from '../applications/files/files.config.js'
 import { OnlyOfficeConfigSchema } from '../applications/files/editors/only-office/only-office.config.js'
+import { PhotopeaConfigSchema } from '../applications/files/editors/photopea/photopea.config.js'
 import { APP_STORE_REPOSITORY } from '../applications/sync/constants/store.js'
 import { AuthConfigSchema, AuthTokenConfigSchema } from '../authentication/auth.config.js'
 import { ACCESS_KEY, CSRF_KEY, REFRESH_KEY, WS_KEY } from '../authentication/constants/auth.js'
@@ -44,6 +45,23 @@ function parseAuth(overrides: Record<string, unknown> = {}) {
 }
 
 describe('configuration contracts', () => {
+  it('defaults the Photopea external server when Photopea is enabled', () => {
+    expect(PhotopeaConfigSchema.parse({ enabled: true, externalServer: 'https://photopea.example.test' })).toEqual({
+      enabled: true,
+      externalServer: 'https://photopea.example.test/'
+    })
+    expect(PhotopeaConfigSchema.parse({ enabled: true, externalServer: 'https://photopea.example.test/photopea' })).toEqual({
+      enabled: true,
+      externalServer: 'https://photopea.example.test/photopea/'
+    })
+    expect(PhotopeaConfigSchema.parse({ enabled: true })).toEqual({
+      enabled: true,
+      externalServer: 'https://www.photopea.com/'
+    })
+    expect(PhotopeaConfigSchema.parse({ enabled: true, externalServer: null }).externalServer).toBe('https://www.photopea.com/')
+    expect(PhotopeaConfigSchema.parse({ enabled: true, externalServer: '' }).externalServer).toBe('https://www.photopea.com/')
+  })
+
   it('fills every nested default in a minimal configuration', () => {
     const config = GlobalConfigSchema.parse(minimalConfiguration())
 
@@ -78,7 +96,8 @@ describe('configuration contracts', () => {
             onlyoffice: { enabled: false, externalServer: null, verifySSL: false },
             eurooffice: { enabled: false, externalServer: null, verifySSL: false },
             collabora: { enabled: false, externalServer: null },
-            drawio: { enabled: false, externalServer: null }
+            drawio: { enabled: false, externalServer: null },
+            photopea: { enabled: false, externalServer: null }
           }
         }
       }

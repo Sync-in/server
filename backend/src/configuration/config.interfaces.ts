@@ -8,6 +8,7 @@ export interface ServerFilesTransfersConfig {
 export interface ServerFilesConfig {
   transfers: ServerFilesTransfersConfig
   editors: FileEditorProviders
+  photopeaExternalServer: string | null
   sampleDocuments: DocumentTypes
 }
 

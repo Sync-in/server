@@ -76,8 +76,10 @@ import { FilesTrashDialogComponent } from '../../files/components/dialogs/files-
 import { FileLockFormatPipe } from '../../files/components/utils/file-lock.utils'
 import { FileEvent } from '../../files/interfaces/file-event.interface'
 import { FileModel } from '../../files/models/file.model'
+import { getPhotopeaFormat } from '../../files/files.constants'
 import { FilesUploadService } from '../../files/services/files-upload.service'
 import { FilesService } from '../../files/services/files.service'
+import { PhotopeaFormatsService } from '../../files/services/photopea-formats.service'
 import { LinkDialogComponent } from '../../links/components/dialogs/link-dialog.component'
 import { ShareLinkModel } from '../../links/models/share-link.model'
 import { ShareDialogComponent } from '../../shares/components/dialogs/share-dialog.component'
@@ -247,6 +249,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   private readonly activatedRoute = inject(ActivatedRoute)
   private readonly renderer = inject(Renderer2)
   private readonly store = inject(StoreService)
+  private readonly photopeaFormats = inject(PhotopeaFormatsService)
   private readonly userService = inject(UserService)
   protected readonly isElectronApp = this.store.isElectronApp.asReadonly()
   private readonly spacesBrowser = inject(SpacesBrowserService)
@@ -509,9 +512,35 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       this.browse(file)
     } else if (file.isViewable || file.isEditable) {
       this.openViewerDialog(file)
+    } else if (this.isPhotopeaOpenable(file)) {
+      this.shortcutOpenInPhotopea(file)
     } else {
       this.filesService.offerDownload(file)
     }
+  }
+
+  shortcutEditInPhotopea(file: FileModel = this.selection()[0]) {
+    if (!file || !this.canEditInPhotopea(file)) return
+    this.shortcutOpenInPhotopea(file)
+  }
+
+  shortcutOpenInPhotopea(file: FileModel = this.selection()[0]) {
+    if (!file || !this.isPhotopeaOpenable(file)) return
+    this.openViewerDialog(file, true)
+  }
+
+  protected isPhotopeaOpenable(file?: FileModel): boolean {
+    return !!file && !file.isDir && this.store.server().files.editors.photopea && this.photopeaFormats.canOpenWithPhotopea(file.getExtension())
+  }
+
+  protected canEditInPhotopea(file?: FileModel): boolean {
+    if (!this.isPhotopeaOpenable(file) || !getPhotopeaFormat(file.getExtension()) || this.isTrashRepo()) return false
+    const permissions = this.inSharesList()
+      ? file.root?.permissions || ''
+      : file.root
+        ? intersectPermissions(this.spacePermissions(), file.root.permissions)
+        : this.spacePermissions()
+    return !file.lock?.isExclusive && permissions.includes(SPACE_OPERATION.MODIFY)
   }
 
   shortcutUploadFiles() {
@@ -788,7 +817,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     return f
   }
 
-  private openViewerDialog(f: FileModel) {
+  private openViewerDialog(f: FileModel, openInPhotopea = false) {
     let permissions: string
     if (this.isTrashRepo()) {
       permissions = ''
@@ -797,7 +826,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     } else {
       permissions = f?.root ? intersectPermissions(this.spacePermissions(), f?.root.permissions) : this.spacePermissions()
     }
-    this.filesService.openViewerDialog(f, this.files(), permissions, () => this.notifyFilesChanged()).catch(console.error)
+    this.filesService.openViewerDialog(f, this.files(), permissions, () => this.notifyFilesChanged(), openInPhotopea).catch(console.error)
   }
 
   private openCreatedFileAfterReload() {

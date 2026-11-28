@@ -32,7 +32,8 @@ export class StoreService {
     mailServerEnabled: false,
     files: {
       transfers: { maxChunkSize: null },
-      editors: { collabora: false, drawio: false, eurooffice: false, onlyoffice: false },
+      editors: { collabora: false, drawio: false, eurooffice: false, onlyoffice: false, photopea: false },
+      photopeaExternalServer: null,
       sampleDocuments: ALL_DOCUMENT_TYPES
     }
   })

@@ -26,6 +26,7 @@ import { catchError, finalize, map, Observable, of, throwError } from 'rxjs'
 import { switchMap, tap } from 'rxjs/operators'
 import { SERVICE_INTERRUPTION_ERROR, SERVICE_UNAVAILABLE_ERROR } from '../app.constants'
 import { USER_PATH } from '../applications/users/user.constants'
+import { PhotopeaFormatsService } from '../applications/files/services/photopea-formats.service'
 import { UserService } from '../applications/users/user.service'
 import { EVENT } from '../electron/constants/events'
 import { Electron } from '../electron/electron.service'
@@ -45,6 +46,7 @@ export class AuthService {
   private readonly http = inject(HttpClient)
   private readonly router = inject(Router)
   private readonly store = inject(StoreService)
+  private readonly photopeaFormats = inject(PhotopeaFormatsService)
   private readonly userService = inject(UserService)
   private readonly layout = inject(LayoutService)
 
@@ -203,6 +205,7 @@ export class AuthService {
     this.userService.initUser(r.user, impersonate)
     if (r.server) {
       this.store.server.set(r.server)
+      void this.photopeaFormats.loadManifest()
     }
   }
 

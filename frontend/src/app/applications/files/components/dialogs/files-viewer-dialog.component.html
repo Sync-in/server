@@ -45,6 +45,24 @@
           <ng-container [ngTemplateOutlet]="viewerError"></ng-container>
         }
       }
+      @case (SHORT_MIME.PHOTOPEA) {
+        @defer (on immediate) {
+          <app-files-viewer-photopea
+            [currentHeight]="currentHeight()"
+            [file]="currentFile"
+            [fileChangeHandler]="fileChangeHandler"
+            [isWriteable]="isWriteableState()"
+            [modalClosing]="modalClosing()"
+            [(isReadonly)]="isReadonly"
+            (fileChange)="notifyFileChange($event)"
+            (viewerReady)="editableViewerReady.set(true)"
+          />
+        } @loading (after 100ms; minimum 200ms) {
+          <ng-container [ngTemplateOutlet]="viewerLoading"></ng-container>
+        } @error {
+          <ng-container [ngTemplateOutlet]="viewerError"></ng-container>
+        }
+      }
       @case (SHORT_MIME.PDF) {
         @defer (on immediate) {
           <app-files-viewer-pdf [currentHeight]="currentHeight()" [file]="currentFile"></app-files-viewer-pdf>

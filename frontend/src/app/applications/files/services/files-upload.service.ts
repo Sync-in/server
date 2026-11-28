@@ -160,6 +160,15 @@ export class FilesUploadService {
     return this.http.request<void>(updateContent ? 'patch' : overwrite ? 'put' : 'post', url, { body: formData })
   }
 
+  uploadFileBlob(file: FileModel, content: Blob) {
+    const url = `${API_FILES_OPERATION_UPLOAD}/${file.path}`
+    const fileName = (file.rootAlias || file.name).normalize()
+    const fileContent = new File([content], fileName, { type: file.mime.replace('-', '/') })
+    const formData = new FormData()
+    formData.append('file', fileContent)
+    return this.http.patch<void>(url, formData)
+  }
+
   uploadNewFileContent(directoryPath: string, fileName: string, content: string) {
     const formData = new FormData()
     formData.append('file', new File([new Blob([content])], fileName, { type: 'application/x-drawio' }))

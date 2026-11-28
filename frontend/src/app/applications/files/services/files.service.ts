@@ -76,7 +76,7 @@ import { FilesOverwriteDialogComponent } from '../components/dialogs/files-overw
 import type { FilesViewerDialogComponent as FilesViewerDialogComponentState } from '../components/dialogs/files-viewer-dialog.component'
 import { FilesViewerSelectDialog } from '../components/dialogs/files-viewer-select-dialog.component'
 import { fileLockPropsToString } from '../components/utils/file-lock.utils'
-import { MAX_CLIENT_EDITOR_FILE_SIZE, SHORT_MIME } from '../files.constants'
+import { getPhotopeaFormat, MAX_CLIENT_EDITOR_FILE_SIZE, SHORT_MIME } from '../files.constants'
 import type { FilesOverwriteAction } from '../interfaces/files-dialog.interface'
 import type { FileModelChange, FileModelChangeKind } from '../interfaces/file-model-change.interface'
 import type { FileOpenOptions, ResolvedFile } from '../interfaces/file-open.interface'
@@ -86,6 +86,7 @@ import { FileFavoriteModel } from '../models/file-favorite.model'
 import { FileRecentModel } from '../models/file-recent.model'
 import { FileModel } from '../models/file.model'
 import { FilesTasksService } from './files-tasks.service'
+import { PhotopeaFormatsService } from './photopea-formats.service'
 
 @Injectable({ providedIn: 'root' })
 export class FilesService {
@@ -108,6 +109,7 @@ export class FilesService {
   private readonly http = inject(HttpClient)
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
+  private readonly photopeaFormats = inject(PhotopeaFormatsService)
   private readonly filesTasksService = inject(FilesTasksService)
   private readonly userService = inject(UserService)
 
@@ -349,8 +351,8 @@ export class FilesService {
       const file = resolved.file
       if (options.expectedShortMime && file.shortMime !== options.expectedShortMime) throw new Error('Document not found')
       if (options.fragment !== undefined) file.markdownFragment = options.fragment
-      if (file.isViewable || file.isEditable) {
-        await this.openViewerAfterAvailabilityCheck(file, [file], resolved.permissions)
+      if (options.photopea || file.isViewable || file.isEditable) {
+        await this.openViewerAfterAvailabilityCheck(file, [file], resolved.permissions, undefined, options.photopea === true)
       } else {
         this.offerDownload(file)
       }
@@ -431,13 +433,19 @@ export class FilesService {
     })
   }
 
-  async openViewerDialog(file: FileModel, directoryFiles: FileModel[], permissions: string, fileChangeHandler?: FileChangeHandler): Promise<void> {
+  async openViewerDialog(
+    file: FileModel,
+    directoryFiles: FileModel[],
+    permissions: string,
+    fileChangeHandler?: FileChangeHandler,
+    openInPhotopea = false
+  ): Promise<void> {
     try {
       if (!this.useTextProbeAsAvailabilityCheck(file)) {
         const response = await firstValueFrom(this.http.head(file.dataUrl, { observe: 'response' }))
         if (this.syncFileMetadata(file, response)) fileChangeHandler?.(file)
       }
-      await this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions, fileChangeHandler)
+      await this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions, fileChangeHandler, openInPhotopea)
     } catch (error) {
       this.sendOpenDocumentError(file, error)
     }
@@ -460,11 +468,20 @@ export class FilesService {
     file: FileModel,
     directoryFiles: FileModel[],
     permissions: string,
-    fileChangeHandler?: FileChangeHandler
+    fileChangeHandler?: FileChangeHandler,
+    openInPhotopea = false
   ): Promise<void> {
     // Client-side editable viewers use this flag; office editors enforce permissions on the backend.
     const fromMarkdownLink = file.markdownFragment !== undefined
-    const isWriteable = !file?.lock?.isExclusive && permissions.includes(SPACE_OPERATION.MODIFY)
+    if (this.store.server().files.editors.photopea) await this.photopeaFormats.loadManifest()
+    const photopeaFormat = getPhotopeaFormat(file.getExtension())
+    const photopeaAvailable =
+      this.store.server().files.editors.photopea && !file.isDir && this.photopeaFormats.canOpenWithPhotopea(file.getExtension())
+    if (openInPhotopea && !photopeaAvailable) {
+      throw new Error('Photopea is unavailable for this file')
+    }
+    const hasWritePermissions = !file?.lock?.isExclusive && permissions.includes(SPACE_OPERATION.MODIFY)
+    const isWriteable = hasWritePermissions && (!openInPhotopea || !!photopeaFormat)
     const mode: FILE_MODE = isWriteable ? FILE_MODE.EDIT : FILE_MODE.VIEW
 
     const hookResult = await this.viewerHook(file)
@@ -481,7 +498,13 @@ export class FilesService {
       this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(file.lock))
     }
 
-    const editorProvider: FileEditorProviders = { collabora: false, drawio: false, eurooffice: false, onlyoffice: false }
+    const editorProvider: FileEditorProviders = {
+      collabora: false,
+      drawio: false,
+      eurooffice: false,
+      onlyoffice: false,
+      photopea: photopeaAvailable
+    }
     if (hookedShortMime === SHORT_MIME.DOCUMENT) {
       const officeEditorProvider = this.store.server().files.editors.onlyoffice ? ONLY_OFFICE_EDITOR : EURO_OFFICE_EDITOR
       const officeEditorEnabled = this.store.server().files.editors[officeEditorProvider]
@@ -520,6 +543,7 @@ export class FilesService {
         isWriteable: isWriteable,
         hookedShortMime: hookedShortMime,
         editorProvider: editorProvider,
+        openInPhotopea,
         fileChangeHandler
       } satisfies Partial<FilesViewerDialogComponentState>
     })

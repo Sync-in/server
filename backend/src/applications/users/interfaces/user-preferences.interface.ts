@@ -5,7 +5,7 @@ export type UserTheme = Exclude<USER_THEME, USER_THEME.AUTO>
 
 export interface UserPreferences {
   theme: USER_THEME
-  editor: Exclude<keyof FileEditorProviders, 'drawio'> | null
+  editor: Exclude<keyof FileEditorProviders, 'drawio' | 'photopea'> | null
   showHiddenFiles: boolean
   singleClickNavigation: boolean
   useSystemNotifications: boolean

@@ -23,8 +23,64 @@ export const SHORT_MIME = {
   MARKDOWN: 'markdown',
   IMAGE: 'image',
   MEDIA: 'media',
-  PDF: 'pdf'
+  PDF: 'pdf',
+  PHOTOPEA: 'photopea'
 } as const
+export const PHOTOPEA_FALLBACK_OPENABLE_EXTENSIONS: ReadonlySet<string> = new Set([
+  'ai',
+  'arw',
+  'bmp',
+  'cdr',
+  'cr2',
+  'cr3',
+  'dds',
+  'dng',
+  'eps',
+  'gif',
+  'ico',
+  'jp2',
+  'jpx',
+  'jpeg',
+  'jpg',
+  'nef',
+  'orf',
+  'pdf',
+  'png',
+  'ps',
+  'psb',
+  'psd',
+  'pxd',
+  'raf',
+  'rw2',
+  'sketch',
+  'svg',
+  'tga',
+  'tif',
+  'tiff',
+  'webp',
+  'xd',
+  'xcf'
+])
+export const PHOTOPEA_FORMAT_BY_EXTENSION: Readonly<Record<string, string>> = {
+  bmp: 'bmp',
+  dds: 'dds',
+  gif: 'gif',
+  ico: 'ico',
+  jpeg: 'jpg',
+  jpg: 'jpg',
+  pdf: 'pdf',
+  psd: 'psd',
+  png: 'png',
+  svg: 'svg',
+  tif: 'tiff',
+  tiff: 'tiff',
+  webp: 'webp'
+}
+
+export function getPhotopeaFormat(extension: string): string | undefined {
+  const normalizedExtension = extension.toLowerCase()
+  return Object.hasOwn(PHOTOPEA_FORMAT_BY_EXTENSION, normalizedExtension) ? PHOTOPEA_FORMAT_BY_EXTENSION[normalizedExtension] : undefined
+}
 export const UNSUPPORTED_VIEW_EXTENSIONS = new Set([
   'rar',
   '7z',
